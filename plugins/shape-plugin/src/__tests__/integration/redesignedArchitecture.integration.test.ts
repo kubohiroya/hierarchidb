@@ -15,15 +15,35 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ImmediateHeartbeatProcessor,
   type NotificationType,
-  type SequencedEvent,
   UIEventBufferManager,
 } from '../../ui/components/build-progress/eventBufferingUI.js';
 import {
+  type EventPayload,
   eventDeliveryMonitor,
   unconditionalEventStreamer,
 } from '../../worker/api/eventBuffering.js';
 
 const toNodeId = (id: string): NodeId => id as NodeId;
+
+type LegacyEventPayload = Exclude<EventPayload, { type: 'heartbeat' }>;
+type SequencedEvent = LegacyEventPayload & {
+  seqNum: number;
+  notificationType: Exclude<NotificationType, 'heartbeat'>;
+};
+type EmptySessionRecord = Record<string, never>;
+type MockSessionStatus = 'idle' | 'running' | 'paused' | 'completed';
+
+const emptySessionRecord: EmptySessionRecord = {};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const getPayloadRecord = (payload: unknown): Record<string, unknown> => {
+  if (!isRecord(payload)) {
+    throw new Error('Expected event payload to be an object');
+  }
+  return payload;
+};
 
 // ---------------------------------------------------------------------------
 // 11.1 Unconditional event delivery
@@ -50,7 +70,7 @@ describe('11.1 Unconditional event delivery', () => {
         timestamp: Date.now(),
         previousStatus: undefined,
         currentStatus: 'running',
-        sessionRecord: {} as any,
+        sessionRecord: emptySessionRecord,
       });
     }).not.toThrow();
 
@@ -104,7 +124,7 @@ describe('11.1 Unconditional event delivery', () => {
       timestamp: Date.now(),
       previousStatus: undefined,
       currentStatus: 'running',
-      sessionRecord: {} as any,
+      sessionRecord: emptySessionRecord,
     });
     expect(received).toHaveLength(1);
 
@@ -118,7 +138,7 @@ describe('11.1 Unconditional event delivery', () => {
         timestamp: Date.now(),
         previousStatus: 'running',
         currentStatus: 'completed',
-        sessionRecord: {} as any,
+        sessionRecord: emptySessionRecord,
       });
     }).not.toThrow();
 
@@ -236,15 +256,15 @@ describe('11.3 Timeout elimination', () => {
     const stateTransitions: string[] = [];
 
     // Simulate state machine that transitions immediately
-    const simulateStateTransition = (from: string, to: string) => {
+    const simulateStateTransition = (from: MockSessionStatus, to: MockSessionStatus) => {
       stateTransitions.push(`${from}->${to}`);
       // Emit event after state transition (not before)
       unconditionalEventStreamer.emitEvent(nodeId, 'session-state', {
         nodeId,
         timestamp: Date.now(),
-        previousStatus: from as any,
-        currentStatus: to as any,
-        sessionRecord: {} as any,
+        previousStatus: from,
+        currentStatus: to,
+        sessionRecord: emptySessionRecord,
       });
     };
 
@@ -270,7 +290,7 @@ describe('11.3 Timeout elimination', () => {
 
     const receivedTypes: string[] = [];
     const unsub = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (e) => {
-      receivedTypes.push((e.payload as any).stageId ?? 'unknown');
+      receivedTypes.push(String(getPayloadRecord(e.payload).stageId ?? 'unknown'));
     });
 
     // Emit stage snapshots directly — no intermediate handshake phase
@@ -333,7 +353,7 @@ describe('11.4 Synchronized pub/sub initialization', () => {
       timestamp: Date.now(),
       previousStatus: undefined,
       currentStatus: 'running',
-      sessionRecord: {} as any,
+      sessionRecord: emptySessionRecord,
     });
 
     expect(channelReady).toBe(true);

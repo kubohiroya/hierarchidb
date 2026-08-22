@@ -1,5 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
+type JsonRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is JsonRecord =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
 /**
  * Chain execution strategies
  */
@@ -57,7 +62,7 @@ export interface ResolverChain {
  */
 export interface ChainExecutionResult {
   success: boolean;
-  data: any;
+  data: unknown;
   errors: Array<{
     resolverId: NodeId;
     error: string;
@@ -69,7 +74,7 @@ export interface ChainExecutionResult {
     executionTime: number;
     recordsProcessed: number;
   };
-  resolverResults: Map<NodeId, any>;
+  resolverResults: Map<NodeId, unknown>;
 }
 
 type ResolverExecutionResult = {
@@ -109,7 +114,7 @@ export class ChainManager {
    */
   async executeChain(
     chainId: string,
-    data: any,
+    data: unknown,
     _options?: {
       timeout?: number;
       parallel?: boolean;
@@ -184,9 +189,9 @@ export class ChainManager {
    */
   private async executeSequential(
     chain: ResolverChain,
-    data: any,
+    data: unknown,
     result: ChainExecutionResult
-  ): Promise<any> {
+  ): Promise<unknown> {
     let currentData = data;
 
     const sortedResolvers = [...chain.resolvers]
@@ -218,9 +223,9 @@ export class ChainManager {
    */
   private async executeParallel(
     chain: ResolverChain,
-    data: any,
+    data: unknown,
     result: ChainExecutionResult
-  ): Promise<any> {
+  ): Promise<unknown> {
     const enabledResolvers = chain.resolvers.filter((r) => r.enabled);
 
     const promises = enabledResolvers.map(
@@ -258,9 +263,9 @@ export class ChainManager {
    */
   private async executeConditional(
     chain: ResolverChain,
-    data: any,
+    data: unknown,
     result: ChainExecutionResult
-  ): Promise<any> {
+  ): Promise<unknown> {
     for (const resolver of chain.resolvers) {
       if (!resolver.enabled) continue;
 
@@ -299,9 +304,9 @@ export class ChainManager {
    */
   private async executeFallback(
     chain: ResolverChain,
-    data: any,
+    data: unknown,
     result: ChainExecutionResult
-  ): Promise<any> {
+  ): Promise<unknown> {
     const sortedResolvers = [...chain.resolvers]
       .filter((r) => r.enabled)
       .sort((a, b) => a.order - b.order);
@@ -330,9 +335,9 @@ export class ChainManager {
    */
   private async executeWeighted(
     chain: ResolverChain,
-    data: any,
+    data: unknown,
     result: ChainExecutionResult
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Similar to parallel, but with weighted merging
     return this.executeParallel(chain, data, result);
   }
@@ -340,7 +345,7 @@ export class ChainManager {
   /**
    * Execute a single resolver (mock implementation)
    */
-  private async executeResolver(resolverId: NodeId, data: any): Promise<any> {
+  private async executeResolver(resolverId: NodeId, data: unknown): Promise<unknown> {
     // In real implementation, this would:
     // 1. Load the resolver configuration
     // 2. Apply mapping rules
@@ -351,7 +356,11 @@ export class ChainManager {
     // Mock implementation
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({ ...data, _processed: true, _resolverId: resolverId });
+        resolve({
+          ...(isRecord(data) ? data : { value: data }),
+          _processed: true,
+          _resolverId: resolverId,
+        });
       }, Math.random() * 100);
     });
   }
@@ -359,7 +368,7 @@ export class ChainManager {
   /**
    * Merge results from parallel execution
    */
-  private mergeResults(results: ResolverExecutionResult[], strategy: ConflictResolution): any {
+  private mergeResults(results: ResolverExecutionResult[], strategy: ConflictResolution): unknown {
     if (results.length === 0) return null;
     if (results.length === 1) return results[0]?.data;
 
@@ -372,7 +381,7 @@ export class ChainManager {
 
       case 'merge':
         // Deep merge all results
-        return results.reduce((acc, r) => this.deepMerge(acc, r?.data), {});
+        return results.reduce<unknown>((acc, r) => this.deepMerge(acc, r.data), {});
 
       case 'error':
         throw new Error('Conflict detected in parallel execution');
@@ -389,20 +398,19 @@ export class ChainManager {
   /**
    * Deep merge helper
    */
-  private deepMerge(target: any, source: any): any {
+  private deepMerge(target: unknown, source: unknown): unknown {
     if (!source) return target;
     if (!target) return source;
+    if (!isRecord(target) || !isRecord(source)) {
+      return source;
+    }
 
     const result = { ...target };
 
     for (const key in source) {
       if (Object.hasOwn(source, key)) {
-        if (
-          typeof source[key] === 'object' &&
-          !Array.isArray(source[key]) &&
-          source[key] !== null
-        ) {
-          result[key] = this.deepMerge(target?.[key], source[key]);
+        if (isRecord(source[key]) && !Array.isArray(source[key]) && source[key] !== null) {
+          result[key] = this.deepMerge(target[key], source[key]);
         } else {
           result[key] = source[key];
         }

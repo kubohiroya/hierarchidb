@@ -1,4 +1,4 @@
 export const atom = <T>(initial: T) => ({
   read: () => initial,
-  write: (_: any, value: T) => value,
+  write: (_: unknown, value: T) => value,
 });

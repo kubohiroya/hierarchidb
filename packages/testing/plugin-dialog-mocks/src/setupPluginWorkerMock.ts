@@ -2,10 +2,10 @@ import { afterAll, beforeAll } from 'vitest';
 import { WorkerAPIImpl } from './mocks/WorkerAPIImpl.js';
 
 export type WorkerClientRefLike = {
-  client: any;
+  client: WorkerAPIImpl<unknown> | null;
   isInitialized: boolean;
   initialize: () => Promise<void>;
-  getAPI: () => any;
+  getAPI: () => WorkerAPIImpl<unknown>;
 };
 
 declare global {
