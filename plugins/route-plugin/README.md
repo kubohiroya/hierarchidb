@@ -27,6 +27,7 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
 - Step3 は国×交通モードの OR/AND マトリクス（1国あたり 10 チェック）で `selectedArrayByCountries` を更新する。
   - OR を選択したモードは同一行の AND が自動 `checked/disabled` になる。
   - チェックボックスは Step2 で読み込んだデータ上で実在する国×モードのみ生成し、初期状態は `checked`。
+  - coverage に存在しない ISO 国は disabled 行としても描画しない。`coverageByCountry` alias や 5-cell 行は受理しない。
 - Step4 は shape の build 設定 UI（TileEmit 設定カードを含む）を共用する。
 - 永続する設定SSOTは`RouteEntity.buildConfig`内の`RouteBuildConfig`とし、別の`processingConfig`設定木を併存させない。
 - Step5 は`source -> geometry -> tileEmit`の3ステージで実行する。

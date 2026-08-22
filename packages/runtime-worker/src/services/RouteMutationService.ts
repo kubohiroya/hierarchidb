@@ -97,7 +97,6 @@ export class RouteMutationService implements RouteMutationAPI {
     return {
       coverageByCountryOr: coverage.or,
       coverageByCountryAnd: coverage.and,
-      coverageByCountry: coverage.or,
       rowCount,
       errorCount: errors.length,
       errors,
