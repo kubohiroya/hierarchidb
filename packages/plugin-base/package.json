@@ -24,7 +24,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ajv": "^8.18.0"
+  },
   "peerDependencies": {
     "react": "^19.0.0",
     "jotai": "^2.11.2",

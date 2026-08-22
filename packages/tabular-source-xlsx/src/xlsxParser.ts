@@ -8,7 +8,9 @@ import type {
   TabularParseResult,
   TabularParserPort,
   TabularPreview,
+  TabularRow,
 } from '@hierarchidb/tabular-source';
+import { isTabularRow } from '@hierarchidb/tabular-source';
 
 // Uses 'xlsx' package, which is a dependency of this optional package
 // to keep @hierarchidb/tabular-source core lean.
@@ -107,16 +109,22 @@ export const xlsxParser: TabularParserPort = {
     if (!ws) {
       throw new Error(`Worksheet "${wsName}" is missing from XLSX workbook`);
     }
-    const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Array<Record<string, unknown>>;
+    const rawRows = XLSX.utils.sheet_to_json(ws, { defval: '' }) as unknown[];
+    const json: TabularRow[] = rawRows.map((row) => {
+      if (!isTabularRow(row)) {
+        throw new Error('xlsx-row-schema-invalid');
+      }
+      return row;
+    });
     const chunkSize = options?.chunkSize ?? 1000;
 
     const headers = json.length > 0 ? Object.keys(json[0] ?? {}) : [];
-    const previewRows: Array<Record<string, unknown>> = json.slice(0, 50);
+    const previewRows: TabularRow[] = json.slice(0, 50);
 
     async function* iterator(): AsyncGenerator<TabularChunk> {
       let index = 0;
       for (let i = 0; i < json.length; i += chunkSize) {
-        const slice = json.slice(i, i + chunkSize) as Array<Record<string, unknown>>;
+        const slice = json.slice(i, i + chunkSize);
         const hasMore = i + chunkSize < json.length;
         yield { rows: slice, index: index++, hasMore };
       }

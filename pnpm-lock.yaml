@@ -1118,6 +1118,9 @@ importers:
 
   packages/map-source:
     dependencies:
+      ajv:
+        specifier: ^8.18.0
+        version: 8.18.0
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -1146,6 +1149,9 @@ importers:
 
   packages/plugin-base:
     dependencies:
+      ajv:
+        specifier: ^8.18.0
+        version: 8.18.0
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -1767,6 +1773,10 @@ importers:
         version: 5.8.2
 
   packages/tabular-source:
+    dependencies:
+      ajv:
+        specifier: ^8.18.0
+        version: 8.18.0
     devDependencies:
       '@hierarchidb/util':
         specifier: workspace:*
@@ -4751,12 +4761,6 @@ importers:
       '@hierarchidb/yaml-api':
         specifier: workspace:*
         version: link:../../packages/yaml-api
-      '@testing-library/jest-dom':
-        specifier: ^6.6.4
-        version: 6.9.1
-      '@testing-library/react':
-        specifier: ^16.3.2
-        version: 16.3.2(@testing-library/dom@9.3.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
@@ -4775,6 +4779,12 @@ importers:
       '@rjsf/validator-ajv8':
         specifier: ^5.0.0
         version: 5.24.13(@rjsf/utils@5.24.13(react@19.2.4))
+      '@testing-library/jest-dom':
+        specifier: ^6.6.4
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@9.3.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       fake-indexeddb:
         specifier: ^4.0.2
         version: 4.0.2

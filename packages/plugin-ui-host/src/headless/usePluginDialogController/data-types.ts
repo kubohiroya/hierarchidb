@@ -1,7 +1,7 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 
-export type DialogUiState = unknown;
+export type DialogUiState = object;
 
 // Draft container: basic info goes to draftMetadata, plugin data goes to draftData (Partial of plugin entity).
 export interface TreeNodeUpdaterPayload<

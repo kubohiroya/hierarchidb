@@ -9,22 +9,24 @@ import { dialogStepLocalizationRegistry } from './DialogStepLocalizationRegistry
 
 // Abstract step payload shape. Concrete plugins should extend this with their own dialog data types.
 export type StepData = object;
+export type StepUiState = object;
 
 export type BivariantCallback<TArgs extends unknown[], TResult> = {
   bivarianceHack: (...args: TArgs) => TResult;
 }['bivarianceHack'];
 
-type DataCallback<TData extends StepData, TUiState, TResult> = BivariantCallback<
-  [data: TData, uiState?: TUiState],
-  TResult
->;
+type DataCallback<
+  TData extends StepData,
+  TUiState extends StepUiState,
+  TResult,
+> = BivariantCallback<[data: TData, uiState?: TUiState], TResult>;
 
 type OptionalDataCallback<TData extends StepData, TResult> = BivariantCallback<
   [data?: TData],
   TResult
 >;
 
-type StartBuildCallback<TData extends StepData, TUiState> = BivariantCallback<
+type StartBuildCallback<TData extends StepData, TUiState extends StepUiState> = BivariantCallback<
   [data: TData, context: StartBuildContext<TData, TUiState>],
   void | Promise<void>
 >;
@@ -55,7 +57,10 @@ export interface PluginStepProvider<TData extends StepData = StepData> {
 /**
  * New: Config-based provider that supplies typed component factories.
  */
-export interface PluginStepConfigProvider<TData extends StepData = StepData, TUiState = unknown> {
+export interface PluginStepConfigProvider<
+  TData extends StepData = StepData,
+  TUiState extends StepUiState = StepUiState,
+> {
   nodeType: string;
   getCreateStepConfigs(): ReadonlyArray<PluginStepConfig<TData, TUiState>>;
   getEditStepConfigs(
@@ -68,7 +73,10 @@ export interface PluginStepConfigProvider<TData extends StepData = StepData, TUi
 /**
  * Plugin step configuration
  */
-export interface StartBuildContext<TData extends StepData = StepData, TUiState = unknown> {
+export interface StartBuildContext<
+  TData extends StepData = StepData,
+  TUiState extends StepUiState = StepUiState,
+> {
   /**
    * Canonical node id if already persisted. Use this to start worker-side build jobs.
    */
@@ -95,7 +103,10 @@ export interface StartBuildContext<TData extends StepData = StepData, TUiState =
   uiState?: TUiState;
 }
 
-export interface PluginStepConfig<TData extends StepData = StepData, TUiState = unknown> {
+export interface PluginStepConfig<
+  TData extends StepData = StepData,
+  TUiState extends StepUiState = StepUiState,
+> {
   /** Step ID */
   id: string;
 
@@ -134,7 +145,10 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
 /**
  * Props passed to step components
  */
-export interface PluginStepProps<TData extends StepData = StepData, TUiState = unknown> {
+export interface PluginStepProps<
+  TData extends StepData = StepData,
+  TUiState extends StepUiState = StepUiState,
+> {
   /** Dialog mode */
   mode: 'create' | 'edit';
 
@@ -183,13 +197,71 @@ const registerAndResolveLabel = <TData extends StepData>(
   return dialogStepLocalizationRegistry.resolveTitle(nodeType, cfg.id);
 };
 
+export const erasePluginStepConfig = <
+  TData extends StepData,
+  TUiState extends StepUiState = StepUiState,
+>(
+  cfg: PluginStepConfig<TData, TUiState>
+): PluginStepConfig<StepData, StepUiState> => {
+  const validate = cfg.validate;
+  const canNavigateTo = cfg.capabilities?.canNavigateTo;
+  const canStartBuild = cfg.capabilities?.canStartBuild;
+  const canSave = cfg.capabilities?.canSave;
+  const canProceedToNext = cfg.capabilities?.canProceedToNext;
+  const canBackToPrevious = cfg.capabilities?.canBackToPrevious;
+  const startBuild = cfg.capabilities?.startBuild;
+
+  return {
+    ...cfg,
+    componentFactory: (props) =>
+      cfg.componentFactory({
+        ...props,
+        data: props.data as TData,
+        uiState: props.uiState as TUiState | undefined,
+        onChange: (data) => props.onChange(data),
+        onUiStateChange: props.onUiStateChange
+          ? (uiState) => props.onUiStateChange?.(uiState)
+          : undefined,
+      }),
+    validate: validate ? (data) => validate(data as TData | undefined) : undefined,
+    capabilities: cfg.capabilities
+      ? {
+          canNavigateTo: canNavigateTo
+            ? (fromStep, data, uiState) =>
+                canNavigateTo(fromStep, data as TData, uiState as TUiState | undefined)
+            : undefined,
+          canStartBuild: canStartBuild
+            ? (data, uiState) => canStartBuild(data as TData, uiState as TUiState | undefined)
+            : undefined,
+          canSave: canSave
+            ? (data, uiState) => canSave(data as TData, uiState as TUiState | undefined)
+            : undefined,
+          canProceedToNext: canProceedToNext
+            ? (data, uiState) => canProceedToNext(data as TData, uiState as TUiState | undefined)
+            : undefined,
+          canBackToPrevious: canBackToPrevious
+            ? (data, uiState) => canBackToPrevious(data as TData, uiState as TUiState | undefined)
+            : undefined,
+          startBuild: startBuild
+            ? (data, context) =>
+                startBuild(data as TData, {
+                  ...context,
+                  dialogData: context.dialogData as TData,
+                  uiState: context.uiState as TUiState | undefined,
+                })
+            : undefined,
+        }
+      : undefined,
+  };
+};
+
 /**
  * Plugin Step Registry
  */
 export class PluginStepRegistry {
   private static instance: PluginStepRegistry;
   private providers: Map<string, PluginStepProvider<StepData>> = new Map();
-  private configProviders: Map<string, PluginStepConfigProvider<StepData, unknown>> = new Map();
+  private configProviders: Map<string, PluginStepConfigProvider<StepData, StepUiState>> = new Map();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -219,14 +291,19 @@ export class PluginStepRegistry {
   }
 
   /** Register a config-based provider (typed componentFactory) */
-  registerConfigProvider<TData extends StepData>(provider: PluginStepConfigProvider<TData>): void {
+  registerConfigProvider<TData extends StepData, TUiState extends StepUiState = StepUiState>(
+    provider: PluginStepConfigProvider<TData, TUiState>
+  ): void {
     if (this.configProviders.has(provider.nodeType)) {
       return;
     }
-    this.configProviders.set(
-      provider.nodeType,
-      provider as unknown as PluginStepConfigProvider<StepData>
-    );
+    this.configProviders.set(provider.nodeType, {
+      nodeType: provider.nodeType,
+      getCreateStepConfigs: () => provider.getCreateStepConfigs().map(erasePluginStepConfig),
+      getEditStepConfigs: (nodeId, data) =>
+        provider.getEditStepConfigs(nodeId, data as TData | undefined).map(erasePluginStepConfig),
+      validateAccess: provider.validateAccess?.bind(provider),
+    });
     this.emitChange();
   }
 
@@ -246,7 +323,7 @@ export class PluginStepRegistry {
     return this.providers.get(nodeType);
   }
 
-  getConfigProvider(nodeType: string): PluginStepConfigProvider<StepData, unknown> | undefined {
+  getConfigProvider(nodeType: string): PluginStepConfigProvider<StepData, StepUiState> | undefined {
     return this.configProviders.get(nodeType);
   }
 

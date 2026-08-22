@@ -21,6 +21,9 @@
     "dexie": "^4.2.0",
     "@hierarchidb/util": "workspace:*"
   },
+  "dependencies": {
+    "ajv": "^8.18.0"
+  },
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/util": "workspace:*"

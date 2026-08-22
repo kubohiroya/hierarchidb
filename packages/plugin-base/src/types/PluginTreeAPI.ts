@@ -1,6 +1,22 @@
 import type { NodeType, TreeId } from '@hierarchidb/core-types';
 import type { NodeCapability } from './pluginDefinitionTypes.js';
 
+export type PluginMetricValue = string | number | boolean | null;
+export type PluginMetricMap = Record<string, PluginMetricValue>;
+
+export interface DependencyGraphGroup {
+  id: string;
+  label?: string;
+  nodeTypes?: readonly NodeType[];
+  metrics?: PluginMetricMap;
+  readonly [key: string]:
+    | string
+    | readonly NodeType[]
+    | PluginMetricMap
+    | PluginMetricValue
+    | undefined;
+}
+
 export interface TreePluginInfo {
   readonly nodeType: NodeType;
   readonly displayName: string;
@@ -90,7 +106,7 @@ export interface DependencyGraph {
   nodes: Array<{
     nodeType: NodeType;
     label: string;
-    metrics?: Record<string, unknown>;
+    metrics?: PluginMetricMap;
   }>;
   edges: Array<{
     from: NodeType;
@@ -102,7 +118,7 @@ export interface DependencyGraph {
     hasCycles: boolean;
   };
   layout?: string;
-  groups?: ReadonlyArray<Record<string, unknown>> | Record<string, unknown>;
+  groups?: ReadonlyArray<DependencyGraphGroup> | Record<string, DependencyGraphGroup>;
   warnings?: string[];
   cyclicPaths?: NodeType[][];
 }
