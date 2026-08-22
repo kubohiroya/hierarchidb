@@ -41,6 +41,17 @@ const requireNonEmptyStringArray = (value: readonly string[], code: string): voi
   }
 };
 
+const validateWgs84Coordinate = (value: unknown, code: string): void => {
+  if (!Array.isArray(value) || value.length < 2) {
+    throw new Error(code);
+  }
+  const longitude = requireFiniteNumber(value[0], code);
+  const latitude = requireFiniteNumber(value[1], code);
+  if (longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90) {
+    throw new Error(code);
+  }
+};
+
 export const validateBorderGeometryDatasetRecord = (record: BorderGeometryDatasetRecord): void => {
   requireNonEmptyString(record.datasetId, 'border-geometry-dataset-id-required');
   requireNonEmptyString(record.nodeId, 'border-geometry-node-id-required');
@@ -82,6 +93,12 @@ export const validateBorderGeometryArcRecord = (record: BorderGeometryArcRecord)
     throw new Error('border-geometry-arc-classification-invalid');
   }
   requireNonEmptyString(record.orientation, 'border-geometry-arc-orientation-required');
+  if (!Array.isArray(record.coordinates) || record.coordinates.length < 2) {
+    throw new Error('border-geometry-arc-coordinates-invalid');
+  }
+  for (const coordinate of record.coordinates) {
+    validateWgs84Coordinate(coordinate, 'border-geometry-arc-coordinates-invalid');
+  }
   requireNonEmptyString(record.coordinateHash, 'border-geometry-coordinate-hash-required');
   requireNonEmptyString(record.endpointHash, 'border-geometry-endpoint-hash-required');
   requireNonEmptyStringArray(record.ownerPolygonIds, 'border-geometry-owner-polygons-required');

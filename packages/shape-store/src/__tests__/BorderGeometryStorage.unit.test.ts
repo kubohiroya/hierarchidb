@@ -42,6 +42,10 @@ const createArcRecord = (
   nodeId: NODE_ID,
   classification: 'sharedBorder',
   orientation: 'canonical-forward',
+  coordinates: [
+    [130, 30],
+    [140, 40],
+  ],
   coordinateHash: 'coordinate-hash-1',
   endpointHash: 'endpoint-hash-1',
   ownerPolygonIds: ['polygon-a', 'polygon-b'],
@@ -187,6 +191,23 @@ describe('Border geometry storage', () => {
     await expect(
       db.putBorderSpatialIndex(createSpatialIndexRecord({ sourceKey: 'US:1' }), options)
     ).rejects.toThrow('border-geometry-dataset-ownership-mismatch');
+  });
+
+  it('rejects invalid arc coordinate contracts', async () => {
+    const options = { enabled: true };
+    await db.putBorderGeometryDataset(createDatasetRecord(), options);
+
+    await expect(
+      db.putBorderGeometryArc(
+        createArcRecord({
+          coordinates: [
+            [130, 30],
+            [181, 40],
+          ],
+        }),
+        options
+      )
+    ).rejects.toThrow('border-geometry-arc-coordinates-invalid');
   });
 
   it('rejects invalid ring and polygon relation contracts', async () => {
