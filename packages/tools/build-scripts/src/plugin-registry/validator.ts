@@ -44,11 +44,8 @@ export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpe
           `${summary.nodeType}: database entry exists but package export "database" is missing.`
         );
       }
-      if (hasCommonEntry && !commonExported) {
-        issues.push(
-          `${summary.nodeType}: common entry exists but package export "common" is missing.`
-        );
-      }
+      // src/common is allowed to be an internal implementation directory. Only a declared
+      // package export makes common part of the public plugin registry surface.
 
       const iconSpecifier = summary.iconComponent?.specifier ?? '';
       if (iconSpecifier.startsWith(summary.packageName) && !hasExportPath(exportPaths, 'icon')) {

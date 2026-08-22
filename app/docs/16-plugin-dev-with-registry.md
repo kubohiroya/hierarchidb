@@ -33,6 +33,7 @@
 }
 ```
 - `exports` は存在するサブパスのみ定義すれば OK です。生成スクリプトは `exports` と `src/` をクロスチェックしてローダーを構成します。
+- `src/common/` は内部実装ディレクトリとして利用できます。`./common` を package `exports` に明示した場合のみ、public な registry module として扱われます。
 - Worker が `export class FooEntitiesDB` を公開すると、`worker-loader.ts` が自動的に Dexie ラッパーを生成します。
 
 ### 2) plugin-manifest.ts（メタデータ）

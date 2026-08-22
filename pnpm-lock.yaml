@@ -1216,6 +1216,9 @@ importers:
       '@hierarchidb/timeline-plugin':
         specifier: workspace:*
         version: link:../../plugins/timeline-plugin
+      '@hierarchidb/yaml-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/yaml-plugin
       maplibre-gl:
         specifier: ^5.19.0
         version: 5.19.0

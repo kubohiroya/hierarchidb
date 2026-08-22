@@ -2,20 +2,6 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import { defineConfig, type Options, type OutExtensionFactory, type UserConfig } from 'tsdown';
 
-const originalWarn = console.warn;
-console.warn = (...args) => {
-  if (typeof args[0] === 'string') {
-    const msg = args[0];
-    if (
-      msg.includes('top-level "define" option is deprecated') ||
-      msg.includes('top-level "inject" option is deprecated')
-    ) {
-      return;
-    }
-  }
-  originalWarn(...(args as Parameters<typeof console.warn>));
-};
-
 type PackageJson = {
   name?: string;
   type?: string;
@@ -47,8 +33,6 @@ type TsdownWorkspaceConfig = Omit<Options, 'config' | 'filter'> & {
   outExtensions?: OutExtensionFactory | string;
   outExtension?: OutExtensionFactory | string;
   define?: Record<string, string>;
-  inject?: unknown;
-  transform?: Record<string, unknown>;
   plugins?: Options['plugins'];
 };
 
@@ -205,42 +189,31 @@ if (normalizedOutExtension !== undefined) {
   finalConfig.outExtensions = normalizedOutExtension;
 }
 
-const geometryConfig: Record<string, unknown> =
-  typeof finalConfig.transform === 'object' && finalConfig.transform !== null
-    ? { ...(finalConfig.transform as Record<string, unknown>) }
-    : {};
+const hasObjectEntries = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.keys(value).length > 0;
 
-if ('define' in finalConfig) {
-  geometryConfig.define = finalConfig.define;
-  delete finalConfig.define;
-}
-
-if ('inject' in finalConfig) {
-  geometryConfig.inject = finalConfig.inject;
-  delete finalConfig.inject;
-}
-
-if (Object.keys(geometryConfig).length > 0) {
-  finalConfig.transform = geometryConfig;
-}
-
-const proxiedConfig = new Proxy(finalConfig, {
-  set(target, prop, value) {
-    if (prop === 'define' || prop === 'inject') {
-      const currentTransform = target.transform;
-      const transform =
-        currentTransform && typeof currentTransform === 'object' ? currentTransform : {};
-      target.transform = transform as Record<string, unknown>;
-      (transform as Record<string, unknown>)[prop as string] = value;
-      return true;
-    }
-    (target as Record<string, unknown>)[prop as string] = value;
-    return true;
-  },
-});
+const userInputOptions = finalConfig.inputOptions;
+const hasExplicitDefines =
+  hasObjectEntries(finalConfig.define) || hasObjectEntries(finalConfig.env);
+const hasExplicitInjects = finalConfig.shims === true;
+finalConfig.inputOptions = async (options, format, context) => {
+  if (!hasExplicitDefines) {
+    delete (options as { define?: unknown }).define;
+  }
+  if (!hasExplicitInjects) {
+    delete (options as { inject?: unknown }).inject;
+  }
+  if (typeof userInputOptions === 'function') {
+    return userInputOptions(options, format, context);
+  }
+  return userInputOptions;
+};
 
 if (process.env.TSDOWN_DEBUG === '1') {
-  console.log('[tsdown-config]', JSON.stringify(proxiedConfig, null, 2));
+  console.log('[tsdown-config]', JSON.stringify(finalConfig, null, 2));
 }
 
-export default defineConfig(proxiedConfig as UserConfig);
+export default defineConfig(finalConfig as UserConfig);
