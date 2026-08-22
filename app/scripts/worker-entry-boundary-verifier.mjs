@@ -9,6 +9,24 @@ const isoCsvAssetName = 'iso3166-2-level1.csv';
 const workerRuntimeArtifactPattern = /(?:^|\/)(?:worker|shared-worker|worker-runtime-shared-[^/]+)\.js$/;
 const unresolvedIsoBasePattern =
   /\bimport\.meta(?:\s*\.\s*env)?\b|(?:^|[^A-Za-z0-9_$])\/iso3166-2-level1\.csv(?:[^A-Za-z0-9_$]|$)/;
+const isoBaseResolverWindowChars = 1_200;
+
+const hasUnresolvedIsoBaseResolver = (source) => {
+  let searchFrom = 0;
+  while (searchFrom < source.length) {
+    const assetNameIndex = source.indexOf(isoCsvAssetName, searchFrom);
+    if (assetNameIndex === -1) return false;
+    const baseResolverStart = Math.max(0, assetNameIndex - isoBaseResolverWindowChars);
+    const baseResolverEnd = Math.min(
+      source.length,
+      assetNameIndex + isoCsvAssetName.length + isoBaseResolverWindowChars,
+    );
+    const baseResolverSource = source.slice(baseResolverStart, baseResolverEnd);
+    if (unresolvedIsoBasePattern.test(baseResolverSource)) return true;
+    searchFrom = assetNameIndex + isoCsvAssetName.length;
+  }
+  return false;
+};
 
 const collectJavaScriptFiles = async (directory) => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -44,7 +62,7 @@ export const verifyWorkerEntryBoundary = async ({ distRoot = defaultDistRoot } =
 
     if (workerRuntimeArtifactPattern.test(artifact) && source.includes(isoCsvAssetName)) {
       foundIsoCsvConsumer = true;
-      if (unresolvedIsoBasePattern.test(source)) {
+      if (hasUnresolvedIsoBaseResolver(source)) {
         unresolvedIsoBaseArtifacts.push(relativeArtifact);
       }
     }

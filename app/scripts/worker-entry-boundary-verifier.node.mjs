@@ -1,4 +1,4 @@
-import test from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -28,7 +28,8 @@ test('accepts neutral worker runtime chunks with build-time ISO base', async () 
   await withDist(
     {
       'shared-worker.js': 'import "./assets/worker-runtime-shared-ok.js";',
-      'assets/worker-runtime-shared-ok.js': 'const csv="/hierarchidb/iso3166-2-level1.csv";',
+      'assets/worker-runtime-shared-ok.js':
+        `const env=import.meta.env;${'x'.repeat(1_300)}const csv="/hierarchidb/iso3166-2-level1.csv";`,
       'assets/app.js': 'import "./shared-worker.js";',
     },
     async (distRoot) => {
