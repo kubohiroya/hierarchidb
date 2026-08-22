@@ -6,6 +6,32 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import { listTasks, onTaskQueueUpdate, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { buildTaskQueueSummary } from './progressAnalysis.js';
+import {
+  getBuildSessionInternal,
+  getShapeEntityHandler,
+  resolveSessionExpiresAt,
+} from './sessionConfigurationConstants.js';
+import {
+  clearActivePipeline,
+  getActivePipeline,
+  getPauseState,
+  heartbeatCallbacks,
+  invalidateActivePipeline,
+  isActivePipelineRunCurrent,
+  registerActivePipeline,
+  resolveBuildStatus,
+  resolveSessionLastActivity,
+  resolveSessionStatus,
+  sessionStateCallbacks,
+  setPaused,
+  stageSnapshotCallbacks,
+  type TaskSubscription,
+  taskCallbacks,
+  taskProgressCallbacks,
+  waitIfPaused,
+  workerLogCallbacks,
+} from './stateManagement.js';
 import { countTaskQueueStatuses, ensureTaskQueueSeeded } from './taskQueueManagement.js';
 import {
   mapTaskQueueRecordToTaskSummary,
@@ -13,13 +39,9 @@ import {
 } from './taskSummaryMapping.js';
 
 // Re-export from progress analysis
-export { buildTaskQueueSummary } from './progressAnalysis.js';
+export { buildTaskQueueSummary };
 // Re-export from session configuration
-export {
-  getBuildSessionInternal,
-  getShapeEntityHandler,
-  resolveSessionExpiresAt,
-} from './sessionConfigurationConstants.js';
+export { getBuildSessionInternal, getShapeEntityHandler, resolveSessionExpiresAt };
 
 // Re-export from state management
 export {
@@ -41,7 +63,7 @@ export {
   taskProgressCallbacks,
   waitIfPaused,
   workerLogCallbacks,
-} from './stateManagement.js';
+};
 
 // Task summary snapshot building
 export const buildTaskSummarySnapshot = async (
@@ -75,3 +97,33 @@ export {
   ensureTaskQueueSeeded,
   mapTaskQueueRecordToTaskSummary,
 };
+
+export const shapeBuildRuntimeCore = {
+  buildTaskQueueSummary,
+  getBuildSessionInternal,
+  getShapeEntityHandler,
+  resolveSessionExpiresAt,
+  clearActivePipeline,
+  getActivePipeline,
+  getPauseState,
+  heartbeatCallbacks,
+  invalidateActivePipeline,
+  isActivePipelineRunCurrent,
+  registerActivePipeline,
+  resolveBuildStatus,
+  resolveSessionLastActivity,
+  resolveSessionStatus,
+  sessionStateCallbacks,
+  setPaused,
+  stageSnapshotCallbacks,
+  taskCallbacks,
+  taskProgressCallbacks,
+  waitIfPaused,
+  workerLogCallbacks,
+  buildTaskSummarySnapshot,
+  listTasks,
+  onTaskQueueUpdate,
+  countTaskQueueStatuses,
+  ensureTaskQueueSeeded,
+  mapTaskQueueRecordToTaskSummary,
+} as const;
