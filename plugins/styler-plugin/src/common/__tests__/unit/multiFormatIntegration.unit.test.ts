@@ -78,7 +78,12 @@ describe('Multi-format File Processing Integration', () => {
 
   beforeEach(async () => {
     tableManager = new StylerMetadataManager('test-styler-multiformat-metadata');
-    csvApi = new StylerTabularApiDriver(tableManager, undefined, 'test-styler-multiformat-chunks');
+    csvApi = new StylerTabularApiDriver(
+      tableManager,
+      undefined,
+      'test-styler-multiformat-chunks',
+      'test-styler-multiformat-rowstore'
+    );
   });
 
   afterEach(async () => {

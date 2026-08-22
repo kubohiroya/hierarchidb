@@ -76,7 +76,12 @@ describe('Styler CSV Workflow Integration', () => {
 
   beforeEach(async () => {
     tableManager = new StylerMetadataManager('test-styler-workflow-metadata');
-    csvApi = new StylerTabularApiDriver(tableManager, undefined, 'test-styler-workflow-chunks');
+    csvApi = new StylerTabularApiDriver(
+      tableManager,
+      undefined,
+      'test-styler-workflow-chunks',
+      'test-styler-workflow-rowstore'
+    );
   });
 
   afterEach(async () => {

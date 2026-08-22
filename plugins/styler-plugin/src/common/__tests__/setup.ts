@@ -1,4 +1,6 @@
 // Test setup file
+import 'fake-indexeddb/auto';
+import { closeRowStoreDB } from '@hierarchidb/tabular-store';
 import { afterEach, beforeEach, describe, expect, it, test } from 'vitest';
 import '../../../../../vitest.database-prefix.setup.ts';
 
@@ -9,6 +11,10 @@ globalThis.describe = describe;
 globalThis.it = it;
 globalThis.beforeEach = beforeEach;
 globalThis.afterEach = afterEach;
+
+afterEach(async () => {
+  await closeRowStoreDB();
+});
 
 // File API polyfill for Vitest environment
 if (typeof File !== 'undefined' && !File.prototype.arrayBuffer) {
