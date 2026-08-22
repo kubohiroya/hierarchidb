@@ -42,10 +42,24 @@ function createAliasMap(): Record<string, string> {
     '@hierarchidb/util': path.resolve(rootDir, '../packages/util/src/index.ts'),
     '@hierarchidb/plugin-base': path.resolve(rootDir, '../packages/plugin-base/src/index.ts'),
     '@hierarchidb/gis-sdk': path.resolve(rootDir, '../packages/gis-sdk/src/index.ts'),
+    '@hierarchidb/ide-gsm-client': path.resolve(rootDir, '../packages/ide-gsm-client/src/index.ts'),
     '@hierarchidb/vt-orchestrator': path.resolve(
       rootDir,
       '../packages/vt-orchestrator/src/index.ts'
     ),
+    '@hierarchidb/yaml-api/validation': path.resolve(
+      rootDir,
+      '../packages/yaml-api/src/validation/index.ts'
+    ),
+    '@hierarchidb/yaml-api/migration': path.resolve(
+      rootDir,
+      '../packages/yaml-api/src/migration/index.ts'
+    ),
+    '@hierarchidb/yaml-api/inverse-migration': path.resolve(
+      rootDir,
+      '../packages/yaml-api/src/inverse-migration/index.ts'
+    ),
+    '@hierarchidb/yaml-api': path.resolve(rootDir, '../packages/yaml-api/src/index.ts'),
     '@hierarchidb/ui-icon': path.resolve(rootDir, '../packages/components/src/index.ts'),
     '@hierarchidb/components': path.resolve(rootDir, '../packages/components/src/index.ts'),
     '@hierarchidb/ui-dialog': path.resolve(rootDir, '../packages/ui/dialog/src/index.ts'),

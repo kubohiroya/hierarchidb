@@ -301,6 +301,9 @@ importers:
       '@hierarchidb/gen-iso3166-2':
         specifier: workspace:*
         version: link:../packages/tools/gen-iso3166-2
+      '@hierarchidb/ide-gsm-client':
+        specifier: workspace:*
+        version: link:../packages/ide-gsm-client
       '@hierarchidb/import-export-api':
         specifier: workspace:*
         version: link:../packages/import-export-api
@@ -403,6 +406,9 @@ importers:
       '@hierarchidb/worker-api':
         specifier: workspace:*
         version: link:../packages/worker-api
+      '@hierarchidb/yaml-api':
+        specifier: workspace:*
+        version: link:../packages/yaml-api
       '@hierarchidb/yaml-store':
         specifier: workspace:*
         version: link:../packages/yaml-store
@@ -517,6 +523,15 @@ importers:
       geojson-vt:
         specifier: ^3.2.1
         version: 3.2.1
+      graphql:
+        specifier: ^16.0.0
+        version: 16.13.2
+      graphql-request:
+        specifier: ^7.1.2
+        version: 7.4.0(graphql@16.13.2)
+      graphql-ws:
+        specifier: ^5.16.0
+        version: 5.16.2(graphql@16.13.2)
       i18next:
         specifier: 22.5.0
         version: 22.5.0

@@ -1686,6 +1686,9 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         '@watergis/maplibre-gl-export',
         'flatgeobuf',
         'geojson-vt',
+        'graphql',
+        'graphql-request',
+        'graphql-ws',
         'pbf',
         '@mapbox/vector-tile',
 
