@@ -271,13 +271,22 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 
 ## canonical Worker start入力
 
-- Runtime bootstrapはTreeNodeの`draftData`を無加工でroute pluginへ渡す。
-- 現行のdirect-route入力は`RouteEntityPayload.buildConfig / routeMode / startLocationId /
-  endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を始点・終点座標として使う。
+- Runtime bootstrapはroute nodeTypeの開始時だけTreeNodeの`draftData`を正規化し、
+  pluginへ渡すtransient入力に明示discriminator `routeBuildInput.kind`を追加する。
+- `routeBuildInput.kind = "direct-route"` は`RouteEntityPayload.buildConfig / routeMode /
+  startLocationId / endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を
+  始点・終点座標として使う。
+- `routeBuildInput.kind = "selection-driven"` は`tabularSourceId`とstrict
+  `selectedArrayByCountries`からruntime `RouteMutationAPI.resolveIdeGsmRouteBuildRoutes`
+  が解決した`RouteBuildRouteInput[]`だけをpluginへ渡す。`draftData.routes`は永続入力SSOTとして
+  追加しない。
+- selection-driven startでは`selectedArrayByCountries`だけから選択対象を決め、未選択行を
+  task化しない。location ID、始点/終点座標、route mode、directionality metadataは
+  IDE-GSM rowと関連locationから解決済みの`RouteBuildRouteInput`に含める。
+- direct-route入力とselection-driven入力が同時に存在する場合は契約違反としてstartを失敗させる。
 - `routeMode`は`ROUTE_MODES`の正規値を直接保持する。`transportMode`や`transportSelection`から
   暗黙変換せず、欠落・不正値はstart時の契約違反として失敗させる。
-- 存在しない`draftData.routes`を別の入力SSOTとして追加しない。
 - 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
   routeMode、location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
-- `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
-  location連動とStep3選択契約を実装するIssue #262の対象であり、direct-route入力と混在させない。
+- selection-driven planningで必須location/coordinate/modeが欠落または不正な場合は、理由付きで
+  startを失敗させる。fallbackや空successへ丸めない。

@@ -20,3 +20,14 @@ export type RouteBuildRouteInput = {
   method?: RouteGenerationConfig['method'];
   methodOptions?: RouteGenerationConfig['options'];
 };
+
+export type RouteBuildStartInput =
+  | { kind: 'direct-route' }
+  | { kind: 'selection-driven'; routes: RouteBuildRouteInput[] };
+
+export type IdeGsmRouteBuildRoutesRequest = {
+  nodeId: NodeId;
+  tabularSourceId: string;
+  selectedArrayByCountries: unknown;
+  locationNodeIds?: NodeId[];
+};

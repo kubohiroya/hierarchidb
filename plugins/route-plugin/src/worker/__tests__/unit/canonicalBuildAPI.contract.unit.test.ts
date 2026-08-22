@@ -86,6 +86,7 @@ describe('route canonicalBuildAPI contract', () => {
     const buildConfig = DEFAULT_ROUTE_BUILD_CONFIG;
     const draftData = {
       buildConfig,
+      routeBuildInput: { kind: 'direct-route' },
       routeMode: ROUTE_MODES.ROAD,
       startLocationId: 'location-start',
       endLocationId: 'location-end',
@@ -129,6 +130,7 @@ describe('route canonicalBuildAPI contract', () => {
         nodeId: 'route-contract-node',
         draftData: {
           buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
+          routeBuildInput: { kind: 'direct-route' },
           routeMode: ROUTE_MODES.ROAD,
           startLocationId: 'location-start',
           endLocationId: 'location-end',
@@ -152,6 +154,7 @@ describe('route canonicalBuildAPI contract', () => {
             tileEmitConfig: {},
             routeGeneration: {},
           },
+          routeBuildInput: { kind: 'direct-route' },
           routeMode: ROUTE_MODES.ROAD,
           startLocationId: 'location-start',
           endLocationId: 'location-end',
@@ -172,6 +175,7 @@ describe('route canonicalBuildAPI contract', () => {
         nodeId: 'route-contract-node',
         draftData: {
           buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
+          routeBuildInput: { kind: 'direct-route' },
           startLocationId: 'location-start',
           endLocationId: 'location-end',
           lineGeometry: [
@@ -181,5 +185,80 @@ describe('route canonicalBuildAPI contract', () => {
         },
       })
     ).rejects.toThrow('draftData.routeMode is unsupported');
+  });
+
+  it('accepts resolved selection-driven route inputs through the explicit discriminator', async () => {
+    const nodeId = 'route-contract-node';
+    const status = {
+      nodeId,
+      status: 'running' as const,
+      progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+    };
+    mocks.startBuildSession.mockResolvedValue(status);
+
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId,
+        draftData: {
+          buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
+          routeBuildInput: {
+            kind: 'selection-driven',
+            routes: [
+              {
+                startLocationId: 'location-a',
+                endLocationId: 'location-b',
+                startCoordinates: [139, 35],
+                endCoordinates: [140, 36],
+                routeMode: ROUTE_MODES.ROAD,
+                metadata: { oneway: true },
+              },
+            ],
+          },
+        },
+      })
+    ).resolves.toBe(status);
+
+    expect(mocks.prepareSession).toHaveBeenCalledWith(nodeId, DEFAULT_ROUTE_BUILD_CONFIG, {
+      routes: [
+        {
+          startLocationId: 'location-a',
+          endLocationId: 'location-b',
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
+          routeMode: ROUTE_MODES.ROAD,
+          metadata: { oneway: true },
+        },
+      ],
+    });
+  });
+
+  it('rejects mixed direct-route and selection-driven canonical start inputs', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'route-contract-node',
+        draftData: {
+          buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
+          routeMode: ROUTE_MODES.ROAD,
+          startLocationId: 'location-start',
+          endLocationId: 'location-end',
+          lineGeometry: [
+            [139, 35],
+            [140, 36],
+          ],
+          routeBuildInput: {
+            kind: 'selection-driven',
+            routes: [
+              {
+                startLocationId: 'location-a',
+                endLocationId: 'location-b',
+                startCoordinates: [139, 35],
+                endCoordinates: [140, 36],
+                routeMode: ROUTE_MODES.ROAD,
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrow('selection-driven input must not include direct-route fields');
   });
 });
