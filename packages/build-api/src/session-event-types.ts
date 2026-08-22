@@ -34,6 +34,7 @@ export interface SessionStatusUpdatedEvent {
         isActive: boolean;
         startedAt?: number;       // required after starting completes
         completedAt?: number;     // required for completed/failed
+        pausedAt?: number;        // required only for paused
         stopReason?: string;
         stageId?: string;
         inactiveMs?: number;      // optional; absence means no recorded inactivity

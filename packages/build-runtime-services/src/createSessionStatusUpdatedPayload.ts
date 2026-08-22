@@ -16,6 +16,7 @@ export const createSessionStatusUpdatedPayload = (
     isActive: isActiveSessionPhase(phase),
     startedAt: state.startedAt,
     completedAt: state.completedAt,
+    pausedAt: phase === 'paused' ? state.lastActivity : undefined,
     stopReason: state.stopReason ?? resolveStopReason(phase),
     stageId: stageSnapshot?.stageId,
     stageStartedAt: stageSnapshot?.stageStartedAt,

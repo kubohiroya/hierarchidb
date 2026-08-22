@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { AuthRequiredError } from '@hierarchidb/auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SourceTaskPayload } from '../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/index.js';
@@ -8,6 +9,7 @@ const getBuildSessionRecordMock = vi.hoisted(() => vi.fn());
 const upsertBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const buildSourceTasksMock = vi.hoisted(() => vi.fn(async () => ({ tasks: [] })));
+const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
 const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
 const getActivePipelineMock = vi.hoisted(() =>
@@ -80,8 +82,8 @@ vi.mock('../../services/CacheValidator.js', () => ({
   },
 }));
 
-vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
-  emitHeartbeat: vi.fn(),
+vi.mock('../../worker/api/eventEmissionConstantsUtils.js', () => ({
+  emitHeartbeat: emitHeartbeatMock,
   emitSessionLifecyclePhaseUpdated: vi.fn(),
   emitSessionStatusUpdated: emitSessionStatusUpdatedMock,
   emitStageSnapshotUpdated: vi.fn(),
@@ -177,6 +179,41 @@ describe('shape build runtime zero-task planning failure', () => {
     expect(receivedError).not.toBe(persistenceError);
     expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
     expect(emitSessionStatusUpdatedMock).not.toHaveBeenCalled();
+  });
+
+  it('persists an authentication planning pause with an explicit heartbeat endpoint', async () => {
+    const authRequiredError = new AuthRequiredError('Authentication required');
+    buildSourceTasksMock.mockRejectedValueOnce(authRequiredError);
+    getBuildSessionRecordMock.mockResolvedValueOnce(null).mockResolvedValue({
+      nodeId,
+      status: 'paused',
+      startedAt: 1_000,
+      updatedAt: 1_000,
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      canResume: true,
+    });
+
+    await expect(startBuildSession()).rejects.toBe(authRequiredError);
+
+    expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
+    const persistedPause = upsertBuildSessionMock.mock.calls[0]?.[0];
+    expect(persistedPause).toMatchObject({
+      nodeId,
+      status: 'paused',
+      selectedArrayByCountries,
+      canResume: true,
+      startedAt: 1_000,
+      lastHeartbeatAt: expect.any(Number),
+    });
+    expect(emitHeartbeatMock).toHaveBeenCalledWith(nodeId, persistedPause?.lastHeartbeatAt);
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledOnce();
   });
 
   it('persists a cleanup startup failure and rethrows the original error', async () => {

@@ -28,6 +28,7 @@ export type AdapterSessionStatusUpdatedEvent = {
     startedAt?: number;
     inactiveMs?: number;
     completedAt?: number;
+    pausedAt?: number;
     stopReason?: string;
     stageId?: string;
     stageStartedAt?: number;
@@ -118,6 +119,9 @@ const validateSessionTiming = (
   const completedAt = payload.completedAt === undefined
     ? undefined
     : requireFiniteNonNegativeNumber(payload.completedAt, 'completedAt');
+  const pausedAt = payload.pausedAt === undefined
+    ? undefined
+    : requireFiniteNonNegativeNumber(payload.pausedAt, 'pausedAt');
 
   if (requiresStartedAt && startedAt === undefined) {
     throw new Error(`[buildSessionWorkerEventAdapter] startedAt is required for phase ${phase}`);
@@ -125,11 +129,25 @@ const validateSessionTiming = (
   if (requiresCompletedAt && completedAt === undefined) {
     throw new Error(`[buildSessionWorkerEventAdapter] completedAt is required for phase ${phase}`);
   }
+  if (phase === 'paused' && pausedAt === undefined) {
+    throw new Error('[buildSessionWorkerEventAdapter] pausedAt is required for phase paused');
+  }
+  if (phase !== 'paused' && pausedAt !== undefined) {
+    throw new Error(`[buildSessionWorkerEventAdapter] pausedAt must be absent for phase ${phase}`);
+  }
   if (startedAt !== undefined && completedAt !== undefined) {
     const durationMs = completedAt - startedAt - inactiveMs;
     if (!Number.isFinite(durationMs) || durationMs < 0) {
       throw new Error(
         `[buildSessionWorkerEventAdapter] session duration must be finite and non-negative, received ${durationMs}`,
+      );
+    }
+  }
+  if (startedAt !== undefined && pausedAt !== undefined) {
+    const durationMs = pausedAt - startedAt - inactiveMs;
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      throw new Error(
+        `[buildSessionWorkerEventAdapter] paused session duration must be finite and non-negative, received ${durationMs}`,
       );
     }
   }
@@ -164,6 +182,7 @@ export const createBuildSessionWorkerEventAdapter = <
         startedAt: record.startedAt,
         inactiveMs: record.inactiveMs,
         completedAt: record.completedAt,
+        pausedAt: String(phase) === 'paused' ? record.lastHeartbeatAt : undefined,
       };
       validateSessionTiming(String(phase), payload);
       dispatch({
@@ -191,6 +210,7 @@ export const createBuildSessionWorkerEventAdapter = <
           startedAt: event.payload.startedAt,
           inactiveMs: event.payload.inactiveMs,
           completedAt: event.payload.completedAt,
+          pausedAt: event.payload.pausedAt,
           stopReason: event.payload.stopReason,
         },
       });

@@ -127,6 +127,7 @@ const emitLifecycle = (
     stopReason?: ShapeBuildStopReason;
     startedAt?: number;
     completedAt?: number;
+    pausedAt?: number;
   } = {}
 ) => {
   const isActive =
@@ -143,6 +144,7 @@ const emitLifecycle = (
       isActive,
       ...(options.startedAt === undefined ? {} : { startedAt: options.startedAt }),
       ...(options.completedAt === undefined ? {} : { completedAt: options.completedAt }),
+      ...(options.pausedAt === undefined ? {} : { pausedAt: options.pausedAt }),
       ...(options.stopReason === undefined ? {} : { stopReason: options.stopReason }),
     },
   });
@@ -267,6 +269,7 @@ describe('useShapeBuildCacheActions', () => {
       emitLifecycle(store, 'running', { startedAt: 1_000 });
       emitLifecycle(store, 'paused', {
         startedAt: 1_000,
+        pausedAt: 1_500,
         stopReason: 'user-pause',
       });
       await Promise.resolve();

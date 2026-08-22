@@ -39,7 +39,7 @@ import {
   emitSessionStatusUpdated,
   emitStageSnapshotUpdated,
   readStartedStageTiming,
-} from './eventEmissionConstants.js';
+} from './eventEmissionConstantsUtils.js';
 
 export const shapeBuildAPI = {
 

@@ -38,7 +38,7 @@ import {
   emitSessionStatusUpdated,
   emitStageSnapshotUpdated,
   readStartedStageTiming,
-} from './eventEmissionConstants.js';
+} from './eventEmissionConstantsUtils.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -127,6 +127,20 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId, runId: string): void =>
   clearBuildSessionAuthContext();
 };
 
+const requirePausedHeartbeatAt = (
+  status: ShapeBuildSessionRecord['status'] | undefined,
+  lastHeartbeatAt: number | undefined,
+): void => {
+  if (status !== 'paused') return;
+  if (
+    typeof lastHeartbeatAt !== 'number' ||
+    !Number.isFinite(lastHeartbeatAt) ||
+    lastHeartbeatAt < 0
+  ) {
+    throw new Error('[shapeBuildAPI] lastHeartbeatAt is required for paused status');
+  }
+};
+
 const upsertBuildSessionSnapshot = async (data: {
   nodeId: NodeId;
   status?: ShapeBuildSessionRecord['status'];
@@ -134,8 +148,10 @@ const upsertBuildSessionSnapshot = async (data: {
   canResume?: boolean;
   startedAt?: number;
   completedAt?: number;
+  lastHeartbeatAt?: number;
   selectedArrayByCountries?: SelectedArrayByCountries;
 }): Promise<void> => {
+  requirePausedHeartbeatAt(data.status, data.lastHeartbeatAt);
   const currentSession =
     data.startedAt === undefined
       ? await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId)
@@ -162,8 +178,9 @@ const upsertBuildSessionSnapshot = async (data: {
       status: data.status,
       selectedArrayByCountries: data.selectedArrayByCountries,
       startedAt: data.startedAt,
-      updatedAt: data.completedAt ?? data.startedAt,
+      updatedAt: data.completedAt ?? data.lastHeartbeatAt ?? data.startedAt,
       completedAt: data.completedAt,
+      lastHeartbeatAt: data.lastHeartbeatAt,
       progress: {
         total: 0,
         completed: 0,
@@ -181,7 +198,12 @@ const upsertBuildSessionSnapshot = async (data: {
       stopReason: data.stopReason,
       canResume: data.canResume,
       completedAt: data.completedAt,
+      lastHeartbeatAt: data.lastHeartbeatAt,
     });
+  }
+
+  if (data.lastHeartbeatAt !== undefined) {
+    emitHeartbeat(data.nodeId, data.lastHeartbeatAt);
   }
 
   // Emit sessionStatusUpdated unconditionally after DB write.
@@ -204,18 +226,25 @@ const updateBuildSessionFromTasks = async (
     status?: ShapeBuildSessionRecord['status'];
     stopReason?: ShapeBuildStopReason;
     completedAt?: number;
-    canResume?: boolean
+    lastHeartbeatAt?: number;
+    canResume?: boolean;
   },
   requireCurrentPipelineRun?: () => void,
 ): Promise<void> => {
+  requirePausedHeartbeatAt(data.status, data.lastHeartbeatAt);
   requireCurrentPipelineRun?.();
   await shapeMutationAPIImpl.updateBuildSession(nodeId, {
     status: data.status,
     stopReason: data.stopReason,
     completedAt: data.completedAt,
+    lastHeartbeatAt: data.lastHeartbeatAt,
     canResume: data.canResume,
   });
   requireCurrentPipelineRun?.();
+
+  if (data.lastHeartbeatAt !== undefined) {
+    emitHeartbeat(nodeId, data.lastHeartbeatAt);
+  }
 
   if (data.status) {
     const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
@@ -736,6 +765,7 @@ const startBuildSessionInternal = async (
     // If auth is required, set session to paused (not failed) so the auth dialog
     // can be shown and the user can retry after authenticating (#979)
     if (error instanceof AuthRequiredError) {
+      const pausedAt = Date.now();
       return persistFailureAndRethrow(
         error,
         async () => {
@@ -744,6 +774,7 @@ const startBuildSessionInternal = async (
             selectedArrayByCountries: draftEntity.selectedArrayByCountries,
             status: 'paused',
             startedAt: buildStartedAt,
+            lastHeartbeatAt: pausedAt,
             canResume: true,
           });
         },
@@ -1083,11 +1114,13 @@ const startBuildSessionInternal = async (
         const failedAt = Date.now();
         const diagnostics = toErrorDiagnostics(error);
         if (isAuthPendingPipelineError(error)) {
+          const pausedAt = Date.now();
           await updateBuildSessionFromTasks(
             nodeForSession,
             {
               status: 'paused',
               stopReason: 'user-pause',
+              lastHeartbeatAt: pausedAt,
               canResume: true,
             },
             requireCurrentPipelineRun
@@ -1364,11 +1397,11 @@ const invokeShapeBuildCommand = async (
       }
 
       const pausedAt = Date.now();
-      emitHeartbeat(nodeId, pausedAt);
       await upsertBuildSessionSnapshot({
         nodeId,
         status: 'paused',
         stopReason,
+        lastHeartbeatAt: pausedAt,
         canResume: true,
       });
       console.warn('[shapeBuildAPI][PauseTrace] pause-settled', {

@@ -95,14 +95,17 @@ redundantly separated.
 | `isActive` | `boolean` | Whether the session is currently executing |
 | `startedAt` | `number \| undefined` | Unix ms — required after `starting` completes |
 | `completedAt` | `number \| undefined` | Unix ms — required for `completed` / `failed` |
-| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states) |
+| `pausedAt` | `number \| undefined` | Unix ms — required only for `paused`; forbidden for every other phase |
+| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states); Shape accepts `route-leave / user-pause / failed / completed / unknown` only |
 | `stageId` | `StageId \| undefined` | Current stage at time of event |
 | `inactiveMs` | `number \| undefined` | Cumulative session inactivity; absence means none recorded |
 | `stageStartedAt` | `number \| undefined` | Unix ms — required when `stageId` is present |
 | `stageInactiveMs` | `number \| undefined` | Required when `stageId` is present |
 
 **UI effect**: Update `lifecycleAtom` (phase, isActive, startedAt, inactiveMs,
-completedAt) and `lifecycleExtrasAtom` (stopReason). `stageId` drives the UI
+completedAt) and `lifecycleExtrasAtom` (stopReason). A paused event applies `phase` and
+`pausedAt` as the elapsed endpoint in the same SSOT update; it does not wait for a
+separate heartbeat event. `stageId` drives the UI
 synchronization/selection signal. Per-stage timing remains owned by the
 `stageSnapshotUpdated` path and is not duplicated from this event.
 
@@ -131,8 +134,10 @@ manufacture stage timing from the current clock or from session timing. After th
 snapshot arrives, its explicit timing becomes the only input to stage elapsed-time
 calculation.
 
-**Note**: `heartbeatAt` is intentionally absent. Heartbeat timing is carried only by
-the `heartbeat` event to avoid polluting this event with high-frequency data.
+**Note**: periodic `heartbeatAt` is intentionally absent. High-frequency heartbeat
+timing is carried only by the `heartbeat` event. The one-shot `pausedAt` field is
+not a periodic heartbeat; it is the persisted pause-completion endpoint required
+to make the paused lifecycle update self-contained.
 
 Session timing is validated at both emission and UI adapter boundaries. `idle` and
 `starting` may omit timing; later phases require `startedAt`; terminal phases require `completedAt`; all supplied timing
@@ -193,7 +198,15 @@ canonical Worker events.
 Pause uses the same strict ownership. The runtime first emits `pausing`, aborts the
 nodeId session through the AbortController stored in the SSOT state-tree entry, and
 awaits the actual pipeline Promise. Only after that Promise has settled and no live
-worker/job remains may interrupted tasks be re-queued and `paused` be emitted. On
+worker/job remains may interrupted tasks be re-queued and `paused` be emitted. The
+terminal pause write stores the explicit pause-completion timestamp in the normalized
+heartbeat row in the same transaction as `paused`. `sessionStatusUpdated(paused)` carries
+that exact timestamp as mandatory `pausedAt`, and the Worker also emits a `heartbeat` with
+the same value. The UI applies the paused phase and elapsed endpoint in one SSOT atom
+update, so correctness does not depend on delivery order across the two channels and no
+read-clock or periodic-heartbeat fallback is allowed. UI-local command-pending state is
+limited to control feedback and duplicate-command prevention; it cannot synthesize the
+paused lifecycle before the canonical paused event is accepted. On
 timeout, the Worker persists `failed` and rejects the pause command with a typed
 shutdown-timeout error. The UI command handler translates that rejection into the
 UI-internal `criticalError` event; `criticalError` is not a fifth Worker event. A

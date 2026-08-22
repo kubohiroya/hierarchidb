@@ -37,7 +37,7 @@ import {
   readStartedStageTiming,
   validateSessionTimingContract,
   validateStageTimingContract,
-} from '../../worker/api/eventEmissionConstants';
+} from '../../worker/api/eventEmissionConstantsUtils';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 
@@ -127,6 +127,21 @@ describe('build session event timing contracts', () => {
       inactiveMs: 100,
       completedAt: 1_050,
     })).toThrowError('session duration must be finite and non-negative');
+  });
+
+  it('requires the explicit pause endpoint only for paused status', () => {
+    expect(() => validateSessionTimingContract('paused', {
+      startedAt: 1_000,
+    })).toThrowError('pausedAt is required for phase paused');
+    expect(() => validateSessionTimingContract('paused', {
+      startedAt: 1_000,
+      inactiveMs: 100,
+      pausedAt: 1_500,
+    })).not.toThrow();
+    expect(() => validateSessionTimingContract('running', {
+      startedAt: 1_000,
+      pausedAt: 1_500,
+    })).toThrowError('pausedAt must be absent for phase running');
   });
 
   it('distinguishes an unstarted stage from an invalid started-stage record', () => {
