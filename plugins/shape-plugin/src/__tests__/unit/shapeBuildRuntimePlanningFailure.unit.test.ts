@@ -8,6 +8,7 @@ const getBuildSessionRecordMock = vi.hoisted(() => vi.fn());
 const upsertBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const buildSourceTasksMock = vi.hoisted(() => vi.fn(async () => ({ tasks: [] })));
+const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
 const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
 const getActivePipelineMock = vi.hoisted(() =>
@@ -81,7 +82,7 @@ vi.mock('../../services/CacheValidator.js', () => ({
 }));
 
 vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
-  emitHeartbeat: vi.fn(),
+  emitHeartbeat: emitHeartbeatMock,
   emitSessionLifecyclePhaseUpdated: vi.fn(),
   emitSessionStatusUpdated: emitSessionStatusUpdatedMock,
   emitStageSnapshotUpdated: vi.fn(),
@@ -177,6 +178,176 @@ describe('shape build runtime zero-task planning failure', () => {
     expect(receivedError).not.toBe(persistenceError);
     expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
     expect(emitSessionStatusUpdatedMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a paused session that is not explicitly resumable before planning or cleanup', async () => {
+    getBuildSessionRecordMock.mockResolvedValue({
+      nodeId,
+      status: 'paused',
+      startedAt: 500,
+      updatedAt: 900,
+      progress: {
+        total: 1,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      stopReason: 'user-pause',
+      canResume: false,
+    });
+
+    await expect(startBuildSession()).rejects.toMatchObject({
+      name: 'ShapeBuildResumeContractError',
+      code: 'SHAPE_BUILD_RESUME_CONTRACT',
+    });
+
+    expect(buildSourceTasksMock).not.toHaveBeenCalled();
+    expect(cleanupInvalidEntriesMock).not.toHaveBeenCalled();
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('preserves the original session identity when planning fails during resume', async () => {
+    const pausedSession = {
+      nodeId,
+      status: 'paused' as const,
+      startedAt: 500,
+      updatedAt: 900,
+      progress: {
+        total: 1,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      stopReason: 'user-pause' as const,
+      canResume: true,
+    };
+    const failedSession = {
+      ...pausedSession,
+      status: 'failed' as const,
+      updatedAt: 1_000,
+      completedAt: 1_000,
+      stopReason: 'failed' as const,
+      canResume: false,
+    };
+    getBuildSessionRecordMock
+      .mockResolvedValueOnce(pausedSession)
+      .mockResolvedValueOnce(pausedSession)
+      .mockResolvedValue(failedSession);
+
+    await expect(startBuildSession()).rejects.toThrow(expectedErrorMessage);
+
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).toHaveBeenCalledWith(nodeId, {
+      status: 'failed',
+      stopReason: 'failed',
+      canResume: false,
+      completedAt: 1_000,
+    });
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledWith(nodeId, failedSession);
+  });
+
+  it('recreates runtime ownership from a persisted paused session and reuses its task queue', async () => {
+    vi.useRealTimers();
+    const pausedSession = {
+      nodeId,
+      status: 'paused' as const,
+      selectedArrayByCountries,
+      startedAt: 500,
+      updatedAt: 900,
+      progress: {
+        total: 1,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      stopReason: 'user-pause' as const,
+      canResume: true,
+    };
+    const runningSession = {
+      ...pausedSession,
+      status: 'running' as const,
+      updatedAt: 1_000,
+      stopReason: undefined,
+      canResume: false,
+    };
+    getBuildSessionRecordMock
+      .mockResolvedValueOnce(pausedSession)
+      .mockResolvedValue(runningSession);
+    buildSourceTasksMock.mockResolvedValue({ tasks: [{} as never] });
+    runShapePipelineMock.mockReturnValueOnce(new Promise<void>(() => {}));
+
+    await expect(startBuildSession()).resolves.toBe(nodeId);
+
+    expect(setPausedMock).toHaveBeenCalledWith(nodeId, false);
+    expect(runShapeArtifactCascadeCleanupMock).not.toHaveBeenCalled();
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).toHaveBeenCalledWith(nodeId, {
+      status: 'running',
+      stopReason: undefined,
+      canResume: false,
+      completedAt: undefined,
+    });
+    expect(setBuildSessionContextMock).toHaveBeenCalledWith(String(nodeId), 500);
+    expect(runShapePipelineMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nodeId,
+        resumeExistingTasks: true,
+      })
+    );
+    expect(registerActivePipelineMock).toHaveBeenCalledWith(
+      nodeId,
+      expect.objectContaining({
+        runId: expect.stringMatching(/^planning-zero-node:\d+$/),
+      })
+    );
+    expect(setPausedMock.mock.invocationCallOrder[0]).toBeLessThan(
+      runShapePipelineMock.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY
+    );
+  });
+
+  it('persists an authentication planning failure with the canonical pause reason', async () => {
+    const authRequiredError = new AuthRequiredError('Authentication required');
+    buildSourceTasksMock.mockRejectedValueOnce(authRequiredError);
+    getBuildSessionRecordMock.mockResolvedValueOnce(null).mockResolvedValue({
+      nodeId,
+      status: 'paused',
+      startedAt: 1_000,
+      updatedAt: 1_000,
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      stopReason: 'auth-required',
+      canResume: true,
+    });
+
+    await expect(startBuildSession()).rejects.toBe(authRequiredError);
+
+    expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
+    const persistedPause = upsertBuildSessionMock.mock.calls[0]?.[0];
+    expect(persistedPause).toMatchObject({
+      nodeId,
+      status: 'paused',
+      selectedArrayByCountries,
+      stopReason: 'auth-required',
+      canResume: true,
+      startedAt: 1_000,
+      lastHeartbeatAt: expect.any(Number),
+    });
+    expect(emitHeartbeatMock).toHaveBeenCalledWith(nodeId, persistedPause?.lastHeartbeatAt);
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledOnce();
   });
 
   it('persists a cleanup startup failure and rethrows the original error', async () => {
