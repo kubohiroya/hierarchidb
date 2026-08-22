@@ -46,7 +46,7 @@ Plugin-specific wrappers currently exist:
 
 - Shape plugin wraps authFetch and download helpers in plugins/shape-plugin/src/services/utils/authFetch.ts and plugins/shape-plugin/src/services/utils/downloadService.ts.
 - Location plugin wraps registry functions in plugins/location-plugin/src/services/download/registry.ts and uses it via plugins/location-plugin/src/services/utils/sharedNet.ts.
-- Route plugin wraps registry functions in plugins/route-plugin/src/services/download/registry.ts and uses it via plugins/route-plugin/src/common/orchestrator/RouteSourceOrchestrator.ts.
+- At the time of this plan, route-plugin wrapped registry functions in plugins/route-plugin/src/services/download/registry.ts and used them via plugins/route-plugin/src/common/orchestrator/RouteSourceOrchestrator.ts. Issue #1375 later removed that browser-local route orchestrator.
 
 BuildMonitor logic exists separately per plugin:
 
@@ -71,7 +71,7 @@ Milestone 2: Replace plugin-specific download/auth wrappers with direct usage of
 
 Remove plugins/shape-plugin/src/services/utils/authFetch.ts and plugins/shape-plugin/src/services/utils/downloadService.ts. Update all call sites to use @hierarchidb/download directly: authFetch('shape', url, init), downloadArrayBuffer('shape', url, prefix, retry, signal), downloadJson('shape', ...), postJson('shape', ...), configurePluginDownloadDefaults('shape', ...), and notifyPluginAuthRequired('shape', ...). Keep the configuration explicit at the call site. Do not introduce new wrapper helpers.
 
-Remove plugins/location-plugin/src/services/download/registry.ts and plugins/route-plugin/src/services/download/registry.ts, and update all imports that depended on them to import directly from @hierarchidb/download. For location sharedNet (plugins/location-plugin/src/services/utils/sharedNet.ts), replace the dynamic registry import with direct imports: getPluginDownloadService('location'), notifyPluginAuthRequired('location', info), and postJson('location', ...). For route orchestrator (plugins/route-plugin/src/common/orchestrator/RouteSourceOrchestrator.ts), replace getRouteDownloadService and notifyAuthRequired with getPluginDownloadService('route') and notifyPluginAuthRequired('route', info).
+Remove plugins/location-plugin/src/services/download/registry.ts and plugins/route-plugin/src/services/download/registry.ts, and update all imports that depended on them to import directly from @hierarchidb/download. For location sharedNet (plugins/location-plugin/src/services/utils/sharedNet.ts), replace the dynamic registry import with direct imports: getPluginDownloadService('location'), notifyPluginAuthRequired('location', info), and postJson('location', ...). The then-existing route orchestrator was updated in this milestone and was later removed entirely by Issue #1375.
 
 Remove plugin-specific download registry tests that only validate thin wrappers. If coverage is needed, add or rely on existing tests in packages/ for registry behavior. Ensure no public re-exports of removed wrapper functions remain (for example, remove getRouteDownloadService export from plugins/route-plugin/src/index.ts).
 

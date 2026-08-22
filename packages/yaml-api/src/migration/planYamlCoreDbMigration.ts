@@ -444,7 +444,7 @@ export async function planYamlCoreDbMigration(
       const hasDraftDataProperty = draftDataProperty.kind === 'data';
       const draftDataValue =
         draftDataProperty.kind === 'data' ? draftDataProperty.value : undefined;
-      const hasDraftData = draftDataValue !== undefined;
+      const hasDraftData = draftDataValue !== undefined && draftDataValue !== null;
       const isEmptyPlainDraftData =
         isPlainMigrationRecord(draftDataValue) && Reflect.ownKeys(draftDataValue).length === 0;
       const isTemporaryProperty = readOwnMigrationProperty(rawNode, 'isTemporary');

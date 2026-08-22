@@ -1,5 +1,6 @@
 import type { StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import { buildStableJsonSignature, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
   createVtHandler as createTileEmitHandler,
@@ -11,7 +12,6 @@ import {
   type VtTaskQueueDb as TileEmitTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { buildStableSignature } from './buildStableSignature.ts';
 import type { ShapeTileEmitTaskInput } from './shapePipelineShared.ts';
 import { buildShapeVectorTileRecord, buildTileEmitTasks, resolveTileEmitConfig } from './shapePipelineShared.ts';
 import type { Tile } from 'geojson-vt';
@@ -24,7 +24,6 @@ import {
   readHeapSnapshot,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
-import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { resolveToleranceByBand } from '~/services/utils/toleranceByBand';
 
 export type ShapeTileEmitStageParams = {
@@ -117,7 +116,7 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
   existingTileEmitTasks.forEach((task) => {
     resolveTaskCacheIdentity(task);
   });
-  const tileEmitConfigSignature = buildStableSignature(tileEmitConfig);
+  const tileEmitConfigSignature = buildStableJsonSignature(tileEmitConfig);
   const desiredTileEmitTasks = await buildTileEmitTasks(
     params.nodeId,
     params.ephemeralStore,

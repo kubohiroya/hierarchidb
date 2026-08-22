@@ -904,6 +904,31 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
   ) {
     throw new Error('[yaml-storage-preflight] VITE_APP_PREFIX must be an exact database prefix');
   }
+  const correctiveRecoveryMode = Object.hasOwn(
+    process.env,
+    'VITE_YAML_STORAGE_CORRECTIVE_RECOVERY_MODE',
+  )
+    ? process.env.VITE_YAML_STORAGE_CORRECTIVE_RECOVERY_MODE
+    : env.VITE_YAML_STORAGE_CORRECTIVE_RECOVERY_MODE;
+  const correctiveRecoveryFingerprint = Object.hasOwn(
+    process.env,
+    'VITE_YAML_STORAGE_CORRECTIVE_RECOVERY_FINGERPRINT',
+  )
+    ? process.env.VITE_YAML_STORAGE_CORRECTIVE_RECOVERY_FINGERPRINT
+    : env.VITE_YAML_STORAGE_CORRECTIVE_RECOVERY_FINGERPRINT;
+  if (correctiveRecoveryMode !== 'disabled' && correctiveRecoveryMode !== 'incident-1388-v1') {
+    throw new Error(
+      '[yaml-storage-corrective-recovery] mode must be exact disabled or incident-1388-v1',
+    );
+  }
+  if (
+    (correctiveRecoveryMode === 'disabled' && correctiveRecoveryFingerprint !== undefined)
+    || (correctiveRecoveryMode === 'incident-1388-v1'
+      && (typeof correctiveRecoveryFingerprint !== 'string'
+        || !/^[0-9a-f]{64}$/u.test(correctiveRecoveryFingerprint)))
+  ) {
+    throw new Error('[yaml-storage-corrective-recovery] fingerprint configuration is invalid');
+  }
   let sourceSha = configuredSourceSha;
   if (sourceSha.length === 0) {
     try {
@@ -1293,6 +1318,10 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         __BUILD_TIME__: JSON.stringify(buildTime),
         __SOURCE_SHA__: JSON.stringify(sourceSha),
         __HDB_DATABASE_PREFIX__: JSON.stringify(databasePrefix),
+        __HDB_YAML_STORAGE_CORRECTIVE_RECOVERY_MODE__: JSON.stringify(correctiveRecoveryMode),
+        __HDB_YAML_STORAGE_CORRECTIVE_RECOVERY_FINGERPRINT__: JSON.stringify(
+          correctiveRecoveryFingerprint ?? null,
+        ),
         // Expose selected non-VITE_ envs for client/runtime-worker packages that check them
         'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;

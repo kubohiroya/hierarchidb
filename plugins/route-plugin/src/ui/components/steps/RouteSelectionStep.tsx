@@ -3,8 +3,10 @@
  * Selects Route Selection per country, aligned with LocationSelectionStep UI.
  */
 
-import type React from 'react';
-import { Suspense } from 'react';
+import { AuthReadyGate } from '@hierarchidb/ui-auth';
+import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
+import { GenericDataGrid } from '@hierarchidb/ui-grid';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Alert,
   Box,
@@ -16,14 +18,9 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
-import { AuthReadyGate } from '@hierarchidb/ui-auth';
-import { GenericDataGrid } from '@hierarchidb/ui-grid';
-import {
-  type RouteSelectionStepProps,
-  useRouteSelectionStep,
-} from './useRouteSelectionStep.js';
+import type React from 'react';
+import { Suspense } from 'react';
+import { type RouteSelectionStepProps, useRouteSelectionStep } from './useRouteSelectionStep.js';
 
 const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
   const {
@@ -40,6 +37,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
     errorRows,
     errorColumns,
     matrixConfig,
+    selectableCountries,
     currentSelections,
     applySelections,
     isCellEnabledForCountry,
@@ -78,7 +76,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <CountryMatrixSelector
-        countries={iso.countries}
+        countries={selectableCountries}
         matrixConfig={matrixConfig}
         selections={currentSelections}
         onSelectionsChange={applySelections}
@@ -96,13 +94,16 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
         <Box sx={{ mt: 1 }}>
           <Alert
             severity="error"
-            action={(
+            action={
               <Button color="inherit" size="small" onClick={() => setErrorDialogOpen(true)}>
                 {t('routeConfig.ideGsmErrors.open', 'Details')}
               </Button>
-            )}
+            }
           >
-            {t('routeConfig.ideGsmErrors.summary', 'IDE-GSM parsing errors detected. Review the error list.')}
+            {t(
+              'routeConfig.ideGsmErrors.summary',
+              'IDE-GSM parsing errors detected. Review the error list.'
+            )}
           </Alert>
         </Box>
       ) : null}
@@ -120,7 +121,10 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
             </Typography>
           ) : null}
           <Typography variant="body2" color="text.secondary">
-            {t('routeConfig.ideGsmErrors.description', 'Some routes could not be resolved. Check the rows below.')}
+            {t(
+              'routeConfig.ideGsmErrors.description',
+              'Some routes could not be resolved. Check the rows below.'
+            )}
           </Typography>
           <Box sx={{ height: 360 }}>
             <GenericDataGrid
@@ -143,12 +147,18 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
       </Dialog>
       {policy.defaultChecked && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          {t('routeConfig.defaultSelectionNote', 'Default selections are applied based on the data source.')}
+          {t(
+            'routeConfig.defaultSelectionNote',
+            'Default selections are applied based on the data source.'
+          )}
         </Typography>
       )}
       {dataSourceName && !policy.defaultChecked && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          {t('routeConfig.customSelectionNote', 'Choose the Route Selection to include for each country.')}
+          {t(
+            'routeConfig.customSelectionNote',
+            'Choose the Route Selection to include for each country.'
+          )}
         </Typography>
       )}
     </Box>
@@ -160,11 +170,11 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = (props) => 
   return (
     <Suspense
       fallback={
-        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           <CircularProgress />
-          <Typography sx={{ ml: 2 }}>
-            {t('auth.loading', 'Checking authentication...')}
-          </Typography>
+          <Typography sx={{ ml: 2 }}>{t('auth.loading', 'Checking authentication...')}</Typography>
         </Box>
       }
     >

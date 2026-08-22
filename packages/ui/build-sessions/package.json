@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
+    "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {

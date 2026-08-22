@@ -127,6 +127,7 @@
     "zoomMin": "生成する最小ズーム",
     "zoomMax": "生成する最大ズーム",
     "stages": {
+      "source": "ソース",
       "download": "ダウンロード",
       "filtering": "フィルタリング",
       "clustering": "クラスタリング",
@@ -213,6 +214,8 @@
     "prereq": "データソースを選択し、前のステップを完了してからビルドしてください。",
     "statusLabel": "ビルド状況",
     "status": {
+      "connecting": "ビルドセッションへ接続中です...",
+      "queued": "canonical ビルドの開始待ちです...",
       "idle": "ビルド開始待ちです。",
       "running": "ビルド中です。",
       "paused": "ビルドを一時停止しました。",
@@ -226,7 +229,22 @@
     "startLabel": "開始",
     "controlsLabel": "ビルド操作",
     "mutationError": "ビルド操作に失敗しました: {{message}}",
+    "controls": {
+      "cancel": "キャンセル",
+      "close": "閉じる"
+    },
+    "progress": {
+      "completedTitle": "ビルド完了",
+      "failedTitle": "ビルド失敗",
+      "completedReason": "すべての canonical task が完了しました。",
+      "failedReason": "task エラーによりビルドに失敗しました。",
+      "pausedTitle": "ビルド一時停止",
+      "pausedReason": "canonical Location session は一時停止中で、再開できます。"
+    },
     "stages": {
+      "source": {
+        "description": "選択した地点ソースレコードを取得して永続化します。"
+      },
       "download": "ダウンロード",
       "filter": "フィルタリング",
       "cluster": "クラスタリング",

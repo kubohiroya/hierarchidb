@@ -1,37 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-
-export type RouteTileIndexRequest = {
-  nodeId: NodeId;
-  minZoom: number;
-  maxZoom: number;
-  zoomBandBoundaries?: number[];
-  minDistanceMetersByBand?: number[];
-  simplifyToleranceByBand?: number[];
-};
-
-export type RouteTileIndexResult = {
-  tileCount: number;
-  lineCount: number;
-  minZoom: number;
-  maxZoom: number;
-};
-
-export type RouteVectorTileBuildRequest = {
-  nodeId: NodeId;
-  minZoom: number;
-  maxZoom: number;
-  zoomBandBoundaries?: number[];
-  bufferSize?: number;
-  inputFormat?: 'geojson' | 'flatgeobuf';
-  inputCompression?: 'gzip' | 'none';
-};
-
-export type RouteVectorTileBuildResult = {
-  tilesGenerated: number;
-  totalBytes: number;
-  zoomMin?: number;
-  zoomMax?: number;
-};
+import type { RouteFeature, RouteGenerationConfig, RouteMode } from './ROUTE_MODES.js';
 
 export type RouteBuildError = {
   id: string;
@@ -40,4 +8,26 @@ export type RouteBuildError = {
   sourceKey?: string;
   featureId?: string;
   createdAt: number;
+};
+
+export type RouteBuildRouteInput = {
+  startLocationId: NodeId;
+  endLocationId: NodeId;
+  startCoordinates: [number, number];
+  endCoordinates: [number, number];
+  routeMode: RouteMode;
+  metadata?: RouteFeature['metadata'];
+  method?: RouteGenerationConfig['method'];
+  methodOptions?: RouteGenerationConfig['options'];
+};
+
+export type RouteBuildStartInput =
+  | { kind: 'direct-route' }
+  | { kind: 'selection-driven'; routes: RouteBuildRouteInput[] };
+
+export type IdeGsmRouteBuildRoutesRequest = {
+  nodeId: NodeId;
+  tabularSourceId: string;
+  selectedArrayByCountries: unknown;
+  locationNodeIds?: NodeId[];
 };

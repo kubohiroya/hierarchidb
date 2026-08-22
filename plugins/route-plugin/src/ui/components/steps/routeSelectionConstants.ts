@@ -1,6 +1,6 @@
+import { IDE_GSM_ROUTE_SELECTION_MODE_ORDER, type RouteMode } from '@hierarchidb/route-api';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-material';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 
 type SelectionColumn = {
   id: RouteMode;
@@ -9,11 +9,23 @@ type SelectionColumn = {
 };
 
 export const ROUTE_MODE_COLUMNS: SelectionColumn[] = [
-  { id: ROUTE_MODES.AIRWAY, labelKey: 'transportModes.air', icon: Flight },
-  { id: ROUTE_MODES.WATERWAY, labelKey: 'transportModes.sea', icon: DirectionsBoat },
-  { id: ROUTE_MODES.H_RAILWAY, labelKey: 'transportModes.highSpeedRail', icon: Train },
-  { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail', icon: Tram },
-  { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road', icon: DirectionsCar },
+  { id: IDE_GSM_ROUTE_SELECTION_MODE_ORDER[0], labelKey: 'transportModes.air', icon: Flight },
+  {
+    id: IDE_GSM_ROUTE_SELECTION_MODE_ORDER[1],
+    labelKey: 'transportModes.sea',
+    icon: DirectionsBoat,
+  },
+  {
+    id: IDE_GSM_ROUTE_SELECTION_MODE_ORDER[2],
+    labelKey: 'transportModes.highSpeedRail',
+    icon: Train,
+  },
+  { id: IDE_GSM_ROUTE_SELECTION_MODE_ORDER[3], labelKey: 'transportModes.rail', icon: Tram },
+  {
+    id: IDE_GSM_ROUTE_SELECTION_MODE_ORDER[4],
+    labelKey: 'transportModes.road',
+    icon: DirectionsCar,
+  },
 ];
 
 export type RouteSelectionCondition = 'or' | 'and';

@@ -1,7 +1,8 @@
+export type { VTStageContext, VtTileWriter } from './contextTypes.js';
+export { runStageTasks } from './runStageTasks.js';
 export {
-  VtTaskQueueDb,
-  deleteTasksByNode,
   deleteTasksByIds,
+  deleteTasksByNode,
   listTasks,
   listTasksByStage,
   listTasksByStageAndStatus,
@@ -9,17 +10,18 @@ export {
   onTaskQueueUpdate,
   putTasks,
   updateTask,
+  VtTaskQueueDb,
 } from './task/taskQueue.js';
-export {
-  runStageTasks,
-} from './runStageTasks.js';
-export {
-  createGeometryStageHandler,
-} from './transform/createGeometryStageHandler/createGeometryStageHandler.js';
+export type { LineStringCoordinate } from './tiles/collectLineStringTileIds.js';
+export { collectLineStringTileIds } from './tiles/collectLineStringTileIds.js';
+export { packTileId, unpackTileId } from './tiles/tileId.js';
+export { createGeometryStageHandler } from './transform/createGeometryStageHandler/createGeometryStageHandler.js';
 export { quantizeTopoJsonToGrid } from './transform/quantizeTopoJsonToGrid.js';
+export type {
+  BandConfig,
+  CanonicalStageId,
+  StageCapability,
+  VtTaskInput,
+} from './types/types.js';
+export { DEFAULT_TASK_SPLIT, resolveRunStageIdentity } from './types/types.js';
 export { createVtHandler } from './vt/createVtHandler.js';
-export {unpackTileId} from './tiles/tileId.js';
-
-export { DEFAULT_TASK_SPLIT } from './types/types.js';
-export type { CanonicalStageId, StageCapability } from './types/types.js';
-export { resolveRunStageIdentity } from './types/types.js';

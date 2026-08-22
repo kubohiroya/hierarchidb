@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../RouteDataSourceStep.js', () => ({
   RouteDataSourceStep: (_props: unknown) => null,
@@ -10,7 +10,7 @@ vi.mock('../RouteSelectionStep.js', () => ({
 vi.mock('../RouteProcessingStep.js', () => ({
   RouteProcessingStep: (_props: unknown) => null,
 }));
-vi.mock('../RouteBuildStep.js', () => ({
+vi.mock('../RouteBuildStep/RouteBuildStep.js', () => ({
   RouteBuildStep: (_props: unknown) => null,
 }));
 vi.mock('../RoutePreviewStep.js', () => ({

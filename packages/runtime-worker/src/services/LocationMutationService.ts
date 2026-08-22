@@ -1,14 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationFeature, LocationPointProperties } from '@hierarchidb/location-store';
-import type { LocationMutationAPI } from '@hierarchidb/location-api';
-import type { RouteLineString } from '@hierarchidb/route-api';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import {
-  filterIdeGsmPointsBySelection,
-  getLocationDB,
-  mortonKeyFromLonLat,
-} from '@hierarchidb/location-store';
-import { getRouteDB } from '@hierarchidb/route-store';
+import type { LocationMutationAPI } from '@hierarchidb/location-api';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -17,9 +9,17 @@ import {
   type IdeGsmLocationImportResult,
   type LocationGroupItem,
   type LocationRelation,
+  parseIdeGsmRecords,
 } from '@hierarchidb/location-api';
+import type { LocationFeature, LocationPointProperties } from '@hierarchidb/location-store';
+import {
+  filterIdeGsmPointsBySelection,
+  getLocationDB,
+  mortonKeyFromLonLat,
+} from '@hierarchidb/location-store';
+import type { RouteLineString } from '@hierarchidb/route-api';
+import { getRouteDB } from '@hierarchidb/route-store';
 import { SingletonMixin } from '@hierarchidb/util';
-import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import { loadTabularTableRows } from './utils/loadTabularTableRows.js';
 
 type LocationPointWriteProgress = {
@@ -56,11 +56,12 @@ export class LocationMutationService implements LocationMutationAPI {
   async upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void> {
     const db = getLocationDB();
     await db.open?.();
-    const existingRows = items.length > 0
-      ? await db.features.bulkGet(
-        items.map((item) => [nodeId, String(item.id)] as [NodeId, string]),
-      )
-      : [];
+    const existingRows =
+      items.length > 0
+        ? await db.features.bulkGet(
+            items.map((item) => [nodeId, String(item.id)] as [NodeId, string])
+          )
+        : [];
     const updateDiffs: LocationUpsertDiff[] = [];
     const now = Date.now();
     const rows: LocationFeature[] = items.map((item, index) => {
@@ -78,10 +79,13 @@ export class LocationMutationService implements LocationMutationAPI {
       }
       const longitude = data?.longitude;
       const latitude = data?.latitude;
-      const mortonKey = typeof longitude === 'number' && Number.isFinite(longitude)
-        && typeof latitude === 'number' && Number.isFinite(latitude)
-        ? mortonKeyFromLonLat(longitude, latitude)
-        : undefined;
+      const mortonKey =
+        typeof longitude === 'number' &&
+        Number.isFinite(longitude) &&
+        typeof latitude === 'number' &&
+        Number.isFinite(latitude)
+          ? mortonKeyFromLonLat(longitude, latitude)
+          : undefined;
       const centroidForShapeId = data?.centroidForShapeId;
       const centroidForShapeContainerNodeId = data?.centroidForShapeContainerNodeId;
       return {
@@ -104,6 +108,10 @@ export class LocationMutationService implements LocationMutationAPI {
   async deleteLocationGroups(nodeId: NodeId, itemIds: string[]): Promise<void> {
     const db = getLocationDB();
     await db.open?.();
+    await this.deleteRoutesReferencingLocationRows(
+      nodeId,
+      itemIds.map((id) => String(id))
+    );
     await db.transaction('rw', db.features, async () => {
       for (const id of itemIds) {
         await db.features.delete([nodeId, String(id)]);
@@ -144,7 +152,10 @@ export class LocationMutationService implements LocationMutationAPI {
       })
       .map((row) => row.id);
     if (!targetIds.length) return;
-    await this.deleteRoutesReferencingLocationRows(nodeId, targetIds.map((id) => String(id)));
+    await this.deleteRoutesReferencingLocationRows(
+      nodeId,
+      targetIds.map((id) => String(id))
+    );
     await db.transaction('rw', db.features, async () => {
       for (const id of targetIds) {
         await db.features.delete([nodeId, String(id)]);
@@ -168,11 +179,11 @@ export class LocationMutationService implements LocationMutationAPI {
       const admin0Code = typeof data.admin0Code === 'string' ? data.admin0Code : undefined;
       const admin0 = typeof data.admin0 === 'string' ? data.admin0 : undefined;
       if (
-        (!admin0Code && legacyCode)
-        || (!admin0 && (legacyName || legacyAdmin0Name))
-        || legacyCode
-        || legacyName
-        || legacyAdmin0Name
+        (!admin0Code && legacyCode) ||
+        (!admin0 && (legacyName || legacyAdmin0Name)) ||
+        legacyCode ||
+        legacyName ||
+        legacyAdmin0Name
       ) {
         const nextData: MutableLocationPointData = { ...data };
         if (!admin0Code && legacyCode) {
@@ -194,10 +205,13 @@ export class LocationMutationService implements LocationMutationAPI {
         const data = item.data;
         const longitude = data?.longitude;
         const latitude = data?.latitude;
-        const mortonKey = typeof longitude === 'number' && Number.isFinite(longitude)
-          && typeof latitude === 'number' && Number.isFinite(latitude)
-          ? mortonKeyFromLonLat(longitude, latitude)
-          : undefined;
+        const mortonKey =
+          typeof longitude === 'number' &&
+          Number.isFinite(longitude) &&
+          typeof latitude === 'number' &&
+          Number.isFinite(latitude)
+            ? mortonKeyFromLonLat(longitude, latitude)
+            : undefined;
         const centroidForShapeId = data?.centroidForShapeId;
         const centroidForShapeContainerNodeId = data?.centroidForShapeContainerNodeId;
         return {
@@ -226,7 +240,11 @@ export class LocationMutationService implements LocationMutationAPI {
     try {
       emit({ phase: 'source' });
 
-      const { headers, rows } = await loadTabularTableRows('location', request.tabularSourceId, request.tabularDbPrefix);
+      const { headers, rows } = await loadTabularTableRows(
+        'location',
+        request.tabularSourceId,
+        request.tabularDbPrefix
+      );
       const parsed = await parseIdeGsmRecords(headers, rows);
       emit({ phase: 'parse', total: parsed.rowCount, processed: parsed.rowCount });
 
@@ -337,10 +355,13 @@ export class LocationMutationService implements LocationMutationAPI {
         const data = item.data as LocationPointProperties;
         const longitude = data?.longitude;
         const latitude = data?.latitude;
-        const mortonKey = typeof longitude === 'number' && Number.isFinite(longitude)
-          && typeof latitude === 'number' && Number.isFinite(latitude)
-          ? mortonKeyFromLonLat(longitude, latitude)
-          : undefined;
+        const mortonKey =
+          typeof longitude === 'number' &&
+          Number.isFinite(longitude) &&
+          typeof latitude === 'number' &&
+          Number.isFinite(latitude)
+            ? mortonKeyFromLonLat(longitude, latitude)
+            : undefined;
         const centroidForShapeId = data?.centroidForShapeId;
         const centroidForShapeContainerNodeId = data?.centroidForShapeContainerNodeId;
         return {
@@ -362,7 +383,7 @@ export class LocationMutationService implements LocationMutationAPI {
 
   private async deleteRoutesReferencingLocationRows(
     locationNodeId: NodeId,
-    locationFeatureIds: string[],
+    locationFeatureIds: string[]
   ): Promise<void> {
     if (!locationFeatureIds.length) return;
     const routeDb = getRouteDB();
@@ -370,30 +391,36 @@ export class LocationMutationService implements LocationMutationAPI {
     const impactedRouteIds = await this.findRouteIdsReferencingLocationFeatures(
       routeDb,
       locationNodeId,
-      locationFeatureIds,
+      locationFeatureIds
     );
     if (!impactedRouteIds.length) return;
     const impactedRows = await routeDb.features.bulkGet(impactedRouteIds as NodeId[]);
     const impacted = impactedRows.filter((row): row is RouteLineString => Boolean(row));
     if (!impacted.length) return;
     const impactedRouteNodeIds = new Set(impacted.map((row) => row.nodeId));
-    await routeDb.transaction('rw', routeDb.features, routeDb.vectorTiles, routeDb.tileIndex, async () => {
-      for (const routeId of impactedRouteIds) {
-        await routeDb.features.delete(routeId);
+    await routeDb.transaction(
+      'rw',
+      routeDb.features,
+      routeDb.vectorTiles,
+      routeDb.tileIndex,
+      async () => {
+        for (const routeId of impactedRouteIds) {
+          await routeDb.features.delete(routeId);
+        }
+        for (const routeNodeId of impactedRouteNodeIds) {
+          await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
+          await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
+        }
       }
-      for (const routeNodeId of impactedRouteNodeIds) {
-        await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
-        await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
-      }
-    });
+    );
     for (const routeNodeId of impactedRouteNodeIds) {
-      await this.clearSourceCacheAndReserveRouteRebuild(routeNodeId);
+      await this.clearRouteArtifactsAndReserveRouteRebuild(routeNodeId);
     }
   }
 
   private async syncRoutesAfterLocationUpdates(
     locationNodeId: NodeId,
-    diffs: LocationUpsertDiff[],
+    diffs: LocationUpsertDiff[]
   ): Promise<void> {
     if (!diffs.length) return;
     const routeDb = getRouteDB();
@@ -402,13 +429,15 @@ export class LocationMutationService implements LocationMutationAPI {
     const impactedRouteIds = await this.findRouteIdsReferencingLocationFeatures(
       routeDb,
       locationNodeId,
-      diffs.map((diff) => String(diff.featureId)),
+      diffs.map((diff) => String(diff.featureId))
     );
     if (!impactedRouteIds.length) return;
     const impactedRows = await routeDb.features.bulkGet(impactedRouteIds as NodeId[]);
     const rows = impactedRows.filter((row): row is RouteLineString => Boolean(row));
     const metadataUpdates: RouteLineString[] = [];
+    const structuralUpdates: RouteLineString[] = [];
     const structuralRouteNodes = new Set<NodeId>();
+    const structuralUpdatedAt = Date.now();
 
     rows.forEach((route) => {
       const startFeatureId = route.startPoint?.locationFeatureId
@@ -417,18 +446,27 @@ export class LocationMutationService implements LocationMutationAPI {
       const endFeatureId = route.endPoint?.locationFeatureId
         ? String(route.endPoint.locationFeatureId)
         : null;
-      const startMatched = (route.startLocationId === locationNodeId || route.startPoint?.locationId === locationNodeId)
-        && startFeatureId
-        ? diffByFeatureId.get(startFeatureId)
-        : undefined;
-      const endMatched = (route.endLocationId === locationNodeId || route.endPoint?.locationId === locationNodeId)
-        && endFeatureId
-        ? diffByFeatureId.get(endFeatureId)
-        : undefined;
+      const startMatched =
+        (route.startLocationId === locationNodeId ||
+          route.startPoint?.locationId === locationNodeId) &&
+        startFeatureId
+          ? diffByFeatureId.get(startFeatureId)
+          : undefined;
+      const endMatched =
+        (route.endLocationId === locationNodeId || route.endPoint?.locationId === locationNodeId) &&
+        endFeatureId
+          ? diffByFeatureId.get(endFeatureId)
+          : undefined;
       if (!startMatched && !endMatched) return;
 
       if (startMatched?.structuralChanged || endMatched?.structuralChanged) {
         structuralRouteNodes.add(route.nodeId);
+        structuralUpdates.push({
+          ...route,
+          rebuildRequired: true,
+          rebuildRequiredAt: structuralUpdatedAt,
+          updatedAt: structuralUpdatedAt,
+        });
         return;
       }
 
@@ -439,11 +477,17 @@ export class LocationMutationService implements LocationMutationAPI {
         endPoint: route.endPoint ? { ...route.endPoint } : route.endPoint,
       };
       if (startMatched?.metadataChanged && nextRoute.startPoint) {
-        nextRoute.startPoint = applyLocationMetadataToRoutePoint(nextRoute.startPoint, startMatched.nextData);
+        nextRoute.startPoint = applyLocationMetadataToRoutePoint(
+          nextRoute.startPoint,
+          startMatched.nextData
+        );
         changed = true;
       }
       if (endMatched?.metadataChanged && nextRoute.endPoint) {
-        nextRoute.endPoint = applyLocationMetadataToRoutePoint(nextRoute.endPoint, endMatched.nextData);
+        nextRoute.endPoint = applyLocationMetadataToRoutePoint(
+          nextRoute.endPoint,
+          endMatched.nextData
+        );
         changed = true;
       }
       if (!changed) return;
@@ -451,25 +495,34 @@ export class LocationMutationService implements LocationMutationAPI {
       metadataUpdates.push(nextRoute);
     });
 
-    await routeDb.transaction('rw', routeDb.features, routeDb.vectorTiles, routeDb.tileIndex, async () => {
-      if (metadataUpdates.length > 0) {
-        await routeDb.features.bulkPut(metadataUpdates);
+    await routeDb.transaction(
+      'rw',
+      routeDb.features,
+      routeDb.vectorTiles,
+      routeDb.tileIndex,
+      async () => {
+        if (metadataUpdates.length > 0) {
+          await routeDb.features.bulkPut(metadataUpdates);
+        }
+        if (structuralUpdates.length > 0) {
+          await routeDb.features.bulkPut(structuralUpdates);
+        }
+        for (const routeNodeId of structuralRouteNodes) {
+          await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
+          await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
+        }
       }
-      for (const routeNodeId of structuralRouteNodes) {
-        await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
-        await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
-      }
-    });
+    );
 
     for (const routeNodeId of structuralRouteNodes) {
-      await this.clearSourceCacheAndReserveRouteRebuild(routeNodeId);
+      await this.clearRouteArtifactsAndReserveRouteRebuild(routeNodeId);
     }
   }
 
   private async findRouteIdsReferencingLocationFeatures(
     routeDb: ReturnType<typeof getRouteDB>,
     locationNodeId: NodeId,
-    locationFeatureIds: string[],
+    locationFeatureIds: string[]
   ): Promise<NodeId[]> {
     if (!locationFeatureIds.length) return [];
     const locationFeatureSet = new Set(locationFeatureIds.map((id) => String(id)));
@@ -484,9 +537,8 @@ export class LocationMutationService implements LocationMutationAPI {
       .primaryKeys();
     const candidateIds = new Set<NodeId>([...startIds, ...endIds].map((id) => id as NodeId));
 
-    const candidateRows = candidateIds.size > 0
-      ? await routeDb.features.bulkGet(Array.from(candidateIds))
-      : [];
+    const candidateRows =
+      candidateIds.size > 0 ? await routeDb.features.bulkGet(Array.from(candidateIds)) : [];
     const matchedIds = new Set<NodeId>();
     const addRouteMatch = (route: RouteLineString): void => {
       const startFeatureId = route.startPoint?.locationFeatureId
@@ -496,18 +548,15 @@ export class LocationMutationService implements LocationMutationAPI {
         ? String(route.endPoint.locationFeatureId)
         : null;
 
-      const startMatched = (
-        route.startLocationId === locationNodeId
-        || route.startPoint?.locationId === locationNodeId
-      )
-        && startFeatureId !== null
-        && locationFeatureSet.has(startFeatureId);
-      const endMatched = (
-        route.endLocationId === locationNodeId
-        || route.endPoint?.locationId === locationNodeId
-      )
-        && endFeatureId !== null
-        && locationFeatureSet.has(endFeatureId);
+      const startMatched =
+        (route.startLocationId === locationNodeId ||
+          route.startPoint?.locationId === locationNodeId) &&
+        startFeatureId !== null &&
+        locationFeatureSet.has(startFeatureId);
+      const endMatched =
+        (route.endLocationId === locationNodeId || route.endPoint?.locationId === locationNodeId) &&
+        endFeatureId !== null &&
+        locationFeatureSet.has(endFeatureId);
 
       if (startMatched || endMatched) {
         matchedIds.add(route.id);
@@ -528,14 +577,14 @@ export class LocationMutationService implements LocationMutationAPI {
       const endFeatureId = route.endPoint?.locationFeatureId
         ? String(route.endPoint.locationFeatureId)
         : null;
-      const hasLegacyLocationMatch = (
-        (typedRoute.startLocationId === undefined && typedRoute.startPoint?.locationId === locationNodeId)
-        || (typedRoute.endLocationId === undefined && typedRoute.endPoint?.locationId === locationNodeId)
-      );
-      const hasLegacyFeatureMatch = (
-        (startFeatureId !== null && locationFeatureSet.has(startFeatureId))
-        || (endFeatureId !== null && locationFeatureSet.has(endFeatureId))
-      );
+      const hasLegacyLocationMatch =
+        (typedRoute.startLocationId === undefined &&
+          typedRoute.startPoint?.locationId === locationNodeId) ||
+        (typedRoute.endLocationId === undefined &&
+          typedRoute.endPoint?.locationId === locationNodeId);
+      const hasLegacyFeatureMatch =
+        (startFeatureId !== null && locationFeatureSet.has(startFeatureId)) ||
+        (endFeatureId !== null && locationFeatureSet.has(endFeatureId));
       if (hasLegacyLocationMatch && hasLegacyFeatureMatch) {
         addRouteMatch(typedRoute);
       }
@@ -544,15 +593,30 @@ export class LocationMutationService implements LocationMutationAPI {
     return Array.from(matchedIds);
   }
 
-  private async clearSourceCacheAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
+  private async clearRouteArtifactsAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
     await ephemeralDB.open?.();
     const now = Date.now();
     await ephemeralDB.transaction(
       'rw',
-      [ephemeralDB.sourceCache, ephemeralDB.sourceCacheMeta, ephemeralDB.buildSessionConfigs, ephemeralDB.buildSessionStatuses],
+      [
+        ephemeralDB.sourceCache,
+        ephemeralDB.sourceCacheMeta,
+        ephemeralDB.geometryCache,
+        ephemeralDB.geometryCacheMeta,
+        ephemeralDB.geometryErrors,
+        ephemeralDB.tileEmitBufferRelations,
+        ephemeralDB.buildTasks,
+        ephemeralDB.buildSessionConfigs,
+        ephemeralDB.buildSessionStatuses,
+      ],
       async () => {
         await ephemeralDB.sourceCache.where('nodeId').equals(routeNodeId).delete();
         await ephemeralDB.sourceCacheMeta.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.geometryCache.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.geometryCacheMeta.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.geometryErrors.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.buildTasks.where('nodeId').equals(routeNodeId).delete();
         const currentStatus = await ephemeralDB.buildSessionStatuses.get(routeNodeId);
         if (currentStatus?.status === 'running') return;
         const current = await ephemeralDB.buildSessionConfigs.get(routeNodeId);
@@ -568,26 +632,28 @@ export class LocationMutationService implements LocationMutationAPI {
           completedAt: undefined,
           stopReason: 'unknown',
         });
-      },
+      }
     );
   }
 }
 
 const hasStructuralLocationDiff = (
   prev?: LocationPointProperties,
-  next?: LocationPointProperties,
+  next?: LocationPointProperties
 ): boolean => {
   if (!prev || !next) return false;
-  return !isEqualNumber(prev.longitude, next.longitude)
-    || !isEqualNumber(prev.latitude, next.latitude)
-    || !isEqualString(prev.admin0Code, next.admin0Code)
-    || !isEqualString(prev.admin1Code, next.admin1Code)
-    || !isEqualString(prev.admin2Code, next.admin2Code);
+  return (
+    !isEqualNumber(prev.longitude, next.longitude) ||
+    !isEqualNumber(prev.latitude, next.latitude) ||
+    !isEqualString(prev.admin0Code, next.admin0Code) ||
+    !isEqualString(prev.admin1Code, next.admin1Code) ||
+    !isEqualString(prev.admin2Code, next.admin2Code)
+  );
 };
 
 const hasMetadataLocationDiff = (
   prev?: LocationPointProperties,
-  next?: LocationPointProperties,
+  next?: LocationPointProperties
 ): boolean => {
   if (!prev || !next) return false;
   const prevComparable = normalizeMetadataComparable(prev);
@@ -595,7 +661,9 @@ const hasMetadataLocationDiff = (
   return !isMetadataComparableEqual(prevComparable, nextComparable);
 };
 
-const normalizeMetadataComparable = (value: LocationPointProperties): {
+const normalizeMetadataComparable = (
+  value: LocationPointProperties
+): {
   name: string;
   type: string;
   admin0?: string;
@@ -615,7 +683,7 @@ const normalizeMetadataComparable = (value: LocationPointProperties): {
 
 const isMetadataComparableEqual = (
   left: ReturnType<typeof normalizeMetadataComparable>,
-  right: ReturnType<typeof normalizeMetadataComparable>,
+  right: ReturnType<typeof normalizeMetadataComparable>
 ): boolean => {
   if (left.name !== right.name) return false;
   if (left.type !== right.type) return false;
@@ -627,7 +695,9 @@ const isMetadataComparableEqual = (
   return Object.entries(left.metadata).every(([key, value]) => right.metadata[key] === value);
 };
 
-const normalizeLocationMetadata = (metadata: Record<string, unknown>): Record<string, string | number | boolean> => {
+const normalizeLocationMetadata = (
+  metadata: Record<string, unknown>
+): Record<string, string | number | boolean> => {
   const normalized: Record<string, string | number | boolean> = {};
   Object.keys(metadata)
     .sort()
@@ -642,7 +712,7 @@ const normalizeLocationMetadata = (metadata: Record<string, unknown>): Record<st
 
 const applyLocationMetadataToRoutePoint = (
   point: NonNullable<RouteLineString['startPoint']>,
-  source: LocationPointProperties,
+  source: LocationPointProperties
 ): NonNullable<RouteLineString['startPoint']> => ({
   ...point,
   name: source.name,

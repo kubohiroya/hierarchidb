@@ -60,6 +60,7 @@ import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/i
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveCanonicalPluginBuildAPI } from './resolveCanonicalPluginBuildAPI.js';
+import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -260,27 +261,6 @@ const RUNTIME_KEY_SEPARATOR = '\u0000';
 
 const toRuntimeKey = (nodeType: NodeType, nodeId: NodeId): string =>
   `${String(nodeType)}${RUNTIME_KEY_SEPARATOR}${String(nodeId)}`;
-
-const resolveRuntimeStatusFromBuildSession = (
-  status: BuildSessionStatus['status']
-): BuildSessionRuntimeStatus => {
-  switch (status) {
-    case 'queued':
-      return 'starting';
-    case 'running':
-      return 'running';
-    case 'paused':
-      return 'paused';
-    case 'completed':
-      return 'completed';
-    case 'failed':
-      return 'failed';
-    case 'recycled':
-      throw new Error('[worker bootstrap] recycled is not a valid build session status');
-    case 'idle':
-      return 'idle';
-  }
-};
 
 const resolveRuntimeStatusFromShapeRecord = (
   status: ShapeBuildSessionRecord['status']
@@ -514,6 +494,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
       });
 
       const SHAPE_NODE_TYPE = 'shape' as NodeType;
+      const ROUTE_NODE_TYPE = 'route' as NodeType;
       const canonicalBuildAPIs = new Map<NodeType, CanonicalPluginBuildAPI>();
       for (const entry of moduleEntries) {
         const buildApi = resolveCanonicalPluginBuildAPI(entry.mod);
@@ -707,6 +688,78 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return filteredByActive.sort((a, b) => String(a.nodeId).localeCompare(String(b.nodeId)));
         };
 
+        const requireRouteDraftRecord = (draftData: unknown): Record<string, unknown> => {
+          if (draftData === null || typeof draftData !== 'object' || Array.isArray(draftData)) {
+            throw new Error('[worker bootstrap] route draftData must be an object');
+          }
+          return draftData as Record<string, unknown>;
+        };
+
+        const hasRouteDirectInput = (draft: Record<string, unknown>): boolean =>
+          Object.hasOwn(draft, 'startLocationId') ||
+          Object.hasOwn(draft, 'endLocationId') ||
+          Object.hasOwn(draft, 'lineGeometry') ||
+          Object.hasOwn(draft, 'routeMode');
+
+        const hasRouteSelectionInput = (draft: Record<string, unknown>): boolean =>
+          Object.hasOwn(draft, 'tabularSourceId') ||
+          Object.hasOwn(draft, 'selectedArrayByCountries');
+
+        const requireRouteTabularSourceId = (value: unknown): string => {
+          if (typeof value !== 'string' || value.length === 0 || value !== value.trim()) {
+            throw new Error(
+              '[worker bootstrap] route selection-driven start requires draftData.tabularSourceId'
+            );
+          }
+          return value;
+        };
+
+        const resolveRouteStartDraftData = async (
+          nodeId: NodeId,
+          draftData: unknown
+        ): Promise<unknown> => {
+          const draft = requireRouteDraftRecord(draftData);
+          const direct = hasRouteDirectInput(draft);
+          const selection = hasRouteSelectionInput(draft);
+          if (direct && selection) {
+            throw new Error(
+              '[worker bootstrap] route build start cannot mix direct-route and selection-driven inputs'
+            );
+          }
+          if (direct) {
+            return {
+              ...draft,
+              routeBuildInput: { kind: 'direct-route' },
+            };
+          }
+          if (!selection) {
+            throw new Error(
+              '[worker bootstrap] route build start requires either direct-route or selection-driven input'
+            );
+          }
+          const routes = await services.getRouteMutationAPI().resolveIdeGsmRouteBuildRoutes({
+            nodeId,
+            tabularSourceId: requireRouteTabularSourceId(draft.tabularSourceId),
+            selectedArrayByCountries: draft.selectedArrayByCountries,
+          });
+          const { tabularSourceId, selectedArrayByCountries, ...canonicalDraft } = draft;
+          void tabularSourceId;
+          void selectedArrayByCountries;
+          return {
+            ...canonicalDraft,
+            routeBuildInput: { kind: 'selection-driven', routes },
+          };
+        };
+
+        const resolveBuildStartDraftData = async (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          draftData: unknown
+        ): Promise<unknown> => {
+          if (nodeType !== ROUTE_NODE_TYPE) return draftData;
+          return resolveRouteStartDraftData(nodeId, draftData);
+        };
+
         const runStartBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId
@@ -721,7 +774,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
                 `[worker bootstrap] draftData is required to start build for nodeType=${String(nodeType)}, nodeId=${String(nodeId)}`
               );
             }
-            const status = await buildApi.startBuildSession({ nodeId, draftData });
+            const resolvedDraftData = await resolveBuildStartDraftData(nodeType, nodeId, draftData);
+            const status = await buildApi.startBuildSession({
+              nodeId,
+              draftData: resolvedDraftData,
+            });
             if (status.nodeId !== nodeId) {
               throw new Error(
                 `[worker bootstrap] canonical build status nodeId mismatch: expected=${String(nodeId)}, actual=${String(status.nodeId)}`

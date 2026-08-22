@@ -24,6 +24,7 @@ describe('runOriginCoordinatorGatedBootstrap', () => {
         expect(accepted).toBe(coordinator);
         order.push('storage:canonical-ready');
       },
+      recoverCanonicalStorageIfAuthorized: vi.fn(async () => 'not-required'),
       requestSuccessReload: () => order.push('reload'),
       prepareCanonicalRuntime,
       initializeBrowserGlobals,
@@ -55,6 +56,7 @@ describe('runOriginCoordinatorGatedBootstrap', () => {
       }),
       acceptActivationCoordinator: vi.fn(),
       activateCanonicalStorage,
+      recoverCanonicalStorageIfAuthorized: vi.fn(async () => 'not-required'),
       requestSuccessReload,
       prepareCanonicalRuntime: async () => {
         order.push('canonical-worker');
@@ -83,6 +85,7 @@ describe('runOriginCoordinatorGatedBootstrap', () => {
         activateCanonicalStorage: async () => {
           throw failure;
         },
+        recoverCanonicalStorageIfAuthorized: vi.fn(async () => 'not-required'),
         requestSuccessReload,
         prepareCanonicalRuntime: vi.fn(async () => undefined),
         initializeBrowserGlobals: vi.fn(),
@@ -107,6 +110,7 @@ describe('runOriginCoordinatorGatedBootstrap', () => {
         }),
         acceptActivationCoordinator: vi.fn(),
         activateCanonicalStorage: vi.fn(async () => undefined),
+        recoverCanonicalStorageIfAuthorized: vi.fn(async () => 'not-required'),
         requestSuccessReload: vi.fn(),
         prepareCanonicalRuntime: async () => {
           throw failure;
@@ -116,6 +120,62 @@ describe('runOriginCoordinatorGatedBootstrap', () => {
       })
     ).rejects.toBe(failure);
 
+    expect(initializeBrowserGlobals).not.toHaveBeenCalled();
+    expect(initializeRuntime).not.toHaveBeenCalled();
+  });
+
+  it('reloads before worker startup after an authorized corrective recovery', async () => {
+    const order: string[] = [];
+    const result = await runOriginCoordinatorGatedBootstrap({
+      initializeCoordinator: async () => ({
+        status: 'canonical-revoked',
+        coordinatorGate: 'revoked-ready-for-preflight',
+        helloCode: 'LEGACY_YAML_ACCESS_REVOKED',
+      }),
+      acceptActivationCoordinator: vi.fn(),
+      activateCanonicalStorage: vi.fn(async () => undefined),
+      recoverCanonicalStorageIfAuthorized: async () => {
+        order.push('recovery');
+        return 'recovered';
+      },
+      requestSuccessReload: () => order.push('reload'),
+      prepareCanonicalRuntime: async () => order.push('worker'),
+      initializeBrowserGlobals: () => order.push('globals'),
+      initializeRuntime: async () => 'router',
+    });
+
+    expect(result).toEqual({ status: 'reload-requested' });
+    expect(order).toEqual(['recovery', 'reload']);
+  });
+
+  it('does not start providers or reload when corrective recovery fails', async () => {
+    const failure = new Error('recovery-failed');
+    const requestSuccessReload = vi.fn();
+    const prepareCanonicalRuntime = vi.fn(async () => undefined);
+    const initializeBrowserGlobals = vi.fn();
+    const initializeRuntime = vi.fn(async () => 'router');
+
+    await expect(
+      runOriginCoordinatorGatedBootstrap({
+        initializeCoordinator: async () => ({
+          status: 'canonical-revoked',
+          coordinatorGate: 'revoked-ready-for-preflight',
+          helloCode: 'LEGACY_YAML_ACCESS_REVOKED',
+        }),
+        acceptActivationCoordinator: vi.fn(),
+        activateCanonicalStorage: vi.fn(async () => undefined),
+        recoverCanonicalStorageIfAuthorized: async () => {
+          throw failure;
+        },
+        requestSuccessReload,
+        prepareCanonicalRuntime,
+        initializeBrowserGlobals,
+        initializeRuntime,
+      })
+    ).rejects.toBe(failure);
+
+    expect(requestSuccessReload).not.toHaveBeenCalled();
+    expect(prepareCanonicalRuntime).not.toHaveBeenCalled();
     expect(initializeBrowserGlobals).not.toHaveBeenCalled();
     expect(initializeRuntime).not.toHaveBeenCalled();
   });
