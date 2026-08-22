@@ -87,17 +87,24 @@ type RuntimeWorkerBootstrap = {
   servicesReadyAt: number;
 };
 
-const heapMonitor = createHeapPressureMonitor({ source: 'worker' });
 const heapListeners = new Set<(event: HeapPressureEvent) => void>();
-heapMonitor.subscribe((event) => {
-  heapListeners.forEach((listener) => {
-    listener(event);
+let heapMonitor: ReturnType<typeof createHeapPressureMonitor> | null = null;
+
+const ensureHeapMonitor = (): ReturnType<typeof createHeapPressureMonitor> => {
+  if (heapMonitor !== null) return heapMonitor;
+  const monitor = createHeapPressureMonitor({ source: 'worker' });
+  monitor.subscribe((event) => {
+    heapListeners.forEach((listener) => {
+      listener(event);
+    });
   });
-});
-heapMonitor.start();
+  monitor.start();
+  heapMonitor = monitor;
+  return monitor;
+};
 
 const setHeapContext = (context: HeapPressureContext | null) => {
-  heapMonitor.setContext(context);
+  ensureHeapMonitor().setContext(context);
 };
 
 const toComlinkProxy = <T extends object>(Comlink: typeof import('comlink'), value: T): T =>
@@ -1156,6 +1163,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           subscribeHeapPressure: async (
             callback: (event: HeapPressureEvent) => void
           ): Promise<() => void> => {
+            ensureHeapMonitor();
             const wrappedCallback = (event: HeapPressureEvent): void => {
               callback(sanitizeForComlink(event));
             };
