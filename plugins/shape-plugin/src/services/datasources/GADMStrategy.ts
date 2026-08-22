@@ -17,7 +17,7 @@ import {
   buildRawDataDataSourceCacheKey,
   type RetryConfig,
 } from '~/services/utils/chunkStore';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/RawDataPipelineResult';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  GADM

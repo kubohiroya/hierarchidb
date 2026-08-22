@@ -4,7 +4,7 @@ import {
   fetchGeoBoundariesMetadata,
   fetchGadmMetadata,
   fetchNaturalEarthMetadata,
-} from './metadataSourceConstants.js';
+} from './metadataSourceConstantsUtils.js';
 
 /**
  * MetadataLoader service

@@ -48,7 +48,7 @@ import {
   jsonSerializer,
 } from '~/services/utils/chunkStore';
 import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
-import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
+import { fetchRawDataWithPipeline } from '~/services/utils/RawDataPipelineResult';
 import {
   countSelectedAdminPairs,
   generateDownloadTaskPayloadsFromSelection,

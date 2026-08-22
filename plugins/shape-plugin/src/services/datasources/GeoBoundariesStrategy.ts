@@ -29,7 +29,7 @@ import {
   buildGeoBoundariesMetadataUrl,
 } from '~/services/utils/geoboundariesEndpoints';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobufUtils';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/RawDataPipelineResult';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
