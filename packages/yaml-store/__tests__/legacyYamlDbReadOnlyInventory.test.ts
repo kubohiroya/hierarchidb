@@ -67,10 +67,24 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
       validLegacyCount: 1,
       invalidCount: 0,
       invalidCodeCounts: {},
+      accountingCounts: {
+        'duplicate/no-op': 0,
+        recoverable: 0,
+        'orphan/blocked': 1,
+        conflict: 0,
+        invalid: 0,
+        'explicitly-discarded': 0,
+      },
     });
     expect(result.status).toBe('accepted');
     if (result.status !== 'accepted') throw new Error('Expected accepted inventory');
     expect(result.sourceDigest).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.accountingEvidence).toEqual([
+      {
+        stableIdentifier: expect.stringMatching(/^[0-9a-f]{64}$/),
+        classification: 'orphan/blocked',
+      },
+    ]);
     const serialized = JSON.stringify(result);
     expect(serialized).not.toContain('secret-node-id');
     expect(serialized).not.toContain('secret-parent-id');
@@ -106,7 +120,24 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
       validLegacyCount: 1,
       invalidCount: 1,
       invalidCodeCounts: { ROW_INVALID_FIELD: 1 },
+      accountingCounts: {
+        'duplicate/no-op': 0,
+        recoverable: 0,
+        'orphan/blocked': 1,
+        conflict: 0,
+        invalid: 1,
+        'explicitly-discarded': 0,
+      },
     });
+    expect(result.status).toBe('accepted');
+    if (result.status !== 'accepted') throw new Error('Expected accepted inventory');
+    expect(result.accountingEvidence.map((entry) => entry.classification).sort()).toEqual([
+      'invalid',
+      'orphan/blocked',
+    ]);
+    for (const entry of result.accountingEvidence) {
+      expect(entry.stableIdentifier).toMatch(/^[0-9a-f]{64}$/);
+    }
 
     await deleteDatabase(databaseName);
   });
@@ -197,6 +228,7 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
       canonicalTargets: [
         {
           nodeId: 'parent-node',
+          nodeType: 'folder',
           parentId: 'root-node',
           name: 'Parent',
           schemaId: 'folder',
@@ -204,8 +236,10 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
         },
         {
           nodeId: 'equivalent-node',
+          nodeType: 'yaml-file',
           parentId: 'parent-node',
           name: 'scenario.yml',
+          subtype: 'scenario',
           schemaId: 'ide-gsm/scenario',
           content: 'name: equivalent\n',
         },
@@ -214,12 +248,159 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
 
     expect(result).toMatchObject({
       status: 'accepted',
+      accountingCounts: {
+        'duplicate/no-op': 1,
+        recoverable: 1,
+        'orphan/blocked': 0,
+        conflict: 0,
+        invalid: 0,
+        'explicitly-discarded': 0,
+      },
       targetComparisonCounts: {
         equivalent: 1,
         'target-absent': 1,
         'parent-blocked': 0,
         conflict: 0,
       },
+    });
+    expect(result.status).toBe('accepted');
+    if (result.status !== 'accepted') throw new Error('Expected accepted inventory');
+    expect(result.accountingEvidence.map((entry) => entry.classification).sort()).toEqual([
+      'duplicate/no-op',
+      'recoverable',
+    ]);
+    for (const entry of result.accountingEvidence) {
+      expect(entry.stableIdentifier).toMatch(/^[0-9a-f]{64}$/);
+    }
+
+    await deleteDatabase(databaseName);
+  });
+
+  it('classifies target collisions and non-folder parents without recovering rows', async () => {
+    const databaseName = nextDatabaseName();
+    await createLegacyDatabase(databaseName, [
+      {
+        nodeId: 'node-id-conflict',
+        parentId: 'parent-node',
+        name: 'scenario.yml',
+        schemaId: 'ide-gsm/scenario',
+        content: 'name: legacy\n',
+      },
+      {
+        nodeId: 'sibling-conflict',
+        parentId: 'parent-node',
+        name: 'git.yml',
+        schemaId: 'ide-gsm/git',
+        content: 'url: https://example.com/repo.git\n',
+      },
+      {
+        nodeId: 'blocked-node',
+        parentId: 'file-parent',
+        name: 'git.yml',
+        schemaId: 'ide-gsm/git',
+        content: 'url: https://example.com/blocked.git\n',
+      },
+    ]);
+
+    const result = await getLegacyYamlDbReadOnlyInventory({
+      databaseName,
+      canonicalTargets: [
+        {
+          nodeId: 'node-id-conflict',
+          nodeType: 'yaml-file',
+          parentId: 'parent-node',
+          name: 'scenario.yml',
+          subtype: 'scenario',
+          schemaId: 'ide-gsm/scenario',
+          content: 'name: canonical\n',
+        },
+        {
+          nodeId: 'parent-node',
+          nodeType: 'folder',
+          parentId: 'root-node',
+          name: 'Parent',
+          schemaId: 'folder',
+          content: '',
+        },
+        {
+          nodeId: 'different-node',
+          nodeType: 'yaml-file',
+          parentId: 'parent-node',
+          name: 'git.yml',
+          subtype: 'git',
+          schemaId: 'ide-gsm/git',
+          content: 'url: https://example.com/repo.git\n',
+        },
+        {
+          nodeId: 'file-parent',
+          nodeType: 'yaml-file',
+          parentId: 'parent-node',
+          name: 'scenario.yml',
+          subtype: 'scenario',
+          schemaId: 'ide-gsm/scenario',
+          content: 'name: parent\n',
+        },
+      ],
+    });
+
+    expect(result).toMatchObject({
+      status: 'accepted',
+      accountingCounts: {
+        'duplicate/no-op': 0,
+        recoverable: 0,
+        'orphan/blocked': 1,
+        conflict: 2,
+        invalid: 0,
+        'explicitly-discarded': 0,
+      },
+    });
+    expect(result.status).toBe('accepted');
+    if (result.status !== 'accepted') throw new Error('Expected accepted inventory');
+    expect(result.accountingEvidence.map((entry) => entry.classification).sort()).toEqual([
+      'conflict',
+      'conflict',
+      'orphan/blocked',
+    ]);
+    for (const entry of result.accountingEvidence) {
+      expect(entry.stableIdentifier).toMatch(/^[0-9a-f]{64}$/);
+    }
+
+    await deleteDatabase(databaseName);
+  });
+
+  it('accounts explicitly discarded rows only from approval records', async () => {
+    const databaseName = nextDatabaseName();
+    await createLegacyDatabase(databaseName, [
+      {
+        nodeId: 'discarded-node',
+        parentId: 'parent-node',
+        name: 'scenario.yml',
+        schemaId: 'ide-gsm/scenario',
+        content: 'name: discarded\n',
+      },
+    ]);
+
+    const result = await getLegacyYamlDbReadOnlyInventory({
+      databaseName,
+      explicitDiscardApprovals: [{ nodeId: 'discarded-node', reason: 'user-approved' }],
+    });
+
+    expect(result).toMatchObject({
+      status: 'accepted',
+      accountingCounts: {
+        'duplicate/no-op': 0,
+        recoverable: 0,
+        'orphan/blocked': 0,
+        conflict: 0,
+        invalid: 0,
+        'explicitly-discarded': 1,
+      },
+      accountingEvidence: [
+        {
+          stableIdentifier: expect.stringMatching(/^[0-9a-f]{64}$/),
+          classification: 'explicitly-discarded',
+        },
+      ],
     });
 
     await deleteDatabase(databaseName);
