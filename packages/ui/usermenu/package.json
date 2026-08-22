@@ -27,6 +27,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-monitoring": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",
@@ -37,6 +38,7 @@
     "@vitejs/plugin-react": "^5.0.1"
   },
   "peerDependencies": {
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-monitoring": "workspace:*",
