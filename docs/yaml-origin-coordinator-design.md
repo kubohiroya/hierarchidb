@@ -532,6 +532,11 @@ logical-v1 diagnostic reports a non-empty exact snapshot. It retains the same li
 native version, catalog cardinality, no-upgrade open, and runtime-worker topology authority. After
 those gates pass, it reads all five stores in one readonly transaction and requires every record to
 be accounted as exact initializer state, modified initializer identity, additional state, or invalid.
+For historical logical-v1 nodes, an absent `references` property or an own data property whose value
+is `undefined` both represent no graph edges for this read-only classification only. The classifier
+does not add an array or mutate the record, and own `undefined` prevents a default identity from being
+classified as exact initializer state. Null, non-array, sparse, non-string, accessor-bearing, and
+symbol-bearing forms remain rejected.
 It validates the contract-defined virtual root anchors and tag relations, and delegates YAML slot
 classification to the existing migration planner. The public result contains only store and aggregate
 counts, stable graph and YAML planning status, and invalid diagnostics limited to store-level counts,
