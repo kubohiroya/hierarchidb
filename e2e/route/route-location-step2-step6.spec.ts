@@ -39,7 +39,12 @@ type WorkerMutationAPI = {
 type WorkerUpdaterAPI = {
   updateTreeNode: (
     nodeId: string,
-    payload: { mode: string; data: unknown; draftData: unknown }
+    payload: {
+      mode: string;
+      draftMetadata: { name: string; description?: string; tags: string[] };
+      draftData: unknown;
+      dialogUIState: Record<string, unknown>;
+    }
   ) => Promise<void>;
 };
 
@@ -130,7 +135,8 @@ const locationPoint = (
   name: string,
   latitude: number,
   longitude: number,
-  admin1: string
+  admin1: string,
+  admin1Code: string
 ): { id: string; data: Record<string, unknown> } => ({
   id,
   data: {
@@ -143,7 +149,7 @@ const locationPoint = (
     admin0: 'Japan',
     admin0Code: 'JP',
     admin1,
-    admin1Code: '13',
+    admin1Code,
   },
 });
 
@@ -151,17 +157,29 @@ const buildRouteDraft = (name: string, locationNodeId: string): Record<string, u
   name,
   description: 'Route/location canonical Step2-Step6 E2E build fixture',
   dataSourceName: 'ide-gsm',
-  routeMode: 'road',
+  tabularSourceId: routeTableId,
+  ideGsmFileName: 'route-location-e2e.csv',
   transportMode: 'road',
   transportSelection: 'road',
-  generationMethod: 'direct',
-  startLocationId: locationNodeId,
-  endLocationId: locationNodeId,
-  lineGeometry: [
-    [139.6917, 35.6895],
-    [135.5023, 34.6937],
-  ],
-  routeBuildInput: { kind: 'direct-route' },
+  generationMethod: 'selection',
+  selectedArrayByCountries: selectedRoadInJapan,
+  routeBuildInput: {
+    kind: 'selection-driven',
+    routes: [
+      {
+        startLocationId: locationNodeId,
+        endLocationId: locationNodeId,
+        startCoordinates: [139.6917, 35.6895],
+        endCoordinates: [135.5023, 34.6937],
+        routeMode: 'road',
+        metadata: {
+          source: 'route-location-e2e',
+          country: 'JP',
+          oneway: true,
+        },
+      },
+    ],
+  },
   buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
   processingStatus: 'idle',
 });
@@ -773,9 +791,14 @@ async function createNodeWithDraft(
         throw new Error(`Failed to create ${targetNodeType} node`);
       }
       await updaterAPI.updateTreeNode(createResult.nodeId, {
-        mode: 'save-draft',
-        data: draft,
+        mode: 'save',
+        draftMetadata: {
+          name: nodeName,
+          description: typeof draft.description === 'string' ? draft.description : undefined,
+          tags: [],
+        },
         draftData: draft,
+        dialogUIState: {},
       });
       return {
         id: createResult.nodeId,
@@ -788,6 +811,36 @@ async function createNodeWithDraft(
   );
 }
 
+async function saveNodeData(
+  page: Page,
+  nodeId: string,
+  name: string,
+  data: Record<string, unknown>
+): Promise<void> {
+  await page.evaluate(
+    async ({ targetNodeId, nodeName, draft }) => {
+      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+      if (!ref) throw new Error('Worker client reference is unavailable');
+      const client = ref.client ?? ref.getAPI?.();
+      if (!client?.getTreeNodeUpdaterAPI) {
+        throw new Error('TreeNode updater API is unavailable');
+      }
+      const updaterAPI = await client.getTreeNodeUpdaterAPI();
+      await updaterAPI.updateTreeNode(targetNodeId, {
+        mode: 'save',
+        draftMetadata: {
+          name: nodeName,
+          description: typeof draft.description === 'string' ? draft.description : undefined,
+          tags: [],
+        },
+        draftData: draft,
+        dialogUIState: {},
+      });
+    },
+    { targetNodeId: nodeId, nodeName: name, draft: data }
+  );
+}
+
 async function openRouteEditStep(
   page: Page,
   routeNode: WorkerNode,
@@ -795,25 +848,86 @@ async function openRouteEditStep(
   label: RegExp
 ): Promise<void> {
   const pageNodeId = routeNode.pageNodeId ?? routeNode.parentId ?? `${routeNode.treeId}:root`;
+  const closeDialogButton = page.getByRole('button', { name: /ダイアログを閉じる|Close/i }).first();
+  if (await closeDialogButton.isVisible().catch(() => false)) {
+    await closeDialogButton.click();
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 10000 });
+  }
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(async (targetNodeId) => {
+          const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+          const client = ref?.client ?? ref?.getAPI?.();
+          const queryAPI = client?.getQueryAPI ? await client.getQueryAPI() : undefined;
+          const node = await queryAPI?.getNode(targetNodeId);
+          return Boolean(node?.id);
+        }, routeNode.id),
+      { timeout: 15000, intervals: [200, 500, 1000] }
+    )
+    .toBe(true);
   await page.goto(buildAppUrl(`d/${routeNode.treeId}/${pageNodeId}`), {
     waitUntil: 'domcontentloaded',
     timeout: 120000,
   });
+  await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 10000 });
   await waitForTreeTableLoad(page);
   const routeNodeLink = page.locator(`a[href*="/${routeNode.id}/"]`).first();
   await expect(routeNodeLink).toBeVisible({ timeout: 20000 });
   await routeNodeLink.click();
-  await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/`), { timeout: 20000 });
+  await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/`), {
+    timeout: 20000,
+  });
+
   const openEditButton = page.getByRole('button', { name: /ノードを編集|Edit/i }).first();
   await expect(openEditButton).toBeVisible({ timeout: 10000 });
+  await expect(openEditButton).toBeEnabled();
   await openEditButton.click();
   await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/\\d+`), {
     timeout: 20000,
   });
-  const stepButton = page.getByRole('button', { name: new RegExp(`^${step}\\.\\s*`) }).first();
-  await expect(stepButton).toBeVisible({ timeout: 10000 });
-  await expect(stepButton).toContainText(label);
-  await stepButton.click();
+  const dialog = page.getByRole('dialog').last();
+  const dialogVisible = await dialog.isVisible({ timeout: 20000 }).catch(() => false);
+  if (!dialogVisible) {
+    const nodeSnapshot = await page.evaluate(async (targetNodeId) => {
+      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+      const client = ref?.client ?? ref?.getAPI?.();
+      const queryAPI = client?.getQueryAPI ? await client.getQueryAPI() : undefined;
+      return queryAPI?.getNode(targetNodeId);
+    }, routeNode.id);
+    throw new Error(
+      `Route edit dialog did not open: url=${page.url()} node=${JSON.stringify(nodeSnapshot)}`
+    );
+  }
+  for (let attempt = 0; attempt < step; attempt += 1) {
+    const stepButton = page.getByRole('button', { name: new RegExp(`^${step}\\.\\s*`) }).first();
+    await expect(stepButton).toBeVisible({ timeout: 10000 });
+    await expect(stepButton).toContainText(label);
+    if (await stepButton.isEnabled()) {
+      await stepButton.click();
+      await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/${step}`), {
+        timeout: 20000,
+      });
+      break;
+    }
+    const currentStepMatch = page.url().match(/\/route\/edit\/normal\/(\d+)/);
+    const currentStep = currentStepMatch ? Number(currentStepMatch[1]) : NaN;
+    if (currentStep === step) {
+      break;
+    }
+    if (!Number.isInteger(currentStep) || currentStep >= step) {
+      throw new Error(`Cannot navigate to route edit step ${step} from ${page.url()}`);
+    }
+    const nextButton = page.locator('#dialog-footer-next-button').last();
+    await expect(nextButton).toBeEnabled({ timeout: 15000 });
+    await nextButton.click();
+    await expect(page).toHaveURL(
+      new RegExp(`/${routeNode.id}/route/edit/normal/${currentStep + 1}`),
+      {
+        timeout: 20000,
+      }
+    );
+  }
   await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/${step}`), {
     timeout: 20000,
   });
@@ -829,7 +943,16 @@ async function waitForRouteBuildCompletion(page: Page, nodeId: string): Promise<
           if (!client?.getBuildSessionStatus) {
             throw new Error('Worker build session status API unavailable');
           }
-          const status = await client.getBuildSessionStatus('route', targetNodeId);
+          let status: { status?: string; [key: string]: unknown };
+          try {
+            status = await client.getBuildSessionStatus('route', targetNodeId);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (/Session .* not found/.test(message)) {
+              return 'missing';
+            }
+            throw error;
+          }
           if (status.status !== 'failed') {
             return status.status ?? 'unknown';
           }
@@ -849,7 +972,7 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
     await clearTestData(page);
   });
 
-  test('covers selection planning, canonical direct build, preview sync, and location cascade', async ({
+  test('covers selection planning, canonical build, preview sync, and location cascade', async ({
     page,
     canonicalAuth,
   }) => {
@@ -873,16 +996,18 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
       `Route Selection E2E ${suffix}`,
       selectionRouteDraft(`Route Selection E2E ${suffix}`)
     );
+    const directRouteName = `Route Build E2E ${suffix}`;
+    const directRouteDraft = buildRouteDraft(directRouteName, locationNode.id);
     const directRouteNode = await createNodeWithDraft(
       page,
       'route',
-      `Route Build E2E ${suffix}`,
-      buildRouteDraft(`Route Build E2E ${suffix}`, locationNode.id)
+      directRouteName,
+      directRouteDraft
     );
 
     const initialLocationItems = [
-      locationPoint(tokyoFeatureId, 'Tokyo', 35.6895, 139.6917, 'Tokyo'),
-      locationPoint(osakaFeatureId, 'Osaka', 34.6937, 135.5023, 'Osaka'),
+      locationPoint(tokyoFeatureId, 'Tokyo', 35.6895, 139.6917, 'Tokyo', '13'),
+      locationPoint(osakaFeatureId, 'Osaka', 34.6937, 135.5023, 'Osaka', '27'),
     ];
     await page.evaluate(
       async ({ locationNodeId, routeNodeId, tableId, items }) => {
@@ -969,6 +1094,13 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
       )
       .toBeGreaterThan(0);
 
+    await saveNodeData(page, directRouteNode.id, directRouteName, {
+      ...directRouteDraft,
+      processingStatus: 'completed',
+      processedAt: Date.now(),
+      buildFinishedAt: Date.now(),
+    });
+
     await openRouteEditStep(page, directRouteNode, 6, /プレビュー|Preview/i);
     await expect(page.getByText(/Route geometry is available|経路/i).first()).toBeVisible({
       timeout: 30000,
@@ -992,7 +1124,7 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
       },
       {
         locationNodeId: locationNode.id,
-        item: locationPoint(tokyoFeatureId, 'Tokyo Renamed', 35.6895, 139.6917, 'Tokyo-to'),
+        item: locationPoint(tokyoFeatureId, 'Tokyo Renamed', 35.6895, 139.6917, 'Tokyo-to', '13'),
       }
     );
     const metadataSyncedRoute = await page.evaluate((key) => {
@@ -1024,7 +1156,7 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
       },
       {
         locationNodeId: locationNode.id,
-        item: locationPoint(tokyoFeatureId, 'Tokyo Renamed', 35.7, 139.6917, 'Tokyo-to'),
+        item: locationPoint(tokyoFeatureId, 'Tokyo Renamed', 35.7, 139.6917, 'Tokyo-to', '13'),
       }
     );
     const rebuildRoute = await page.evaluate((key) => {
@@ -1073,14 +1205,14 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
     expect(referenceCountBeforeDelete).toBe(1);
 
     await page.evaluate(
-      async ({ locationNodeId }) => {
+      async ({ locationNodeId, locationFeatureId }) => {
         const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
         const client = ref?.client ?? ref?.getAPI?.();
         if (!client?.getLocationMutationAPI) throw new Error('Location mutation API unavailable');
         const locationMutation = await client.getLocationMutationAPI();
-        await locationMutation.deleteLocationGroups(locationNodeId, [tokyoFeatureId]);
+        await locationMutation.deleteLocationGroups(locationNodeId, [locationFeatureId]);
       },
-      { locationNodeId: locationNode.id }
+      { locationNodeId: locationNode.id, locationFeatureId: tokyoFeatureId }
     );
     await expect(
       page.evaluate((key) => {

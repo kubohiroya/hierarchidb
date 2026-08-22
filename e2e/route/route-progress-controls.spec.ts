@@ -111,10 +111,8 @@ test.describe('Route build controls', () => {
       const draftPayload = {
         name,
         description: 'Route build control E2E seed',
-        dataSourceName: 'ide-gsm',
-        tabularSourceId: `missing-tabular-${Date.now()}`,
-        selectedArrayByCountries: {
-          JP: [true, true, false, false, false],
+        routeBuildInput: {
+          kind: 'direct-route',
         },
         transportMode: 'air',
         transportSelection: 'air',
@@ -207,10 +205,7 @@ test.describe('Route build controls', () => {
     await expect(buildDialog.getByRole('alert')).toHaveCount(0);
     await startButton.click();
 
-    const workerResultAlert = buildDialog.getByRole('alert').first();
-    await expect(workerResultAlert).toBeVisible({ timeout: 20000 });
-    const workerResult = (await workerResultAlert.textContent())?.trim() ?? '';
-    expect(workerResult.length).toBeGreaterThan(0);
-    expect(workerResult).not.toContain('canonical event subscription is not ready');
+    await expect(buildDialog).toContainText(/ビルド完了|completed/i, { timeout: 20000 });
+    await expect(buildDialog.getByRole('alert')).toHaveCount(0);
   });
 });

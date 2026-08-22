@@ -132,6 +132,9 @@ const hasCanonicalRouteBuildInput = (data?: RouteStepData): boolean => {
 };
 
 const hasRouteDataSourceReady = (data?: Partial<RouteEntity>): boolean => {
+  if (hasCanonicalRouteBuildInput(data)) {
+    return true;
+  }
   if (!data?.dataSourceName) {
     return false;
   }
@@ -231,6 +234,9 @@ registry.registerConfigProvider<RouteStepData>({
             />
           );
         },
+        capabilities: {
+          canNavigateTo: (_fromStep, data) => hasRouteConfig(data),
+        },
         validate: () => true,
       },
       {
@@ -251,6 +257,7 @@ registry.registerConfigProvider<RouteStepData>({
           );
         },
         capabilities: {
+          canNavigateTo: (_fromStep, data) => hasRouteConfig(data),
           canStartBuild: (data: RouteStepData) => {
             return hasRouteConfig(data);
           },
