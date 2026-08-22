@@ -1,7 +1,7 @@
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
-import { initializeShapeChunkStore } from '../services/utils/initializeShapeChunkStore.js';
+import { getBuildDatabasePrefix } from '@hierarchidb/util';
+import { initializeShapeWorkerDatabases } from './initializeShapeWorkerDatabases.js';
 
-initializeShapeChunkStore(getDBName(getBuildDatabasePrefix(), 'shape-chunks'));
+initializeShapeWorkerDatabases(getBuildDatabasePrefix());
 
 export { shapeBuildAPI } from './api.js';
 export { canonicalBuildAPI, shapeBuildExtensions } from './canonicalBuildAPI.js';

@@ -112,6 +112,22 @@ const runningSourceStatus: SessionStatusUpdatedEvent = {
   },
 };
 
+const pausedSourceStatus: SessionStatusUpdatedEvent = {
+  type: 'sessionStatusUpdated',
+  payload: {
+    nodeId: 'node-1' as NodeId,
+    phase: 'paused',
+    isActive: false,
+    startedAt: 1_000,
+    inactiveMs: 0,
+    pausedAt: 1_200,
+    stopReason: 'user-pause',
+    stageId: 'source',
+    stageStartedAt: 1_050,
+    stageInactiveMs: 0,
+  },
+};
+
 const emptyGeometrySnapshot: StageSnapshotUpdatedEvent = {
   type: 'stageSnapshotUpdated',
   payload: {
@@ -236,6 +252,24 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
       stageInactiveMs: 0,
       stageCompletedAt: undefined,
     });
+
+    view.unmount();
+  });
+
+  it('forwards the canonical pause endpoint to the SSOT lifecycle', async () => {
+    const store = createStore();
+    const { callbacks, view } = await startBridge(store);
+
+    act(() => {
+      callbacks.onSessionState(pausedSourceStatus);
+    });
+
+    expect(store.get(buildSessionLifecycleAtom)).toEqual(
+      expect.objectContaining({
+        phase: 'paused',
+        heartbeatAt: 1_200,
+      })
+    );
 
     view.unmount();
   });

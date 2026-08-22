@@ -2,6 +2,7 @@ import { type AuthProviderType, useAuth } from '@hierarchidb/ui-auth';
 import { detectUserLanguage, useLanguage } from '@hierarchidb/ui-i18n';
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import { ThemeContext } from '@hierarchidb/ui-theme';
+import { isRetainedLegacyYamlDatabaseName } from '@hierarchidb/util';
 import { useCallback, useContext, useEffect, useId, useState } from 'react';
 import { createProviderSignInHandler } from './createProviderSignInHandler.js';
 
@@ -198,9 +199,10 @@ export const useUserMenu = (): UserMenuState => {
         const databases = await indexedDB.databases();
         await Promise.all(
           databases.map((db) => {
-            if (db.name) {
+            const databaseName = db.name;
+            if (databaseName && !isRetainedLegacyYamlDatabaseName(databaseName)) {
               return new Promise<void>((resolve, reject) => {
-                const req = indexedDB.deleteDatabase(db.name || '');
+                const req = indexedDB.deleteDatabase(databaseName);
                 req.onsuccess = () => resolve();
                 req.onerror = () => reject(req.error);
               });

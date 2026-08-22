@@ -322,6 +322,16 @@ terminally rejected. The coordinator does not terminate, navigate, reload, or om
 | SharedWorker runtime | `worker` | new `connect` handling and the exposed API on every existing port; coordinator requests arrive through an exact window-owned port relay because Chromium has no SharedWorker `navigator.serviceWorker` | its WorkerService CoreDB connection, every plugin-owned YamlDB connection, and all connected ports |
 | stage workers, GEOS worker, country-availability worker, tabular-filter worker | `worker` | none; these entries own no legacy YAML command or storage publication | none; explicit true evidence is valid only after the responder confirms the empty ownership set |
 
+Responder message targets are runtime-owned and are not interchangeable. A window installs its
+responder on `navigator.serviceWorker`. A Dedicated Worker installs it on that worker's exact
+global object (`self` / `globalThis`), which owns its `message` events and direct `postMessage`.
+A SharedWorker continues to use its owned port relay target. Every Dedicated Worker entry calls
+the shared strict target requirement before installing the responder; the candidate must be
+self-identical, expose `addEventListener`, `removeEventListener`, and direct `postMessage`, and
+must not expose `document`. An absent or mismatched candidate is the stable
+`origin-coordinator-invalid-dedicated-worker-target` contract error. It is never replaced with a
+Service Worker target, port, Window, no-op responder, or compatibility fallback.
+
 The bridge implementation must audit every current worker entry against this table. A new or
 unclassified in-scope runtime is incompatible until this specification and its responder
 ownership are updated. A SharedWorker's multiple application ports do not create synthetic
@@ -412,6 +422,14 @@ matches the build-fixed fingerprint, a missing exact canonical CoreDB name, an a
 historical `hidb-core` native-v2 interrupted artifact, an absent or exact YamlDB v1 snapshot, and an
 absent dedicated recovery database. Unknown, non-empty, duplicate, malformed, blocked, or
 version-mismatched state is terminal.
+
+Production follow-up for Issue #1388 found the historical `hidb-core` artifact to be exact
+logical-v1 / native-v10 / non-empty. Later preservation diagnostics accounted the snapshot as valid,
+but the additional node remained `otherString / otherPayload` and therefore graph-preserved
+non-YAML. This evidence does not broaden `incident-1388-v1`: the state is still non-empty/mismatched
+relative to the accepted set, so recovery must not ignore `hidb-core` and fresh-create canonical
+CoreDB. No recovery write authority exists unless a separate issue first defines an explicit
+historical nodeType literal and payload contract.
 
 The one executor is selected by creating the dedicated
 `<prefix>-yaml-storage-recovery` native-v1 database and its exact `claimed` record in the same
@@ -575,6 +593,19 @@ application ports rather than on an unavailable `navigator.serviceWorker`; its w
 the exact worker URL beside the port and forwards only strict coordinator relay envelopes for that
 URL. The foundation responder does not revoke entrypoints, close storage, or acknowledge
 quiescence.
+
+The country-availability Worker owner attaches `error` and `messageerror` observers before
+requesting its UI storage bridge and applies an explicit finite bridge-initialization deadline.
+Construction failure, script startup failure, message deserialization failure, bridge rejection,
+and deadline expiry are converted to sanitized visible UI errors. A failed Worker is terminated,
+unregistered from the owned-client inventory, and removed from the shared handle so an explicit
+user retry can create a fresh instance. Metadata and availability loading stop; the UI must not
+remain in an indefinite loading state or continue through an alternate transport or data source.
+The Worker is a separate JavaScript realm from the Shape UI entry. Before exposing its metadata or
+availability API, its own composition entry initializes the inert Shape chunk-store reference once
+with the exact `shape-chunks` database name derived from the immutable build prefix. UI-realm
+initialization is not treated as Worker initialization, and missing or conflicting initialization
+fails closed before metadata access.
 
 ## Authority boundary
 

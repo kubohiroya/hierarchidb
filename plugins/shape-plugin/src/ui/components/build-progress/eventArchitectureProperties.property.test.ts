@@ -273,9 +273,14 @@ describe('Event Architecture Properties', () => {
             fc.assert(
                 fc.property(
                     fc.record({
-                        nodeIds: fc.array(
-                            fc.string({ minLength: 2, maxLength: 10 }),
-                            { minLength: 1, maxLength: 3 }
+                        nodeIds: fc.uniqueArray(
+                            fc.string({ minLength: 2, maxLength: 10 })
+                                .filter((value) => value.trim().length > 0),
+                            {
+                                minLength: 1,
+                                maxLength: 3,
+                                selector: (value) => value,
+                            }
                         ),
                         eventTypes: fc.array(
                             fc.constantFrom('session-state', 'stage-snapshot', 'task-progress', 'heartbeat'),

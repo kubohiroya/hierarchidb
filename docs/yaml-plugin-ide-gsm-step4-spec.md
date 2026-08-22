@@ -192,7 +192,9 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - YAML plugin、step component、executor は app config や environment variable を直接読まない。
 - flag が OFF の場合、Step 4 を effective step config に含めず、既存の3ステップ構成を維持する。
 - environment variable や複数 config 経路への fallback を設けない。
-- 実装ファイルの配置は executor/flag 実装 Issue で命名規約に従って確定する。本書は公開契約、単一読取責務、注入境界、既定値の SSOT とする。
+- app側の実装配置は `app/src/yaml-ide-gsm/` とする。`YamlIdeGsmAppConfig.ts` が startup-fixed config の唯一の読取元であり、`VITE_YAML_IDE_GSM_STEP4_ENABLED` は未設定または `0` で `false`、`1` で `true` とする。その他の値は起動時契約違反として扱う。
+- executor は `app/src/yaml-ide-gsm/createYamlIdeGsmExecutor.ts` に置き、caller注入の runtime credential provider、worker `YamlCanonicalZipAPI`、`IdeGsmClient` factoryだけを side-effect 境界にする。executor は app config、environment variable、localStorage、IndexedDBを直接読まない。
+- runtime credential provider は `app/src/yaml-ide-gsm/yamlIdeGsmCredentialProvider.ts` に置く。endpoint、JWT、GitHub token は関数呼び出しでその都度取得し、node、draft、TreeNode、IndexedDB、URL、localStorage、log、public error resultへ保存・露出しない。
 
 ## Migration と import
 
@@ -200,9 +202,9 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 
 - CoreDB `TreeNode` を YAML domain data の唯一の authoritative store とする。
 - committed filename と payload の組は `metadata.name` / `data`、draft filename と payload の組は `draftMetadata.name` / `draftData` とする。各 slot は対応する metadata とだけ照合し、committed と draft の間で値を補完しない。
-- 独立した YamlDB v1 は authoritative store、cache、dual-write 先ではない。既存 row の回復可否を調べるための frozen legacy recovery source とし、新規 write、自動 merge、自動 copy、自動 delete を禁止する。
-- CoreDB と YamlDB は別の IndexedDB database であり、単一 transaction に含められない。CoreDB migration、YamlDB inventory/recovery、YamlDB runtime path 廃止、物理 database 削除は別の Issue と atomic boundary で扱う。
-- CoreDB migration 中は YamlDB を変更しない。YamlDB recovery が CoreDB record を作る場合も、先に source snapshot 全体を fencing と preflight で固定し、write は CoreDB だけの単一 transaction で行う。YamlDB row の削除を同じ成功条件に含めない。
+- 独立した YamlDB v1 は authoritative store、cache、dual-write 先ではない。既存 rowをgraph-preserved historical sourceとしてread-only inventoryするためだけに保持し、新規 write、自動 merge、自動 copy、自動 deleteを禁止する。
+- CoreDB と YamlDB は別の IndexedDB database であり、単一 transaction に含められない。CoreDB migration、YamlDB read-only inventory、YamlDB runtime path 廃止、retention保護、物理 database 削除は別の Issue と atomic boundary で扱う。
+- CoreDB migration 中は YamlDB を変更しない。YamlDB inventoryはsource accountingとtarget comparisonだけを行い、CoreDB record作成、repair、copy、merge、discard、delete、fallbackを行わない。将来historical write pathが必要な場合は、別Issueでsource fencing、target-only atomic write、rollbackを明示確定する。
 
 ### Nonempty interrupted CoreDB preservation classification
 
@@ -212,7 +214,8 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - historical logical-v1 `nodes` recordでは、`draftData: null`を`draftData` property absent / `undefined`と同じ「draft slotなし」の永続表現として読む。これは値補完ではなくreadonly classification上のslot presence判定であり、recordを書き換えず、`version`、`id`、`nodeType`、`metadata`、committed `data`などmigration guardに必要なfieldの欠落は引き続きfail-closedにする。default identity recordに`draftData: null`がある場合は現行initializer exact shapeとは一致しないため`modified-default-identity`であり、`exact-default`へ丸めない。
 - historical logical-v1 writerがown propertyとして永続化した`references: undefined`は、`references` property absentと同じ「参照なし」の表現としてreadonly graph classification上だけで読む。これは`[]`の補完、canonical recordへの正規化、runtime writer契約の緩和ではなく、input recordのproperty presence/valueを変更しない。default identity recordにown `references: undefined`がある場合は現行initializer exact shapeと一致しないため`modified-default-identity`、default identityを持たないvalid recordは`additional`とする。`references: null`、非配列、疎配列、非文字列要素、accessor property、symbol propertyは引き続きfail-closedにする。
 - `tagAssociations`のhistorical logical-v1 topologyは`createdAt` indexを持つ一方、record contractのtimestamp fieldは`assignedAt`である。classifierは`assignedAt`を必須record fieldとして検証し、`createdAt`を生成、copy、alias、fallbackしない。associationのnode/tag参照とscopeもexactに検証する。
-- YAML nodeの分類は既存migration plannerを唯一のauthorityとし、canonical、legacy-with-name、host-split-legacy、placeholderのaggregateだけを返す。raw record、record ID、metadata name、YAML本文、timestamp、個別digest、native errorをpublic resultへ含めない。
+- YAML nodeの分類は既存migration plannerを唯一のauthorityとし、canonical、legacy-with-name、host-split-legacy、placeholderのaggregateだけを返す。raw record、record ID、metadata name、YAML本文、timestamp、個別digest、native errorをpublic resultへ含めない。YAML受理条件を拡張する前の再診断では、additional nodeの`nodeType`とpayload形状を固定bucketの件数としてだけ公開する。bucketは既知literalまたは`otherString`、およびlegacy/host-split/canonical/mixed/incomplete/other/no-payload形状の件数に限定し、raw literal、filename、schemaId、content、node IDを公開しない。
+- fixed bucketはsource-only設計判断の入力であり、それ自体をYAML受理条件にしない。`otherString`は公開可能な既知literal集合外のnodeTypeが存在することだけを示し、`otherPayload`はYAML slot候補形状ではないことだけを示す。`otherString / otherPayload`の組合せを、filename、schemaId、metadata、payload body、件数、既定rootとの差分からYAMLとして推測してはならない。明示的なhistorical nodeType literalとpayload contractが別Issueで仕様化されるまで、当該additional nodeはgraph-preserved non-YAMLとして扱い、migration plannerへ渡さず、recovery write authorityを付与しない。
 - diagnosticはDB作成、versionchange、copy、merge、rename、delete、repair、claim、activation、retryを行わない。全recordがvalidかつ保全可能という結果もwrite authorityではなく、source fencingとtarget-only atomic writeを定義する別Issueの入力に限る。
 
 ### Record shape と共通 validation
@@ -314,12 +317,15 @@ single activation releaseは初回upgradeを実行するbootstrapと、upgrade�
 - successor durable readはapplication-only moduleに置き、fixed coordinator Service Workerのstate DB moduleまたはvalidator moduleをimportしない。application側のsuccessor pathを変更しても、production acceptanceではfixed coordinator artifact hashとstatic import graph hashがaccepted releaseと完全一致することを要求する。
 - durable gateがexact `revoked/ready-for-preflight`の後続windowはlegacy bootstrapを開始しない。exact CoreDB logical v2 / native v20、exact production store topology、exact `yamlMigrationJournal` schema、全`yaml-file` raw slotのcanonical-only validationを確認し、当該runtimeのCoreDB / WorkerService initializationが成功した場合だけpost-activation boot用のfreshなissued `canonical-ready` stateを作る。CoreDB logical v1 / native v10、missingまたはfuture native version、schema mismatch、legacy / host-split-legacy / invalid slot、initialization failureではterminal boot failureとし、migrationを再実行しない。
 - React rootはcoordinator gateを実行する最小bootstrap containerだけを先にmountできる。`AppRoot`、`AppProviders`、`WorkerProvider`、`RouterProvider`は`runtime-ready`確定後に1つのprovider treeとして初めてmountする。`root.tsx`のimportはbrowser globals、WorkerAPIClient、SharedWorker、plugin preloadを開始するside effectを持たない。successorの順序はcanonical WorkerAPIClientのprepare、browser globals初期化、router作成、provider tree mountで固定し、`WorkerProvider`はprepare済みの同一client singletonを再利用して別のlegacy Workerを作成しない。static hydrate fallbackはprovider treeのcommit後だけ除去し、`reload-requested`またはbootstrap failureではprovider treeをmountせずfallbackを維持する。reload、failure、successorのいずれにもretry、legacy fallback、第二のruntime初期化を追加しない。
+- `WorkerProvider`は初回mount時のauth bridge検証後にprovider treeを公開し、`hierarchidb:auth-session-changed`受信時はprepare済みの同一canonical clientへbridgeを再登録する。session変更を理由に第二のWorkerを作成しない。
+- auth bridge再登録はevent順に直列化し、先行失敗で後続の明示eventを失敗扱いにしない。再登録失敗時はprovider treeを無表示にせずretry/reload可能なterminal overlayを表示し、後続登録成功時は先行errorを解除する。
 - production SharedWorker entryはVite生成URLにrelease / gate queryを付与して起動するため、worker内の動的chunkからqueryなしの`shared-worker.js`を再importしてはならない。singletonを含む共有moduleは副作用を持つentryとは別のneutral chunkへ出力し、entryと動的chunkが同一module URLを参照する。production buildはentry以外のworker artifactによる`shared-worker.js` importをcontract violationとして失敗させる。
 - post-activation bootはversion markerだけをauthorityにしない。CoreDB version / schema、全current raw YAML slot、current runtime initializationの3つを毎boot検証し、1件でも失敗した場合はgeneric Worker API、dialog、ZIP、Simulation routeを公開しない。coordinator `rejected`をpost-activation stateとして受理しない。
 - production Worker entryはfresh `canonical-ready` access decisionを保持し、generic query / mutation、dialog writer、ZIP、Simulationを各callで同じdecisionによりguardする。windowが`revoked`を観測したことだけ、Workerがv2をopenできたことだけ、journal rowが1件以上あることだけでは公開しない。migration対象0件ではjournalが空でもよいため、journal row countをready markerに使用しない。
 - activation claim後、v2 commit前にexecutorが失われた場合はv1を再openしてlegacyを公開せずterminal stopとする。別contextによる再claim、coordinatorの`allowed`復元、DB reset、同一または別`openRequestId`の再作成を行わない。復旧が必要な場合は別Issueでdurable state、CoreDB version、snapshotを再検証する明示的なrecovery releaseを仕様化し、事前承認を得る。
 - durable gateが既に`revoked/ready-for-preflight`のsuccessor bootではmissing CoreDBをfresh createへ読み替えない。fresh createを許すのは`allowed`からquiescenceを完了した唯一の同一activation executorだけであり、successorのmissingは引き続きterminal failureとする。
 - #1388のcorrective recoveryは、上記一般規則を変更しないversioned incident releaseとする。通常buildはbuild-time exact mode `disabled`を必須としfingerprintを持たない。recovery buildだけがexact `incident-1388-v1`と事前read-only inventoryで取得した64文字lowercase coordinator fingerprintを固定する。exact `revoked/ready-for-preflight` fingerprint、canonical `<prefix>-core` missing、historical `hidb-core` absentまたはexact logical-v2 topology/native-v2かつ全store 0 record、YamlDB absentまたはexact v1 snapshot、recovery DB missingの全条件を満たす場合だけclaimへ進む。unknown/nonempty/mismatchを補完・推測・skipしない。
+- #1388 production follow-upでhistorical `hidb-core`がexact logical-v1 / native-v10 / nonemptyであり、preservation classifier上はvalidだがadditional nodeが`otherString / otherPayload`のgraph-preserved non-YAMLと確定した場合も、`incident-1388-v1`の受理条件を拡張しない。この状態は#1388のaccepted setに対してnonempty/mismatchであり、canonical `<prefix>-core` missingをfresh createへ読み替えず、`hidb-core`をskip、delete、copy、rename、merge、repairしない。別Issueで明示historical nodeType literalとpayload contractを仕様化しない限り、recovery write authorityは発生しない。
 - origin-wide executorは`<prefix>-yaml-storage-recovery` native v1、exact `recovery-state` store、exact `claimed` recordをoldVersion 0の同一versionchange transactionで作成できた1 contextだけとする。既存recovery DB/record、claim後の失敗、canonical targetの既存/mismatchはterminalでありretryしない。claimantだけがcanonical exact nameへ`open(name, 20)`を1回発行し、`oldVersion === 0`、exact logical-v2 topology、CoreDB initialize、canonical raw validationを全て満たした後に同じrecordを`completed`へ更新しsuccess-only reloadする。coordinator reset、DB delete、`hidb-core`/YamlDBのcopy・rename・mutation、lower version reopen、別openRequestId retryを禁止する。acceptance後はmode `disabled`で再build/deployし、fixed coordinator artifact/static graphはbyte-identicalを維持する。
 - concurrent activation、success-only reload、new tab、browser restart、revoked + v1、revoked + invalid v2、coordinator rejectedをautomated regressionで検証する。concurrent claimではexecutorがexactly 1、post-activation bootではcanonical routeだけがreadyとなり、generic IndexedDB reset UIを表示しない。
 
@@ -370,6 +376,9 @@ production quiescence bridgeより前に、release-scoped SharedWorkerの外側�
 - foundation protocol version 1のHELLO / readiness messageはliteral protocol version、coordinator buildへ埋め込んだexact 40-character source SHAと一致するrelease ID、explicit foundation capability、readiness request ID / timeoutをstrict own-property validationする。別buildのvalid SHA、accessor、symbol / extra property、unknown literal、missing field、invalid timeoutを拒否し、retryまたは既存runtime continuationへ変換しない。このSHA equalityは#1326 foundation releaseだけの契約であり、production bridgeへ互換分岐として残さない。
 - Service Worker module memoryはauthorityにしない。専用`hierarchidb-origin-coordinator` IndexedDBのversion 1 / `coordinator-state` storeへfirst upgrade時だけexact `{ key: 'yaml-storage', protocolVersion: 1, phase: 'allowed' }`を作成する。existing storeのrecord欠落、shape破損、unknown phase、version不一致、IDB failureを`allowed`へ補完しない。foundationはstate mutation APIを公開しない。
 - app windowはcoordinator registration、active worker、durable gate HELLO acceptanceの後だけbrowser globals、YamlDB preload、router、SharedWorker bootstrapへ進む。window、SharedWorker、dedicated runtime worker、stage worker、GEOS worker、country availability worker、tabular filter workerは共有`@hierarchidb/origin-coordinator` contractを使用し、各runtime bootstrap / message handlerより前にfoundation readiness responderをinstallする。SharedWorkerは全connected portへ単一のlogical responderをinstallし、windowはowned portとexact worker URLを保持してstrict relayだけを転送する。coordinator unavailable、unsupported、timeout、invalid stateではvisible boot failureとし、legacy bootstrap、BroadcastChannel、Web Locksへfallbackしない。
+- responder message targetはruntimeごとに固定する。Windowは`navigator.serviceWorker`、Dedicated Workerはそのruntimeのexact worker global (`self` / `globalThis`)、SharedWorkerはowned port relay targetを使用し、相互に代用しない。Dedicated Worker entryは共有strict requirementでself identity、`addEventListener`、`removeEventListener`、direct `postMessage`、`document`不在を検証してからinstallする。target欠落またはshape不一致は`origin-coordinator-invalid-dedicated-worker-target`で停止し、Service Worker target、port、Window、no-op responderへfallbackしない。
+- country availability WorkerのownerはUI storage bridge要求前に`error` / `messageerror`を監視し、明示的な有限timeoutを適用する。construction、script startup、message deserialization、bridge rejection、timeoutはsanitizedなvisible UI errorとし、失敗Workerをterminate・owned-client inventoryから解除・shared handleから除去する。metadata / availability loadingを必ず終了し、無限loading、別transport、別data sourceへのfallbackを行わない。明示的なユーザーretryだけがfresh Workerを作成できる。
+- country availability WorkerはShape UI entryとは別のJavaScript realmである。metadata / availability API公開前に、Worker自身のcomposition entryがimmutable build prefixからexact `shape-chunks` database名を構成し、inertなShape chunk-store参照を一度だけ初期化する。UI realmでの初期化をWorker初期化とみなさず、未初期化または別名での再初期化はmetadata access前にfail closedとする。
 - readiness censusはscope内clientごとのstrict responseを要求し、incompatible / unresponsive clientをskipしない。browserが`Client`消滅を確認した場合だけdiscardedとして別集計し、silenceをterminationまたはackに変換しない。外部resultにはclient type別countとstable codeだけを含め、Client ID、URL、raw message、credential、endpoint、storage contentを含めない。
 - foundation releaseは#1294 reducer、quiescence request / ack、entrypoint revoke、storage close、CoreDB / YamlDB access、#1280、target `open()`、versionchangeへ接続しない。後続production responder Issueがdurable gateのmonotonic revokeとtyped ackを追加する。
 - origin-wide coordinator readiness、後続quiescence成功のどちらもactual fenceではない。`actualFenceEstablished`は後続single activationのCoreDB `versionchanging`だけで成立する。
@@ -431,16 +440,16 @@ migration journalのproduction schemaはCoreDB logical v2 / native v20 table `ya
 
 journal valueのexact own data propertyは`migrationId`、`fromCoreDbVersion`、`toCoreDbVersion`、`nodeId`、`slot`、`preimageRepresentation`、`legacyName`、`canonicalPostimageDigest`だけとする。`slot`は`committed | draft`、`preimageRepresentation`は`legacy-with-name | host-split-legacy`とする。`legacyName`はlegacyでは検証済みpayload / metadata共通name、host-split-legacyでは検証済み対応metadata nameを保存する。YAML本文、payload preimage、canonical postimage、description、tagsを保存しない。
 
-### YamlDB v1 inventory と recovery
+### YamlDB v1 read-only inventory と retirement
 
-- YamlDB v1の全rowをread-onlyでinventoryし、`nodeId`、`parentId`、name、schemaId、対応CoreDB node/parentの有無を検証する。
-- 各rowのcontentをYAML parseしてregistry schemaで検証し、CoreDB parentの存在とfolder型、同一node IDの既存target、`parentId + metadata.name`のsibling index targetを調べる。
-- 各rowを`duplicate/no-op`、`recoverable`（recoverable orphan）、`orphan/blocked`、`conflict`、`invalid`、`explicitly discarded`のいずれかとしてaccountする。`duplicate/no-op`はYamlDB rowから構成するcanonical targetと既存CoreDB nodeのnode ID、node type、parent ID、`metadata.name`、canonical subtype、schemaId、contentがすべて一致し、string fieldがbyte-for-byteで同一の場合だけとする。その他の既存node IDまたはsibling index衝突は`conflict`とする。CoreDBにtarget nodeがなく、node IDとsibling indexが衝突せず、回復先parentが存在してfolder型の場合だけ`recoverable`とし、この状態をrecoverable orphanと定義する。target nodeがなくても、回復先parentがmissingまたはfolder型でない場合は`orphan/blocked`とし、推測したparentへ付け替えない。discardは対象rowと理由をユーザーが明示承認した場合だけ許可し、inventory側で自動判断しない。
-- orphan、CoreDBとのnode ID / parent / payload conflict、`schemaId: ''`、missing name、invalid content、unknown/ambiguous mappingをskip、filename-only分類、自動copyで処理しない。全対象とtyped errorを報告する。
-- CoreDB migrationの成功はYamlDB inventoryのrowを削除または移動したことを意味しない。回復は別Issueで明示的に承認された規則だけを使う。
-- recovery sourceを確定する前にproduction YamlDB writerを除去してfenceし、read-only inventoryを作る。inventory snapshotが変化した場合はCoreDB write前に全体を失敗させる。cross-DB transactionがないため、snapshot固定を証明できない場合はrecoveryを開始しない。
-- ユーザーが明示承認したrecovery batchだけを対象に、全rowとtargetを再preflightした後、CoreDBの単一transactionで一括commitする。1件の失敗でbatch全体をabortし、source YamlDBは成功時も変更しない。
-- YamlDB runtime pathを廃止しても物理databaseを直ちに削除しない。CoreDB migrationの本番適用後、少なくとも30日かつ後続のstable releaseが1回受け入れ済みになるまで保持し、全row accountedとrollback不要を確認する別Issueでのみ削除できる。
+- YamlDB v1の全rowをread-onlyでinventoryし、historical v1 row shapeを`{ nodeId, parentId, name, schemaId, content }`の固定入力として検証する。runtimeの`YamlFileNodeData`型や将来のcanonical payload型へ結合しない。
+- inventory entrypointは`indexedDB.databases()`でaccepted production evidenceに基づくexact database name / native versionだけを確認する。missing、duplicate、version mismatch、unexpected upgrade、blocked、malformed topologyでは対象DBをopenせず、stable error codeでfail closedする。openする場合もexact native versionを指定し、`onupgradeneeded`をabortし、全transactionを`readonly`に固定する。
+- YamlDB source accountingはCoreDB target comparisonから分離する。source rowはYAML parse、registry schema、primary key一致、required string field、content redaction boundaryを検証し、`valid-legacy`または`invalid`へ決定的にaccountする。unknown/default bucket、skip、filename-only分類、schema/name推測、空schemaId補完を使わない。
+- CoreDBがcanonical targetとして利用可能な場合だけ、別のdiagnostic layerで`equivalent`、`target-absent`、`parent-blocked`、`conflict`等を報告してよい。ただしtarget comparisonはwrite authorityではない。`target-absent`、parent存在、sibling衝突なし、payload valid等の結果をCoreDB write可能性へ昇格しない。
+- 公開result、Issue comment、log、errorにはaggregate count、stable code、deterministic snapshot digestだけを含める。raw row、record ID、node ID、parent ID、metadata name、YAML本文、database prefix、credential、native errorを公開しない。
+- inventoryはCoreDB / YamlDBへのwrite、repair、normalization、migration、journal作成、canonical publication、copy、merge、rename、discard、delete、retry、fallbackを行わない。CoreDB migrationやactivationの成功はYamlDB rowを削除、移動、回復、discardしたことを意味しない。
+- YamlDB runtime pathを廃止しても物理databaseを直ちに削除しない。CoreDB migrationの本番適用後、少なくとも30日かつ後続のstable releaseが1回受け入れ済みになるまで保持する。物理削除は、exact対象DB、backup有無、削除条件、非可逆性を明記した別Issueと明示承認でのみ実行できる。
+- retention期間中はgeneric reset / bulk IndexedDB delete経路が保持対象YamlDBを削除してはならない。保持対象はaccepted production evidenceで確定したexact database nameだけとし、suffix、prefix、substring、schema推測で除外対象を広げない。
 
 ### Canonical ZIP import / export boundary
 
@@ -537,7 +546,7 @@ CoreDB / runtime laneのrollback順は次で固定する。
 8. inverse migration成功後に限り、必要なlegacy type consumerを起動する。
 9. production quiescence bridgeはinverse migrationとlegacy runtime復帰が完了するまで維持する。全activation-era contextが終了した後にだけ別releaseで無効化または除去でき、rollback途中で先にrevertしない。
 
-YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory / recovery accessだけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
+YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory accessとretention保護だけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
 
 ## Upstream blocker
 
@@ -592,7 +601,7 @@ graph TD
   Step4 --> NonSshIntegration["non-SSH snapshot / command integration"]
   SimulationRegression --> NonSshIntegration
 
-  QuiescenceBridge --> LegacyRecovery["YamlDB v1 read-only inventory / recovery"]
+  QuiescenceBridge --> LegacyRecovery["YamlDB v1 read-only inventory / retirement"]
   Activation --> LegacyRecovery
   LegacyRecovery --> RemoveYamlReads["残存read path除去 / runtime retirement"]
   RemoveYamlReads --> RetentionGate["30日 + stable release + 全row accounted"]
@@ -634,5 +643,5 @@ graph LR
 - activation release内では`quiescing`で旧tab / workerの停止とcloseを要求するがactual fence成立とはみなさず、read-only preflight後に同じ`openRequestId`でtarget versionを開く。`blocked`では同じrequestだけを待機し、`versionchanging`でactual fence成立、upgrade commit後に`initializing`、initialization成功後に`canonical-ready`へ進み、その後だけcanonical reader / writer / APIを公開する。failure、ID mismatch、illegal transitionはterminal `rejected`とし、retry、reset、別request、legacy fallback、v1 reopenを行わない。
 - migration commit成功前にcanonical `YamlFileNodeData`、dialog、ZIP、SimulationWorkflowまたはWorker APIを公開せず、各処理を別releaseへ分離しない。`SimulationWorkflow.runSimulation`のproduction return contractは同じactivationで`Promise<void>`へ切り替える。
 - activation前にdormant canonical SimulationWorkflow consumerの回帰を完了し、activation後にもproduction routingを対象とする回帰を行う。executor / Step 4と合わせたnon-SSH integrationを、SSH lifecycleを含むfinal integrationから分離する。
-- YamlDB laneはproduction write除去 / fence、read-only inventory / recovery、残存read path除去 / runtime retirementの順とする。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
+- YamlDB laneはproduction write除去 / fence、read-only inventory、generic resetからのretention保護、残存read path除去 / runtime retirementの順とする。read-only inventoryはsource accountingとtarget comparisonだけを行い、recovery write authorityを持たない。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
 - SSH client / UI integrationはupstream API公開と本仕様のrevision更新までblockedとし、完了後にfinal integrationへ進む。

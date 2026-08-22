@@ -69,6 +69,7 @@ describe('useShapeBuildConfigStepSession', () => {
           phase: 'paused',
           isActive: false,
           startedAt: 1_000,
+          pausedAt: 1_500,
         },
       });
     });

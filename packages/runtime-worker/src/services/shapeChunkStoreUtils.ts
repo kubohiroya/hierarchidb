@@ -1,10 +1,10 @@
-import {
-  type ChunkStoreDeserializer,
-  type ChunkStoreMetadata,
-  type ChunkStoreSerializer,
-  DexieChunkStore,
+import type {
+  ChunkStoreDeserializer,
+  ChunkStoreMetadata,
+  ChunkStoreSerializer,
 } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import { LocalShapeChunkStore } from './LocalShapeChunkStore.js';
 
 const bufferSerializer: ChunkStoreSerializer<ArrayBuffer> = (value) => value;
 const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value;
@@ -12,9 +12,18 @@ const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value
 const RAW_DATA_DEFAULT_CONTENT_TYPE = 'application/octet-stream';
 const RAW_DATA_CACHE_PREFIX = 'download:';
 
-const createShapeChunkStore = (databaseName: string): DexieChunkStore<ArrayBuffer> =>
-  new DexieChunkStore<ArrayBuffer>({
-    dbName: databaseName,
+export const isRawDataDataSourceCacheKey = (cacheKey: string | undefined): boolean => {
+  if (cacheKey === undefined) return false;
+  return (
+    cacheKey.startsWith('https://') ||
+    cacheKey.startsWith('http://') ||
+    cacheKey.startsWith(RAW_DATA_CACHE_PREFIX)
+  );
+};
+
+const createShapeChunkStore = (databaseName: string): LocalShapeChunkStore =>
+  new LocalShapeChunkStore({
+    databaseName,
     serializer: bufferSerializer,
     deserializer: bufferDeserializer,
   });
@@ -55,6 +64,11 @@ export const storeRawDataDataSourceBufferForNode = async (params: {
   contentType?: string;
 }): Promise<{ contentType: string; sizeBytes: number }> => {
   const { nodeId, cacheKey, buffer } = params;
+  if (!isRawDataDataSourceCacheKey(cacheKey)) {
+    throw new Error(
+      `[runtime-worker][shape-chunk-store] invalid raw source cache key: ${cacheKey}`
+    );
+  }
   const store = createShapeChunkStore(params.databaseName);
   const resolvedContentType = params.contentType ?? RAW_DATA_DEFAULT_CONTENT_TYPE;
   await store.setForNode(nodeId, cacheKey, buffer, {
@@ -70,7 +84,9 @@ export const listRawDataDataSourceMetadataForNode = async (
   nodeId: NodeId
 ): Promise<ChunkStoreMetadata[]> => {
   const store = createShapeChunkStore(databaseName);
-  return store.listMetadataForNode(nodeId);
+  return (await store.listMetadataForNode(nodeId)).filter((entry) =>
+    isRawDataDataSourceCacheKey(entry.cacheKey)
+  );
 };
 
 export const countSourceDataSourceBuffersForNode = async (
@@ -78,7 +94,7 @@ export const countSourceDataSourceBuffersForNode = async (
   nodeId: NodeId
 ): Promise<number> => {
   const metadata = await listRawDataDataSourceMetadataForNode(databaseName, nodeId);
-  return metadata.filter((entry) => entry.cacheKey?.startsWith(RAW_DATA_CACHE_PREFIX)).length;
+  return metadata.length;
 };
 
 export const hasRawDataDataSourceBuffer = async (
@@ -86,6 +102,7 @@ export const hasRawDataDataSourceBuffer = async (
   nodeId: NodeId,
   cacheKey: string
 ): Promise<boolean> => {
+  if (!isRawDataDataSourceCacheKey(cacheKey)) return false;
   const store = createShapeChunkStore(databaseName);
   return store.hasRelationForNode(nodeId, cacheKey);
 };

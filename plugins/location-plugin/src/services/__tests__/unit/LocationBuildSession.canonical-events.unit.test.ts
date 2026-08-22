@@ -120,8 +120,12 @@ describe('LocationBuildSession canonical events', () => {
 
   it('stops active processing and requeues the task before publishing paused state', async () => {
     const phases: string[] = [];
+    let pausedAt: number | undefined;
     unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
-      if (event.type === 'sessionStatusUpdated') phases.push(event.payload.phase);
+      if (event.type === 'sessionStatusUpdated') {
+        phases.push(event.payload.phase);
+        if (event.payload.phase === 'paused') pausedAt = event.payload.pausedAt;
+      }
     });
     let finishSearch: (() => void) | null = null;
     const searchResult = new Promise<never[]>((resolve) => {
@@ -150,6 +154,7 @@ describe('LocationBuildSession canonical events', () => {
       stopReason: 'route-leave',
     });
     expect(phases.slice(-2)).toEqual(['pausing', 'paused']);
+    expect(pausedAt).toEqual(expect.any(Number));
     await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
       expect.objectContaining({
         stage: 'source',

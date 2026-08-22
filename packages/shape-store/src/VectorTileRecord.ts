@@ -78,7 +78,13 @@ export interface ResourceUsage {
   networkBytesSent: number;
 }
 
-export type BuildStopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
+export type BuildStopReason =
+  | 'route-leave'
+  | 'user-pause'
+  | 'auth-required'
+  | 'failed'
+  | 'completed'
+  | 'unknown';
 
 export interface LayerInfo {
   name: string;

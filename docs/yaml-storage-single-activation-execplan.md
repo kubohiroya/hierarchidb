@@ -99,6 +99,16 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   normalize, or repair.
   Date: 2026-08-22.
 
+- Decision: Close the #1388 recovery path fail-closed after #1432/#1437/#1447.
+  Rationale: The source-controlled preservation diagnostics eventually accepted the exact
+  logical-v1/native-v10 `hidb-core` snapshot, but production evidence after #1442 reported only one
+  additional graph-preserved non-YAML node with `otherString / otherPayload` buckets and all YAML
+  slots at zero. #1447 records that these buckets are not YAML acceptance conditions. Therefore the
+  non-empty `hidb-core` artifact remains outside the `incident-1388-v1` accepted set, and the
+  recovery release must not skip it, delete it, copy it, rename it, merge it, repair it, or
+  fresh-create canonical CoreDB in its presence.
+  Date: 2026-08-22.
+
 - Decision: Interpret an own `references: undefined` written by the historical logical-v1 CoreDB
   writer as no references only inside the read-only preservation classifier.
   Rationale: The corrected production diagnostic rejected exactly four node records as
@@ -324,5 +334,7 @@ workflow's base/head comparison exits zero. The Issue verification text must use
 non-regression form, or the unrelated baseline must be resolved under separately approved scope,
 before the Issue can truthfully claim every listed command exits zero.
 
-External publication and Issue status updates remain pending explicit approval. YamlDB physical
-recovery and retirement remain follow-up work for #1341 or a later Epic lane.
+External publication and Issue status updates remain pending explicit approval. YamlDB read-only
+inventory, retention protection, runtime retirement, and any later physical deletion remain follow-up
+work for #1341 or a later Epic lane. #1341 does not authorize YamlDB/CoreDB recovery writes; any
+future historical write path requires a separate explicit contract Issue.

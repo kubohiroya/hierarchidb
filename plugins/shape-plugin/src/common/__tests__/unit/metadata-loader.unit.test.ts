@@ -81,13 +81,19 @@ vi.mock('../../../services/utils/chunkStore.js', () => ({
       relationsByNode.set(nodeId, set);
     }),
   })),
-  createShapeNetworkPort: vi.fn(() => ({
-    fetch: vi.fn(),
-  })),
   jsonSerializer: vi.fn(),
   jsonDeserializer: vi.fn(),
   textSerializer: vi.fn(),
   textDeserializer: vi.fn(),
+  createShapeNetworkPort: vi.fn(() => ({
+    fetch: vi.fn(),
+  })),
+}));
+
+vi.mock('../../../services/utils/createShapeNetworkPort.js', () => ({
+  createShapeNetworkPort: vi.fn(() => ({
+    fetch: vi.fn(),
+  })),
 }));
 
 describe('MetadataLoader', () => {

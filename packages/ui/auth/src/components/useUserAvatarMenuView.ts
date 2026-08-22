@@ -1,3 +1,4 @@
+import { isRetainedLegacyYamlDatabaseName } from '@hierarchidb/util';
 import { type MouseEvent, useCallback, useEffect, useState } from 'react';
 import type { AuthContextProps } from 'react-oidc-context';
 
@@ -49,7 +50,10 @@ const deleteIndexedDbDatabases = async (): Promise<{ blocked: string[]; failed: 
   const databases = await indexedDB.databases();
   const names = databases
     .map((db) => db.name)
-    .filter((name): name is string => typeof name === 'string' && name.length > 0);
+    .filter(
+      (name): name is string =>
+        typeof name === 'string' && name.length > 0 && !isRetainedLegacyYamlDatabaseName(name)
+    );
 
   const results = await Promise.all(
     names.map(
@@ -67,8 +71,8 @@ const deleteIndexedDbDatabases = async (): Promise<{ blocked: string[]; failed: 
           req.onsuccess = () => finish('deleted');
           req.onerror = () => finish('failed');
           req.onblocked = () => finish('blocked');
-        }),
-    ),
+        })
+    )
   );
 
   return {

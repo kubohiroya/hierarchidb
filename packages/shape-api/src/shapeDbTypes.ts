@@ -1,6 +1,12 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
-export type ShapeBuildStopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
+export type ShapeBuildStopReason =
+  | 'route-leave'
+  | 'user-pause'
+  | 'auth-required'
+  | 'failed'
+  | 'completed'
+  | 'unknown';
 
 import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 

@@ -522,6 +522,33 @@ describe('useBuildSessionStateTreeBridge canonical event consumption', () => {
     unmount();
   });
 
+  it('applies the paused phase and persisted pause endpoint in one state update', async () => {
+    const { result } = renderBridge();
+    await waitFor(() => expect(workerMocks.handlers).not.toBeNull());
+
+    act(() => {
+      requireHandlers().onSessionState({
+        type: 'sessionStatusUpdated',
+        payload: {
+          nodeId: NODE_ID,
+          phase: 'paused',
+          isActive: false,
+          startedAt: 1_000,
+          inactiveMs: 100,
+          pausedAt: 1_500,
+        },
+      });
+    });
+
+    expect(result.current.tree.session).toMatchObject({
+      phase: 'paused',
+      isActive: false,
+      startedAt: 1_000,
+      inactiveMs: 100,
+      lastHeartbeatAt: 1_500,
+    });
+  });
+
   it('throws when canonical progress or session timing violates the contract', async () => {
     renderBridge();
     await waitFor(() => expect(workerMocks.handlers).not.toBeNull());
@@ -560,11 +587,26 @@ describe('useBuildSessionStateTreeBridge canonical event consumption', () => {
           payload: {
             nodeId: NODE_ID,
             phase: 'paused',
-            isActive: true,
+            isActive: false,
             startedAt: 1_000,
           },
         });
       });
-    }).toThrow(/is invalid for phase paused/);
+    }).toThrow(/pausedAt is required for phase paused/);
+
+    expect(() => {
+      act(() => {
+        requireHandlers().onSessionState({
+          type: 'sessionStatusUpdated',
+          payload: {
+            nodeId: NODE_ID,
+            phase: 'running',
+            isActive: true,
+            startedAt: 1_000,
+            pausedAt: 1_500,
+          },
+        });
+      });
+    }).toThrow(/pausedAt must be absent for phase running/);
   });
 });

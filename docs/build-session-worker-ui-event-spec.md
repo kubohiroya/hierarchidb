@@ -32,7 +32,8 @@ type SessionStatusUpdatedEvent = {
     isActive: boolean;
     startedAt?: number;            // required after starting completes
     completedAt?: number;          // required for completed/failed
-    stopReason?: string;           // e.g. 'user-pause' | 'failed' | 'completed' | 'route-leave'
+    pausedAt?: number;             // required only for paused
+    stopReason?: string;           // 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown'
     stageId?: StageId;             // current stage at time of event (undefined if no stage is active)
     inactiveMs?: number;           // cumulative session inactivity; absence means none recorded
     stageStartedAt?: number;       // required when stageId is present
@@ -45,8 +46,10 @@ type SessionStatusUpdatedEvent = {
 
 - `idle` and `starting` may omit session timing. Every later execution or terminal phase requires a finite, non-negative `startedAt`.
 - `completed` and `failed` additionally require a finite, non-negative `completedAt`.
+- `paused` additionally requires a finite, non-negative `pausedAt`; every other phase must omit it.
 - When present, `inactiveMs` must be finite and non-negative. Its absence means that no session-level inactive interval was recorded; it is not a repair value supplied by the consumer.
 - When both session endpoints are present, `completedAt - startedAt - inactiveMs` must be finite and non-negative. A violation throws.
+- For `paused`, `pausedAt - startedAt - inactiveMs` must be finite and non-negative. A violation throws.
 - When `stageId` is present, `stageStartedAt` and `stageInactiveMs` are required and follow the stage timing contract below. When `stageId` is absent, both stage timing fields must also be absent.
 
 **Normalized persistence boundary**:
@@ -71,7 +74,7 @@ type SessionStatusUpdatedEvent = {
 - Only after the transaction succeeds does the UI reset the SSOT state tree and increment its recovery revision. The bridge depends on that revision so the same nodeId is probed and subscribed again.
 - Supplying `0`, the current clock, a migration, or a compatibility fallback for missing stage inactivity is prohibited.
 
-**UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
+**UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. For `paused`, apply `pausedAt` as the session and active-stage elapsed endpoint in the same SSOT atom update that applies the phase; rendering paused must not depend on another event channel arriving first. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
 
 **Shape cache/result count synchronization**:
 
@@ -83,8 +86,11 @@ type SessionStatusUpdatedEvent = {
 
 **Pause completion contract**:
 
+- Shape accepts only its canonical stop-reason set. `auth-required` means source planning, the active pipeline, or the auth-dialog host required an authenticated request before processing could continue. Planning failures persist it before pipeline start; active-pipeline failures persist it only after confirmed drain. In both cases it is emitted as `paused / canResume=true`, and only the auth-dialog host resumes it after authentication succeeds. It is not converted to `route-leave`.
 - A pause request emits `pausing` after abort has been requested, while the pipeline is still shutting down.
 - `paused` may be emitted only after the session's pipeline Promise has settled, no worker/job remains live, and tasks interrupted by the confirmed abort have been re-queued.
+- The same transaction that persists `paused` also persists the explicit pause-completion timestamp as `buildSessionHeartbeats.lastHeartbeatAt`. `sessionStatusUpdated(paused)` must carry that exact value as `pausedAt`; the Worker also emits the same value through `heartbeat`. The UI applies `phase=paused` and `pausedAt` atomically and never relies on cross-channel delivery order.
+- A UI-local pending pause action may drive control loading and duplicate-command prevention only. It must not synthesize a paused lifecycle or select paused elapsed-time semantics before `sessionStatusUpdated(paused)` is accepted.
 - Task rows must not be changed from `running` to `queued` before runtime shutdown is confirmed. A task-count query cannot prove shutdown after those rows have been rewritten.
 - If shutdown confirmation exceeds the configured timeout, the Worker persists `failed` and rejects the pause command with a typed shutdown-timeout error. The UI command handler converts that rejection into the UI-internal `criticalError` event. The Worker must not emit a fifth canonical event, emit `paused`, set `canResume=true`, or continue cache/artifact writes for that run.
 - A late completion from the timed-out run is stale and must not mutate task/session state or artifacts.
@@ -168,7 +174,7 @@ type StageSnapshotUpdatedEvent = {
 - `stageStartedAt` and `stageInactiveMs` are required finite, non-negative numbers.
 - When `stageCompletedAt` is present, it must be finite and non-negative, and `stageCompletedAt - stageStartedAt - stageInactiveMs` must be non-negative.
 - Missing or invalid timing throws immediately. It must not be replaced with `Date.now()` / `0`, clamped, or silently skipped.
-- `Date.now()` is allowed only as the actual current clock for a running duration, or as the explicit timestamp recorded when a stage starts.
+- `Date.now()` is allowed only as the actual current clock for a running duration, as the explicit timestamp recorded when a stage starts, or as the explicit heartbeat endpoint emitted immediately before persisting a confirmed `paused` session.
 
 **Stage elapsed time derivation (UI-side)**:
 
@@ -182,9 +188,11 @@ duration = end - stageStartedAt - stageInactiveMs
 assert finite(duration) and duration >= 0
 ```
 
+Because `sessionStatusUpdated(paused)` carries `pausedAt`, the UI can apply the paused phase and its elapsed endpoint in one SSOT update. The separate `heartbeat` event may still arrive, but it must carry the same persisted endpoint and is not required for the paused render to avoid a missing end timestamp. The UI must not substitute the current clock or invent a heartbeat.
+
 An unstarted stage has `timing === null` and contributes `0`; no timing sentinel is generated. A started stage with missing or invalid timing throws instead of contributing `0`.
 
-Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted heartbeat endpoint, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock for a missing persisted endpoint.
+Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted pause-completion heartbeat endpoint emitted by the Worker after the active pipeline has settled and before the `paused` session status is emitted, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock, an earlier periodic heartbeat, or any invented endpoint for a missing pause-completion endpoint.
 
 ---
 
@@ -237,10 +245,6 @@ type TaskProgressUpdatedEvent = {
   common command/query/subscription contract; moving the current Route and Location
   UI-owned execution path to that transport is a separate migration. Runtime bootstrap
   never resolves a plugin-specific build API name or listener fallback.
-- Shape's atom bridge uses the shared canonical subscription kernel for the Worker
-  subscription handlers. Its plugin-owned atom tree remains the only Shape
-  build-session SSOT; probe/recovery and Worker diagnostics remain Shape-specific and
-  outside the four canonical state channels.
 - Route canonical progress and commands use the Worker-owned canonical API. Location
   command ownership remains separate while its build manager is UI-realm owned.
 - Shape Worker diagnostics remain outside the canonical state tree and are subscribed
@@ -375,6 +379,11 @@ sessionStageDurationByStageSnapshot: useAtomValue(stageDurationMsByStageAtom),
 ### Reset
 
 `resetBuildSessionStateAtom` must also reset `stageTimingByStageAtom` to its initial value (`{ source: null, geometry: null, tileEmit: null }`). The successful-recovery write atom invokes that reset and then increments `buildSessionRecoveryRevisionAtom`; cancellation invokes neither operation.
+
+When reset produces `phase=idle` and an empty authoritative task tree, the UI must
+exclude any React-retained task snapshot in that same render. Deferred effect cleanup
+may release the retained snapshot afterward, but it must not temporarily reconstruct a
+terminal display status against the reset session timing.
 
 ---
 

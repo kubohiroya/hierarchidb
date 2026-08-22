@@ -1,4 +1,5 @@
 import {
+  deleteAllIndexedDbDatabases,
   executeIndexedDbMaintenance,
   type MaintenanceDeleteResult,
 } from '../maintenanceExecution.ts';
@@ -53,5 +54,64 @@ describe('executeIndexedDbMaintenance', () => {
     expect(steps).toContain('set-lock');
     expect(steps).toContain('worker-upgrade');
     expect(getMaintenanceLock()).toBeNull();
+  });
+});
+
+describe('deleteAllIndexedDbDatabases', () => {
+  const originalWindow = globalThis.window;
+
+  afterEach(() => {
+    if (typeof originalWindow === 'undefined') {
+      Reflect.deleteProperty(globalThis, 'window');
+      return;
+    }
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: originalWindow,
+    });
+  });
+
+  it('skips only exact retained legacy YamlDB names during generic deletion', async () => {
+    const deleted: string[] = [];
+
+    const indexedDb = {
+      databases: async () => [
+        { name: 'hierarchidb-core' },
+        { name: 'hierarchidb-yaml' },
+        { name: 'cart-yaml' },
+        { name: 'prefix-hierarchidb-yaml' },
+        { name: 'hierarchidb-yaml-copy' },
+      ],
+      deleteDatabase: (name: string) => {
+        deleted.push(name);
+        const request = {
+          error: null,
+          onblocked: null as (() => void) | null,
+          onsuccess: null as (() => void) | null,
+          onerror: null as (() => void) | null,
+        };
+        queueMicrotask(() => {
+          request.onsuccess?.();
+        });
+        return request;
+      },
+    };
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { indexedDB: indexedDb },
+    });
+
+    const result = await deleteAllIndexedDbDatabases({ retries: 0 });
+
+    expect(deleted).toEqual([
+      'hierarchidb-core',
+      'cart-yaml',
+      'prefix-hierarchidb-yaml',
+      'hierarchidb-yaml-copy',
+    ]);
+    expect(result.deleted).toEqual(deleted);
+    expect(result.blocked).toEqual([]);
+    expect(result.failed).toEqual([]);
   });
 });

@@ -11,7 +11,9 @@ type ActivePipeline = {
 
 const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
+const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionLifecyclePhaseUpdatedMock = vi.hoisted(() => vi.fn());
+const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
 const activePipelineStore = vi.hoisted(() => new Map<string, ActivePipeline>());
 const invalidatedRunIds = vi.hoisted(() => new Map<string, string>());
 const countTaskQueueStatusesMock = vi.hoisted(() =>
@@ -24,20 +26,24 @@ const countTaskQueueStatusesMock = vi.hoisted(() =>
   }))
 );
 const getBuildSessionRecordMock = vi.hoisted(() =>
-  vi.fn(async (nodeId: string) => ({
-    nodeId,
-    status: 'running' as const,
-    startedAt: 1,
-    updatedAt: 1,
-    progress: {
-      total: 0,
-      completed: 0,
-      failed: 0,
-      skipped: 0,
-      percentage: 0,
-    },
-    stages: {},
-  }))
+  vi.fn(async (nodeId: string) => {
+    const latestUpdate = updateBuildSessionMock.mock.calls.at(-1)?.[1];
+    return {
+      nodeId,
+      status: latestUpdate?.status ?? ('running' as const),
+      startedAt: 1,
+      updatedAt: 1,
+      lastHeartbeatAt: latestUpdate?.lastHeartbeatAt,
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+    };
+  })
 );
 
 vi.mock('../../services/build/ShapeBuildAPIClient.js', () => ({
@@ -53,11 +59,13 @@ vi.mock('../../services/build/ShapeBuildAPIClient.js', () => ({
   },
 }));
 
-vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
+vi.mock('../../worker/api/eventEmissionConstantsUtils.js', () => ({
+  emitHeartbeat: (...args: Parameters<typeof emitHeartbeatMock>) => emitHeartbeatMock(...args),
   emitSessionLifecyclePhaseUpdated: (
     ...args: Parameters<typeof emitSessionLifecyclePhaseUpdatedMock>
   ) => emitSessionLifecyclePhaseUpdatedMock(...args),
-  emitSessionStatusUpdated: vi.fn(),
+  emitSessionStatusUpdated: (...args: Parameters<typeof emitSessionStatusUpdatedMock>) =>
+    emitSessionStatusUpdatedMock(...args),
   emitStageSnapshotUpdated: vi.fn(async () => undefined),
   readStartedStageTiming: vi.fn(() => null),
 }));
@@ -130,6 +138,59 @@ describe('shape build pause command pipeline drain', () => {
     await ephemeralDB.clearNodeData(TEST_NODE_ID);
   });
 
+  it.each([null, 'expired-auth'])('rejects invalid pause stopReason %s', async (stopReason) => {
+    await expect(
+      shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/pause', {
+        nodeId: TEST_NODE_ID,
+        stopReason,
+      })
+    ).rejects.toThrowError(
+      `[shapeBuildAPI] invalid session/pause stopReason: ${String(stopReason)}`
+    );
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid cancel-queued stopReason', async () => {
+    await expect(
+      shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/cancel-queued', {
+        nodeId: TEST_NODE_ID,
+        stopReason: 'expired-auth',
+      })
+    ).rejects.toThrowError(
+      '[shapeBuildAPI] invalid session/cancel-queued stopReason: expired-auth'
+    );
+    expect(getBuildSessionRecordMock).not.toHaveBeenCalled();
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts auth-required as a canonical pause stopReason', async () => {
+    const deferred = createDeferred();
+    const abortController = new AbortController();
+    activePipelineStore.set(String(TEST_NODE_ID), {
+      promise: deferred.promise,
+      abortController,
+      runId: 'run-auth-required',
+    });
+
+    const command = shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/pause', {
+      nodeId: TEST_NODE_ID,
+      stopReason: 'auth-required',
+    });
+    deferred.resolve();
+    await command;
+
+    expect(updateBuildSessionMock).toHaveBeenCalledWith(
+      TEST_NODE_ID,
+      expect.objectContaining({
+        status: 'paused',
+        stopReason: 'auth-required',
+        canResume: true,
+      })
+    );
+  });
+
   it('keeps pausing until the exact pipeline promise settles', async () => {
     const deferred = createDeferred();
     const abortController = new AbortController();
@@ -182,12 +243,31 @@ describe('shape build pause command pipeline drain', () => {
       })
     );
     expect(countTaskQueueStatusesMock).toHaveBeenCalledTimes(1);
+    expect(emitHeartbeatMock).toHaveBeenCalledWith(TEST_NODE_ID, expect.any(Number));
     expect(updateBuildSessionMock).toHaveBeenCalledWith(TEST_NODE_ID, {
       status: 'paused',
       stopReason: 'user-pause',
       canResume: true,
       completedAt: undefined,
+      lastHeartbeatAt: expect.any(Number),
     });
+    const pausedUpdate = updateBuildSessionMock.mock.calls.find(
+      ([, update]) => update.status === 'paused'
+    )?.[1];
+    if (typeof pausedUpdate?.lastHeartbeatAt !== 'number') {
+      throw new Error('paused update is missing lastHeartbeatAt');
+    }
+    expect(emitHeartbeatMock).toHaveBeenCalledWith(TEST_NODE_ID, pausedUpdate.lastHeartbeatAt);
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledWith(
+      TEST_NODE_ID,
+      expect.objectContaining({
+        status: 'paused',
+        lastHeartbeatAt: pausedUpdate.lastHeartbeatAt,
+      })
+    );
+    expect(emitHeartbeatMock.mock.invocationCallOrder[0]).toBeLessThan(
+      emitSessionStatusUpdatedMock.mock.invocationCallOrder[0]
+    );
   });
 
   it('persists failed and rejects with a typed error on shutdown timeout', async () => {
