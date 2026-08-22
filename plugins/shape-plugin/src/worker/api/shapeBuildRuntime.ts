@@ -5,7 +5,7 @@
 
 import { shapeBuildRuntime as shapeBuildRuntimeExecution } from './apiInternalExecutionConstants.js';
 import { shapeBuildRuntimeAggregation } from './shapeBuildRuntimeAggregation.js';
-import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { shapeBuildRuntimeCore } from './shapeBuildRuntimeCore.js';
 import { shapeBuildRuntimePublic } from './shapeBuildRuntimePublic.js';
 
 export const shapeBuildRuntime = {
