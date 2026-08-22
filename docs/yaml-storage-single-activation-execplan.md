@@ -99,6 +99,18 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   normalize, or repair.
   Date: 2026-08-22.
 
+- Decision: Interpret an own `references: undefined` written by the historical logical-v1 CoreDB
+  writer as no references only inside the read-only preservation classifier.
+  Rationale: The corrected production diagnostic rejected exactly four node records as
+  `required-field-contract` (one default identity and three additional identities). The historical
+  writer materializes an omitted optional `references` value as an own `undefined` property, and a
+  synthetic 15-record cohort with that exact shape reproduces every published production counter.
+  Treating the value as an empty graph edge set does not fill or mutate the record: the own property
+  remains evidence, so the default identity remains `modified-default-identity` and the three YAML
+  records remain `additional`. Null, non-array, sparse, non-string, accessor-bearing, or
+  symbol-bearing forms remain invalid.
+  Date: 2026-08-22.
+
 - Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
   as an empty v1 migration or a revoked successor recovery.
   Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole

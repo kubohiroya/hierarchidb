@@ -474,9 +474,10 @@ function classifyNodes(states: RecordState[]): ParsedNode[] {
       draftDataProperty.value === null ||
       isPlainRecord(draftDataProperty.value);
     const visibleValid = !visibleProperty.found || typeof visibleProperty.value === 'boolean';
-    const references = !referencesProperty.found
-      ? Object.freeze([])
-      : readExactStringArray(referencesProperty.value);
+    const references =
+      !referencesProperty.found || referencesProperty.value === undefined
+        ? Object.freeze([])
+        : readExactStringArray(referencesProperty.value);
     if (id === null) {
       setInvalidReason(state, 'required-identity');
       continue;
