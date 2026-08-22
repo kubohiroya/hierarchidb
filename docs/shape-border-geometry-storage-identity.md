@@ -82,6 +82,8 @@ Arc identity は source polygon の一時的な feature index や vector tile id
 
 初期抽出実装は source ring の隣接 edge を検証単位として扱い、同一 ring 上で連続する同一 `classification` / `ownerPolygonIds` の run を1つの arc record に coalesce する。共有境界は逆向きに出現する同一 coordinate sequence を canonical orientation へ正規化して単一 arc として保存し、ring relation は `forward` / `reverse` で参照する。3つ以上の polygon が同一 edge を所有する場合は曖昧な topology として失敗する。
 
+初期簡略化実装は抽出済み arc record を入力単位とし、polygon ごとの boundary copy ではなく同一 arc を1回だけ簡略化する。簡略化後の arc は元 arc の `classification`、`orientation`、`ownerPolygonIds`、端点を維持し、`coordinateHash` / `endpointHash` / `arcId` は簡略化後の canonical coordinate sequence から再計算する。ring relation は元 arc id から簡略化後 arc id へ一括で張り替え、共有境界が polygon ごとに分岐する出力を成功扱いしない。端点変更、2点未満、非 finite / WGS84 範囲外 coordinate、不正 tolerance、arc id collision は補正せず失敗する。
+
 ### Ring And Reconstruction Identity
 
 Ring relation は coordinate を複製せず、ordered arc references を保存する。
