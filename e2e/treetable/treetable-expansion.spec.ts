@@ -5,6 +5,7 @@ import {
   setupConsoleErrorTracking,
   clearTestData,
   waitForSubTreeUpdate,
+  buildAppUrl,
 } from '../utils/test-helpers';
 
 /**
@@ -18,7 +19,7 @@ test.describe('TreeTable Expansion', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
-    await page.goto('/treeconsole-simple');
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
   });
@@ -49,7 +50,7 @@ test.describe('TreeTable Expansion', () => {
     // 子ノードが表示されることを確認
     const parentId = await expandableNode.getAttribute('data-node-id');
     const childNodes = page.locator(`[data-testid="tree-node"][data-parent-id="${parentId}"]`);
-    await expect(childNodes).toHaveCount.atLeast(1);
+    await expect.poll(async () => childNodes.count()).toBeGreaterThanOrEqual(1);
 
     // 再度クリックして折りたたみ
     await expandableNode.locator('[data-testid="expand-button"]').click();
@@ -154,7 +155,7 @@ test.describe('TreeTable Expansion', () => {
       const grandChildNodes = page.locator(
         `[data-testid="tree-node"][data-parent-id="${childId}"]`
       );
-      await expect(grandChildNodes).toHaveCount.atLeast(1);
+      await expect.poll(async () => grandChildNodes.count()).toBeGreaterThanOrEqual(1);
 
       // 階層インデントの確認
       const indentLevel = await grandChildNodes.first().evaluate((el) => {
@@ -190,7 +191,7 @@ test.describe('TreeTable Expansion', () => {
 
     // 子ノードも表示されていることを確認
     const childNodes = page.locator(`[data-testid="tree-node"][data-parent-id="${nodeId}"]`);
-    await expect(childNodes).toHaveCount.atLeast(1);
+    await expect.poll(async () => childNodes.count()).toBeGreaterThanOrEqual(1);
   });
 
   test('展開中のローディング状態', async ({ page }) => {
@@ -301,7 +302,7 @@ test.describe('TreeTable Expansion', () => {
     // タッチデバイスをエミュレート
     await page.emulate(require('@playwright/test').devices['iPad']);
 
-    await page.goto('/treeconsole-simple');
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 

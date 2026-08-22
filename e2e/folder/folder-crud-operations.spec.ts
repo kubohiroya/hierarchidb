@@ -28,7 +28,7 @@ test.describe('Folder CRUD Operations', () => {
     await clearTestData(page);
     // Navigate to specific console with valid IDs to avoid routing issues
     // Using 'default' as treeId and 'defaultRoot' as pageTreeNodeId
-    await page.goto(buildAppUrl('t/r'));
+    await page.goto(buildAppUrl('d/r'));
 
     // If a base-dialog is open, close it
     const dialog = page.locator('[role="base-dialog"]');

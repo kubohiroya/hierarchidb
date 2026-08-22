@@ -26,7 +26,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
 
-    await page.goto(buildAppUrl('t/r'));
+    await page.goto(buildAppUrl('d/r'));
 
     const dialog = page.locator('[role="base-dialog"]');
     if (await dialog.isVisible()) {

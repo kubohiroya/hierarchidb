@@ -7,6 +7,7 @@ import {
   createTestFolder,
   waitForSubTreeUpdate,
   waitForDraftUpdate,
+  buildAppUrl,
 } from '../utils/test-helpers';
 
 type PerformanceWithMemory = Performance & {
@@ -37,7 +38,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
-    await page.goto('/treeconsole-simple');
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
   });
@@ -381,7 +382,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 複数のページ遷移をシミュレート
     for (let i = 0; i < 5; i++) {
-      await page.goto('/treeconsole-simple');
+      await page.goto(buildAppUrl('d/r'));
       await dismissGuidedTour(page);
       await waitForTreeTableLoad(page);
 
@@ -392,12 +393,12 @@ test.describe('TreeTable Real-time Synchronization', () => {
       );
 
       // 別のページに移動
-      await page.goto('/about');
+      await page.goto(buildAppUrl('about'));
       await page.waitForTimeout(1000);
     }
 
     // 最終メモリ使用量
-    await page.goto('/treeconsole-simple');
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 

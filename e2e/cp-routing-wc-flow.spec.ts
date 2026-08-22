@@ -18,7 +18,7 @@ test.describe.serial('CP routing + Working Copy build flow', () => {
 
     await clearTestData(page);
 
-    await page.goto(buildAppUrl('t/r'));
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 

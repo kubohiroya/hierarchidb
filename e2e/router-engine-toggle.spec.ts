@@ -1,7 +1,15 @@
 import { test, expect, Page } from '@playwright/test';
+import { buildAppUrl } from './utils/test-helpers';
 
 type RouterWindow = Window & {
   __HDB_WORKER_READY__?: boolean;
+};
+
+const expectAppHomeReady = async (page: Page): Promise<void> => {
+  await expect(page.getByRole('heading', { name: 'hierarchidb' })).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByRole('button', { name: /Navigate to Resources view/i })).toBeVisible();
 };
 
 /**
@@ -37,23 +45,20 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
 
   test('should load app with React Router (default engine) @router-toggle', async () => {
     // Navigate to the app (default uses React Router)
-    await page.goto('/hierarchidb/', {
-      waitUntil: 'networkidle',
+    await page.goto(buildAppUrl(), {
+      waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
     // Wait for the app to be ready
-    await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible({
-      timeout: 15000
-    });
+    await expectAppHomeReady(page);
 
     // Verify no error screens are shown
     await expect(page.locator('text=/Initialization Error/i')).not.toBeVisible();
     await expect(page.locator('text=/Failed to initialize/i')).not.toBeVisible();
     
     // Verify the main app content is loaded
-    const mainContent = page.locator('main, [role="main"], .MuiContainer-root');
-    await expect(mainContent).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'hierarchidb' })).toBeVisible();
 
     // Check that we're on the home route
     const url = page.url();
@@ -64,15 +69,13 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
 
   test('should handle browser routing mode @router-toggle', async () => {
     // Navigate to the app
-    await page.goto('/hierarchidb/', {
-      waitUntil: 'networkidle',
+    await page.goto(buildAppUrl(), {
+      waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
     // Wait for the app to be ready
-    await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible({
-      timeout: 15000
-    });
+    await expectAppHomeReady(page);
 
     // Verify URL is clean (no hash) in browser mode
     const url = page.url();
@@ -87,57 +90,51 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
   });
 
   test('should initialize worker before app renders @router-toggle', async () => {
+    await page.addInitScript(() => {
+      (window as RouterWindow).__HDB_WORKER_READY__ = false;
+      window.addEventListener('hierarchidb-worker-init-complete', () => {
+        (window as RouterWindow).__HDB_WORKER_READY__ = true;
+      });
+    });
+
     // Navigate to the app
-    await page.goto('/hierarchidb/', {
-      waitUntil: 'networkidle',
+    await page.goto(buildAppUrl(), {
+      waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
     // Wait for worker initialization event
     // The app should wait for worker initialization before rendering
-    const workerInitialized = await page.evaluate(() => {
-      return new Promise<boolean>((resolve) => {
-        const timeout = setTimeout(() => resolve(false), 15000);
-        
-        // Listen for the worker initialization event
-        window.addEventListener('hierarchidb-worker-init-complete', () => {
-          clearTimeout(timeout);
-          resolve(true);
-        }, { once: true });
-
-        // If the event already fired, resolve immediately
-        if ((window as RouterWindow).__HDB_WORKER_READY__) {
-          clearTimeout(timeout);
-          resolve(true);
-        }
-      });
-    });
+    await page.waitForLoadState('domcontentloaded');
+    const workerInitialized = await page.waitForFunction(
+      () => (window as RouterWindow).__HDB_WORKER_READY__ === true,
+      undefined,
+      { timeout: 15000 },
+    ).then(() => true).catch(() => false);
 
     expect(workerInitialized).toBe(true);
 
     // Verify the app content is now visible
-    await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible();
+    await expectAppHomeReady(page);
     
     console.log('✅ Worker initialized before app render');
   });
 
   test('should handle navigation to home page @router-toggle', async () => {
     // Navigate to the app
-    await page.goto('/hierarchidb/', {
-      waitUntil: 'networkidle',
+    await page.goto(buildAppUrl(), {
+      waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
     // Wait for the app to be ready
-    await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible({
-      timeout: 15000
-    });
+    await expectAppHomeReady(page);
 
     // Check for typical home page elements
     // These might include navigation, title, or main content areas
     const hasContent = await page.evaluate(() => {
       // Check for _obsolate_common elements that indicate successful page load
-      const hasMainContent = document.querySelector('main, [role="main"]') !== null;
+      const hasMainContent = document.querySelector('h1')?.textContent?.includes('hierarchidb') ?? false;
       const hasNavigation = document.querySelector('nav, [role="navigation"]') !== null;
       const hasContainer = document.querySelector('.MuiContainer-root') !== null;
       
@@ -151,15 +148,13 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
 
   test('should not show router-related errors @router-toggle', async () => {
     // Navigate to the app
-    await page.goto('/hierarchidb/', {
-      waitUntil: 'networkidle',
+    await page.goto(buildAppUrl(), {
+      waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
     // Wait for the app to be ready
-    await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible({
-      timeout: 15000
-    });
+    await expectAppHomeReady(page);
 
     // Check for _obsolate_common error patterns
     const errorPatterns = [
