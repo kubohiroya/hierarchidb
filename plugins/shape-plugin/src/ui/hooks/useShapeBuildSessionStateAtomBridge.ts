@@ -127,6 +127,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
               startedAt: status.startedAt,
               inactiveMs: status.inactiveMs,
               completedAt: status.completedAt,
+              pausedAt: status.pausedAt,
               stopReason: resolveShapeBuildStopReason(status.stopReason),
             },
           });
