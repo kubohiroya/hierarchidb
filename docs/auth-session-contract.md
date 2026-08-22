@@ -187,7 +187,7 @@ worker は `localStorage` を直接読まず、UI が提供する storage bridge
   設けない。
 
 この契約は現行Bearer方式のworker連携に限定する。cookie、reverse proxy、domain、BFF routingを含む
-将来のtransport選択は Issue #1316 の責務とする。
+将来のtransport選択は Issue #1316 と `docs/auth-http-only-session-topology-decision.md` の責務とする。
 
 ## Responsibility boundary
 
