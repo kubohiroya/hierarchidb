@@ -113,6 +113,31 @@ describe('yaml IDE-GSM executor', () => {
     expect(client.executeCommand).not.toHaveBeenCalled();
   });
 
+  it('rejects absolute and parent-traversal project paths before credentials or network', async () => {
+    const client = createClient();
+    const zipApi = createZipApi();
+    const getIdeGsmCredentials = vi.fn();
+    const executor = createYamlIdeGsmExecutor({
+      config: { yamlIdeGsmStep4Enabled: true },
+      credentialProvider: { getIdeGsmCredentials, getGitHubToken: vi.fn() },
+      createClient: vi.fn(() => client),
+      getYamlCanonicalZipAPI: vi.fn(async () => zipApi),
+    });
+
+    const result = await executor.execute({
+      parentId,
+      filename: 'scenario.yml',
+      payload: scenarioPayload,
+      commandId: 'sim',
+      runtimeInput: { projectRelativePath: '../project' },
+    });
+
+    expect(result).toEqual({ ok: false, code: 'INVALID_INPUT' });
+    expect(getIdeGsmCredentials).not.toHaveBeenCalled();
+    expect(zipApi.exportYamlCanonicalZip).not.toHaveBeenCalled();
+    expect(client.executeCommand).not.toHaveBeenCalled();
+  });
+
   it('syncs YAML before running a non-bootstrap command', async () => {
     const client = createClient();
     const zipApi = createZipApi();

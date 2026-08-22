@@ -195,6 +195,8 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - app側の実装配置は `app/src/yaml-ide-gsm/` とする。`YamlIdeGsmAppConfig.ts` が startup-fixed config の唯一の読取元であり、`VITE_YAML_IDE_GSM_STEP4_ENABLED` は未設定または `0` で `false`、`1` で `true` とする。その他の値は起動時契約違反として扱う。
 - executor は `app/src/yaml-ide-gsm/createYamlIdeGsmExecutor.ts` に置き、caller注入の runtime credential provider、worker `YamlCanonicalZipAPI`、`IdeGsmClient` factoryだけを side-effect 境界にする。executor は app config、environment variable、localStorage、IndexedDBを直接読まない。
 - runtime credential provider は `app/src/yaml-ide-gsm/yamlIdeGsmCredentialProvider.ts` に置く。endpoint、JWT、GitHub token は関数呼び出しでその都度取得し、node、draft、TreeNode、IndexedDB、URL、localStorage、log、public error resultへ保存・露出しない。
+- app は UI plugin import より前に `app/src/yaml-ide-gsm/configureYamlIdeGsmStep4Runtime.ts` で Step 4 runtime capability を1回注入する。YAML plugin はこの注入済み capability だけを読み、app config、environment variable、credential source、worker singletonを直接読まない。flag OFF または未注入では Step 4 configを生成せず、既存3 stepを維持する。
+- credential sourceが未接続の場合、UIはexecutorからのstable `CREDENTIALS_UNAVAILABLE` failureだけを表示し、endpoint、JWT、GitHub token、provider例外messageを表示またはlogへ出力しない。credential providerの実入力源をUI plugin、draft、TreeNode、IndexedDB、localStorageへ保存してはならない。
 
 ## Migration と import
 

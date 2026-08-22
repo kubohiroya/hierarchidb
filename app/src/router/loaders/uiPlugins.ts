@@ -6,6 +6,7 @@
  */
 
 import { loadAllUIPlugins } from '~/plugin-loaders/uiPluginLoaderUtils';
+import { configureYamlIdeGsmStep4Runtime } from '~/yaml-ide-gsm/configureYamlIdeGsmStep4Runtime';
 
 export interface UIPluginSetupResult {
   registry: Record<string, unknown>;
@@ -24,6 +25,8 @@ export interface UIPluginSetupResult {
  * @returns Promise resolving to plugin setup result with registry and teardown
  */
 export async function setupUIPlugins(): Promise<UIPluginSetupResult> {
+  configureYamlIdeGsmStep4Runtime();
+
   // Load all UI plugin-loaders (this triggers dynamic imports and plugin registration)
   await loadAllUIPlugins();
 

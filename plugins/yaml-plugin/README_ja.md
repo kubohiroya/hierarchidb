@@ -19,15 +19,20 @@ yaml-plugin は folder-plugin を継承し、YAML ファイルの管理機能を
 
 ### ダイアログステップ
 
-`PluginStepRegistry` ベースの 3 ステップウィザードを提供する:
+`PluginStepRegistry` ベースの既存3ステップウィザードを提供する。appがUI plugin load前に
+`yamlIdeGsmStep4Enabled` runtimeをenabledとして注入した場合だけ、任意のIDE-GSM command stepを追加する。
 
 | ステップ | ID | コンポーネント | 説明 | バリデーション |
 | --- | --- | --- | --- | --- |
 | 1 | `basic-info` | `YamlBasicInfoStep` | 名前の入力 | `name` が空でないこと |
 | 2 | `schema-selection` | `YamlSchemaSelectionStep` | スキーマ ID の選択 | `schemaId` が選択されていること |
 | 3 | `schema-editor` | `YamlSchemaEditorStep` | JSON Schema Form によるコンテンツ編集 | 常に有効（保存可能） |
+| 4 | `ide-gsm-command` | `YamlIdeGsmCommandStep` | subtypeで許可されたIDE-GSM command実行 | 任意のUI-only action |
 
 スキーマエディタは `@rjsf/core` + `@rjsf/mui` を使用し、選択されたスキーマに基づくフォーム UI を動的に生成する。
+Step 4はappから注入されたruntime capabilityだけを読む。app config、environment variable、
+credential、IndexedDB、localStorageを直接読まない。editor-only subtypeは実行可能commandなしとして表示し、
+upstream blockedなSSH lifecycle commandは正規registryに存在しないため表示しない。
 
 ### アイコン
 
@@ -71,7 +76,7 @@ interface YamlFileNodeData {
 }
 
 // Draft type for create/edit
-type YamlDraft = Partial<YamlFileNodeData>;
+type YamlDraft = Partial<YamlFileNodeData> & { subtype?: YamlSubtype };
 ```
 
 永続化前に`TreeNodeUpdaterService`がexact writer inputを構築する。canonical writerは`name`を`draftMetadata.name`だけへ保存し、registryで検証した`{ subtype, schemaId, content }`を`draftData`だけへ保存する。不完全または不一致なrecordはwriteせず拒否する。
@@ -163,11 +168,12 @@ src/
 ├── ui/
 │   ├── index.ts              # UI entry point (step exports)
 │   └── components/
-│       ├── steps-provider.tsx # PluginStepRegistry registration (3 steps)
+│       ├── steps-provider.tsx # PluginStepRegistry registration (3 or 4 steps)
 │       └── steps/
 │           ├── YamlBasicInfoStep.tsx       # Basic info step
 │           ├── YamlSchemaSelectionStep.tsx # Schema selection step
-│           └── YamlSchemaEditorStep.tsx    # Schema editor step (RJSF)
+│           ├── YamlSchemaEditorStep.tsx    # Schema editor step (RJSF)
+│           └── YamlIdeGsmCommandStep.tsx   # Optional Step 4 command UI
 └── worker/
     └── index.ts                        # Worker-safe canonical writer export
 ```
@@ -177,7 +183,7 @@ src/
 | パス | 内容 |
 | --- | --- |
 | `@hierarchidb/yaml-plugin` | PluginManifest、YAML_NODE_TYPE、YAML_PLUGIN_ID |
-| `@hierarchidb/yaml-plugin/ui` | UI コンポーネント（3 ステップ） |
+| `@hierarchidb/yaml-plugin/ui` | UI コンポーネント（3 ステップ、任意のStep 4） |
 | `@hierarchidb/yaml-plugin/icon` | YamlPluginIcon |
 | `@hierarchidb/yaml-plugin/worker` | Worker-safe canonical writer export |
 | `@hierarchidb/yaml-plugin/canonical-writer` | Strict canonical dialog writer |

@@ -19,15 +19,21 @@ yaml-plugin inherits from folder-plugin and adds YAML file management capabiliti
 
 ### Dialog Steps
 
-Provides a 3-step wizard via `PluginStepRegistry`:
+Provides the existing 3-step wizard via `PluginStepRegistry`. When the app injects an enabled
+`yamlIdeGsmStep4Enabled` runtime before loading UI plugins, the provider appends the optional
+IDE-GSM command step.
 
 | Step | ID | Component | Description | Validation |
 | --- | --- | --- | --- | --- |
 | 1 | `basic-info` | `YamlBasicInfoStep` | Name input | `name` must be non-empty |
 | 2 | `schema-selection` | `YamlSchemaSelectionStep` | Schema ID selection | `schemaId` must be selected |
 | 3 | `schema-editor` | `YamlSchemaEditorStep` | JSON Schema Form content editor | Always valid (save enabled) |
+| 4 | `ide-gsm-command` | `YamlIdeGsmCommandStep` | Subtype-authorized IDE-GSM command execution | Optional UI-only action |
 
 The schema editor uses `@rjsf/core` + `@rjsf/mui` to dynamically generate a form UI based on the selected schema.
+Step 4 reads only the app-injected runtime capability. It does not read app config, environment
+variables, credentials, IndexedDB, or localStorage. Editor-only subtypes render no executable
+commands, and upstream-blocked SSH lifecycle commands are absent from the canonical registry.
 
 ### Icon
 
@@ -71,7 +77,7 @@ interface YamlFileNodeData {
 }
 
 // Draft type for create/edit
-type YamlDraft = Partial<YamlFileNodeData>;
+type YamlDraft = Partial<YamlFileNodeData> & { subtype?: YamlSubtype };
 ```
 
 Before persistence, `TreeNodeUpdaterService` constructs an exact writer input. The canonical writer stores `name` only in `draftMetadata.name`, stores the registry-validated `{ subtype, schemaId, content }` only in `draftData`, and rejects incomplete or mismatched records without writing.
@@ -163,11 +169,12 @@ src/
 ├── ui/
 │   ├── index.ts              # UI entry point (step exports)
 │   └── components/
-│       ├── steps-provider.tsx # PluginStepRegistry registration (3 steps)
+│       ├── steps-provider.tsx # PluginStepRegistry registration (3 or 4 steps)
 │       └── steps/
 │           ├── YamlBasicInfoStep.tsx       # Basic info step
 │           ├── YamlSchemaSelectionStep.tsx # Schema selection step
-│           └── YamlSchemaEditorStep.tsx    # Schema editor step (RJSF)
+│           ├── YamlSchemaEditorStep.tsx    # Schema editor step (RJSF)
+│           └── YamlIdeGsmCommandStep.tsx   # Optional Step 4 command UI
 └── worker/
     └── index.ts                        # Worker-safe canonical writer export
 ```
@@ -177,7 +184,7 @@ src/
 | Path | Contents |
 | --- | --- |
 | `@hierarchidb/yaml-plugin` | PluginManifest, YAML_NODE_TYPE, YAML_PLUGIN_ID |
-| `@hierarchidb/yaml-plugin/ui` | UI components (3 steps) |
+| `@hierarchidb/yaml-plugin/ui` | UI components (3 steps, optional Step 4) |
 | `@hierarchidb/yaml-plugin/icon` | YamlPluginIcon |
 | `@hierarchidb/yaml-plugin/worker` | Worker-safe canonical writer export |
 | `@hierarchidb/yaml-plugin/canonical-writer` | Strict canonical dialog writer |
