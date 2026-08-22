@@ -1,5 +1,6 @@
 import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import { buildStableJsonSignature, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata } from '~/common/types/index';
 import {
@@ -9,7 +10,6 @@ import {
   runStageTasks,
   type VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import { buildStableSignature } from './buildStableSignature.ts';
 import type { ShapeGeometryByBandTaskInput } from './shapePipelineShared.ts';
 import { resolveGeometryConfig } from './shapePipelineShared.ts';
 import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
@@ -23,7 +23,6 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setGeometryPlannedTotal } from './shapeProgressPlanUtils.ts';
-import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import {
   buildGeometryTaskCacheIdentity,
   requireShapeSourceBaseTolerance,
@@ -223,7 +222,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     resolveTaskCacheIdentity(task);
   });
   const geometryConfig = resolveGeometryConfig(params.buildConfig);
-  const geometryConfigSignature = buildStableSignature(geometryConfig);
+  const geometryConfigSignature = buildStableJsonSignature(geometryConfig);
   const bandsAscending = [...params.bands].sort((a, b) => a.zMax - b.zMax);
 
   const fetchTasks = await runGeometryStep(params, 'load-source-stage-tasks', async () => (

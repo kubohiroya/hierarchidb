@@ -142,7 +142,7 @@ export const resolveRunStageIdentity = (options: {
 
 export type GeometryStageTaskInput = {
   sourceCacheId: string;
-  sourceCacheFormat?: 'flatgeobuf' | 'topojson';
+  sourceCacheFormat?: 'flatgeobuf' | 'topojson' | 'geojson';
   sourceCacheCompression?: 'gzip' | 'none';
   bandIndex: number;
   bandMinZoom?: number;

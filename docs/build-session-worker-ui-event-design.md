@@ -236,13 +236,17 @@ any phase or task recalculation.
 
 ## Shared UI Bridge
 
-`useBuildSessionStateTreeBridge` subscribes to the four canonical channels as a single
-lifecycle-owned subscription. Shape selects the Worker bridge transport. Route and
-Location currently run their canonical managers in the UI realm and explicitly select
-the same-realm event-streamer transport. There is no implicit fallback between these
-transports. The same-realm streamer remains live-only, so its UI subscription must be
-mounted before the local session starts. The bridge does not call the legacy aggregate
-progress hook or reconstruct task counts from `sessionStatusUpdated`.
+The node-type-neutral canonical subscription kernel subscribes to the four canonical
+channels as one lifecycle-owned subscription. Shape and Route select the Worker bridge
+transport. Location currently runs its canonical manager in the UI realm and explicitly
+selects the same-realm event-streamer transport. There is no implicit fallback between
+these transports. The same-realm streamer remains live-only, so its UI subscription must
+be ready before the local session starts. `useBuildSessionStateTreeBridge` consumes the
+kernel and does not call the legacy aggregate progress hook or reconstruct task counts
+from `sessionStatusUpdated`. Shape also consumes the same kernel directly from its
+plugin-owned atom bridge; probe/recovery and worker diagnostics stay Shape-specific,
+while canonical event validation, buffering, heartbeat delivery, and per-task version
+gating are shared.
 
 All three build-capable worker modules also export the same `canonicalBuildAPI`
 registration surface. The SharedWorker bootstrap resolves only that exact export and
@@ -269,14 +273,15 @@ creates a current clock timestamp or zero-count compatibility payload for missin
 canonical data.
 
 Route and Location UI consumers use this derived snapshot directly. Shape UI keeps
-its plugin-owned SSOT state tree and does not convert aggregate progress through a
-second mapper. Aggregate hooks are not exported by
+its plugin-owned SSOT atom tree as the only Shape build-session state owner and reduces
+the shared kernel's accepted canonical events into that tree. It does not convert
+aggregate progress through a second mapper, reintroduce a local event buffer, or derive
+task readiness from React state/ref. Aggregate hooks are not exported by
 `@hierarchidb/ui-build-sessions`.
 
-The shared Route progress hook is a read-only same-realm consumer. It does not reuse
-the Worker command hook for pause or resume because those commands would target a
-different session owner. Route pipeline controls must be provided by the UI-realm
-owner when that command contract is implemented.
+Route progress and controls target the Worker-owned canonical API. Location remains
+a same-realm progress consumer until its manager ownership migration; the common
+kernel does not redirect commands to a different owner.
 
 Shape subscribes to Worker diagnostics separately with
 `BuildWorkerBridge.subscribeWorkerLog`. Worker log events remain outside the four
@@ -377,12 +382,11 @@ There is no global or cross-stream `eventVersion` counter.
 
 `taskProgressUpdated` uses `version` only as a per-`taskId` ordering key. An event is
 accepted when its version is greater than the last accepted version for that task;
-equal or lower versions are dropped. Shape's `UIEventBufferManager` runs this gate
-before `BuildSessionWorkerEventAdapter`. The shared UI bridge compares against the
-greatest task version retained in its authoritative state tree and buffers events that
-arrive before the first snapshot. A delayed lower-version snapshot updates membership,
-ordering, and status without lowering that retained progress version or its associated
-progress fields. Neither path uses a global event-version value.
+equal or lower versions are dropped. The shared canonical subscription kernel owns
+this gate for Shape, Route, and Location consumers, and buffers events that arrive
+before the first authoritative stage snapshot. A delayed lower-version snapshot
+updates membership, ordering, and status without lowering an already accepted progress
+version or its associated progress fields. No path uses a global event-version value.
 
 `sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
 arrival order. `heartbeat` is applied immediately on receipt.

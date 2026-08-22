@@ -68,3 +68,55 @@ export type InspectCanonicalYamlStorageCoreDbResult =
       readonly ok: false;
       readonly error: YamlStorageCoreDbError;
     }>;
+
+export type YamlStorageCorrectiveRecoveryInterruptedCoreStatus = 'missing' | 'empty-native-v2';
+
+export type YamlStorageCorrectiveRecoveryYamlStatus = 'missing' | 'exact-v1';
+
+export interface YamlStorageCorrectiveRecoveryClaimRecord {
+  readonly key: string;
+  readonly protocolVersion: 1;
+  readonly phase: 'claimed' | 'completed';
+  readonly coordinatorFingerprintSha256: string;
+  readonly recoveryReleaseId: string;
+  readonly recoveryReleaseVersion: string;
+  readonly openRequestId: string;
+  readonly interruptedCoreDatabaseStatus: YamlStorageCorrectiveRecoveryInterruptedCoreStatus;
+  readonly yamlDatabaseStatus: YamlStorageCorrectiveRecoveryYamlStatus;
+  readonly yamlRowCount: number | null;
+  readonly yamlDigestSha256: string | null;
+}
+
+export type YamlStorageCorrectiveRecoveryErrorCode =
+  | 'INVALID_RECOVERY_INPUT'
+  | 'RECOVERY_CLAIM_SCHEMA_MISMATCH'
+  | 'RECOVERY_CLAIM_READ_FAILED'
+  | 'RECOVERY_CLAIM_MISMATCH'
+  | 'RECOVERY_TARGET_OPEN_FAILED'
+  | 'RECOVERY_TARGET_OPEN_BLOCKED'
+  | 'RECOVERY_TARGET_VERSION_MISMATCH'
+  | 'RECOVERY_CORE_DB_INITIALIZATION_FAILED'
+  | 'RECOVERY_CANONICAL_VALIDATION_FAILED'
+  | 'RECOVERY_COMPLETION_WRITE_FAILED';
+
+export interface RecoverMissingYamlStorageCoreDbInput {
+  readonly databaseName: string;
+  readonly recoveryDatabaseName: string;
+  readonly recoveryDatabase: IDBDatabase;
+  readonly recoveryReleaseId: string;
+  readonly coordinatorFingerprintSha256: string;
+  readonly recoveryReleaseVersion: string;
+  readonly openRequestId: string;
+  readonly interruptedCoreDatabaseStatus: YamlStorageCorrectiveRecoveryInterruptedCoreStatus;
+  readonly yamlDatabaseStatus: YamlStorageCorrectiveRecoveryYamlStatus;
+  readonly yamlRowCount: number | null;
+  readonly yamlDigestSha256: string | null;
+  readonly environment: YamlStorageCoreDbEnvironment;
+}
+
+export type RecoverMissingYamlStorageCoreDbResult =
+  | Readonly<{ readonly ok: true }>
+  | Readonly<{
+      readonly ok: false;
+      readonly error: Readonly<{ readonly code: YamlStorageCorrectiveRecoveryErrorCode }>;
+    }>;

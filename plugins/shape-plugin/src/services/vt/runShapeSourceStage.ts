@@ -1,6 +1,7 @@
 import type { StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import {
+  buildStableJsonSignature,
   encodeFlatGeobufFromFeatureCollection,
   ephemeralDB,
   type GeometryEngine,
@@ -52,7 +53,6 @@ import {
   countSelectedAdminPairs,
   generateDownloadTaskPayloadsFromSelection,
 } from '~/services/utils/shapeBuildUtils';
-import { buildStableSignature } from './buildStableSignature.ts';
 import {
   buildFeatureId,
   extractGeometryStats,
@@ -1830,7 +1830,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
     await notifyTasksEnqueued({ taskCount: 0, source: 'created' });
     return;
   }
-  const configSignature = buildStableSignature(params.buildConfig.sourceConfig);
+  const configSignature = buildStableJsonSignature(params.buildConfig.sourceConfig);
   if (!reuseExistingTasks) {
     const tasks = buildSourceTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
     assertNotAborted(abortSignal);

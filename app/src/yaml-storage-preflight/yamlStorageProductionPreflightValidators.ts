@@ -27,6 +27,17 @@ interface Participant {
   readonly participantId: string;
 }
 
+interface ParticipantEvidence extends Participant {
+  readonly outcome: 'acknowledged' | 'discarded';
+}
+
+export interface CoordinatorReadyStateEvidence {
+  readonly activationId: string;
+  readonly quiescenceRequestId: string;
+  readonly participants: readonly Participant[];
+  readonly evidence: readonly ParticipantEvidence[];
+}
+
 export type CoordinatorStateSummary =
   | Readonly<{
       readonly phase: 'allowed';
@@ -250,19 +261,26 @@ function parseParticipants(value: unknown): readonly Participant[] | null {
 }
 
 function hasExactReadyEvidence(value: unknown, participants: readonly Participant[]): boolean {
+  return parseReadyEvidence(value, participants) !== null;
+}
+
+function parseReadyEvidence(
+  value: unknown,
+  participants: readonly Participant[]
+): readonly ParticipantEvidence[] | null {
   const items = readExactArray(value);
-  if (items === null || items.length !== participants.length) return false;
+  if (items === null || items.length !== participants.length) return null;
   const participantById = new Map(
     participants.map((participant) => [participant.participantId, participant] as const)
   );
-  const evidence: Participant[] = [];
+  const evidence: ParticipantEvidence[] = [];
   const evidenceIds = new Set<string>();
   for (const item of items) {
     if (
       !isPlainObject(item) ||
       !hasExactOwnDataProperties(item, ['participantKind', 'participantId', 'outcome'])
     ) {
-      return false;
+      return null;
     }
     const participantKind = readString(item, 'participantKind');
     const participantId = readString(item, 'participantId');
@@ -277,10 +295,10 @@ function hasExactReadyEvidence(value: unknown, participants: readonly Participan
       expected.participantKind !== participantKind ||
       evidenceIds.has(participantId)
     ) {
-      return false;
+      return null;
     }
     evidenceIds.add(participantId);
-    evidence.push(Object.freeze({ participantKind, participantId }));
+    evidence.push(Object.freeze({ participantKind, participantId, outcome }));
   }
   for (let index = 1; index < evidence.length; index += 1) {
     const previous = evidence[index - 1];
@@ -290,10 +308,10 @@ function hasExactReadyEvidence(value: unknown, participants: readonly Participan
       current === undefined ||
       compareParticipants(previous, current) >= 0
     ) {
-      return false;
+      return null;
     }
   }
-  return true;
+  return Object.freeze(evidence);
 }
 
 function keyPathMatches(
@@ -445,6 +463,89 @@ export function parseCoordinatorState(
   } catch {
     return null;
   }
+}
+
+export function parseCoordinatorReadyStateEvidence(
+  value: unknown
+): CoordinatorReadyStateEvidence | null {
+  try {
+    if (
+      !isPlainObject(value) ||
+      !hasExactOwnDataProperties(value, [
+        'key',
+        'protocolVersion',
+        'phase',
+        'status',
+        'activationId',
+        'quiescenceRequestId',
+        'participants',
+        'evidence',
+      ]) ||
+      readString(value, 'key') !== 'yaml-storage' ||
+      !hasOwnDataValue(value, 'protocolVersion', 2) ||
+      readString(value, 'phase') !== 'revoked' ||
+      readString(value, 'status') !== 'ready-for-preflight'
+    ) {
+      return null;
+    }
+    const activationId = readString(value, 'activationId');
+    const quiescenceRequestId = readString(value, 'quiescenceRequestId');
+    const participantsProperty = readOwnDataProperty(value, 'participants');
+    const evidenceProperty = readOwnDataProperty(value, 'evidence');
+    const participants = participantsProperty.found
+      ? parseParticipants(participantsProperty.value)
+      : null;
+    const evidence =
+      participants !== null && evidenceProperty.found
+        ? parseReadyEvidence(evidenceProperty.value, participants)
+        : null;
+    if (
+      activationId === null ||
+      activationId.length === 0 ||
+      quiescenceRequestId === null ||
+      quiescenceRequestId.length === 0 ||
+      participants === null ||
+      evidence === null
+    ) {
+      return null;
+    }
+    return Object.freeze({ activationId, quiescenceRequestId, participants, evidence });
+  } catch {
+    return null;
+  }
+}
+
+function appendLengthPrefixedString(chunks: number[], value: string): void {
+  const bytes = new TextEncoder().encode(value);
+  const length = bytes.length;
+  chunks.push(
+    (length >>> 24) & 0xff,
+    (length >>> 16) & 0xff,
+    (length >>> 8) & 0xff,
+    length & 0xff,
+    ...bytes
+  );
+}
+
+export function encodeCoordinatorReadyStateFingerprint(
+  evidence: CoordinatorReadyStateEvidence
+): Uint8Array {
+  const chunks: number[] = [];
+  appendLengthPrefixedString(chunks, 'hierarchidb-yaml-storage-corrective-recovery-coordinator-v1');
+  appendLengthPrefixedString(chunks, evidence.activationId);
+  appendLengthPrefixedString(chunks, evidence.quiescenceRequestId);
+  appendLengthPrefixedString(chunks, String(evidence.participants.length));
+  for (const participant of evidence.participants) {
+    appendLengthPrefixedString(chunks, participant.participantKind);
+    appendLengthPrefixedString(chunks, participant.participantId);
+  }
+  appendLengthPrefixedString(chunks, String(evidence.evidence.length));
+  for (const item of evidence.evidence) {
+    appendLengthPrefixedString(chunks, item.participantKind);
+    appendLengthPrefixedString(chunks, item.participantId);
+    appendLengthPrefixedString(chunks, item.outcome);
+  }
+  return new Uint8Array(chunks);
 }
 
 function encodeByteSequence(bytes: Uint8Array): string {

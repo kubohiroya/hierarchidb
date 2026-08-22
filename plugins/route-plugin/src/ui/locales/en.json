@@ -148,6 +148,17 @@
     "geometry": {
       "title": "Geometry"
     },
+    "routeTransform": {
+      "title": "Route geometry by zoom band",
+      "description": "Provide comma-separated values per band in the same order as the zoom bands.",
+      "minDistance": "Min distance per band (meters)",
+      "tolerance": "Geometry simplify tolerance per band",
+      "errors": {
+        "bandCount": "Configure at least one valid zoom band first.",
+        "valueCount": "Enter one comma-separated value for every zoom band.",
+        "invalidValue": "Each value must be a finite non-negative number."
+      }
+    },
     "tileEmit": {
       "title": "TileEmit"
     }
@@ -160,7 +171,7 @@
     "maxZoom": "Max zoom"
   },
   "build": {
-    "review": "Review the configuration and press Build to start the batch route generation.",
+    "review": "Review the configuration and press Build to start the canonical route build.",
     "dataSource": "Data Source:",
     "transportMode": "Transport Mode:",
     "routeType": "Route Type:",
@@ -168,11 +179,42 @@
     "endLocation": "End:",
     "notConfigured": "Not configured",
     "missing": "Select Route by country before building.",
-    "crashHint": "Previous build did not finish. Consider cleaning data before restarting.",
+    "missingCanonicalInput": "Build config, route mode, start/end locations, and line geometry are required.",
+    "unknownStage": "unknown stage",
+    "crashHint": "A previous build stopped during {{stage}}. Review its canonical task failure before restarting.",
+    "crashMemoryHint": "A previous build stopped during {{stage}} after peak memory reached {{ratio}}. Review the canonical task failure before restarting.",
     "start": "When ready, click the Build button below to start the build session.",
     "title": "Build routes",
     "panelDescription": "Monitor and control route build progress.",
     "started": "Route vector tile build started (session {{sessionId}})",
+    "stages": {
+      "source": {
+        "description": "Generate and persist canonical route source artifacts."
+      },
+      "geometry": {
+        "description": "Build geometry cache and the tile transpose index."
+      },
+      "tileEmit": {
+        "description": "Generate and persist canonical route vector tiles."
+      }
+    },
+    "status": {
+      "connectingWorker": "Connecting to the build worker...",
+      "queued": "Waiting for the canonical build to start..."
+    },
+    "controls": {
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "progress": {
+      "completedTitle": "Build completed",
+      "completedReason": "All canonical tasks completed.",
+      "failedTitle": "Build failed",
+      "failedReason": "Build failed due to task errors.",
+      "pausedTitle": "Build paused",
+      "pausedReason": "The canonical Worker session is paused and can be resumed.",
+      "crashTitle": "Previous build interruption"
+    },
     "ideGsm": {
       "source": "IDE-GSM: downloading",
       "parse": "IDE-GSM: parsing rows",

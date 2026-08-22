@@ -148,6 +148,17 @@
     "geometry": {
       "title": "Geometry"
     },
+    "routeTransform": {
+      "title": "ズーム帯別ルートジオメトリ",
+      "description": "ズーム帯と同じ順序で、帯ごとの値をカンマ区切りで入力します。",
+      "minDistance": "ズーム帯ごとの最小距離（メートル）",
+      "tolerance": "ズーム帯ごとのジオメトリ簡略化許容値",
+      "errors": {
+        "bandCount": "先に有効なズーム帯を1つ以上設定してください。",
+        "valueCount": "ズーム帯ごとに1つ、カンマ区切りで値を入力してください。",
+        "invalidValue": "各値には有限の0以上の数値を入力してください。"
+      }
+    },
     "tileEmit": {
       "title": "TileEmit"
     }
@@ -160,7 +171,7 @@
     "maxZoom": "最大ズーム"
   },
   "build": {
-    "review": "設定内容を確認し、ビルドを開始してください。",
+    "review": "設定内容を確認し、canonical ルートビルドを開始してください。",
     "dataSource": "データソース:",
     "transportMode": "交通モード:",
     "routeType": "経路タイプ:",
@@ -168,11 +179,42 @@
     "endLocation": "終点:",
     "notConfigured": "未設定",
     "missing": "ビルド前に国ごとの交通経路を選択してください。",
-    "crashHint": "前回のビルドが完了していません。再開前にデータを削除してください。",
+    "missingCanonicalInput": "ビルド設定、ルートモード、始点・終点、および2点以上のライン形状が必要です。",
+    "unknownStage": "不明なステージ",
+    "crashHint": "前回のビルドは {{stage}} で停止しました。再開前に canonical タスクの失敗内容を確認してください。",
+    "crashMemoryHint": "前回のビルドは {{stage}} で停止し、ピークメモリ使用率は {{ratio}} に達しました。再開前に canonical タスクの失敗内容を確認してください。",
     "start": "準備ができたらビルドボタンを押してください。",
     "title": "ルートビルド",
     "panelDescription": "ルートビルドの進捗を確認できます。",
     "started": "ベクタタイルビルドを開始しました（セッション {{sessionId}}）",
+    "stages": {
+      "source": {
+        "description": "canonical ルートソース成果物を生成して永続化します。"
+      },
+      "geometry": {
+        "description": "ジオメトリキャッシュとタイル転置インデックスを構築します。"
+      },
+      "tileEmit": {
+        "description": "canonical ルートベクタタイルを生成して永続化します。"
+      }
+    },
+    "status": {
+      "connectingWorker": "ビルドワーカーに接続中...",
+      "queued": "canonical ビルドの開始を待機中..."
+    },
+    "controls": {
+      "cancel": "キャンセル",
+      "close": "閉じる"
+    },
+    "progress": {
+      "completedTitle": "ビルド完了",
+      "completedReason": "すべての canonical タスクが完了しました。",
+      "failedTitle": "ビルド失敗",
+      "failedReason": "タスクエラーによりビルドが失敗しました。",
+      "pausedTitle": "ビルド一時停止",
+      "pausedReason": "canonical Worker セッションは一時停止中で、再開できます。",
+      "crashTitle": "前回のビルド中断"
+    },
     "ideGsm": {
       "source": "IDE-GSM: ダウンロード中",
       "parse": "IDE-GSM: 行を解析中",
