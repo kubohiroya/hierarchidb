@@ -2,14 +2,21 @@ import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type {
   IdeGsmLocationRecord,
+  IdeGsmRouteBuildRoutesRequest,
   IdeGsmRouteCoverageResult,
   IdeGsmRouteImportRequest,
+  RouteBuildRouteInput,
   RouteLineString,
   RouteMutationAPI,
   RouteWaypointInput,
   RouteWaypointResult,
 } from '@hierarchidb/route-api';
-import { parseIdeGsmRouteRecords, ROUTE_MODES } from '@hierarchidb/route-api';
+import {
+  buildIdeGsmRouteSelectionEntries,
+  filterIdeGsmRoutesBySelection,
+  parseIdeGsmRouteRecords,
+  ROUTE_MODES,
+} from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import type { TreeNode, TreeQueryAPI } from '@hierarchidb/tree-api';
@@ -97,11 +104,70 @@ export class RouteMutationService implements RouteMutationAPI {
     return {
       coverageByCountryOr: coverage.or,
       coverageByCountryAnd: coverage.and,
-      coverageByCountry: coverage.or,
       rowCount,
       errorCount: errors.length,
       errors,
     };
+  }
+
+  async resolveIdeGsmRouteBuildRoutes(
+    request: IdeGsmRouteBuildRoutesRequest
+  ): Promise<RouteBuildRouteInput[]> {
+    const selectionEntries = buildIdeGsmRouteSelectionEntries(request.selectedArrayByCountries);
+    const lineStrings = await this.loadIdeGsmRouteLineStrings({
+      nodeId: request.nodeId,
+      tabularSourceId: request.tabularSourceId,
+      locationNodeIds: request.locationNodeIds,
+    });
+    const selectedLineStrings = filterIdeGsmRoutesBySelection(lineStrings, selectionEntries);
+    if (selectedLineStrings.length === 0) {
+      throw new Error(
+        '[route build planner] selectedArrayByCountries matched no IDE-GSM route rows'
+      );
+    }
+    return selectedLineStrings
+      .sort(compareRouteLineStringsForPlanning)
+      .map((line) => toRouteBuildRouteInput(line));
+  }
+
+  private async loadIdeGsmRouteLineStrings(request: {
+    nodeId: NodeId;
+    tabularSourceId: string;
+    locationNodeIds?: NodeId[];
+  }): Promise<RouteLineString[]> {
+    const locationNodeIds =
+      request.locationNodeIds && request.locationNodeIds.length > 0
+        ? request.locationNodeIds
+        : await this.resolveIdeGsmLocationNodeIds(request.nodeId);
+    if (locationNodeIds.length === 0) {
+      throw new Error('[route build planner] No related location nodes found.');
+    }
+
+    const { headers, rows } = await loadTabularTableRows(
+      'route',
+      request.tabularSourceId,
+      getBuildDatabasePrefix()
+    );
+    const locationIndex = await buildIdeGsmLocationIndex(
+      this.locationQueryService,
+      locationNodeIds
+    );
+    const { lineStrings, errors } = parseIdeGsmRouteRecords(
+      headers,
+      rows,
+      locationIndex,
+      request.nodeId
+    );
+    if (errors.length > 0) {
+      const first = errors[0];
+      throw new Error(
+        `[route build planner] IDE-GSM route source has ${String(errors.length)} invalid row(s); first row ${String(first?.rowNumber ?? 'unknown')}: ${first?.reason ?? 'unknown error'}`
+      );
+    }
+    if (lineStrings.length === 0) {
+      throw new Error('[route build planner] IDE-GSM route source contains no resolved route rows');
+    }
+    return lineStrings;
   }
 
   private async resolveIdeGsmLocationNodeIds(nodeId: NodeId): Promise<NodeId[]> {
@@ -160,6 +226,65 @@ export class RouteMutationService implements RouteMutationAPI {
     return results;
   }
 }
+
+const compareRouteLineStringsForPlanning = (
+  left: RouteLineString,
+  right: RouteLineString
+): number =>
+  buildRouteLineStringPlanningKey(left).localeCompare(buildRouteLineStringPlanningKey(right), 'en');
+
+const buildRouteLineStringPlanningKey = (line: RouteLineString): string =>
+  [
+    line.routeMode,
+    line.startLocationId ?? '',
+    line.endLocationId ?? '',
+    line.featureId,
+    line.name,
+  ].join('\u0000');
+
+const toRouteBuildRouteInput = (line: RouteLineString): RouteBuildRouteInput => ({
+  startLocationId: requireLineLocationId(line.startLocationId, line.featureId, 'startLocationId'),
+  endLocationId: requireLineLocationId(line.endLocationId, line.featureId, 'endLocationId'),
+  startCoordinates: requireLineCoordinates(line.startPoint, line.featureId, 'startPoint'),
+  endCoordinates: requireLineCoordinates(line.endPoint, line.featureId, 'endPoint'),
+  routeMode: line.routeMode,
+  metadata: line.metadata,
+});
+
+const requireLineLocationId = (
+  value: NodeId | undefined,
+  featureId: string,
+  label: string
+): NodeId => {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`[route build planner] resolved route ${featureId} is missing ${label}`);
+  }
+  return value;
+};
+
+const requireLineCoordinates = (
+  value: RouteLineString['startPoint'],
+  featureId: string,
+  label: string
+): [number, number] => {
+  const longitude = value.longitude;
+  const latitude = value.latitude;
+  if (
+    typeof longitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180 ||
+    typeof latitude !== 'number' ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90
+  ) {
+    throw new Error(
+      `[route build planner] resolved route ${featureId} has invalid ${label} coordinates`
+    );
+  }
+  return [longitude, latitude];
+};
 
 const isFolderNodeType = (nodeType?: string | null): boolean => {
   if (!nodeType) return false;
