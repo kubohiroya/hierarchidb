@@ -72,6 +72,15 @@ export class ShapeBuildPauseActivePipelineMissingError extends Error {
   }
 }
 
+export class ShapeBuildResumeContractError extends Error {
+  readonly code = 'SHAPE_BUILD_RESUME_CONTRACT';
+
+  constructor(readonly nodeId: NodeId, message: string) {
+    super(`[shapeBuildAPI] ${message}: ${String(nodeId)}`);
+    this.name = 'ShapeBuildResumeContractError';
+  }
+}
+
 const createActivePipelineAlreadyExistsError = (nodeId: NodeId, runId: string): Error => {
   const error = new Error(`[shapeBuildAPI] active pipeline already exists: ${String(nodeId)}:${runId}`);
   error.name = 'ShapeBuildActivePipelineAlreadyExistsError';
@@ -253,6 +262,29 @@ const updateBuildSessionFromTasks = async (
     }
     emitSessionStatusUpdated(nodeId, newSessionRecord);
   }
+};
+
+const requireResumablePausedSessionStartedAt = (
+  nodeId: NodeId,
+  previousSession: ShapeBuildSessionRecord,
+): number => {
+  if (previousSession.canResume !== true) {
+    throw new ShapeBuildResumeContractError(
+      nodeId,
+      'paused build session is not explicitly resumable',
+    );
+  }
+  if (
+    typeof previousSession.startedAt !== 'number' ||
+    !Number.isFinite(previousSession.startedAt) ||
+    previousSession.startedAt < 0
+  ) {
+    throw new ShapeBuildResumeContractError(
+      nodeId,
+      'paused build session is missing a valid startedAt',
+    );
+  }
+  return previousSession.startedAt;
 };
 
 const initializeAndReadStageTiming = async (
@@ -724,7 +756,10 @@ const startBuildSessionInternal = async (
     // sessionStatusUpdated is emitted inside upsertBuildSessionSnapshot
     return nodeForSession;
   }
-  const buildStartedAt = Date.now();
+  const resumeExistingTasks = shouldReuseTaskQueueOnStart(previousSession?.status);
+  const buildStartedAt = resumeExistingTasks && previousSession
+    ? requireResumablePausedSessionStartedAt(nodeForSession, previousSession)
+    : Date.now();
   let sourcePlan: Awaited<ReturnType<typeof estimatePlannedSourceTotal>>;
   try {
     console.warn('[shapeBuildAPI] Starting plan-source-total step', {
@@ -768,15 +803,24 @@ const startBuildSessionInternal = async (
       return persistFailureAndRethrow(
         error,
         async () => {
-          await upsertBuildSessionSnapshot({
-            nodeId: nodeForSession,
-            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-            status: 'paused',
-            stopReason: 'auth-required',
-            startedAt: buildStartedAt,
-            lastHeartbeatAt: pausedAt,
-            canResume: true,
-          });
+          if (resumeExistingTasks) {
+            await updateBuildSessionFromTasks(nodeForSession, {
+              status: 'paused',
+              stopReason: 'auth-required',
+              lastHeartbeatAt: pausedAt,
+              canResume: true,
+            });
+          } else {
+            await upsertBuildSessionSnapshot({
+              nodeId: nodeForSession,
+              selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+              status: 'paused',
+              stopReason: 'auth-required',
+              startedAt: buildStartedAt,
+              lastHeartbeatAt: pausedAt,
+              canResume: true,
+            });
+          }
         },
         (persistenceError) => {
           console.error('[shapeBuildAPI] Failed to persist auth-required pause', {
@@ -801,15 +845,24 @@ const startBuildSessionInternal = async (
     return persistFailureAndRethrow(
       error,
       async () => {
-        await upsertBuildSessionSnapshot({
-          nodeId: nodeForSession,
-          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-          status: 'failed',
-          stopReason: 'failed',
-          startedAt: buildStartedAt,
-          completedAt: failedAt,
-          canResume: false,
-        });
+        if (resumeExistingTasks) {
+          await updateBuildSessionFromTasks(nodeForSession, {
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
+          });
+        } else {
+          await upsertBuildSessionSnapshot({
+            nodeId: nodeForSession,
+            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+            status: 'failed',
+            stopReason: 'failed',
+            startedAt: buildStartedAt,
+            completedAt: failedAt,
+            canResume: false,
+          });
+        }
       },
       (persistenceError) => {
         console.error('[shapeBuildAPI] Failed to persist source planning failure', {
@@ -860,23 +913,24 @@ const startBuildSessionInternal = async (
         draftEntity.selectedArrayByCountries,
       ),
     );
-    await executeStartupStep(
-      'fresh-build-tile-artifact-invalidation',
-      async () => runShapeArtifactCascadeCleanup({
-        nodeId: nodeForSession,
-        target: { kind: 'stage', stage: 'tileEmit' },
-      }),
-    );
-    await executeStartupStep(
-      'clear-build-task-history',
-      async () => clearBuildTasksByStage(nodeForSession, ['source', 'geometry', 'tileEmit']),
-    );
+    if (!resumeExistingTasks) {
+      await executeStartupStep(
+        'fresh-build-tile-artifact-invalidation',
+        async () => runShapeArtifactCascadeCleanup({
+          nodeId: nodeForSession,
+          target: { kind: 'stage', stage: 'tileEmit' },
+        }),
+      );
+      await executeStartupStep(
+        'clear-build-task-history',
+        async () => clearBuildTasksByStage(nodeForSession, ['source', 'geometry', 'tileEmit']),
+      );
+    }
     let existingTaskCount = await executeStartupStep(
       'count-existing-tasks',
       async () => taskQueue.tasks.where('nodeId').equals(nodeForSession).count(),
     );
-    const canReuseTaskQueue = shouldReuseTaskQueueOnStart(previousSession?.status);
-    if (!canReuseTaskQueue && existingTaskCount > 0) {
+    if (!resumeExistingTasks && existingTaskCount > 0) {
       await executeStartupStep(
         'clear-completed-session-task-queue',
         async () => {
@@ -889,7 +943,6 @@ const startBuildSessionInternal = async (
         },
       );
     }
-    const resumeExistingTasks = false;
     const existingSourceTaskCount = await executeStartupStep(
       'count-existing-source-tasks',
       async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'source']).count(),
@@ -899,14 +952,24 @@ const startBuildSessionInternal = async (
     setSourcePlannedTotal(nodeForSession, plannedSourceTotal);
     await executeStartupStep(
       'upsert-session-snapshot',
-      async () =>
-        upsertBuildSessionSnapshot({
+      async () => {
+        if (resumeExistingTasks) {
+          await updateBuildSessionFromTasks(nodeForSession, {
+            status: 'running',
+            stopReason: undefined,
+            canResume: false,
+            completedAt: undefined,
+          });
+          return;
+        }
+        await upsertBuildSessionSnapshot({
           nodeId: nodeForSession,
           selectedArrayByCountries: draftEntity.selectedArrayByCountries,
           status: 'running',
           startedAt: buildStartedAt,
           canResume: false,
-        }),
+        });
+      },
       { existingTaskCount, plannedSourceTotal }
     );
     const emitQueuedProgressSnapshot = async (payload: {
@@ -1215,15 +1278,24 @@ const startBuildSessionInternal = async (
     return persistFailureAndRethrow(
       error,
       async () => {
-        await upsertBuildSessionSnapshot({
-          nodeId: nodeForSession,
-          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-          status: 'failed',
-          stopReason: 'failed',
-          startedAt: buildStartedAt,
-          completedAt: failedAt,
-          canResume: false,
-        });
+        if (resumeExistingTasks) {
+          await updateBuildSessionFromTasks(nodeForSession, {
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
+          });
+        } else {
+          await upsertBuildSessionSnapshot({
+            nodeId: nodeForSession,
+            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+            status: 'failed',
+            stopReason: 'failed',
+            startedAt: buildStartedAt,
+            completedAt: failedAt,
+            canResume: false,
+          });
+        }
       },
       (persistenceError) => {
         console.error('[shapeBuildAPI] Failed to persist startup failure', {
