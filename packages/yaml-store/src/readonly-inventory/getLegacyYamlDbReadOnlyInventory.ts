@@ -20,7 +20,9 @@ export type LegacyYamlDbInventoryErrorCode =
   | 'LEGACY_YAMLDB_OPEN_FAILED'
   | 'LEGACY_YAMLDB_TOPOLOGY_MALFORMED'
   | 'LEGACY_YAMLDB_READ_FAILED'
-  | 'LEGACY_YAMLDB_DIGEST_FAILED';
+  | 'LEGACY_YAMLDB_DIGEST_FAILED'
+  | 'LEGACY_YAMLDB_CANONICAL_TARGETS_MALFORMED'
+  | 'LEGACY_YAMLDB_DISCARD_APPROVAL_MALFORMED';
 
 export type LegacyYamlDbInventoryInvalidCode =
   | 'ROW_NOT_PLAIN_OBJECT'
@@ -59,7 +61,7 @@ export interface LegacyYamlDbCanonicalTargetRow {
 }
 
 export interface LegacyYamlDbExplicitDiscardApproval {
-  readonly nodeId: string;
+  readonly stableIdentifier: string;
   readonly reason: string;
 }
 
@@ -108,6 +110,15 @@ interface LegacyYamlDbRawCursorEntry {
   readonly primaryKey: IDBValidKey;
   readonly value: unknown;
 }
+
+type LegacyYamlDbAccountingResult = Readonly<
+  | {
+      ok: true;
+      counts: LegacyYamlDbCountMap<LegacyYamlDbAccountingClassification>;
+      validClassifications: readonly LegacyYamlDbAccountingClassification[];
+    }
+  | { ok: false; code: LegacyYamlDbInventoryErrorCode }
+>;
 
 const registryEntries = Object.values(YAML_SUBTYPE_REGISTRY);
 
@@ -233,32 +244,72 @@ function compareTargets(
 
 function createApprovalSet(
   approvals: readonly LegacyYamlDbExplicitDiscardApproval[] | undefined
-): ReadonlySet<string> {
-  if (approvals === undefined) return new Set();
-  const approvedNodeIds = new Set<string>();
+): Readonly<
+  | { ok: true; approvedStableIdentifiers: ReadonlySet<string> }
+  | { ok: false; code: LegacyYamlDbInventoryErrorCode }
+> {
+  if (approvals === undefined) return { ok: true, approvedStableIdentifiers: new Set() };
+  const approvedStableIdentifiers = new Set<string>();
   for (const approval of approvals) {
     if (
       isPlainRecord(approval) &&
-      typeof approval.nodeId === 'string' &&
-      approval.nodeId.length > 0 &&
+      typeof approval.stableIdentifier === 'string' &&
+      /^[0-9a-f]{64}$/.test(approval.stableIdentifier) &&
       typeof approval.reason === 'string' &&
       approval.reason.length > 0
     ) {
-      approvedNodeIds.add(approval.nodeId);
+      approvedStableIdentifiers.add(approval.stableIdentifier);
+    } else {
+      return { ok: false, code: 'LEGACY_YAMLDB_DISCARD_APPROVAL_MALFORMED' };
     }
   }
-  return approvedNodeIds;
+  return { ok: true, approvedStableIdentifiers };
+}
+
+function createTargetIndexes(targets: readonly LegacyYamlDbCanonicalTargetRow[]): Readonly<
+  | {
+      ok: true;
+      targetByNodeId: ReadonlyMap<string, LegacyYamlDbCanonicalTargetRow>;
+      targetIdentity: ReadonlyMap<string, LegacyYamlDbCanonicalTargetRow>;
+    }
+  | { ok: false; code: LegacyYamlDbInventoryErrorCode }
+> {
+  const targetByNodeId = new Map<string, LegacyYamlDbCanonicalTargetRow>();
+  const targetIdentity = new Map<string, LegacyYamlDbCanonicalTargetRow>();
+  for (const target of targets) {
+    if (
+      !isPlainRecord(target) ||
+      typeof target.nodeId !== 'string' ||
+      target.nodeId.length === 0 ||
+      typeof target.nodeType !== 'string' ||
+      target.nodeType.length === 0 ||
+      typeof target.parentId !== 'string' ||
+      target.parentId.length === 0 ||
+      typeof target.name !== 'string' ||
+      target.name.length === 0 ||
+      typeof target.schemaId !== 'string' ||
+      typeof target.content !== 'string' ||
+      (target.subtype !== undefined && typeof target.subtype !== 'string')
+    ) {
+      return { ok: false, code: 'LEGACY_YAMLDB_CANONICAL_TARGETS_MALFORMED' };
+    }
+    const identity = `${target.parentId}\u0000${target.name}`;
+    if (targetByNodeId.has(target.nodeId) || targetIdentity.has(identity)) {
+      return { ok: false, code: 'LEGACY_YAMLDB_CANONICAL_TARGETS_MALFORMED' };
+    }
+    targetByNodeId.set(target.nodeId, target);
+    targetIdentity.set(identity, target);
+  }
+  return { ok: true, targetByNodeId, targetIdentity };
 }
 
 function computeAccountingCounts(
   rows: readonly LegacyYamlDbInventoryRow[],
   invalidCount: number,
   targets: readonly LegacyYamlDbCanonicalTargetRow[] | undefined,
-  explicitDiscardApprovals: readonly LegacyYamlDbExplicitDiscardApproval[] | undefined
-): Readonly<{
-  counts: LegacyYamlDbCountMap<LegacyYamlDbAccountingClassification>;
-  validClassifications: readonly LegacyYamlDbAccountingClassification[];
-}> {
+  explicitDiscardApprovals: readonly LegacyYamlDbExplicitDiscardApproval[] | undefined,
+  stableIdentifiers: readonly string[]
+): LegacyYamlDbAccountingResult {
   const counts: Record<LegacyYamlDbAccountingClassification, number> = {
     'duplicate/no-op': 0,
     recoverable: 0,
@@ -268,28 +319,39 @@ function computeAccountingCounts(
     'explicitly-discarded': 0,
   };
   const validClassifications: LegacyYamlDbAccountingClassification[] = [];
-  const approvedDiscardNodeIds = createApprovalSet(explicitDiscardApprovals);
+  const approvals = createApprovalSet(explicitDiscardApprovals);
+  if (approvals.ok === false) return { ok: false, code: approvals.code };
+  const { approvedStableIdentifiers } = approvals;
   if (targets === undefined) {
-    for (const row of rows) {
-      const classification = approvedDiscardNodeIds.has(row.nodeId)
+    for (let index = 0; index < rows.length; index += 1) {
+      const stableIdentifier = stableIdentifiers[index];
+      if (stableIdentifier === undefined) {
+        return { ok: false, code: 'LEGACY_YAMLDB_DIGEST_FAILED' };
+      }
+      const classification = approvedStableIdentifiers.has(stableIdentifier)
         ? 'explicitly-discarded'
         : 'orphan/blocked';
       validClassifications.push(classification);
       increment(counts, classification);
     }
     return Object.freeze({
+      ok: true,
       counts: freezeCounts(counts),
       validClassifications: Object.freeze(validClassifications),
     });
   }
 
-  const targetByNodeId = new Map(targets.map((target) => [target.nodeId, target] as const));
-  const targetIdentity = new Map(
-    targets.map((target) => [`${target.parentId}\u0000${target.name}`, target])
-  );
+  const targetIndexes = createTargetIndexes(targets);
+  if (targetIndexes.ok === false) return { ok: false, code: targetIndexes.code };
+  const { targetByNodeId, targetIdentity } = targetIndexes;
 
-  for (const row of rows) {
-    if (approvedDiscardNodeIds.has(row.nodeId)) {
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const stableIdentifier = stableIdentifiers[index];
+    if (row === undefined || stableIdentifier === undefined) {
+      return { ok: false, code: 'LEGACY_YAMLDB_DIGEST_FAILED' };
+    }
+    if (approvedStableIdentifiers.has(stableIdentifier)) {
       const classification = 'explicitly-discarded';
       validClassifications.push(classification);
       increment(counts, classification);
@@ -326,6 +388,7 @@ function computeAccountingCounts(
   }
 
   return Object.freeze({
+    ok: true,
     counts: freezeCounts(counts),
     validClassifications: Object.freeze(validClassifications),
   });
@@ -387,32 +450,42 @@ async function digestSourceEntries(
 
 async function digestAccountingStableIdentifier(
   entry: LegacyYamlDbRawCursorEntry,
-  sourceIndex: number,
-  classification: LegacyYamlDbAccountingClassification
+  sourceIndex: number
 ): Promise<string> {
   const stableInput = JSON.stringify({
     contract: 'legacy-yamldb-v1-accounting-evidence',
     sourceIndex,
-    classification,
     entry: stableValueForDigest(entry),
   });
   return digestSha256Hex(textEncoder.encode(stableInput));
 }
 
+async function createAccountingStableIdentifiers(
+  entries: readonly LegacyYamlDbRawCursorEntry[]
+): Promise<readonly string[]> {
+  const stableIdentifiers: string[] = [];
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    if (entry === undefined) throw new Error('missing-accounting-entry');
+    stableIdentifiers.push(await digestAccountingStableIdentifier(entry, index));
+  }
+  return Object.freeze(stableIdentifiers);
+}
+
 async function createAccountingEvidence(
-  entries: readonly LegacyYamlDbRawCursorEntry[],
+  stableIdentifiers: readonly string[],
   classifications: readonly LegacyYamlDbAccountingClassification[]
 ): Promise<readonly LegacyYamlDbAccountingEvidence[]> {
   const evidence: LegacyYamlDbAccountingEvidence[] = [];
-  for (let index = 0; index < entries.length; index += 1) {
-    const entry = entries[index];
+  for (let index = 0; index < stableIdentifiers.length; index += 1) {
+    const stableIdentifier = stableIdentifiers[index];
     const classification = classifications[index];
-    if (entry === undefined || classification === undefined) {
+    if (stableIdentifier === undefined || classification === undefined) {
       throw new Error('missing-accounting-classification');
     }
     evidence.push(
       Object.freeze({
-        stableIdentifier: await digestAccountingStableIdentifier(entry, index, classification),
+        stableIdentifier,
         classification,
       })
     );
@@ -516,10 +589,10 @@ export async function getLegacyYamlDbReadOnlyInventory(
 
   const databaseName = options.databaseName ?? defaultLegacyYamlDatabaseName();
   const located = await locateLegacyDatabase(factory, databaseName);
-  if (!located.ok) return fail(located.code);
+  if (located.ok === false) return fail(located.code);
 
   const opened = await openExistingLegacyDatabase(factory, databaseName);
-  if (!opened.ok) return fail(opened.code);
+  if (opened.ok === false) return fail(opened.code);
 
   try {
     const read = await readAllLegacyEntries(opened.database);
@@ -535,7 +608,7 @@ export async function getLegacyYamlDbReadOnlyInventory(
       const entry = read.entries[index];
       if (entry === undefined) return fail('LEGACY_YAMLDB_READ_FAILED');
       const validation = validateLegacyRow(entry);
-      if (validation.ok) {
+      if (validation.ok === true) {
         validRows.push(validation.row);
         validRowIndexes.push(index);
         classifications.push('valid-legacy');
@@ -547,18 +620,28 @@ export async function getLegacyYamlDbReadOnlyInventory(
     }
 
     let sourceDigest: string;
+    let stableIdentifiers: readonly string[];
     try {
       sourceDigest = await digestSourceEntries(read.entries, classifications);
+      stableIdentifiers = await createAccountingStableIdentifiers(read.entries);
     } catch {
       return fail('LEGACY_YAMLDB_DIGEST_FAILED');
+    }
+    const validStableIdentifiers: string[] = [];
+    for (const sourceIndex of validRowIndexes) {
+      const stableIdentifier = stableIdentifiers[sourceIndex];
+      if (stableIdentifier === undefined) return fail('LEGACY_YAMLDB_DIGEST_FAILED');
+      validStableIdentifiers.push(stableIdentifier);
     }
 
     const accounting = computeAccountingCounts(
       validRows,
       read.entries.length - validRows.length,
       options.canonicalTargets,
-      options.explicitDiscardApprovals
+      options.explicitDiscardApprovals,
+      validStableIdentifiers
     );
+    if (accounting.ok === false) return fail(accounting.code);
     for (let index = 0; index < validRowIndexes.length; index += 1) {
       const sourceIndex = validRowIndexes[index];
       const classification = accounting.validClassifications[index];
@@ -569,7 +652,10 @@ export async function getLegacyYamlDbReadOnlyInventory(
     }
     let accountingEvidence: readonly LegacyYamlDbAccountingEvidence[];
     try {
-      accountingEvidence = await createAccountingEvidence(read.entries, accountingClassifications);
+      accountingEvidence = await createAccountingEvidence(
+        stableIdentifiers,
+        accountingClassifications
+      );
     } catch {
       return fail('LEGACY_YAMLDB_DIGEST_FAILED');
     }

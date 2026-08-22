@@ -28,9 +28,9 @@ Read-only inventory accounts every row into exactly one of these classifications
 - `orphan/blocked`: the recovery parent is missing or is not a folder.
 - `conflict`: the target node or same-parent sibling exists but is not an exact duplicate.
 - `invalid`: row shape, key, registry tuple, or canonical payload validation fails.
-- `explicitly-discarded`: a separate user approval record names the node ID and reason.
+- `explicitly-discarded`: a separate user approval record names the row stable identifier and reason.
 
-These classifications are accounting evidence only. `recoverable` does not authorize a write, and `explicitly-discarded` does not delete the source row. Row-level evidence exposes only the classification and a stable digest identifier; it does not expose node IDs, parent IDs, filenames, schema IDs, YAML content, credentials, or native errors.
+These classifications are accounting evidence only. `recoverable` does not authorize a write, and `explicitly-discarded` does not delete the source row. Row-level evidence exposes only the classification and a classification-independent stable digest identifier; it does not expose node IDs, parent IDs, filenames, schema IDs, YAML content, credentials, or native errors. Malformed discard approvals and ambiguous canonical target snapshots fail closed instead of being skipped or overwritten by input order.
 
 ## License
 
