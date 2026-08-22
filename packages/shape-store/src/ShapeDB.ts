@@ -7,15 +7,39 @@
  * - Vector tiles
  */
 
-import {Dexie, type Table} from 'dexie';
-import type {ShapeContainerNodeId, ShapeTileSummaryRecord, VectorTileRecord} from "./VectorTileRecord";
-import { VectorTileDbBase } from "@hierarchidb/vectortile-store";
-import type { TabularTableMetadataLike } from "@hierarchidb/tabular-store";
-import type { NodeId } from "@hierarchidb/core-types";
-import type {BuildSessionHeartbeat, BuildSessionRecord, BuildSessionStatus, BuildStageStatus } from "@hierarchidb/gis-sdk";
+import type { NodeId } from '@hierarchidb/core-types';
+import type {
+  BuildSessionHeartbeat,
+  BuildSessionRecord,
+  BuildSessionStatus,
+  BuildStageStatus,
+} from '@hierarchidb/gis-sdk';
+import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
+import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
+import { Dexie, type Table } from 'dexie';
+import type {
+  BorderGeometryArcRecord,
+  BorderGeometryDatasetRecord,
+  BorderGeometryPolygonRelationRecord,
+  BorderGeometryRingRecord,
+  BorderGeometrySpatialIndexRecord,
+} from './BorderGeometryStorageTypes.js';
+import {
+  validateBorderGeometryArcRecord,
+  validateBorderGeometryDatasetRecord,
+  validateBorderGeometryPolygonRelationRecord,
+  validateBorderGeometryRingRecord,
+  validateBorderGeometrySpatialIndexRecord,
+} from './borderGeometryStorageValidationUtils.js';
+import type { BorderGeometryStorageFlagOptions } from './isShapeBorderGeometryStorageEnabled.js';
+import { requireShapeBorderGeometryStorageEnabled } from './isShapeBorderGeometryStorageEnabled.js';
+import type {
+  ShapeContainerNodeId,
+  ShapeTileSummaryRecord,
+  VectorTileRecord,
+} from './VectorTileRecord';
 
 export class ShapeDB extends VectorTileDbBase {
-
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
   tileSummaries!: Table<ShapeTileSummaryRecord, ShapeContainerNodeId>;
@@ -27,76 +51,113 @@ export class ShapeDB extends VectorTileDbBase {
   buildSessionStatuses!: Table<BuildSessionStatus, NodeId>;
   buildStageStatuses!: Table<BuildStageStatus, string>;
 
+  // Border geometry storage tables (version 3, gated by default-off flag at API boundary)
+  borderGeometryDatasets!: Table<BorderGeometryDatasetRecord, string>;
+  borderGeometryArcs!: Table<BorderGeometryArcRecord, [string, string]>;
+  borderGeometryRings!: Table<BorderGeometryRingRecord, [string, string]>;
+  borderGeometryPolygonRelations!: Table<BorderGeometryPolygonRelationRecord, [string, string]>;
+  borderSpatialIndexes!: Table<BorderGeometrySpatialIndexRecord, [string, string]>;
+
   constructor(databaseName: string) {
     super(databaseName);
 
     // Version 1: Original schema with monolithic sessions table
-    this.version(1).stores(this.mergeVectorTileStores({
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-      tileSummaries: '&nodeId',
-    }));
+    this.version(1).stores(
+      this.mergeVectorTileStores({
+        vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+        tileSummaries: '&nodeId',
+      })
+    );
 
     // Version 2: Refactored session schema with four normalized tables
-    this.version(2).stores(this.mergeVectorTileStores({
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-      tileSummaries: '&nodeId',
-      buildSessionConfigs: '&nodeId',
-      buildSessionHeartbeats: '&nodeId',
-      buildSessionStatuses: '&nodeId, status',
-      buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
-    })).upgrade(async (tx) => {
-      // Migration logic: Transform old BuildSessionRecord into four new tables
-      // Check if the old sessions table exists (it won't exist on fresh installs)
-      const tableNames = Array.from(tx.idbtrans.objectStoreNames);
-      if (!tableNames.includes('sessions')) {
-        // No old sessions table to migrate (fresh install or already migrated)
-        return;
-      }
+    this.version(2)
+      .stores(
+        this.mergeVectorTileStores({
+          vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+          tileSummaries: '&nodeId',
+          buildSessionConfigs: '&nodeId',
+          buildSessionHeartbeats: '&nodeId',
+          buildSessionStatuses: '&nodeId, status',
+          buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+        })
+      )
+      .upgrade(async (tx) => {
+        // Migration logic: Transform old BuildSessionRecord into four new tables
+        // Check if the old sessions table exists (it won't exist on fresh installs)
+        const tableNames = Array.from(tx.idbtrans.objectStoreNames);
+        if (!tableNames.includes('sessions')) {
+          // No old sessions table to migrate (fresh install or already migrated)
+          return;
+        }
 
-      const oldSessionsTable = tx.idbtrans.objectStore('sessions');
-      const oldSessions: BuildSessionRecord[] = [];
-      const cursorRequest = oldSessionsTable.openCursor();
+        const oldSessionsTable = tx.idbtrans.objectStore('sessions');
+        const oldSessions: BuildSessionRecord[] = [];
+        const cursorRequest = oldSessionsTable.openCursor();
 
-      await new Promise<void>((resolve, reject) => {
-        cursorRequest.onsuccess = (event) => {
-          const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-          if (cursor) {
-            oldSessions.push(cursor.value as BuildSessionRecord);
-            cursor.continue();
-          } else {
-            resolve();
-          }
-        };
-        cursorRequest.onerror = () => reject(cursorRequest.error);
+        await new Promise<void>((resolve, reject) => {
+          cursorRequest.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+            if (cursor) {
+              oldSessions.push(cursor.value as BuildSessionRecord);
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          cursorRequest.onerror = () => reject(cursorRequest.error);
+        });
+
+        // Transform each old session into four new table records
+        for (const old of oldSessions) {
+          // 1. Create BuildSessionRecord (immutable config)
+          const sessionConfig: BuildSessionRecord = {
+            nodeId: old.nodeId,
+            domainType: 'shape', // ShapeDB is always 'shape' domain
+            selectedArrayByCountries: old.selectedArrayByCountries,
+            selectedArrayVersion: undefined, // Not present in old schema
+            startedAt: old.startedAt,
+            sourceStageMaxima: old.sourceStageMaxima
+              ? {
+                  featureMax: old.sourceStageMaxima.featureMax,
+                  polygonMax: old.sourceStageMaxima.polygonMax,
+                }
+              : undefined,
+          };
+          await tx.table('buildSessionConfigs').add(sessionConfig);
+
+          // Discarded fields (as per design):
+          // - progress: Computed from buildTasks
+          // - stages: Computed from buildTasks
+          // - resourceUsage: Unused/unimplemented
+          // - canResume: Unused/unimplemented
+          // - lastActivity: Redundant with lastHeartbeatAt
+          // - expiresAt: Unused/unimplemented
+          // - updatedAt: Redundant with status-specific timestamps
+          // - stageHeartbeatAt: Redundant with lastHeartbeatAt
+        }
       });
 
-      // Transform each old session into four new table records
-      for (const old of oldSessions) {
-        // 1. Create BuildSessionRecord (immutable config)
-        const sessionConfig: BuildSessionRecord = {
-          nodeId: old.nodeId,
-          domainType: 'shape', // ShapeDB is always 'shape' domain
-          selectedArrayByCountries: old.selectedArrayByCountries,
-          selectedArrayVersion: undefined, // Not present in old schema
-          startedAt: old.startedAt,
-          sourceStageMaxima: old.sourceStageMaxima ? {
-            featureMax: old.sourceStageMaxima.featureMax,
-            polygonMax: old.sourceStageMaxima.polygonMax,
-          } : undefined,
-        };
-        await tx.table('buildSessionConfigs').add(sessionConfig);
-
-        // Discarded fields (as per design):
-        // - progress: Computed from buildTasks
-        // - stages: Computed from buildTasks
-        // - resourceUsage: Unused/unimplemented
-        // - canResume: Unused/unimplemented
-        // - lastActivity: Redundant with lastHeartbeatAt
-        // - expiresAt: Unused/unimplemented
-        // - updatedAt: Redundant with status-specific timestamps
-        // - stageHeartbeatAt: Redundant with lastHeartbeatAt
-      }
-    });
+    // Version 3: Border geometry storage foundation. Access is gated by the default-off flag.
+    this.version(3).stores(
+      this.mergeVectorTileStores({
+        vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+        tileSummaries: '&nodeId',
+        buildSessionConfigs: '&nodeId',
+        buildSessionHeartbeats: '&nodeId',
+        buildSessionStatuses: '&nodeId, status',
+        buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+        borderGeometryDatasets:
+          '&datasetId, nodeId, sourceKey, [nodeId+sourceKey], createdFromRevision',
+        borderGeometryArcs:
+          '&[datasetId+arcId], datasetId, nodeId, classification, [nodeId+datasetId]',
+        borderGeometryRings:
+          '&[datasetId+ringId], datasetId, nodeId, polygonId, [nodeId+datasetId]',
+        borderGeometryPolygonRelations:
+          '&[datasetId+polygonId], datasetId, nodeId, [nodeId+datasetId]',
+        borderSpatialIndexes:
+          '&[datasetId+indexId], datasetId, nodeId, indexKind, [nodeId+datasetId]',
+      })
+    );
 
     this.initVectorTileTables();
     this.tileSummaries = this.table('tileSummaries');
@@ -107,6 +168,11 @@ export class ShapeDB extends VectorTileDbBase {
     this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
     this.buildSessionStatuses = this.table('buildSessionStatuses');
     this.buildStageStatuses = this.table('buildStageStatuses');
+    this.borderGeometryDatasets = this.table('borderGeometryDatasets');
+    this.borderGeometryArcs = this.table('borderGeometryArcs');
+    this.borderGeometryRings = this.table('borderGeometryRings');
+    this.borderGeometryPolygonRelations = this.table('borderGeometryPolygonRelations');
+    this.borderSpatialIndexes = this.table('borderSpatialIndexes');
   }
 
   protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
@@ -188,7 +254,9 @@ export class ShapeDB extends VectorTileDbBase {
     });
   }
 
-  async getVectorTileSummary(nodeId: ShapeContainerNodeId): Promise<ShapeTileSummaryRecord | undefined> {
+  async getVectorTileSummary(
+    nodeId: ShapeContainerNodeId
+  ): Promise<ShapeTileSummaryRecord | undefined> {
     return await this.tileSummaries.get(nodeId);
   }
 
@@ -216,7 +284,7 @@ export class ShapeDB extends VectorTileDbBase {
     nodeId: ShapeContainerNodeId,
     z: number,
     x: number,
-    y: number,
+    y: number
   ): Promise<VectorTileRecord | undefined> {
     const tile = await this.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).first();
 
@@ -233,7 +301,7 @@ export class ShapeDB extends VectorTileDbBase {
   async getTilesInZoomRange(
     nodeId: ShapeContainerNodeId,
     minZ: number,
-    maxZ: number,
+    maxZ: number
   ): Promise<VectorTileRecord[]> {
     return await this.vectorTiles
       .where('nodeId')
@@ -242,6 +310,124 @@ export class ShapeDB extends VectorTileDbBase {
       .toArray();
   }
 
+  async putBorderGeometryDataset(
+    record: BorderGeometryDatasetRecord,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<void> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    validateBorderGeometryDatasetRecord(record);
+    await this.borderGeometryDatasets.put(record);
+  }
+
+  async getBorderGeometryDataset(
+    datasetId: string,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<BorderGeometryDatasetRecord | undefined> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    if (typeof datasetId !== 'string' || datasetId.length === 0) {
+      throw new Error('border-geometry-dataset-id-required');
+    }
+    return this.borderGeometryDatasets.get(datasetId);
+  }
+
+  async putBorderGeometryArc(
+    record: BorderGeometryArcRecord,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<void> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    validateBorderGeometryArcRecord(record);
+    const dataset = await this.borderGeometryDatasets.get(record.datasetId);
+    if (
+      !dataset ||
+      dataset.nodeId !== record.nodeId ||
+      dataset.createdFromRevision !== record.createdFromRevision
+    ) {
+      throw new Error('border-geometry-dataset-ownership-mismatch');
+    }
+    await this.borderGeometryArcs.put(record);
+  }
+
+  async putBorderGeometryRing(
+    record: BorderGeometryRingRecord,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<void> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    validateBorderGeometryRingRecord(record);
+    const dataset = await this.borderGeometryDatasets.get(record.datasetId);
+    if (
+      !dataset ||
+      dataset.nodeId !== record.nodeId ||
+      dataset.createdFromRevision !== record.createdFromRevision
+    ) {
+      throw new Error('border-geometry-dataset-ownership-mismatch');
+    }
+    await this.borderGeometryRings.put(record);
+  }
+
+  async putBorderGeometryPolygonRelation(
+    record: BorderGeometryPolygonRelationRecord,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<void> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    validateBorderGeometryPolygonRelationRecord(record);
+    const dataset = await this.borderGeometryDatasets.get(record.datasetId);
+    if (
+      !dataset ||
+      dataset.nodeId !== record.nodeId ||
+      dataset.createdFromRevision !== record.createdFromRevision
+    ) {
+      throw new Error('border-geometry-dataset-ownership-mismatch');
+    }
+    await this.borderGeometryPolygonRelations.put(record);
+  }
+
+  async putBorderSpatialIndex(
+    record: BorderGeometrySpatialIndexRecord,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<void> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    validateBorderGeometrySpatialIndexRecord(record);
+    const dataset = await this.borderGeometryDatasets.get(record.datasetId);
+    if (
+      !dataset ||
+      dataset.nodeId !== record.nodeId ||
+      dataset.sourceKey !== record.sourceKey ||
+      dataset.schemaVersion !== record.schemaVersion ||
+      dataset.createdFromRevision !== record.createdFromRevision
+    ) {
+      throw new Error('border-geometry-dataset-ownership-mismatch');
+    }
+    await this.borderSpatialIndexes.put(record);
+  }
+
+  async clearBorderGeometryByNode(
+    nodeId: ShapeContainerNodeId,
+    options?: BorderGeometryStorageFlagOptions
+  ): Promise<void> {
+    requireShapeBorderGeometryStorageEnabled(options);
+    if (typeof nodeId !== 'string' || nodeId.length === 0) {
+      throw new Error('border-geometry-node-id-required');
+    }
+    await this.transaction(
+      'rw',
+      [
+        this.borderGeometryDatasets,
+        this.borderGeometryArcs,
+        this.borderGeometryRings,
+        this.borderGeometryPolygonRelations,
+        this.borderSpatialIndexes,
+      ],
+      async () => {
+        await Promise.all([
+          this.borderGeometryDatasets.where('nodeId').equals(nodeId).delete(),
+          this.borderGeometryArcs.where('nodeId').equals(nodeId).delete(),
+          this.borderGeometryRings.where('nodeId').equals(nodeId).delete(),
+          this.borderGeometryPolygonRelations.where('nodeId').equals(nodeId).delete(),
+          this.borderSpatialIndexes.where('nodeId').equals(nodeId).delete(),
+        ]);
+      }
+    );
+  }
 }
 
 let shapeDatabase: ShapeDB | null = null;
@@ -266,14 +452,15 @@ export function getShapeDB(): ShapeDB {
   return shapeDatabase;
 }
 
-const createShapeDatabaseReference = (): ShapeDB => new Proxy({} as ShapeDB, {
-  get: (_target, property) => {
-    const database = getShapeDB();
-    const value = Reflect.get(database, property, database) as unknown;
-    return typeof value === 'function' ? value.bind(database) : value;
-  },
-  set: (_target, property, value) => Reflect.set(getShapeDB(), property, value),
-});
+const createShapeDatabaseReference = (): ShapeDB =>
+  new Proxy({} as ShapeDB, {
+    get: (_target, property) => {
+      const database = getShapeDB();
+      const value = Reflect.get(database, property, database) as unknown;
+      return typeof value === 'function' ? value.bind(database) : value;
+    },
+    set: (_target, property, value) => Reflect.set(getShapeDB(), property, value),
+  });
 
 /** Stable reference backed only by an explicitly initialized database. */
 export const shapeDB = createShapeDatabaseReference();
