@@ -4,6 +4,7 @@ import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString,
 import type { Tile } from 'geojson-vt';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import {
+  buildStableJsonSignature,
   geometryBboxClip,
   latToTileY,
   lonToTileX,
@@ -21,7 +22,6 @@ import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
-import { buildStableSignature } from './buildStableSignature.ts';
 import { deleteTasksByIds, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import {
@@ -82,7 +82,7 @@ const FETCH_CACHE_META_CHUNK_SIZE = 500;
  * @deprecated Use reconcileStageTasksByMetadata instead of legacy signature filtering.
  */
 const buildTaskInputSignature = (input: unknown): string => (
-  buildStableSignature(input ?? null)
+  buildStableJsonSignature(input ?? null)
 );
 
 /**

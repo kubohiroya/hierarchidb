@@ -1,7 +1,7 @@
+import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
-import type { RouteEntity } from '@hierarchidb/route-api';
 
 vi.mock('../RouteDataSourceStep.js', () => ({
   RouteDataSourceStep: (_props: unknown) => null,
@@ -12,7 +12,7 @@ vi.mock('../RouteSelectionStep.js', () => ({
 vi.mock('../RouteProcessingStep.js', () => ({
   RouteProcessingStep: (_props: unknown) => null,
 }));
-vi.mock('../RouteBuildStep.js', () => ({
+vi.mock('../RouteBuildStep/RouteBuildStep.js', () => ({
   RouteBuildStep: (_props: unknown) => null,
 }));
 vi.mock('../RoutePreviewStep.js', () => ({
@@ -53,7 +53,7 @@ const getRouteCreateConfigs = () => {
 
 const createStepProps = (
   initialData: RouteStepData,
-  onChange: (data: RouteStepData) => void,
+  onChange: (data: RouteStepData) => void
 ): PluginStepProps<RouteStepData> => ({
   mode: 'create',
   nodeId: 'route-node',
@@ -78,7 +78,7 @@ describe('route steps provider update merge', () => {
     const element = dataSourceConfig.componentFactory(
       createStepProps({}, (next) => {
         latestData = next;
-      }),
+      })
     ) as RouteDataSourceElement;
 
     element.props.onUpdate({ dataSourceName: 'ide-gsm' });
@@ -100,7 +100,7 @@ describe('route steps provider update merge', () => {
       ideGsmFileName: 'routes.csv',
     };
     const element = dataSourceConfig.componentFactory(
-      createStepProps(initialData, () => undefined),
+      createStepProps(initialData, () => undefined)
     ) as RouteDataSourceElement;
 
     expect(element.props.draft).toMatchObject(initialData);
@@ -117,7 +117,7 @@ describe('route steps provider update merge', () => {
     const element = dataSourceConfig.componentFactory(
       createStepProps({ dataSourceName: 'ide-gsm' }, () => {
         changeCount += 1;
-      }),
+      })
     ) as RouteDataSourceElement;
 
     element.props.onUpdate({ dataSourceName: 'ide-gsm' });

@@ -2,14 +2,9 @@ import type { TaskDisplayPayload } from '@hierarchidb/build-api';
 import { type Atom, atom } from 'jotai';
 import { selectAtom } from 'jotai/utils';
 import { atomFamily } from 'jotai-family';
+import type { CanonicalBuildSessionTaskStatus } from '../kernel/createCanonicalBuildSessionSubscriptionKernel.js';
 
-export type BuildSessionTaskStatus =
-  | 'queued'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'recycled'
-  | 'skipped';
+export type BuildSessionTaskStatus = CanonicalBuildSessionTaskStatus;
 
 export type BuildSessionStateTreeLifecyclePhase =
   | 'idle'

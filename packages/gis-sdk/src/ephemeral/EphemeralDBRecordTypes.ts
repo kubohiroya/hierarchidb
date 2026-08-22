@@ -162,7 +162,7 @@ export interface EphemeralSourceCacheRecord {
   countryCode?: string;
   adminLevel?: number;
   data: ArrayBuffer;
-  format?: 'flatgeobuf' | 'topojson';
+  format?: 'flatgeobuf' | 'topojson' | 'geojson';
   compression?: 'gzip' | 'none';
   featureCount: number;
   inputFeatureCount?: number;
@@ -210,6 +210,7 @@ export interface EphemeralGeometryCacheMetaRecord {
   vertexCount?: number;
   polygonCount?: number;
   extractionRatio?: number;
+  tolerance?: number;
   metadata?: Record<string, unknown>;
   timestamp: number;
 }

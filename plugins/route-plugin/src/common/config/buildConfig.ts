@@ -1,5 +1,5 @@
-import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
+import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 
 type RouteBuildConfigLocal = RouteBuildConfig;
 
@@ -26,6 +26,8 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
   geometryConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     maxConcurrent: 2,
+    geometryEngine: 'turf',
+    simplifyAlgorithm: 'geojson',
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
     minVertexCountForAreaFilter: 10,
@@ -95,7 +97,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
 
 export const mergeRouteBuildConfig = (
   base: RouteBuildConfig,
-  overrides?: PartialRouteBuildConfig,
+  overrides?: PartialRouteBuildConfig
 ): RouteBuildConfig => {
   if (!overrides) return base;
 
@@ -106,12 +108,12 @@ export const mergeRouteBuildConfig = (
   const transformOverrides = overrides.geometryConfig;
   const geometryConfig = transformOverrides
     ? {
-      ...base.geometryConfig,
-      ...transformOverrides,
-      hybridFilterConfig: transformOverrides.hybridFilterConfig
-        ? { ...base.geometryConfig.hybridFilterConfig, ...transformOverrides.hybridFilterConfig }
-        : base.geometryConfig.hybridFilterConfig,
-    }
+        ...base.geometryConfig,
+        ...transformOverrides,
+        hybridFilterConfig: transformOverrides.hybridFilterConfig
+          ? { ...base.geometryConfig.hybridFilterConfig, ...transformOverrides.hybridFilterConfig }
+          : base.geometryConfig.hybridFilterConfig,
+      }
     : base.geometryConfig;
 
   const tileEmitConfig = overrides.tileEmitConfig
@@ -124,9 +126,9 @@ export const mergeRouteBuildConfig = (
 
   const routeGeometryConfig = overrides.routeGeometryConfig
     ? {
-      ...(base.routeGeometryConfig ?? {}),
-      ...overrides.routeGeometryConfig,
-    }
+        ...base.routeGeometryConfig,
+        ...overrides.routeGeometryConfig,
+      }
     : base.routeGeometryConfig;
 
   const routeGeneration = overrides.routeGeneration

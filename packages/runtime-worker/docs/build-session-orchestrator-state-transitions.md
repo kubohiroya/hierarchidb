@@ -208,7 +208,7 @@ Reference:
 
 `useShapeBuildSessionStateAtomBridge`:
 
-- acquires the five Shape channels with `BuildWorkerBridge.subscribeAll`
+- acquires the four canonical Shape channels with `BuildWorkerBridge.subscribeAll`
 - applies `stageSnapshotUpdated` as a full stage replacement
 - gates `taskProgressUpdated` by monotonically increasing per-task version
 - ignores callbacks after effect cancellation and disposes the acquired subscription
@@ -228,7 +228,7 @@ Current Shape UI behavior for multi-stage runs (`source -> geometry -> tileEmit`
 3. On stage transition detection (from progress stage or session record stageId):
    - set target stage to `ui-initializing`
    - buffer target-stage progress events without applying them
-   - request/accept task snapshot
+   - accept the authoritative `stageSnapshotUpdated` full replacement
    - switch target stage to `running`
    - flush buffered progress on `requestAnimationFrame`
 
@@ -376,7 +376,8 @@ Reference:
 
 - UI control intent (`Start`/`Resume`) maps to the same runtime command path.
 - Persistence updates are applied to normalized status/stage/heartbeat tables through session snapshot upsert/update flow.
-- Task stream emits `snapshot` then incremental `update` events.
+- Task delivery emits authoritative `stageSnapshotUpdated` full replacements and
+  separately ordered `taskProgressUpdated` events.
 
 ## 7.2 Pause / Cancel Queued
 

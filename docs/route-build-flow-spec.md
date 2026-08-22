@@ -1,6 +1,6 @@
 # route ビルド前〜ビルド仕様
 
-最終更新: 2026-08-21
+最終更新: 2026-08-22
 
 ## 仕様の位置づけと優先順位
 
@@ -31,7 +31,7 @@ cache identity の正規仕様（SSOT）とする。
   `RouteBuildSessionOrchestrator -> RouteBuildSession` とする。
 - UIは正規Worker commandを通じてstart/pause/resumeを要求する。UIから
   `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` を独立に直列実行する経路は
-  移行対象であり、正規経路として残さない。
+  使用しない。この3つのdirect mutation APIとbrowser-local orchestratorは削除し、正規経路として残さない。
 - 各ステージは実成果物を生成する。未実装/no-op handlerがtaskやstageを`completed`にしてはならない。
 - 必須入力、設定、engine、cache metadata、timingが欠落・不正な場合は即時に失敗する。
   丸め、clamp、既定値補完、別engineへの暗黙fallbackで継続しない。
@@ -57,13 +57,20 @@ cache identity の正規仕様（SSOT）とする。
   - OR 条件（始点または終点が一致）: 空路 / 海路 / 高速鉄道 / 在来線鉄道 / 道路
   - AND 条件（始点かつ終点が一致）: 空路 / 海路 / 高速鉄道 / 在来線鉄道 / 道路
 - 1 国あたり 10 チェックボックスを持つ。
+- `selectedArrayByCountries[countryCode]` の正規順序は、前半5セルが
+  `airway / waterway / high-speed-railway / railway / road` の OR、後半5セルが同じ順序の AND とする。
+  route UI と worker/runtime の source planning は `@hierarchidb/route-api` の
+  `IDE_GSM_ROUTE_SELECTION_MODE_ORDER` を唯一の列順SSOTとして参照する。
 
 ### 初期状態
 
 - Step2 のデータソースが返したcoverageに存在する「国×交通モード」だけチェックボックスを有効化する。
+- Step3の行はcoverageに存在する国だけで構成する。coverage外のISO国をdisabled行として描画しない。
 - 生成されたチェックボックスは初期状態で `checked` とする。
 - coverageはデータソース入力の実在範囲であり、location DB内の現在のノード集合ではない。
   したがって、coverageに存在する国はlocation DBに解決可能なPointがまだ無くても表示する。
+- coverage APIの正規payloadは `coverageByCountryOr` と `coverageByCountryAnd` だけである。
+  `coverageByCountry` alias、5-cell行、nullish fallback、空coverage、不明route modeは契約違反として失敗させる。
 - 選択されたroute行の始点/終点をsourceステージで解決できない場合は、理由を持つtask errorとして
   可視化する。「処理対象なし」や空成果物へ読み替えない。
 
@@ -75,7 +82,12 @@ cache identity の正規仕様（SSOT）とする。
 ### state 更新
 
 - Step3 の操作結果は `selectedArrayByCountries` に反映する。
+- `selectedArrayByCountries` はcoverage国だけをkeyに持ち、各rowはOR 5列 + AND 5列の10 booleanだけを保持する。
 - Step5 の fetch 対象は `selectedArrayByCountries` を唯一の選択入力として扱う。
+- source planning は `selectedArrayByCountries` を strict に
+  `IdeGsmRouteSelectionEntry[]` へ変換してから IDE-GSM 行を抽出する。国コードは uppercase ISO2、
+  各行は10個の boolean、OR cell が true の場合は対応する AND cell も true でなければならない。
+  空選択、5-cell legacy row、非 boolean cell、不正国コードは start 時の契約違反として失敗する。
 
 ## Step4: Build 設定
 
@@ -105,6 +117,18 @@ cache identity の正規仕様（SSOT）とする。
 
 - build ステップの UI 構成と動作は shape と基本的に同一とする。
 - 実装は最大限共用し、route 固有差分のみ差し込む。
+- `RouteBuildStep` は Container、hooksを持たない `RouteBuildStepView`、
+  `useRouteBuildStepState` に分離する。Viewは共通`BuildSessionProgressPanel`を直接使用し、
+  route専用の再ラップcomponentやbrowser-local lifecycle stateを持たない。
+- route UI adapterが所有するのは`source / geometry / tileEmit`のstage vocabulary、表示label、
+  必須build入力、Worker transport指定、結果表示へのdraft反映だけとする。購読検証、snapshot readiness、
+  progress buffering、command mutation stateは`@hierarchidb/ui-build-sessions`の共通kernelを使用する。
+- subscriptionおよびcommand transportの初期化が完了するまでstart/resumeを禁止する。
+  canonical sessionが`queued`の間はqueued cancelだけを表示し、
+  `cancelQueuedBuildSession`へ接続する。pause/resume/cancel成功をlocal stateで合成しない。
+- canonical `paused / completed / failed`とRoute固有の前回crash insightは、共通Panelの
+  suspend/completion/crash dialog surfaceへ接続する。canonical timingの欠落を
+  draft timestampや`Date.now()`で補完しない。
 
 ### 内部パイプライン
 
@@ -115,12 +139,26 @@ cache identity の正規仕様（SSOT）とする。
     - shape のようなズーム帯別 GeoJSON コピーは作成しない。
 - `geometry` ステージ:
   - route では filtering と simplification を一括で実行する。
-  - simplification algorithm と tolerance の単位は shape transform と共通。
-  - LineStringの端点を保持し、ズーム帯ごとのtile転置indexを生成する。
+  - `geometryConfig.geometryEngine='turf'` と `simplifyAlgorithm='geojson'` を明示必須とし、
+    route の RDP simplification tolerance は緯度経度のdegree単位とする。
+  - `zoomBandBoundaries` は `0..22` のstrictly increasingな整数列で2要素以上、
+    `minDistanceMetersByBand` / `simplifyToleranceByBand` はband数と同じ長さのfiniteな非負値列とする。
+    値の丸め、sort、clamp、末尾値の反復、既定値補完は行わない。
+  - 各bandは`zBase=zMin`とし、中間bandの上端は次boundaryの直前、最終bandだけ最後のboundaryを
+    含む。LineStringの端点を保持し、`zBase`で横切るtileの転置indexを生成する。
+  - filteringでrouteが除外されたbandも、空FeatureCollectionのgeometry artifactを永続化する。
+    空成果物をno-op成功へ読み替えず、filter結果とlineageをartifact metadataへ保持する。
+  - tile index対象のLineStringはWeb Mercator緯度範囲内でなければならない。範囲外座標を
+    tile端へclampしない。経度差が180°を超えるsegmentはantimeridianを横断するworld-wrap区間とし、
+    経度seamの両側tileをindexへ含める。
   - filtering / simplification / index生成のいずれかを省略して成功扱いにしない。
 - `tileEmit` ステージ:
-  - shape と完全に同じ処理を利用する。
+  - shape/location と共通の`createVtHandler`を利用する。
   - geometry cacheとtile転置indexを読み、MVT生成とroute storeへの永続化までを完了する。
+  - 親tile単位のtaskはtile転置indexから決定的に生成し、各taskは正のtile件数を生成しなければ失敗する。
+  - task入力は現在のsessionが計画したroute×bandのgeometry cache IDだけに限定し、同じnodeIdに残る
+    過去sessionの別source artifact/relationを現在のMVTへ混入させない。
+  - `RouteDB.vectorTiles`への書込み結果をbyte単位でread-back検証した後にのみ完了する。
 
 ### source key / cache identity
 
@@ -128,7 +166,8 @@ cache identity の正規仕様（SSOT）とする。
 - routeは既定で方向付きとし、始点/終点の順序を保持する。
 - `metadata.bidirectional === true` または `metadata.oneway === false` が契約どおり明示されたrouteだけ、
   `(longitude, latitude, locationId)` の辞書順で端点を並べ、双方向を同一`sourceKey`へ正規化する。
-- directionality metadataが欠落している場合にbidirectionalと推測しない。不正型を既定値へ補完しない。
+- directionality metadataが欠落している場合にbidirectionalと推測しない。不正型や
+  `bidirectional` / `oneway` の矛盾を既定値へ補完しない。
 - geometry生成に影響する座標、generation method/options、build設定は入力`meta`/`inputHash`へ含める。
   `sourceKey`が同一でも入力署名が異なればcacheを再利用しない。
 - routeMode、locationId、座標、入力署名の必須要素が欠落・不正な場合は契約違反として失敗する。
@@ -144,11 +183,32 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 
 ### metadata 保存
 
-- route metadata には以下を保存する:
+- data-source strategy / location 解決境界は、正規 `RouteFeature.startPoint / endPoint` の
+  route metadata に以下を保存する:
   - location からコピーした始点/終点座標
   - 始点/終点の admin0〜2 の name/code
   - 始点終点間の距離
   - 中継点数
+- `RouteBuildSession` が受け取る `RouteBuildRouteInput` は、この境界で解決済みの
+  location ID と始点/終点座標を必須入力とする。session 内で曖昧な文字列検索や
+  別 location への fallback を行わない。
+- source cache metadata は route metadata の複製先ではない。後続stageがartifactの同一性と
+  lineageを検証できるよう、`sourceKey`、`inputHash`、content hash、route mode、directionality、
+  generation method、location ID、始点/終点座標、距離、所要時間、中継点数、feature/vertex数、
+  永続化完了時刻を保存する。admin name/codeは正規`RouteFeature`をSSOTとし、source cacheへ
+  重複保存しない。
+- geometry cacheはroute×zoom bandごとに1件を`EphemeralDB.geometryCache`へ保存し、
+  `geometryCacheMeta`へdata以外のlineageを保存する。metadataにはsource cache ID、source input/content
+  hash、geometry input/content hash、route mode、band範囲、filter閾値、simplification tolerance、
+  filter結果、feature/vertex/tile数、永続化完了時刻を含める。
+- tileEmit対象となる非空geometry artifactは、shape/locationと共通のVT handlerが読むFlatGeobufで保存し、
+  metadataの`format`を`flatgeobuf`とする。filter除外artifactは転置indexへ登録せず、空featuresの
+  GeoJSONと`format=geojson`を保存する。転置indexが非FlatGeobuf artifactを参照した場合は失敗する。
+- 正規tile転置indexは`EphemeralDB.tileEmitBufferRelations`のtile→geometry buffer関係とする。
+  tile IDはVT orchestratorの共通packed IDを使い、tile境界への接触も交差として含める。
+  旧`RouteDB.tileIndex`はcanonical geometry→tileEmit lineageのSSOTとして使用しない。
+- 同一route sourceのgeometry cache更新は、旧band artifact/relation削除、新artifact/meta、
+  新relation書込み、read-back検証を1つのEphemeralDB transactionで完了する。
 
 ## Step6: Preview
 
@@ -180,10 +240,12 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 ### プロパティ別の更新ルール
 
 - 始点/終点の座標変更または admin code 変更:
-  - 該当 route ノードで該当経路の fetch キャッシュを削除
-  - route UI に `rebuild required` タグを表示
-  - sessions に「再ビルド予約」項目を作成
+  - 該当 route ノードの route feature に `rebuildRequired=true` と `rebuildRequiredAt` を保存する。
+  - route DB の vector tile / tile index と ephemeral DB の source / geometry / tile relation / build task 成果物を削除する。
+  - route UI は `rebuildRequired` を根拠に `rebuild required` タグを表示する。
+  - sessions に「再ビルド予約」項目を作成する。
     - 予約は route ノード単位でまとめる（経路単位では作らない）
+    - 既存の route build session が `running` の場合は、成果物だけを無効化し、running status / config は上書きしない。
 - それ以外（admin name など）:
   - 対応 route metadata を即時更新
 
@@ -211,11 +273,22 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 
 ## canonical Worker start入力
 
-- Runtime bootstrapはTreeNodeの`draftData`を無加工でroute pluginへ渡す。
-- 現行のdirect-route入力は`RouteEntityPayload.buildConfig / startLocationId / endLocationId /
-  lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を始点・終点座標として使う。
-- 存在しない`draftData.routes`を別の入力SSOTとして追加しない。
+- Runtime bootstrapはroute nodeTypeの開始時だけTreeNodeの`draftData`を正規化し、
+  pluginへ渡すtransient入力に明示discriminator `routeBuildInput.kind`を追加する。
+- `routeBuildInput.kind = "direct-route"` は`RouteEntityPayload.buildConfig / routeMode /
+  startLocationId / endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を
+  始点・終点座標として使う。
+- `routeBuildInput.kind = "selection-driven"` は`tabularSourceId`とstrict
+  `selectedArrayByCountries`からruntime `RouteMutationAPI.resolveIdeGsmRouteBuildRoutes`
+  が解決した`RouteBuildRouteInput[]`だけをpluginへ渡す。`draftData.routes`は永続入力SSOTとして
+  追加しない。
+- selection-driven startでは`selectedArrayByCountries`だけから選択対象を決め、未選択行を
+  task化しない。location ID、始点/終点座標、route mode、directionality metadataは
+  IDE-GSM rowと関連locationから解決済みの`RouteBuildRouteInput`に含める。
+- direct-route入力とselection-driven入力が同時に存在する場合は契約違反としてstartを失敗させる。
+- `routeMode`は`ROUTE_MODES`の正規値を直接保持する。`transportMode`や`transportSelection`から
+  暗黙変換せず、欠落・不正値はstart時の契約違反として失敗させる。
 - 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
-  location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
-- `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
-  Issue #549の対象であり、direct-route入力と混在させない。
+  routeMode、location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
+- selection-driven planningで必須location/coordinate/modeが欠落または不正な場合は、理由付きで
+  startを失敗させる。fallbackや空successへ丸めない。

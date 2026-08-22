@@ -83,6 +83,24 @@
         not bootstrap the application, start activation, persist state, copy data, or send results.
       </p>
       <p>
+        Recovery-pre and recovery-post modes validate the separately approved corrective-recovery
+        inventory and durable one-shot claim. They are read-only and never start recovery.
+      </p>
+      <p>
+        Recovery-interrupted-core reports only the fixed historical database native version,
+        logical-v2 topology status, and total record count. It never authorizes recovery.
+      </p>
+      <p>
+        Recovery-interrupted-core-v1 requires the fixed historical database at exact native version
+        10 and reports only its logical-v1 topology status and total record count. It never
+        authorizes recovery.
+      </p>
+      <p>
+        Recovery-interrupted-core-preservation classifies every record in that exact logical-v1
+        database and reports only store and aggregate counts plus graph and YAML planning status. It
+        never exposes record values or authorizes recovery.
+      </p>
+      <p>
         In pre mode, record the result and close this diagnostic tab before loading or reloading the
         production root. An open diagnostic tab is intentionally not a coordinator participant and
         therefore blocks activation census fail-closed.

@@ -1,6 +1,6 @@
 # @hierarchidb/route-plugin
 
-最終更新: 2026-08-21
+最終更新: 2026-08-22
 
 HierarchiDB の交通路・輸送ルート管理プラグイン。OpenStreetMap、OpenFlights、searoute-js、Transitland、Natural Earth 等のオープンデータソースから航路・海路・道路・鉄道・高速鉄道のルートデータをバッチダウンロードし、IndexedDB に永続化して地図上で可視化・分析する。`RouteBuildSession`（`AbstractBuildSession` を継承）による 3 ステージバッチ処理（source → geometry → tileEmit）、レーンポリシーによる並列制御、MapLibre ベースの Map プレビュー（交通モード別色分け・線幅調整）をサポートする。
 
@@ -14,9 +14,11 @@ HierarchiDB の交通路・輸送ルート管理プラグイン。OpenStreetMap�
 - routeは既定で方向付きであり、契約どおりbidirectionalと明示されたrouteだけ
   始終点を正規化して同一`sourceKey`にする。
 - build sessionの正規entry pointは`RouteBuildSessionOrchestrator -> RouteBuildSession`とする。
-- 2026-08-21時点ではUIの直接実行経路とsession経路が併存する。session側は
-  `source`でgenerator結果を永続化せず、`geometry` / `tileEmit`でも実成果物を生成しない。
-  Issue #549で単一の正規経路へ統合する。
+- UIはWorker canonical eventのsubscription確立後にcanonical commandだけを送信する。
+  browser-local orchestratorと`importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles`
+  のdirect mutation経路は削除済みである。
+- `source`は生成結果、`geometry`はzoom-band別FlatGeobufとtile転置index、`tileEmit`は
+  shape/location共通VT handlerが生成したMVTをそれぞれ永続化する。
 - 未実装stage、engine欠落、不正設定をno-op成功や別engineへの暗黙fallbackで処理しない。
 
 ## ノードタイプと継承関係
@@ -50,11 +52,10 @@ route-plugin は `PluginStepRegistry` ベースの 5 ステップウィザード
 | コンポーネント | 説明 |
 | --- | --- |
 | `RouteDataSourceStep` | データソース選択 UI（ライセンス確認を含む） |
-| `RouteSelectionStep` | 国×交通モードのチェックボックスマトリックス（OR/AND 切り替え） |
+| `RouteSelectionStep` | Step2 coverage に存在する国だけを描画する国×交通モードのチェックボックスマトリックス（OR/AND 切り替え、1国10 boolean） |
 | `RouteProcessingStep` | ビルドパラメータ設定（geometry / tileEmit 設定） |
 | `RouteBuildStep` | ビルド実行・進捗モニタリング |
 | `RoutePreviewStep` | MapLibre ベースのルートプレビュー |
-| `RouteBuildLaunchForm` | ビルド起動フォーム |
 | `RouteBuildLiveProgress` | リアルタイムビルド進捗表示 |
 | `RouteBuildProgressBar` | ビルド進捗バー |
 | `RouteBuildSummary` | ビルド結果サマリー |
@@ -222,13 +223,16 @@ route-plugin は `batch: true` を宣言し、`RouteBuildSession`（`AbstractBui
 ### ビルドフロー
 
 ```text
-RouteBuildManager.startRouteBuildSession()
-  → RouteBuildTask[] 生成（source / geometry / tileEmit）
+Worker canonical command
+  → RouteBuildSessionOrchestrator
+  → RouteBuildManager.createRouteBuildSession()
+  → RouteBuildTask[] 生成（source / geometry）
   → VtTaskQueueDb に永続化
   → RouteBuildSession.processBatch()
-    → runStageTasks('source')   — ルート経路生成（RouteGenerator）
-    → runStageTasks('geometry') — ジオメトリ処理
-    → runStageTasks('tileEmit') — ベクトルタイル生成
+    → runStageTasks('source')   — 経路生成とsource artifact永続化
+    → runStageTasks('geometry') — FlatGeobuf、metadata、tile転置index永続化
+    → tile転置indexから現在sessionのtileEmit taskを決定的に生成
+    → runStageTasks('tileEmit') — 共通VT handlerによるMVT生成とRouteDB永続化
 ```
 
 ### 3 ステージパイプライン
@@ -236,8 +240,8 @@ RouteBuildManager.startRouteBuildSession()
 | ステージ | 処理内容 | 並列制御 |
 | --- | --- | --- |
 | `source` | 始点・終点座標から経路を生成（`RouteGenerator`） | レーンポリシーによるメソッド別並列制御 |
-| `geometry` | ジオメトリ処理（簡略化・フィルタリング） | `geometryConfig.maxConcurrent` |
-| `tileEmit` | MVT ベクトルタイル生成 | `tileEmitConfig.maxConcurrent` |
+| `geometry` | filtering / simplification、endpoint保持、FlatGeobufとtile転置indexの永続化 | `geometryConfig.maxConcurrent` |
+| `tileEmit` | shape/location共通VT handlerによるMVT生成、RouteDB書込み、read-back検証 | `tileEmitConfig.maxConcurrent` |
 
 ### レーンポリシー
 
@@ -251,23 +255,12 @@ source ステージでは `lanePolicy` によりルート生成メソッド別�
 | `great_circle` | 64 |
 | `custom` | 8 |
 
-### RouteBuildOrchestrationService
+### Canonical orchestration
 
-`RouteBuildOrchestrationService` が高レベルのビルドオーケストレーションを提供する:
-
-| メソッド | 説明 |
-| --- | --- |
-| `startFromSources` | データソースから OD ペアを取得してビルド開始 |
-| `startMatrix` | 起点×終点のマトリックスビルド |
-| `startEnrich` | 既存ルートのエンリッチメントビルド |
-
-### RouteSourceOrchestrator
-
-`RouteSourceOrchestrator` がデータソース戦略の選択と実行を担当する:
-
-- `TabularStrategy` — 表形式データソース（IDE-GSM 等）
-- `GeoJsonStrategy` — GeoJSON データソース
-- `FetchNetworkPort` によるホスト単位の同時接続管理（4 接続）、CORS プロキシ対応
+`RouteBuildSessionOrchestrator`がnodeIdごとに1つの`RouteBuildSession`を所有する。
+UI側にsession mapやstage runnerを持たず、起動・pause・resumeはWorker canonical command、
+進捗はcanonical 4 eventだけを使用する。tileEmit taskは現在sessionが計画したgeometry cache IDだけを
+入力とし、同じnodeIdに残る過去sessionの別source artifactを混入させない。
 
 ### Location 連携
 
@@ -392,12 +385,6 @@ src/
 │   │   ├── en.ts                     # English translations
 │   │   ├── ja.ts                     # Japanese translations
 │   │   └── types.ts                  # i18n type definitions
-│   ├── orchestrator/
-│   │   ├── RouteBuildOrchestrationService.ts  # High-level build orchestration
-│   │   ├── RouteSourceOrchestrator.ts         # Data source strategy orchestration
-│   │   ├── TaskMapper.ts                      # OD pair → task mapping
-│   │   ├── types.ts                           # Orchestrator types
-│   │   └── strategies/                        # TabularStrategy, GeoJsonStrategy
 │   ├── styles/
 │   │   └── routeStyle.ts             # Route style config, color expressions
 │   ├── tabular/
@@ -413,7 +400,11 @@ src/
 │   ├── LocationResolver.ts           # Location coordinate resolution
 │   ├── RouteBuildManager.ts          # Build session manager (task creation, session lifecycle)
 │   ├── RouteBuildSession.ts          # Build session (3-stage pipeline with lane policy)
-│   ├── RouteBuildSessionOrchestrator.ts  # Session orchestrator (extends BaseBuildSessionManager)
+│   ├── RouteBuildSessionOrchestrator.ts  # Canonical session orchestrator
+│   ├── persistRouteSourceArtifact.ts     # Source artifact persistence
+│   ├── persistRouteGeometryArtifacts.ts # Geometry artifact/index persistence
+│   ├── prepareRouteTileEmitTasks.ts      # Current-session tile task planning
+│   ├── persistRouteTileArtifacts.ts      # Route MVT persistence/read-back
 │   ├── build/
 │   │   └── adapters/                 # Runtime worker adapter registration
 │   ├── config/
@@ -433,11 +424,9 @@ src/
 │   ├── i18n.ts                       # i18n setup
 │   ├── components/
 │   │   ├── steps-provider.tsx        # PluginStepRegistry registration (5 steps)
-│   │   ├── RouteBuildLaunchForm.tsx   # Build launch form
 │   │   ├── RouteBuildLiveProgress.tsx # Live progress display
 │   │   ├── RouteBuildProgressBar.tsx  # Progress bar
 │   │   ├── RouteBuildSummary.tsx      # Build summary
-│   │   ├── useRouteBuildLaunchForm.ts # Build launch form hook
 │   │   └── steps/
 │   │       ├── RouteBuildStep.tsx     # Build execution step
 │   │       ├── RouteDataSourceStep.tsx # Data source selection
@@ -453,7 +442,8 @@ src/
 │   └── utils/
 │       └── clearRouteDataSourceCache.ts  # Cache clearing
 └── worker/
-    ├── index.ts                      # Worker entry point (getBuildTasks, registerRouteWorkerStores)
+    ├── index.ts                      # Worker entry point
+    ├── canonicalBuildAPI.ts          # Canonical build command/event API
     ├── createRouteFeatureStoreDexie.ts    # Dexie FeatureStore factory
     ├── createRouteVectorTileStoreDexie.ts # Dexie VectorTileStore factory
     ├── getBuildTasks.ts              # Build task retrieval from VtTaskQueueDb
