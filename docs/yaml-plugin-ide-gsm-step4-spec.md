@@ -205,6 +205,14 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - 独立した YamlDB v1 は authoritative store、cache、dual-write 先ではない。既存 rowをgraph-preserved historical sourceとしてread-only inventoryするためだけに保持し、新規 write、自動 merge、自動 copy、自動 deleteを禁止する。
 - CoreDB と YamlDB は別の IndexedDB database であり、単一 transaction に含められない。CoreDB migration、YamlDB read-only inventory、YamlDB runtime path 廃止、retention保護、物理 database 削除は別の Issue と atomic boundary で扱う。
 - CoreDB migration 中は YamlDB を変更しない。YamlDB inventoryはsource accountingとtarget comparisonだけを行い、CoreDB record作成、repair、copy、merge、discard、delete、fallbackを行わない。将来historical write pathが必要な場合は、別Issueでsource fencing、target-only atomic write、rollbackを明示確定する。
+- #1341 のlegacy YamlDB v1 inventoryは、全rowを `duplicate/no-op`、`recoverable`、`orphan/blocked`、`conflict`、`invalid`、`explicitly-discarded` のいずれかへ決定的にaccountする。`unknown`、skip、default fallbackを分類として導入しない。
+- `duplicate/no-op` は、CoreDB targetのnode ID、`nodeType: "yaml-file"`、parent ID、metadata name、subtype、schemaId、contentがlegacy rowとbyte-for-byte一致する場合だけ成立する。
+- `recoverable` は、target nodeが存在せず、同一parent/nameのsibling衝突がなく、回復先parentが存在し、かつそのparentの`nodeType`が`folder`である場合だけ成立する。この分類はwrite authorityではなく、別途承認されるrecovery batchのpreflight入力に限る。
+- `orphan/blocked` は、回復先parentが存在しない、またはfolder型ではない場合に用いる。parent、schema、filename、subtype、contentを推測または補完して`recoverable`へ昇格しない。
+- `conflict` は、同一node IDのtargetが存在するが完全一致しない場合、または同一parent/nameの別nodeが存在する場合に用いる。conflict rowを自動merge、overwrite、rename、discardしない。
+- `invalid` は、legacy rowのshape、primary key、registry tuple、canonical payload validationのいずれかが不正な場合に用いる。invalid rowをrepair、補完、recoveryしない。
+- `explicitly-discarded` は、対象node IDと理由を含むユーザー承認記録が別途存在する場合だけaccountできる。discard承認はrow削除ではなくaccounting分類であり、YamlDB source rowを変更しない。
+- YamlDB inventoryのpublic resultはaggregate count、stable code、rowごとのclassificationとstable identifier、deterministic source digestに限定し、YAML本文、credential、raw native error、個別row値を含めない。stable identifierはrow digestであり、node ID、parent ID、filename、schemaId、contentを公開しない。
 
 ### Nonempty interrupted CoreDB preservation classification
 

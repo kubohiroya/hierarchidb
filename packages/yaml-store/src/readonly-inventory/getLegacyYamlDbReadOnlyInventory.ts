@@ -38,20 +38,41 @@ export type LegacyYamlDbTargetComparisonCode =
   | 'parent-blocked'
   | 'conflict';
 
+export type LegacyYamlDbAccountingClassification =
+  | 'duplicate/no-op'
+  | 'recoverable'
+  | 'orphan/blocked'
+  | 'conflict'
+  | 'invalid'
+  | 'explicitly-discarded';
+
 export type LegacyYamlDbCountMap<Key extends string> = Readonly<Partial<Record<Key, number>>>;
 
 export interface LegacyYamlDbCanonicalTargetRow {
   readonly nodeId: string;
+  readonly nodeType: string;
   readonly parentId: string;
   readonly name: string;
+  readonly subtype?: YamlSubtype;
   readonly schemaId: string;
   readonly content: string;
+}
+
+export interface LegacyYamlDbExplicitDiscardApproval {
+  readonly nodeId: string;
+  readonly reason: string;
+}
+
+export interface LegacyYamlDbAccountingEvidence {
+  readonly stableIdentifier: string;
+  readonly classification: LegacyYamlDbAccountingClassification;
 }
 
 export interface LegacyYamlDbReadOnlyInventoryOptions {
   readonly indexedDB?: IDBFactory;
   readonly databaseName?: string;
   readonly canonicalTargets?: readonly LegacyYamlDbCanonicalTargetRow[];
+  readonly explicitDiscardApprovals?: readonly LegacyYamlDbExplicitDiscardApproval[];
 }
 
 export type LegacyYamlDbReadOnlyInventoryResult =
@@ -63,6 +84,8 @@ export type LegacyYamlDbReadOnlyInventoryResult =
       readonly validLegacyCount: number;
       readonly invalidCount: number;
       readonly invalidCodeCounts: LegacyYamlDbCountMap<LegacyYamlDbInventoryInvalidCode>;
+      readonly accountingCounts: LegacyYamlDbCountMap<LegacyYamlDbAccountingClassification>;
+      readonly accountingEvidence: readonly LegacyYamlDbAccountingEvidence[];
       readonly targetComparisonCounts?: LegacyYamlDbCountMap<LegacyYamlDbTargetComparisonCode>;
       readonly sourceDigest: string;
     }>
@@ -198,42 +221,114 @@ function validateLegacyRow(
 }
 
 function compareTargets(
-  rows: readonly LegacyYamlDbInventoryRow[],
-  targets: readonly LegacyYamlDbCanonicalTargetRow[]
+  accountingCounts: LegacyYamlDbCountMap<LegacyYamlDbAccountingClassification>
 ): LegacyYamlDbCountMap<LegacyYamlDbTargetComparisonCode> {
+  return freezeCounts({
+    equivalent: accountingCounts['duplicate/no-op'] ?? 0,
+    'target-absent': accountingCounts.recoverable ?? 0,
+    'parent-blocked': accountingCounts['orphan/blocked'] ?? 0,
+    conflict: accountingCounts.conflict ?? 0,
+  });
+}
+
+function createApprovalSet(
+  approvals: readonly LegacyYamlDbExplicitDiscardApproval[] | undefined
+): ReadonlySet<string> {
+  if (approvals === undefined) return new Set();
+  const approvedNodeIds = new Set<string>();
+  for (const approval of approvals) {
+    if (
+      isPlainRecord(approval) &&
+      typeof approval.nodeId === 'string' &&
+      approval.nodeId.length > 0 &&
+      typeof approval.reason === 'string' &&
+      approval.reason.length > 0
+    ) {
+      approvedNodeIds.add(approval.nodeId);
+    }
+  }
+  return approvedNodeIds;
+}
+
+function computeAccountingCounts(
+  rows: readonly LegacyYamlDbInventoryRow[],
+  invalidCount: number,
+  targets: readonly LegacyYamlDbCanonicalTargetRow[] | undefined,
+  explicitDiscardApprovals: readonly LegacyYamlDbExplicitDiscardApproval[] | undefined
+): Readonly<{
+  counts: LegacyYamlDbCountMap<LegacyYamlDbAccountingClassification>;
+  validClassifications: readonly LegacyYamlDbAccountingClassification[];
+}> {
+  const counts: Record<LegacyYamlDbAccountingClassification, number> = {
+    'duplicate/no-op': 0,
+    recoverable: 0,
+    'orphan/blocked': 0,
+    conflict: 0,
+    invalid: invalidCount,
+    'explicitly-discarded': 0,
+  };
+  const validClassifications: LegacyYamlDbAccountingClassification[] = [];
+  const approvedDiscardNodeIds = createApprovalSet(explicitDiscardApprovals);
+  if (targets === undefined) {
+    for (const row of rows) {
+      const classification = approvedDiscardNodeIds.has(row.nodeId)
+        ? 'explicitly-discarded'
+        : 'orphan/blocked';
+      validClassifications.push(classification);
+      increment(counts, classification);
+    }
+    return Object.freeze({
+      counts: freezeCounts(counts),
+      validClassifications: Object.freeze(validClassifications),
+    });
+  }
+
   const targetByNodeId = new Map(targets.map((target) => [target.nodeId, target] as const));
   const targetIdentity = new Map(
     targets.map((target) => [`${target.parentId}\u0000${target.name}`, target])
   );
-  const counts: Record<LegacyYamlDbTargetComparisonCode, number> = {
-    equivalent: 0,
-    'target-absent': 0,
-    'parent-blocked': 0,
-    conflict: 0,
-  };
 
   for (const row of rows) {
+    if (approvedDiscardNodeIds.has(row.nodeId)) {
+      const classification = 'explicitly-discarded';
+      validClassifications.push(classification);
+      increment(counts, classification);
+      continue;
+    }
+
     const target = targetByNodeId.get(row.nodeId);
     if (target !== undefined) {
       const equivalent =
+        target.nodeType === 'yaml-file' &&
         target.parentId === row.parentId &&
         target.name === row.name &&
+        target.subtype === row.subtype &&
         target.schemaId === row.schemaId &&
         target.content === row.content;
-      increment(counts, equivalent ? 'equivalent' : 'conflict');
+      const classification = equivalent ? 'duplicate/no-op' : 'conflict';
+      validClassifications.push(classification);
+      increment(counts, classification);
       continue;
     }
 
     const sibling = targetIdentity.get(`${row.parentId}\u0000${row.name}`);
     if (sibling !== undefined && sibling.nodeId !== row.nodeId) {
-      increment(counts, 'conflict');
+      const classification = 'conflict';
+      validClassifications.push(classification);
+      increment(counts, classification);
       continue;
     }
 
-    increment(counts, targetByNodeId.has(row.parentId) ? 'target-absent' : 'parent-blocked');
+    const parent = targetByNodeId.get(row.parentId);
+    const classification = parent?.nodeType === 'folder' ? 'recoverable' : 'orphan/blocked';
+    validClassifications.push(classification);
+    increment(counts, classification);
   }
 
-  return freezeCounts(counts);
+  return Object.freeze({
+    counts: freezeCounts(counts),
+    validClassifications: Object.freeze(validClassifications),
+  });
 }
 
 function stableValueForDigest(value: unknown): unknown {
@@ -288,6 +383,41 @@ async function digestSourceEntries(
     offset += chunk.byteLength;
   }
   return digestSha256Hex(combined);
+}
+
+async function digestAccountingStableIdentifier(
+  entry: LegacyYamlDbRawCursorEntry,
+  sourceIndex: number,
+  classification: LegacyYamlDbAccountingClassification
+): Promise<string> {
+  const stableInput = JSON.stringify({
+    contract: 'legacy-yamldb-v1-accounting-evidence',
+    sourceIndex,
+    classification,
+    entry: stableValueForDigest(entry),
+  });
+  return digestSha256Hex(textEncoder.encode(stableInput));
+}
+
+async function createAccountingEvidence(
+  entries: readonly LegacyYamlDbRawCursorEntry[],
+  classifications: readonly LegacyYamlDbAccountingClassification[]
+): Promise<readonly LegacyYamlDbAccountingEvidence[]> {
+  const evidence: LegacyYamlDbAccountingEvidence[] = [];
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    const classification = classifications[index];
+    if (entry === undefined || classification === undefined) {
+      throw new Error('missing-accounting-classification');
+    }
+    evidence.push(
+      Object.freeze({
+        stableIdentifier: await digestAccountingStableIdentifier(entry, index, classification),
+        classification,
+      })
+    );
+  }
+  return Object.freeze(evidence);
 }
 
 function openRequestToPromise(
@@ -396,16 +526,22 @@ export async function getLegacyYamlDbReadOnlyInventory(
     if (!read.ok) return fail('LEGACY_YAMLDB_TOPOLOGY_MALFORMED');
 
     const validRows: LegacyYamlDbInventoryRow[] = [];
+    const validRowIndexes: number[] = [];
     const classifications: (LegacyYamlDbInventoryInvalidCode | 'valid-legacy')[] = [];
+    const accountingClassifications: LegacyYamlDbAccountingClassification[] = [];
     const invalidCodeCounts: Partial<Record<LegacyYamlDbInventoryInvalidCode, number>> = {};
 
-    for (const entry of read.entries) {
+    for (let index = 0; index < read.entries.length; index += 1) {
+      const entry = read.entries[index];
+      if (entry === undefined) return fail('LEGACY_YAMLDB_READ_FAILED');
       const validation = validateLegacyRow(entry);
       if (validation.ok) {
         validRows.push(validation.row);
+        validRowIndexes.push(index);
         classifications.push('valid-legacy');
       } else {
         classifications.push(validation.code);
+        accountingClassifications[index] = 'invalid';
         increment(invalidCodeCounts, validation.code);
       }
     }
@@ -413,6 +549,27 @@ export async function getLegacyYamlDbReadOnlyInventory(
     let sourceDigest: string;
     try {
       sourceDigest = await digestSourceEntries(read.entries, classifications);
+    } catch {
+      return fail('LEGACY_YAMLDB_DIGEST_FAILED');
+    }
+
+    const accounting = computeAccountingCounts(
+      validRows,
+      read.entries.length - validRows.length,
+      options.canonicalTargets,
+      options.explicitDiscardApprovals
+    );
+    for (let index = 0; index < validRowIndexes.length; index += 1) {
+      const sourceIndex = validRowIndexes[index];
+      const classification = accounting.validClassifications[index];
+      if (sourceIndex === undefined || classification === undefined) {
+        return fail('LEGACY_YAMLDB_DIGEST_FAILED');
+      }
+      accountingClassifications[sourceIndex] = classification;
+    }
+    let accountingEvidence: readonly LegacyYamlDbAccountingEvidence[];
+    try {
+      accountingEvidence = await createAccountingEvidence(read.entries, accountingClassifications);
     } catch {
       return fail('LEGACY_YAMLDB_DIGEST_FAILED');
     }
@@ -425,9 +582,11 @@ export async function getLegacyYamlDbReadOnlyInventory(
       validLegacyCount: validRows.length,
       invalidCount: read.entries.length - validRows.length,
       invalidCodeCounts: freezeCounts(invalidCodeCounts),
+      accountingCounts: accounting.counts,
+      accountingEvidence,
       ...(options.canonicalTargets === undefined
         ? {}
-        : { targetComparisonCounts: compareTargets(validRows, options.canonicalTargets) }),
+        : { targetComparisonCounts: compareTargets(accounting.counts) }),
       sourceDigest,
     });
   } finally {
