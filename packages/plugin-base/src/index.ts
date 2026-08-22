@@ -10,9 +10,11 @@ export type {
 export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
 export { composeStepConfigs } from './services/composeStepConfigs.js';
 export * from './types/BaseSearchCriteria.js';
+export * from './types/dependencyGraphJsonSchema.js';
 export * from './types/EntityLifecycleHooks.js';
 // export * from './types/PluginExtensionAPI.js';
 export * from './types/PluginLifecycleAPI.js';
+export * from './types/PluginTreeAPI.js';
 export * from './types/pluginDefinitionTypes.js';
 export * from './types/pluginManifestTypes.js';
 export * from './types/pluginMetadataTypes.js';

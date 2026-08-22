@@ -11,7 +11,15 @@ export interface TabularSchema {
   columns: TabularColumnSpec[];
 }
 
-export type TabularRow = Record<string, unknown>;
+export type TabularValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly TabularValue[]
+  | { readonly [key: string]: TabularValue };
+
+export type TabularRow = Record<string, TabularValue>;
 
 export interface TabularChunk<T = TabularRow> {
   rows: T[];

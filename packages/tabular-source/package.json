@@ -48,6 +48,9 @@
   "peerDependencies": {
     "@hierarchidb/util": "workspace:*"
   },
+  "dependencies": {
+    "ajv": "^8.18.0"
+  },
   "devDependencies": {
     "@hierarchidb/util": "workspace:*",
     "typescript": "workspace:^5.9.3"

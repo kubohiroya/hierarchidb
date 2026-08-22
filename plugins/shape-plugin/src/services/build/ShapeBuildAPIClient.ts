@@ -30,7 +30,6 @@ import type {
   ShapeBuildSessionRecoveryRequest,
   ShapeBuildSessionRecoveryResult,
 } from '@hierarchidb/shape-api';
-import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   storeRawDataDataSourceBufferForNode,
 } from '~/services/utils/chunkStore';
@@ -76,8 +75,10 @@ const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idl
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const isVtTaskQueueDb = (value: ShapeGeometryTaskQueue): value is VtTaskQueueDb =>
-  isRecord(value) && 'tasks' in value && 'transaction' in value;
+const isShapeGeometryTaskQueue = (value: ShapeGeometryTaskQueue): value is ShapeGeometryTaskQueue =>
+  isRecord(value) &&
+  isRecord(value.tasks) &&
+  typeof value.tasks.get === 'function';
 
 const BUILD_STAGES = ['source', 'geometry', 'tileEmit'] as const;
 
@@ -677,11 +678,21 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     return merged;
   }
 
-  subscribeToWorkerLog(_nodeId: NodeId, _callback: (event: { level: 'log' | 'warn' | 'error'; message: string; data?: any; timestamp: number }) => void): () => void {
+  subscribeToWorkerLog(
+    _nodeId: NodeId,
+    _callback: (event: {
+      level: 'log' | 'warn' | 'error';
+      message: string;
+      data?: unknown;
+      timestamp: number;
+    }) => void
+  ): () => void {
     // This method is implemented on the UI side and should not directly call worker API
     // The actual subscription is handled by the WorkerBridge
-    console.warn('[ShapeQueryAPIImpl] subscribeToWorkerLog called on UI side - this should be handled by WorkerBridge');
-    return () => { }; // Return empty unsubscribe function
+    console.warn(
+      '[ShapeQueryAPIImpl] subscribeToWorkerLog called on UI side - this should be handled by WorkerBridge'
+    );
+    return () => {}; // Return empty unsubscribe function
   }
 }
 
@@ -970,8 +981,8 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
     // Validate cache write is allowed if taskId and taskQueue are provided
     if (taskId && taskQueue) {
-      if (!isVtTaskQueueDb(taskQueue)) {
-        throw new Error('[shape-build-api] geometry task queue must be a VtTaskQueueDb');
+      if (!isShapeGeometryTaskQueue(taskQueue)) {
+        throw new Error('[shape-build-api] geometry task queue must expose tasks.get');
       }
       const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidationConstants');
       await validateCacheWriteAllowed(taskQueue, taskId, 'geometry');

@@ -8,6 +8,7 @@ import type {
   TabularPreview,
   TabularRow,
 } from '~/types';
+import { isTabularRow } from '../tabularRowJsonSchema.js';
 
 type FileMeta = { name?: string };
 
@@ -61,10 +62,10 @@ export const jsonlParser: TabularParserPort = {
       let idx = 0;
       for (const [i, line] of lines.entries()) {
         const obj = JSON.parse(line) as unknown;
-        if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+        if (!isTabularRow(obj)) {
           throw new Error('jsonl-row-must-be-object');
         }
-        const row = obj as TabularRow;
+        const row = obj;
         if (!headers) headers = Object.keys(row);
         if (sample.length < 50) sample.push(row);
         buf.push(row);
