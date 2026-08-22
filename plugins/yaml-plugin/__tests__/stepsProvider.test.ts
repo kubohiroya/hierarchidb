@@ -2,7 +2,7 @@ import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { YAML_TEMPLATES } from '@hierarchidb/yaml-api';
 import * as fc from 'fast-check';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createYamlStepConfigProvider } from '../src/ui/components/steps-provider.js';
+import { createYamlStepConfigProvider } from '../src/ui/components/createYamlStepConfigProvider.js';
 
 // Side-effect: register the steps
 import '../src/ui/components/steps-provider.js';
