@@ -10,4 +10,4 @@ export * from './ideGsmRouteTypes.js';
 export * from './ROUTE_MODES.js';
 export * from './RouteMutationAPI.js';
 export * from './RouteQueryAPI.js';
-export type { RouteBuildError } from './routeBuildTypes.js';
+export type { RouteBuildError, RouteBuildRouteInput } from './routeBuildTypes.js';

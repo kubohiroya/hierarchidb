@@ -1,8 +1,7 @@
 import type { CanonicalPluginBuildAPI } from '@hierarchidb/build-api';
 import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
-import type { RouteBuildRouteInput } from '~/services/RouteBuildManager.js';
+import { ROUTE_MODES, type RouteBuildRouteInput, type RouteMode } from '@hierarchidb/route-api';
 import { RouteBuildSessionOrchestrator } from '~/services/RouteBuildSessionOrchestrator.js';
 import { getBuildTasks } from './getBuildTasks.js';
 import { requireRouteBuildConfig } from './requireRouteBuildConfig.js';

@@ -1,12 +1,8 @@
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import {
-  RouteBuildManager,
-  type RouteBuildManagerDeps,
-  type RouteBuildRouteInput,
-} from './RouteBuildManager.js';
+import type { RouteBuildConfig, RouteBuildRouteInput } from '@hierarchidb/route-api';
+import { RouteBuildManager, type RouteBuildManagerDeps } from './RouteBuildManager.js';
 import { RouteBuildSession } from './RouteBuildSession.js';
 
 export interface RouteBuildInput {

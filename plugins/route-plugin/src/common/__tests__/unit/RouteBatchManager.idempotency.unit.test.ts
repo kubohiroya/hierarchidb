@@ -2,12 +2,15 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
-import { ROUTE_MODES, type RouteBuildConfig } from '@hierarchidb/route-api';
+import {
+  ROUTE_MODES,
+  type RouteBuildConfig,
+  type RouteBuildRouteInput,
+} from '@hierarchidb/route-api';
 import { RouteDB } from '@hierarchidb/route-store';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
-import type { RouteBuildRouteInput } from '../../../services/RouteBuildManager.js';
 import { RouteBuildSessionOrchestrator } from '../../../services/RouteBuildSessionOrchestrator.js';
 
 const ephemeralStore = initializeEphemeralDB('route-session-idempotency-test');
