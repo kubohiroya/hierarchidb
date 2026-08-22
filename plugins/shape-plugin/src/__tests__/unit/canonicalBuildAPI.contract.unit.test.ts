@@ -16,6 +16,12 @@ const shapeBuildAPIMocks = vi.hoisted(() => ({
   generateDownloadTaskPayloadsFromSelection: vi.fn(),
 }));
 
+const shapeBuildExtensionMocks = vi.hoisted(() => ({
+  setShapeCorsProxyBaseURL: vi.fn(),
+  setUiStorageBridge: vi.fn(),
+  getSingleton: vi.fn(),
+}));
+
 vi.mock('../../worker/api.js', () => ({
   shapeBuildAPI: {
     startBuildSession: shapeBuildAPIMocks.startBuildSession,
@@ -33,11 +39,24 @@ vi.mock('../../worker/api.js', () => ({
   },
 }));
 
+vi.mock('../../services/utils/setShapeCorsProxyBaseURL.js', () => ({
+  setShapeCorsProxyBaseURL: shapeBuildExtensionMocks.setShapeCorsProxyBaseURL,
+}));
+
+vi.mock('@hierarchidb/auth', () => ({
+  AuthService: {
+    getSingleton: shapeBuildExtensionMocks.getSingleton,
+  },
+}));
+
 import { canonicalBuildAPI, shapeBuildExtensions } from '../../worker/canonicalBuildAPI.js';
 
 describe('shape canonicalBuildAPI contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    shapeBuildExtensionMocks.getSingleton.mockResolvedValue({
+      setUiStorageBridge: shapeBuildExtensionMocks.setUiStorageBridge,
+    });
   });
 
   it('exports exactly the canonical plugin build API methods', () => {
@@ -49,8 +68,21 @@ describe('shape canonicalBuildAPI contract', () => {
     shapeBuildAPIMocks.generateDownloadTaskPayloadsFromSelection.mockResolvedValue(payloads);
 
     expect(Object.keys(shapeBuildExtensions)).toEqual([
+      'setCorsProxyBaseURL',
+      'setUiStorageBridge',
       'generateDownloadTaskPayloadsFromSelection',
     ]);
+    shapeBuildExtensions.setCorsProxyBaseURL('http://127.0.0.1:3000/');
+    expect(shapeBuildExtensionMocks.setShapeCorsProxyBaseURL).toHaveBeenCalledWith(
+      'http://127.0.0.1:3000/'
+    );
+    const storageBridge = {
+      getItem: vi.fn(),
+      removeItem: vi.fn(),
+    };
+    await shapeBuildExtensions.setUiStorageBridge(storageBridge);
+    expect(shapeBuildExtensionMocks.getSingleton).toHaveBeenCalledTimes(1);
+    expect(shapeBuildExtensionMocks.setUiStorageBridge).toHaveBeenCalledWith(storageBridge);
     await expect(
       shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection(
         'shape-contract-node',
