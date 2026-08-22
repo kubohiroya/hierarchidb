@@ -12,7 +12,7 @@ import {
   type CanonicalBuildSessionEventSource,
 } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
-import { type EphemeralDB, ephemeralDB } from '@hierarchidb/gis-sdk';
+import { type EphemeralDB, initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import type {
   RouteBuildConfig,
   RouteGenerationConfig,
@@ -22,6 +22,7 @@ import type {
 import type { RouteEnginesProvider, RouteGenerationResult } from '@hierarchidb/route-engine';
 import { RouteGenerator } from '@hierarchidb/route-engine';
 import type { RouteDB } from '@hierarchidb/route-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import {
   createVtHandler,
   deleteTasksByNode,
@@ -101,6 +102,9 @@ const DEFAULT_LANE_CAPS: Record<string, number> = {
   custom: 8,
 };
 
+const getRouteEphemeralStore = (): EphemeralDB =>
+  initializeEphemeralDB(getDBName(getBuildDatabasePrefix(), 'ephemeral'));
+
 type RouteStageTiming = {
   stageStartedAt: number;
   stageInactiveMs: number;
@@ -133,7 +137,7 @@ export class RouteBuildSession
     this.tasks = tasks;
     this.tasksById = new Map(tasks.map((task) => [task.taskId, task]));
     this.generator = deps?.generator ?? new RouteGenerator(deps?.engines);
-    this.ephemeralStore = deps?.ephemeralStore ?? ephemeralDB;
+    this.ephemeralStore = deps?.ephemeralStore ?? getRouteEphemeralStore();
     this.routeStore = deps?.routeStore;
   }
 

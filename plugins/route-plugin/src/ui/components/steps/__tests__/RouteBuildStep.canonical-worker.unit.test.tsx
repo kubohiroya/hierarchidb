@@ -25,8 +25,9 @@ const createLifecycleStatus = (status: BuildStatus): BuildSessionLifecycleSnapsh
   completedAt: status === 'completed' || status === 'failed' ? 2_000 : undefined,
 });
 
-const validDraft: Partial<RouteEntity> = {
+const validDraft = {
   buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
+  routeBuildInput: { kind: 'direct-route' },
   routeMode: ROUTE_MODES.ROAD,
   transportSelection: 'road',
   startLocationId: 'location-start' as NodeId,
@@ -35,7 +36,7 @@ const validDraft: Partial<RouteEntity> = {
     [0, 0],
     [1, 1],
   ],
-};
+} as Partial<RouteEntity>;
 
 const mocks = vi.hoisted(() => ({
   progress: {

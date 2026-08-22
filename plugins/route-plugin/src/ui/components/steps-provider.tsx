@@ -76,7 +76,65 @@ const createDraftUpdater = (
 const hasAnyRouteSelection = (selection?: Record<string, boolean[]>): boolean =>
   Boolean(selection && Object.values(selection).some((row) => row?.some(Boolean)));
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isCoordinatePair = (value: unknown): boolean =>
+  Array.isArray(value) &&
+  value.length === 2 &&
+  value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate));
+
+const hasDirectRouteFields = (data?: RouteStepData): boolean =>
+  Boolean(
+    data?.routeMode &&
+      data.startLocationId &&
+      data.endLocationId &&
+      Array.isArray(data.lineGeometry) &&
+      data.lineGeometry.length >= 2
+  );
+
+const hasSelectionDrivenFields = (data?: RouteStepData): boolean =>
+  Boolean(data?.tabularSourceId || data?.selectedArrayByCountries);
+
+const hasSelectionDrivenRouteBuildInput = (routeBuildInput: unknown): boolean => {
+  if (!isRecord(routeBuildInput) || routeBuildInput.kind !== 'selection-driven') return false;
+  const routes = routeBuildInput.routes;
+  return (
+    Array.isArray(routes) &&
+    routes.length > 0 &&
+    routes.every((route) => {
+      if (!isRecord(route)) return false;
+      return (
+        typeof route.startLocationId === 'string' &&
+        route.startLocationId.length > 0 &&
+        typeof route.endLocationId === 'string' &&
+        route.endLocationId.length > 0 &&
+        typeof route.routeMode === 'string' &&
+        route.routeMode.length > 0 &&
+        isCoordinatePair(route.startCoordinates) &&
+        isCoordinatePair(route.endCoordinates)
+      );
+    })
+  );
+};
+
+const hasCanonicalRouteBuildInput = (data?: RouteStepData): boolean => {
+  if (!data?.buildConfig) return false;
+  const routeBuildInput = (data as Record<string, unknown>).routeBuildInput;
+  if (!isRecord(routeBuildInput)) return false;
+  if (routeBuildInput.kind === 'selection-driven') {
+    return !hasDirectRouteFields(data) && hasSelectionDrivenRouteBuildInput(routeBuildInput);
+  }
+  if (routeBuildInput.kind === 'direct-route') {
+    return !hasSelectionDrivenFields(data) && hasDirectRouteFields(data);
+  }
+  return false;
+};
+
 const hasRouteDataSourceReady = (data?: Partial<RouteEntity>): boolean => {
+  if (hasCanonicalRouteBuildInput(data)) {
+    return true;
+  }
   if (!data?.dataSourceName) {
     return false;
   }
@@ -88,7 +146,8 @@ const hasRouteDataSourceReady = (data?: Partial<RouteEntity>): boolean => {
 
 const hasRouteConfig = (data?: RouteStepData): boolean => {
   return Boolean(
-    hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)
+    (hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)) ||
+      hasCanonicalRouteBuildInput(data)
   );
 };
 
@@ -99,7 +158,8 @@ const startRouteBuild = async (data: RouteStepData, _context: StartBuildContext)
   const t = (key: string, fallback: string) =>
     String(i18n.t(key, { ns: 'route-plugin', defaultValue: fallback }));
   const hasEssentials = Boolean(
-    hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)
+    (hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)) ||
+      hasCanonicalRouteBuildInput(data)
   );
 
   if (!hasEssentials) {
@@ -174,6 +234,9 @@ registry.registerConfigProvider<RouteStepData>({
             />
           );
         },
+        capabilities: {
+          canNavigateTo: (_fromStep, data) => hasRouteConfig(data),
+        },
         validate: () => true,
       },
       {
@@ -194,10 +257,9 @@ registry.registerConfigProvider<RouteStepData>({
           );
         },
         capabilities: {
+          canNavigateTo: (_fromStep, data) => hasRouteConfig(data),
           canStartBuild: (data: RouteStepData) => {
-            return Boolean(
-              hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)
-            );
+            return hasRouteConfig(data);
           },
           startBuild: (data, context) => startRouteBuild(data as RouteStepData, context),
         },

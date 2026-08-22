@@ -133,16 +133,61 @@ const resolveTransportLabel = (draft: Partial<RouteEntity>, t: Translate): strin
   return t(entry.key, entry.fallback);
 };
 
-const hasRequiredFields = (nodeId: NodeId | null, draft: Partial<RouteEntity>): boolean =>
+const hasDirectRouteFields = (draft: Partial<RouteEntity>): boolean =>
   Boolean(
-    nodeId &&
-      draft.buildConfig &&
-      draft.routeMode &&
+    draft.routeMode &&
       draft.startLocationId &&
       draft.endLocationId &&
       Array.isArray(draft.lineGeometry) &&
       draft.lineGeometry.length >= 2
   );
+
+const isCoordinatePair = (value: unknown): value is readonly [number, number] =>
+  Array.isArray(value) &&
+  value.length === 2 &&
+  value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate));
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const hasSelectionDrivenRoutes = (routeBuildInput: unknown): boolean => {
+  if (!isRecord(routeBuildInput) || routeBuildInput.kind !== 'selection-driven') {
+    return false;
+  }
+  const routes = routeBuildInput.routes;
+  return (
+    Array.isArray(routes) &&
+    routes.length > 0 &&
+    routes.every((route) => {
+      if (!isRecord(route)) return false;
+      return (
+        typeof route.startLocationId === 'string' &&
+        route.startLocationId.length > 0 &&
+        typeof route.endLocationId === 'string' &&
+        route.endLocationId.length > 0 &&
+        typeof route.routeMode === 'string' &&
+        route.routeMode.length > 0 &&
+        isCoordinatePair(route.startCoordinates) &&
+        isCoordinatePair(route.endCoordinates)
+      );
+    })
+  );
+};
+
+const hasSelectionDrivenFields = (draft: Partial<RouteEntity>): boolean =>
+  Boolean(draft.tabularSourceId || draft.selectedArrayByCountries);
+
+const hasRequiredFields = (nodeId: NodeId | null, draft: Partial<RouteEntity>): boolean => {
+  if (!nodeId || !draft.buildConfig) return false;
+  const routeBuildInput = (draft as Record<string, unknown>).routeBuildInput;
+  if (isRecord(routeBuildInput) && routeBuildInput.kind === 'selection-driven') {
+    return !hasDirectRouteFields(draft) && hasSelectionDrivenRoutes(routeBuildInput);
+  }
+  if (isRecord(routeBuildInput) && routeBuildInput.kind === 'direct-route') {
+    return !hasSelectionDrivenFields(draft) && hasDirectRouteFields(draft);
+  }
+  return false;
+};
 
 export const routeBuildUiAdapter = {
   nodeType: PLUGIN_NODE_TYPE,

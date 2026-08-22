@@ -1,7 +1,6 @@
-import type { BuildTaskSummary } from '@hierarchidb/build-api';
+import type { BuildTaskSummary, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import { VtTaskQueueDb, listTasks } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord } from '@hierarchidb/build-api';
+import { listTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 const mapTaskQueueRecord = (task: TaskQueueRecord): BuildTaskSummary => ({
   taskId: task.taskId,
@@ -9,7 +8,10 @@ const mapTaskQueueRecord = (task: TaskQueueRecord): BuildTaskSummary => ({
   stage: task.stage,
   status: task.status as BuildTaskSummary['status'],
   progress: task.progress,
+  sequence: task.sequence,
+  display: task.display,
   metadata: task.metadata,
+  errorMessage: task.errorMessage,
 });
 
 export async function getBuildTasks(nodeId: NodeId): Promise<BuildTaskSummary[]> {
