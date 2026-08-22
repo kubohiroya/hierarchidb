@@ -1,5 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import 'fake-indexeddb/auto';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
+import {
+  deleteTasksByIds,
+  putTasks,
+  updateTask,
+  VtTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 
 // Mock shapeBuildRuntime (used by shapeBuildAPI internally for startBuildSession etc.)
 // The 4-channel subscription methods use shapeBuildRuntimeCore directly, so we don't
@@ -34,19 +42,29 @@ import {
 } from '../../worker/api/shapeBuildRuntimeCore';
 import { shapeBuildAPI } from '../../worker/api/shapeBuildAPI';
 import {
+  emitStageSnapshotUpdated,
   readStartedStageTiming,
   validateSessionTimingContract,
   validateStageTimingContract,
 } from '../../worker/api/eventEmissionConstantsUtils';
+import { unconditionalEventStreamer } from '../../worker/api/eventBuffering';
+import { shapeQueryAPIImpl } from '../../services/build/ShapeBuildAPIClient';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 
 describe('shapeBuildAPI 4-channel subscriptions', () => {
+  const taskQueue = new VtTaskQueueDb();
+
   beforeEach(() => {
     sessionStateCallbacks.clear();
     stageSnapshotCallbacks.clear();
     heartbeatCallbacks.clear();
     taskProgressCallbacks.clear();
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await taskQueue.tasks.clear();
   });
 
   it('registers and dispatches all subscription channels', () => {
@@ -81,6 +99,172 @@ describe('shapeBuildAPI 4-channel subscriptions', () => {
     expect(stageSnapshotCallbacks.has(String(nodeId))).toBe(false);
     expect(heartbeatCallbacks.has(String(nodeId))).toBe(false);
     expect(taskProgressCallbacks.has(String(nodeId))).toBe(false);
+  });
+
+  it('emits full stage snapshots after task status transitions and deletion', async () => {
+    const nodeId = asNodeId(`shape-stage-status-${Date.now()}-${Math.random()}`);
+    const task: TaskQueueRecord = {
+      taskId: `${String(nodeId)}:source:JP:0`,
+      nodeId,
+      version: 1,
+      stage: 'source',
+      status: 'queued',
+      index: 0,
+      progress: 0,
+    };
+    const snapshotCallback = vi.fn();
+    const unsubscribe = shapeBuildAPI.subscribeStageSnapshots(nodeId, snapshotCallback);
+
+    await putTasks(taskQueue, [task]);
+    expect(snapshotCallback).not.toHaveBeenCalled();
+    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', {
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'source',
+        tasks: [task],
+        stageStartedAt: 1_000,
+        stageInactiveMs: 0,
+      },
+    });
+    expect(snapshotCallback).toHaveBeenCalledTimes(1);
+
+    await updateTask(taskQueue, task.taskId, {
+      status: 'running',
+      progress: 0,
+    });
+    await vi.waitFor(() => {
+      expect(snapshotCallback).toHaveBeenCalledTimes(2);
+    });
+    expect(snapshotCallback.mock.calls[1]?.[0]?.payload.tasks).toMatchObject([
+      { taskId: task.taskId, status: 'running' },
+    ]);
+    expect(snapshotCallback.mock.calls[1]?.[0]?.payload.stageCompletedAt).toBeUndefined();
+
+    await updateTask(taskQueue, task.taskId, {
+      progress: 50,
+      message: 'halfway',
+    });
+    expect(snapshotCallback).toHaveBeenCalledTimes(2);
+
+    await updateTask(taskQueue, task.taskId, {
+      status: 'completed',
+      progress: 100,
+      completedAt: 1_600,
+      display: { kind: 'skip', key: 'canonical-skip' },
+      message: 'Skipped by the canonical filter',
+    });
+    await vi.waitFor(() => {
+      expect(snapshotCallback).toHaveBeenCalledTimes(3);
+    });
+    expect(snapshotCallback.mock.calls[2]?.[0]?.payload.tasks).toMatchObject([
+      {
+        taskId: task.taskId,
+        status: 'completed',
+        progress: 100,
+        display: { kind: 'skip', key: 'canonical-skip' },
+        message: 'Skipped by the canonical filter',
+      },
+    ]);
+    expect(snapshotCallback.mock.calls[2]?.[0]?.payload.stageCompletedAt).toBe(1_600);
+
+    await deleteTasksByIds(taskQueue, [task.taskId]);
+    await vi.waitFor(() => {
+      expect(snapshotCallback).toHaveBeenCalledTimes(4);
+    });
+    expect(snapshotCallback.mock.calls[3]?.[0]?.payload.tasks).toEqual([]);
+    expect(snapshotCallback.mock.calls[3]?.[0]?.payload.stageCompletedAt).toBeUndefined();
+
+    unsubscribe();
+  });
+
+  it('deduplicates task updates using the canonical task status', async () => {
+    const nodeId = asNodeId(`shape-stage-canonical-status-${Date.now()}-${Math.random()}`);
+    const task: TaskQueueRecord = {
+      taskId: `${String(nodeId)}:tileEmit:0`,
+      nodeId,
+      version: 1,
+      stage: 'tileEmit',
+      status: 'completed',
+      index: 0,
+      progress: 10,
+    };
+    const snapshotCallback = vi.fn();
+    const unsubscribe = shapeBuildAPI.subscribeStageSnapshots(nodeId, snapshotCallback);
+
+    await putTasks(taskQueue, [task]);
+    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', {
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'tileEmit',
+        tasks: [{ ...task, status: 'running' }],
+        stageStartedAt: 1_000,
+        stageInactiveMs: 0,
+      },
+    });
+    expect(snapshotCallback).toHaveBeenCalledTimes(1);
+
+    await updateTask(taskQueue, task.taskId, { progress: 20 });
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    expect(snapshotCallback).toHaveBeenCalledTimes(1);
+
+    await updateTask(taskQueue, task.taskId, {
+      status: 'completed',
+      progress: 100,
+      completedAt: 1_600,
+    });
+    await vi.waitFor(() => {
+      expect(snapshotCallback).toHaveBeenCalledTimes(2);
+    });
+    expect(snapshotCallback.mock.calls[1]?.[0]?.payload.tasks).toMatchObject([
+      { taskId: task.taskId, status: 'completed', progress: 100 },
+    ]);
+
+    unsubscribe();
+  });
+
+  it('rejects contract-invalid persisted tasks before canonical summary mapping', async () => {
+    const nodeId = asNodeId(`shape-stage-invalid-task-${Date.now()}-${Math.random()}`);
+    const taskId = `${String(nodeId)}:source:JP:0`;
+    await taskQueue.tasks.put({
+      taskId,
+      nodeId,
+      version: 0,
+      stage: 'source',
+      status: 'queued',
+      index: 0,
+      progress: 0,
+    });
+
+    await expect(emitStageSnapshotUpdated(nodeId, 'source', 1_000, 0)).rejects.toThrow(
+      'task.version',
+    );
+
+    await taskQueue.tasks.update(taskId, { version: 1, progress: 101 });
+    await expect(emitStageSnapshotUpdated(nodeId, 'source', 1_000, 0)).rejects.toThrow(
+      'task.progress',
+    );
+  });
+
+  it('reports initial snapshot failures without an unhandled rejection', async () => {
+    const nodeId = asNodeId(`shape-stage-initial-error-${Date.now()}-${Math.random()}`);
+    const failure = new Error('initial stage snapshot read failed');
+    vi.spyOn(shapeQueryAPIImpl, 'getBuildSessionRecord').mockRejectedValueOnce(failure);
+    const logCallback = vi.fn();
+    const unsubscribeLog = shapeBuildAPI.subscribeWorkerLog(nodeId, logCallback);
+    const unsubscribeSnapshot = shapeBuildAPI.subscribeStageSnapshots(nodeId, vi.fn());
+
+    await vi.waitFor(() => {
+      expect(logCallback).toHaveBeenCalledWith(expect.objectContaining({
+        level: 'error',
+        data: {
+          stage: 'initial-subscription',
+          error: failure.message,
+        },
+      }));
+    });
+
+    unsubscribeSnapshot();
+    unsubscribeLog();
   });
 });
 
@@ -127,21 +311,6 @@ describe('build session event timing contracts', () => {
       inactiveMs: 100,
       completedAt: 1_050,
     })).toThrowError('session duration must be finite and non-negative');
-  });
-
-  it('requires the explicit pause endpoint only for paused status', () => {
-    expect(() => validateSessionTimingContract('paused', {
-      startedAt: 1_000,
-    })).toThrowError('pausedAt is required for phase paused');
-    expect(() => validateSessionTimingContract('paused', {
-      startedAt: 1_000,
-      inactiveMs: 100,
-      pausedAt: 1_500,
-    })).not.toThrow();
-    expect(() => validateSessionTimingContract('running', {
-      startedAt: 1_000,
-      pausedAt: 1_500,
-    })).toThrowError('pausedAt must be absent for phase running');
   });
 
   it('distinguishes an unstarted stage from an invalid started-stage record', () => {

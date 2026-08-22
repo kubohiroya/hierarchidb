@@ -33,7 +33,7 @@ type SessionStatusUpdatedEvent = {
     startedAt?: number;            // required after starting completes
     completedAt?: number;          // required for completed/failed
     pausedAt?: number;             // required only for paused
-    stopReason?: string;           // 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown'
+    stopReason?: string;           // 'route-leave' | 'user-pause' | 'auth-required' | 'failed' | 'completed' | 'unknown'
     stageId?: StageId;             // current stage at time of event (undefined if no stage is active)
     inactiveMs?: number;           // cumulative session inactivity; absence means none recorded
     stageStartedAt?: number;       // required when stageId is present
@@ -149,6 +149,22 @@ Replaces: `taskSnapshotReceived`, `taskUpdated`, `taskDeleted`
 
 **Not emitted**: For stages that have not yet started. A stage that has not started has no `stageStartedAt` and no tasks; emitting a snapshot for it would require a sentinel value, which is a contract violation.
 
+The Shape producer connects its stage-snapshot subscription to the authoritative task
+queue. It records only the last emitted canonical task status and stage as
+delivery-deduplication metadata; the task queue remains the source of truth. A
+queued/running/completed/failed/recycled transition, or deletion of a known task,
+schedules a serialized full snapshot using start and inactive timing from the latest
+valid snapshot for that stage. Updates that do not change task status do not trigger
+another full snapshot. If no valid timing has been observed, the producer waits for
+the required initial/stage-start snapshot instead of inventing timing values. When
+every task in a non-empty authoritative snapshot is terminal, `stageCompletedAt` is
+the greatest persisted task `completedAt`. Active and empty snapshots keep it absent;
+missing or invalid terminal-task completion timing is a contract violation.
+
+An initial-subscription read or a serialized status-triggered snapshot failure is
+published on the Worker log channel with its stage context. Detached subscription
+Promises must not turn this failure into an unhandled rejection.
+
 **Payload**:
 
 ```typescript
@@ -171,6 +187,8 @@ type StageSnapshotUpdatedEvent = {
 **Constraints**:
 
 - All `task.progress` values must be finite numbers in `[0, 100]`.
+- Each persisted task version must be a positive integer and each task status/display kind must be supported. The producer validates the stored row before summary mapping; legacy version normalization is not part of the canonical event boundary.
+- Each full task summary preserves the persisted optional `display` and `message` fields. In particular, `status='completed'` with `display.kind='skip'` remains a skipped outcome in the UI and must not be reclassified as ordinary completed work.
 - `stageStartedAt` and `stageInactiveMs` are required finite, non-negative numbers.
 - When `stageCompletedAt` is present, it must be finite and non-negative, and `stageCompletedAt - stageStartedAt - stageInactiveMs` must be non-negative.
 - Missing or invalid timing throws immediately. It must not be replaced with `Date.now()` / `0`, clamped, or silently skipped.
