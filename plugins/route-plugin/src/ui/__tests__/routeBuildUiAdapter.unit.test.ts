@@ -37,4 +37,68 @@ describe('routeBuildUiAdapter', () => {
       ).toThrow(/must be finite 0\.\.100/);
     }
   );
+
+  it('accepts canonical selection-driven routeBuildInput as build-ready UI input', () => {
+    expect(
+      routeBuildUiAdapter.hasRequiredFields(
+        'route-node' as never,
+        {
+          buildConfig: { corsProxyBaseURL: 'http://localhost:3003', workerConcurrency: 1 },
+          routeBuildInput: {
+            kind: 'selection-driven',
+            routes: [
+              {
+                startLocationId: 'location-a',
+                endLocationId: 'location-b',
+                startCoordinates: [139, 35],
+                endCoordinates: [140, 36],
+                routeMode: 'road',
+              },
+            ],
+          },
+          selectedArrayByCountries: { JP: [true] },
+          tabularSourceId: 'route-table',
+        } as never
+      )
+    ).toBe(true);
+  });
+
+  it('accepts direct-route input only when selection-driven fields are absent', () => {
+    expect(
+      routeBuildUiAdapter.hasRequiredFields(
+        'route-node' as never,
+        {
+          buildConfig: { corsProxyBaseURL: 'http://localhost:3003', workerConcurrency: 1 },
+          routeBuildInput: { kind: 'direct-route' },
+          routeMode: 'road',
+          startLocationId: 'location-a',
+          endLocationId: 'location-b',
+          lineGeometry: [
+            [139, 35],
+            [140, 36],
+          ],
+        } as never
+      )
+    ).toBe(true);
+  });
+
+  it('rejects mixed direct-route and selection-driven UI build inputs', () => {
+    expect(
+      routeBuildUiAdapter.hasRequiredFields(
+        'route-node' as never,
+        {
+          buildConfig: { corsProxyBaseURL: 'http://localhost:3003', workerConcurrency: 1 },
+          routeBuildInput: { kind: 'direct-route' },
+          routeMode: 'road',
+          startLocationId: 'location-a',
+          endLocationId: 'location-b',
+          lineGeometry: [
+            [139, 35],
+            [140, 36],
+          ],
+          selectedArrayByCountries: { JP: [true] },
+        } as never
+      )
+    ).toBe(false);
+  });
 });
