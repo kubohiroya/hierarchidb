@@ -184,7 +184,7 @@ class CanonicalAuthControllerImpl implements CanonicalAuthController {
   ) {}
 
   get authorizationHeader(): string {
-    return `Bearer ${MOCK_ACCESS_TOKEN}`;
+    return `Bearer ${CANONICAL_E2E_ACCESS_TOKEN}`;
   }
 
   async signIn(): Promise<void> {
