@@ -90,7 +90,7 @@ export interface DependencyGraph {
   nodes: Array<{
     nodeType: NodeType;
     label: string;
-    metrics?: any;
+    metrics?: Record<string, unknown>;
   }>;
   edges: Array<{
     from: NodeType;
@@ -102,7 +102,7 @@ export interface DependencyGraph {
     hasCycles: boolean;
   };
   layout?: string;
-  groups?: any;
+  groups?: ReadonlyArray<Record<string, unknown>> | Record<string, unknown>;
   warnings?: string[];
   cyclicPaths?: NodeType[][];
 }

@@ -18,7 +18,7 @@ export interface HostProfileProvider<TData extends StepData = StepData> {
 
 export class HostProfileRegistry {
   private static singleton: HostProfileRegistry | null = null;
-  private providers = new Map<HostName, HostProfileProvider<any>>();
+  private providers = new Map<HostName, HostProfileProvider<StepData>>();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -28,11 +28,11 @@ export class HostProfileRegistry {
   }
 
   register<TData extends StepData>(provider: HostProfileProvider<TData>): void {
-    this.providers.set(provider.name, provider);
+    this.providers.set(provider.name, provider as unknown as HostProfileProvider<StepData>);
     this.emitChange();
   }
 
-  get(name: HostName): HostProfileProvider<any> | undefined {
+  get(name: HostName): HostProfileProvider<StepData> | undefined {
     return this.providers.get(name);
   }
 

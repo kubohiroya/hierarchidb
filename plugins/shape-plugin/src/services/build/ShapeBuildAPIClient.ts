@@ -13,6 +13,7 @@ import type {
   ShapeEphemeralSessionRecord,
   ShapeFeatureMetadata,
   ShapeSourceCache,
+  ShapeGeometryTaskQueue,
   ShapeMutationAPI,
   ShapeProcessingStatus,
   ShapeQueryAPI,
@@ -33,6 +34,7 @@ import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   storeRawDataDataSourceBufferForNode,
 } from '~/services/utils/chunkStore';
+
 import { resolveCountryContinentName, resolveCountryName } from '~/services/utils/iso3166';
 import {
   toEphemeralBuildSessionRecord,
@@ -73,6 +75,9 @@ const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idl
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+const isVtTaskQueueDb = (value: ShapeGeometryTaskQueue): value is VtTaskQueueDb =>
+  isRecord(value) && 'tasks' in value && 'transaction' in value;
 
 const BUILD_STAGES = ['source', 'geometry', 'tileEmit'] as const;
 
@@ -955,12 +960,19 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: VtTaskQueueDb): Promise<void> {
+  async putGeometryCaches(
+    buffers: ShapeGeometryCache[],
+    taskId?: string,
+    taskQueue?: ShapeGeometryTaskQueue
+  ): Promise<void> {
     if (buffers.length === 0) return;
     assertNonEmptyGeometryCacheBuffers(buffers);
 
     // Validate cache write is allowed if taskId and taskQueue are provided
     if (taskId && taskQueue) {
+      if (!isVtTaskQueueDb(taskQueue)) {
+        throw new Error('[shape-build-api] geometry task queue must be a VtTaskQueueDb');
+      }
       const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidationConstants');
       await validateCacheWriteAllowed(taskQueue, taskId, 'geometry');
     }

@@ -6,6 +6,7 @@ import type {
   TabularChunk,
   TabularParseResult,
   TabularPreview,
+  TabularRow,
 } from '~/types';
 
 type FileMeta = { name?: string; type?: string };
@@ -84,16 +85,16 @@ export function createTabularLikeParser(id: 'csv' | 'tsv', delimiter: string): T
         headers = first.map((_, i) => `col${i + 1}`);
       }
 
-      const previewRows: Record<string, any>[] = [];
+      const previewRows: TabularRow[] = [];
 
       async function* iterator(): AsyncGenerator<TabularChunk> {
-        let buf: Record<string, any>[] = [];
+        let buf: TabularRow[] = [];
         let chunkIndex = 0;
         for (let i = startIdx; i < lines.length; i++) {
           const line = lines[i];
           if (!line) continue;
           const parts = tabularDatabaseSplit(line, delimiter);
-          const row: Record<string, any> = {};
+          const row: TabularRow = {};
           headers.forEach((h, idx) => {
             row[h] = parts[idx] ?? '';
           });

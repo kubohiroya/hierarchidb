@@ -189,7 +189,7 @@ const registerAndResolveLabel = <TData extends StepData>(
 export class PluginStepRegistry {
   private static instance: PluginStepRegistry;
   private providers: Map<string, PluginStepProvider<StepData>> = new Map();
-  private configProviders: Map<string, PluginStepConfigProvider<any, unknown>> = new Map();
+  private configProviders: Map<string, PluginStepConfigProvider<StepData, unknown>> = new Map();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -223,7 +223,10 @@ export class PluginStepRegistry {
     if (this.configProviders.has(provider.nodeType)) {
       return;
     }
-    this.configProviders.set(provider.nodeType, provider);
+    this.configProviders.set(
+      provider.nodeType,
+      provider as unknown as PluginStepConfigProvider<StepData>
+    );
     this.emitChange();
   }
 
@@ -243,7 +246,7 @@ export class PluginStepRegistry {
     return this.providers.get(nodeType);
   }
 
-  getConfigProvider(nodeType: string): PluginStepConfigProvider<any, unknown> | undefined {
+  getConfigProvider(nodeType: string): PluginStepConfigProvider<StepData, unknown> | undefined {
     return this.configProviders.get(nodeType);
   }
 

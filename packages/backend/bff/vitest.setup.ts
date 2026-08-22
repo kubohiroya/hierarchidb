@@ -1,12 +1,14 @@
 import { vi } from 'vitest';
 
 // Minimal fetch mock to satisfy integration tests without live server
-vi.stubGlobal('fetch', async (input: any, init?: any) => {
-  const url = typeof input === 'string' ? input : String(input?.url ?? '');
+vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   const method = (init?.method || 'GET').toUpperCase();
-  const origin = init?.headers?.Origin || init?.headers?.origin || '*';
+  const requestHeaders = new Headers(init?.headers);
+  const origin = requestHeaders.get('Origin') || requestHeaders.get('origin') || '*';
 
-  const json = (obj: any, status = 200, headers: Record<string, string> = {}) =>
+  const json = (obj: unknown, status = 200, headers: Record<string, string> = {}) =>
     new Response(JSON.stringify(obj), {
       status,
       headers: {
@@ -50,8 +52,10 @@ vi.stubGlobal('fetch', async (input: any, init?: any) => {
   if (url.endsWith('/auth/token') && method === 'POST') {
     try {
       const bodyText = init?.body ? init.body.toString() : '{}';
-      const body = JSON.parse(bodyText);
-      if (!body.code) return json({ error: 'Missing authorization code' }, 400);
+      const body = JSON.parse(bodyText) as unknown;
+      if (typeof body !== 'object' || body === null || !('code' in body) || !body.code) {
+        return json({ error: 'Missing authorization code' }, 400);
+      }
       return json({ error: 'Invalid code' }, 401);
     } catch {
       return json({ error: 'Bad request' }, 400);

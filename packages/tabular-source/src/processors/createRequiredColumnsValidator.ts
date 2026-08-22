@@ -1,10 +1,11 @@
 import type { TabularProcessor } from '~/processor';
+import type { TabularRow } from '~/types';
 
 export function createRequiredColumnsValidator(id: string, required: string[]): TabularProcessor {
   const set = new Set(required);
   return {
     id,
-    validateRow(row: Record<string, any>) {
+    validateRow(row: TabularRow) {
       const missing: string[] = [];
       for (const key of set) {
         const value = row[key];

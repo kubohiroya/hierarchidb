@@ -87,7 +87,11 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
 
   setStyle(style: MapStyleSpec): void {
     if (!this.map) return;
-    this.map.setStyle(style.styleUrl || style.styleObject);
+    const nextStyle = style.styleUrl || style.styleObject;
+    if (!nextStyle) {
+      throw new Error('map-style-required');
+    }
+    this.map.setStyle(nextStyle);
   }
 
   addDeckLayers(layers: DeckLayerSpec[]): void {

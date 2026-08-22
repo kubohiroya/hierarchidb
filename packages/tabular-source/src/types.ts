@@ -11,13 +11,15 @@ export interface TabularSchema {
   columns: TabularColumnSpec[];
 }
 
-export interface TabularChunk<T = Record<string, any>> {
+export type TabularRow = Record<string, unknown>;
+
+export interface TabularChunk<T = TabularRow> {
   rows: T[];
   index: number; // 0-based chunk index
   hasMore: boolean;
 }
 
-export interface TabularPreview<T = Record<string, any>> {
+export interface TabularPreview<T = TabularRow> {
   schema: TabularSchema;
   sample: T[]; // first N rows
   totalRows?: number;
@@ -49,7 +51,6 @@ export interface TabularDataProfile {
   rowCount?: number;
 }
 
-export interface TabularParseResult<T = Record<string, any>>
-  extends AsyncIterable<TabularChunk<T>> {
+export interface TabularParseResult<T = TabularRow> extends AsyncIterable<TabularChunk<T>> {
   preview: TabularPreview<T>;
 }
