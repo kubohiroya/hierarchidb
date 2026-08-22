@@ -11,6 +11,7 @@ import {
 import {
   getOriginCoordinatorSourceSha,
   installOriginCoordinatorBridgeResponder,
+  requireOriginCoordinatorDedicatedWorkerTarget,
 } from '@hierarchidb/origin-coordinator';
 import { type Endpoint, expose } from 'comlink';
 import type { GeosWorkerApi } from './geosWorkerTypes.ts';
@@ -22,7 +23,7 @@ const shouldAutoExpose =
 
 if (shouldAutoExpose) {
   installOriginCoordinatorBridgeResponder({
-    target: globalThis.navigator.serviceWorker,
+    target: requireOriginCoordinatorDedicatedWorkerTarget(globalThis),
     releaseId: getOriginCoordinatorSourceSha(),
     revokeLegacyYamlAccess: () => undefined,
   });

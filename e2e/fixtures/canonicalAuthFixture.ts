@@ -2,7 +2,7 @@ import { test as base, expect, type Page, type Route } from '@playwright/test';
 import { buildAppUrl } from '../utils/test-helpers';
 
 const MOCK_AUTHORIZATION_CODE = 'canonical-e2e-authorization-code';
-const MOCK_ACCESS_TOKEN = 'canonical-e2e-session-token';
+export const CANONICAL_E2E_ACCESS_TOKEN = 'canonical-e2e-session-token';
 const MOCK_USER = {
   id: 'canonical-e2e-user',
   email: 'canonical-e2e@example.com',
@@ -106,7 +106,7 @@ const installCanonicalAuthRoutes = async (
     }
 
     await fulfillJson(route, 200, {
-      access_token: MOCK_ACCESS_TOKEN,
+      access_token: CANONICAL_E2E_ACCESS_TOKEN,
       token_type: 'Bearer',
       expires_in: 3_600,
       session_mode: 'stateless',
@@ -122,7 +122,10 @@ const installCanonicalAuthRoutes = async (
   await page.route('**/auth/verify', async (route) => {
     routeState.verifyRequestCount += 1;
     const authorization = route.request().headers().authorization;
-    if (route.request().method() !== 'POST' || authorization !== `Bearer ${MOCK_ACCESS_TOKEN}`) {
+    if (
+      route.request().method() !== 'POST' ||
+      authorization !== `Bearer ${CANONICAL_E2E_ACCESS_TOKEN}`
+    ) {
       await fulfillJson(route, 401, { error: 'Invalid token' });
       return;
     }
@@ -143,7 +146,7 @@ const assertCanonicalPersistedSession = async (page: Page): Promise<void> => {
     legacyTokenExpiresAt: localStorage.getItem('token_expires_at'),
   }));
 
-  expect(snapshot.accessToken).toBe(MOCK_ACCESS_TOKEN);
+  expect(snapshot.accessToken).toBe(CANONICAL_E2E_ACCESS_TOKEN);
   expect(snapshot.refreshTokenId).toBeNull();
   expect(snapshot.legacyIdToken).toBeNull();
   expect(snapshot.legacyRefreshToken).toBeNull();
@@ -192,7 +195,7 @@ class CanonicalAuthControllerImpl implements CanonicalAuthController {
     await this.page.getByRole('button', { name: 'Sign in with GitHub' }).click();
     await this.page.waitForFunction(
       (expectedToken) => localStorage.getItem('access_token') === expectedToken,
-      MOCK_ACCESS_TOKEN,
+      CANONICAL_E2E_ACCESS_TOKEN,
       { timeout: 30_000 }
     );
     await assertCanonicalPersistedSession(this.page);
@@ -210,7 +213,7 @@ class CanonicalAuthControllerImpl implements CanonicalAuthController {
         body: '{}',
       });
       return { ok: response.ok, status: response.status };
-    }, MOCK_ACCESS_TOKEN);
+    }, CANONICAL_E2E_ACCESS_TOKEN);
 
     expect(verifyResult).toEqual({ ok: true, status: 200 });
     expect(this.routeState.authorizeRequestCount).toBe(1);
