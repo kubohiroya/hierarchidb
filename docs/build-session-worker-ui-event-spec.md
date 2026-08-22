@@ -86,6 +86,7 @@ type SessionStatusUpdatedEvent = {
 
 **Pause completion contract**:
 
+- Shape accepts only its canonical stop-reason set. `auth-required` means source planning, the active pipeline, or the auth-dialog host required an authenticated request before processing could continue. Planning failures persist it before pipeline start; active-pipeline failures persist it only after confirmed drain. In both cases it is emitted as `paused / canResume=true`, and only the auth-dialog host resumes it after authentication succeeds. It is not converted to `route-leave`.
 - A pause request emits `pausing` after abort has been requested, while the pipeline is still shutting down.
 - `paused` may be emitted only after the session's pipeline Promise has settled, no worker/job remains live, and tasks interrupted by the confirmed abort have been re-queued.
 - The same transaction that persists `paused` also persists the explicit pause-completion timestamp as `buildSessionHeartbeats.lastHeartbeatAt`. `sessionStatusUpdated(paused)` must carry that exact value as `pausedAt`; the Worker also emits the same value through `heartbeat`. The UI applies `phase=paused` and `pausedAt` atomically and never relies on cross-channel delivery order.

@@ -197,6 +197,7 @@ describe('shape build runtime zero-task planning failure', () => {
         percentage: 0,
       },
       stages: {},
+      stopReason: 'auth-required',
       canResume: true,
     });
 
@@ -208,6 +209,7 @@ describe('shape build runtime zero-task planning failure', () => {
       nodeId,
       status: 'paused',
       selectedArrayByCountries,
+      stopReason: 'auth-required',
       canResume: true,
       startedAt: 1_000,
       lastHeartbeatAt: expect.any(Number),
