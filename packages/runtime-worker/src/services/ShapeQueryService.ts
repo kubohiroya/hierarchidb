@@ -38,6 +38,7 @@ import {
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   countSourceDataSourceBuffersForNode,
+  isRawDataDataSourceCacheKey,
   listRawDataDataSourceMetadataForNode,
   readRawDataDataSourceBuffer,
 } from './shapeChunkStoreUtils.js';
@@ -616,31 +617,36 @@ export class ShapeQueryService implements ShapeQueryAPI {
       nodeId
     );
     const records = await Promise.all(
-      metadata.map(async (entry) => {
-        const cacheKey = entry.cacheKey;
-        if (!cacheKey) return null;
-        const data = await readRawDataDataSourceBuffer(
-          this.shapeChunkStoreDatabaseName,
-          nodeId,
-          cacheKey
-        );
-        if (!data) return null;
-        return {
-          id: cacheKey,
-          nodeId,
-          data,
-          featureCount: 0,
-          bbox: [0, 0, 0, 0],
-          downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
-          size: entry.sizeBytes ?? data.byteLength,
-          timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
-        };
-      })
+      metadata
+        .filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey))
+        .map(async (entry) => {
+          const cacheKey = entry.cacheKey;
+          if (cacheKey === undefined) {
+            throw new Error('[ShapeQueryService] raw source cache metadata is missing cacheKey');
+          }
+          const data = await readRawDataDataSourceBuffer(
+            this.shapeChunkStoreDatabaseName,
+            nodeId,
+            cacheKey
+          );
+          if (!data) return null;
+          return {
+            id: cacheKey,
+            nodeId,
+            data,
+            featureCount: 0,
+            bbox: [0, 0, 0, 0],
+            downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
+            size: entry.sizeBytes ?? data.byteLength,
+            timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
+          };
+        })
     );
     return records.filter(Boolean) as ShapeSourceCache[];
   }
 
   async getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null> {
+    if (!isRawDataDataSourceCacheKey(bufferId)) return null;
     const data = await readRawDataDataSourceBuffer(
       this.shapeChunkStoreDatabaseName,
       nodeId,

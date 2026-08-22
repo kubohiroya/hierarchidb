@@ -48,6 +48,10 @@ const getRouteCreateConfigs = () => {
   return provider.getCreateStepConfigs() as ReadonlyArray<{
     id: string;
     componentFactory: (props: PluginStepProps<RouteStepData>) => React.ReactNode;
+    validate?: (data?: RouteStepData) => boolean;
+    capabilities?: {
+      canStartBuild?: (data: RouteStepData) => boolean;
+    };
   }>;
 };
 
@@ -124,5 +128,52 @@ describe('route steps provider update merge', () => {
     element.props.onUpdate({ dataSourceName: 'ide-gsm' });
 
     expect(changeCount).toBe(0);
+  });
+
+  it('allows build start for canonical selection-driven routeBuildInput', () => {
+    const configs = getRouteCreateConfigs();
+    const buildConfig = configs.find((cfg) => cfg.id === 'build');
+    const canStartBuild = buildConfig?.capabilities?.canStartBuild;
+    if (!canStartBuild) {
+      throw new Error('build canStartBuild capability not found');
+    }
+
+    expect(
+      canStartBuild({
+        buildConfig: {},
+        routeBuildInput: {
+          kind: 'selection-driven',
+          routes: [
+            {
+              startLocationId: 'location-node',
+              endLocationId: 'location-node',
+              startCoordinates: [139.6917, 35.6895],
+              endCoordinates: [135.5023, 34.6937],
+              routeMode: 'road',
+            },
+          ],
+        },
+      } as RouteStepData)
+    ).toBe(true);
+  });
+
+  it('allows data-source and build readiness for canonical direct-route input', () => {
+    const configs = getRouteCreateConfigs();
+    const dataSourceConfig = configs.find((cfg) => cfg.id === 'data-source');
+    const buildConfig = configs.find((cfg) => cfg.id === 'build');
+    const directRouteData = {
+      buildConfig: {},
+      routeMode: 'road',
+      startLocationId: 'location-node',
+      endLocationId: 'location-node',
+      lineGeometry: [
+        [139.6917, 35.6895],
+        [135.5023, 34.6937],
+      ],
+      routeBuildInput: { kind: 'direct-route' },
+    } as RouteStepData;
+
+    expect(dataSourceConfig?.validate?.(directRouteData)).toBe(true);
+    expect(buildConfig?.capabilities?.canStartBuild?.(directRouteData)).toBe(true);
   });
 });

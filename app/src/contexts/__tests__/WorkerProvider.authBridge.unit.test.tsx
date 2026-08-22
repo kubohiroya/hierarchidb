@@ -21,6 +21,7 @@ const proxyMock: WorkerClientProxy = {
 };
 
 vi.mock('@hierarchidb/ui-plugin-shell/ui-auth', () => ({
+  AUTH_SESSION_CHANGED_EVENT: 'hierarchidb:auth-session-changed',
   createAuthSessionStorageBridge: () => ({
     getItem: async () => null,
     removeItem: async () => undefined,
@@ -113,5 +114,92 @@ describe('WorkerProvider auth bridge readiness', () => {
     });
     expect(screen.queryByTestId('ready-content')).toBeNull();
     expect(window.__HDB_WORKER_CLIENT_REF__?.isInitialized).toBe(false);
+  });
+
+  it('re-registers the bridge after the canonical auth session changes', async () => {
+    setUiStorageBridgeMock.mockResolvedValue(undefined);
+
+    render(
+      <WorkerProvider renderOverlay={false} fallback={null}>
+        <div data-testid="ready-content">ready</div>
+      </WorkerProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('ready-content')).toBeDefined();
+      expect(setUiStorageBridgeMock).toHaveBeenCalledOnce();
+    });
+    window.dispatchEvent(new Event('hierarchidb:auth-session-changed'));
+
+    await waitFor(() => {
+      expect(setUiStorageBridgeMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows a retryable terminal error when post-ready bridge registration fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    setUiStorageBridgeMock.mockResolvedValueOnce(undefined);
+
+    render(
+      <WorkerProvider renderOverlay={false} fallback={null}>
+        <div data-testid="ready-content">ready</div>
+      </WorkerProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('ready-content')).toBeDefined();
+    });
+    setUiStorageBridgeMock.mockRejectedValueOnce(new Error('session bridge refresh failed'));
+    window.dispatchEvent(new Event('hierarchidb:auth-session-changed'));
+
+    await waitFor(() => {
+      expect(screen.getByText('session bridge refresh failed')).toBeDefined();
+      expect(screen.getByRole('button', { name: 'workerInit.error.actions.retry' })).toBeDefined();
+    });
+    expect(screen.queryByTestId('ready-content')).toBeNull();
+  });
+
+  it('processes a later session event after an earlier registration fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    setUiStorageBridgeMock.mockResolvedValueOnce(undefined);
+
+    render(
+      <WorkerProvider renderOverlay fallback={null}>
+        <div data-testid="ready-content">ready</div>
+      </WorkerProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('ready-content')).toBeDefined();
+      expect(setUiStorageBridgeMock).toHaveBeenCalledOnce();
+    });
+
+    let rejectEarlierRegistration: ((error: Error) => void) | undefined;
+    setUiStorageBridgeMock
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            rejectEarlierRegistration = reject;
+          })
+      )
+      .mockResolvedValueOnce(undefined);
+
+    window.dispatchEvent(new Event('hierarchidb:auth-session-changed'));
+    await waitFor(() => {
+      expect(setUiStorageBridgeMock).toHaveBeenCalledTimes(2);
+    });
+    window.dispatchEvent(new Event('hierarchidb:auth-session-changed'));
+    expect(setUiStorageBridgeMock).toHaveBeenCalledTimes(2);
+
+    if (!rejectEarlierRegistration) {
+      throw new Error('Earlier bridge registration was not started');
+    }
+    rejectEarlierRegistration(new Error('superseded session bridge failed'));
+
+    await waitFor(() => {
+      expect(setUiStorageBridgeMock).toHaveBeenCalledTimes(3);
+      expect(screen.getByTestId('ready-content')).toBeDefined();
+      expect(screen.queryByText('superseded session bridge failed')).toBeNull();
+    });
   });
 });

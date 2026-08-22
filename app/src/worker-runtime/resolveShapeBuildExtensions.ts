@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeDataSourceName } from '@hierarchidb/shape-api';
+import type { UiStorageBridge } from '@hierarchidb/worker-api';
 
 export type ShapeDownloadTaskPayload = {
   url: string;
@@ -11,6 +12,7 @@ export type ShapeDownloadTaskPayload = {
 
 export type ShapeBuildExtensions = {
   setCorsProxyBaseURL(url: string): void;
+  setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   generateDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,
@@ -30,6 +32,7 @@ export const resolveShapeBuildExtensions = (mod: unknown): ShapeBuildExtensions 
   const extensions = candidate as Record<string, unknown>;
   for (const methodName of [
     'setCorsProxyBaseURL',
+    'setUiStorageBridge',
     'generateDownloadTaskPayloadsFromSelection',
   ] as const) {
     if (typeof extensions[methodName] !== 'function') {

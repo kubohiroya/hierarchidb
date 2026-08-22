@@ -15,6 +15,11 @@
 - Step5: ビルド
 - Step6: プレビュー
 
+Step3 の country-availability Dedicated Worker は UI と別の JavaScript realm であるため、
+Worker entry 自身が API 公開前に build-time database prefix から exact `shape-chunks` 名を構成し、
+inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の初期化を Worker realm へ共有されたものと
+みなさず、未初期化、空の database prefix、または別名での再初期化は fail closed とする。
+
 ## ステージ構成（shape）
 
 - `source`
@@ -44,7 +49,8 @@
 
 - runtime bootstrapは起動時とWorker API更新時のCORS proxy base URLを、必須の `shapeBuildExtensions.setCorsProxyBaseURL` を通じてshape worker moduleへ明示伝播する
 - shape worker moduleは自身の `@hierarchidb/download` stateを更新する。共有network portは次回参照時に設定値の一致を検証し、変更済みなら再生成する
-- dynamic plugin chunkとruntime bootstrap chunkがmodule scopeを暗黙共有すると仮定しない。別runtime moduleの設定、環境変数、compatibility既定値からproxyを推測しない
+- runtime bootstrapは `WorkerAPI.setUiStorageBridge` で受け取ったread-through bridgeを、自身とshape worker moduleそれぞれの `AuthService` へ登録する。shape側の登録は必須の `shapeBuildExtensions.setUiStorageBridge` を通じて行う
+- dynamic plugin chunkとruntime bootstrap chunkがmodule scopeを暗黙共有すると仮定しない。別runtime moduleの設定、環境変数、compatibility既定値からproxyや認証sessionを推測しない
 
 ## source stage（shape）
 
@@ -58,9 +64,28 @@
 - タスク単位: `countryCode + adminLevel`（1タスク=1 stage1Buffer）
 - `geometry`タスク生成はplugin側が責務を持つ
   - vt-orchestratorには`geometry` / `tileEmit`タスクを投入する
-  - 国コードの ISO2/ISO3 変換は plugin の dataSource strategy が担う（外部 API の国コード揺れは許容しない）
-  - 内部の基準コード体系は ISO2 を採用し、`sourceKey` とキャッシュキーは ISO2 統一で運用する
-  - 例: GeoBoundaries/GADM の URL は ISO3 を要求するため、strategy 側で ISO2 → ISO3 変換して URL を生成する
+- 国コードの ISO2/ISO3 変換は plugin の dataSource strategy が担う（外部 API の国コード揺れは許容しない）
+- 内部の基準コード体系は ISO2 を採用し、`sourceKey` とキャッシュキーは ISO2 統一で運用する
+- 例: GeoBoundaries/GADM の URL は ISO3 を要求するため、strategy 側で ISO2 → ISO3 変換して URL を生成する
+- SharedWorker / worker asset から ISO3166 CSV を読む場合も、app base path（例: `/hierarchidb/`）配下の `iso3166-2-level1.csv` を解決し、base path 欠落による ISO3→ISO2 変換失敗を silent fallback で吸収しない
+
+### Raw source cache の network 所有境界
+
+- upstream download は shape-plugin の data-source strategy が所有し、明示的な `FetchNetworkPort` と `auth.scope='shape'` を持つ ChunkStore だけが network access を実行する
+- runtime-worker の `ShapeQueryService` と raw source cache helper は、既存の IndexedDB cache に対する local read / write / list / count / relation 操作だけを所有する
+- 現行buildの raw source cache key は download URL（`http://` または `https://`）である。明示的に legacy key mode を選んだwriterが生成する `download:` key も raw source entry として識別する
+- 同じ ChunkStore 内の `geoboundaries:metadata:*` などのmetadata entryは raw source cacheのlist/count/read対象に含めない
+- runtime-worker の local-only Shape ChunkStore は `FetchNetworkPort` を生成せず、network fetch API を呼び出した場合は `LocalShapeChunkStoreNetworkAccessError`（`LOCAL_SHAPE_CHUNK_STORE_NETWORK_ACCESS_FORBIDDEN`）で即時に失敗する
+- auth scope の補完、auth無効化、stale cacheへの読み替えによって誤ったnetwork要求を継続してはならない
+
+### Raw source cache の network 所有境界
+
+- upstream download は shape-plugin の data-source strategy が所有し、明示的な `FetchNetworkPort` と `auth.scope='shape'` を持つ ChunkStore だけが network access を実行する
+- runtime-worker の `ShapeQueryService` と raw source cache helper は、既存の IndexedDB cache に対する local read / write / list / count / relation 操作だけを所有する
+- 現行buildの raw source cache key は download URL（`http://` または `https://`）である。明示的に legacy key mode を選んだwriterが生成する `download:` key も raw source entry として識別する
+- 同じ ChunkStore 内の `geoboundaries:metadata:*` などのmetadata entryは raw source cacheのlist/count/read対象に含めない
+- runtime-worker の local-only Shape ChunkStore は `FetchNetworkPort` を生成せず、network fetch API を呼び出した場合は `LocalShapeChunkStoreNetworkAccessError`（`LOCAL_SHAPE_CHUNK_STORE_NETWORK_ACCESS_FORBIDDEN`）で即時に失敗する
+- auth scope の補完、auth無効化、stale cacheへの読み替えによって誤ったnetwork要求を継続してはならない
 
 ## geometry stage（shape）
 

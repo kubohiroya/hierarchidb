@@ -1,3 +1,4 @@
+import { AuthService } from '@hierarchidb/auth';
 import type {
   BuildProgress,
   BuildSessionStatus,
@@ -8,6 +9,11 @@ import { requireCanonicalStageBuildConfig } from '@hierarchidb/build-runtime-ser
 import type { BuildSession, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
 import { setShapeCorsProxyBaseURL } from '~/services/utils/setShapeCorsProxyBaseURL';
 import { shapeBuildAPI } from './api.js';
+
+type ShapeUiStorageBridge = {
+  getItem(key: string): Promise<string | null>;
+  removeItem(key: string): Promise<void>;
+};
 
 const BUILD_SESSION_STATUSES = new Set<BuildSessionStatus['status']>([
   'idle',
@@ -294,6 +300,10 @@ export const canonicalBuildAPI = {
 
 export const shapeBuildExtensions = {
   setCorsProxyBaseURL: (url: string): void => setShapeCorsProxyBaseURL(url),
+  setUiStorageBridge: async (bridge: ShapeUiStorageBridge): Promise<void> => {
+    const auth = await AuthService.getSingleton();
+    await auth.setUiStorageBridge(bridge);
+  },
   generateDownloadTaskPayloadsFromSelection: (
     ...args: Parameters<typeof shapeBuildAPI.generateDownloadTaskPayloadsFromSelection>
   ) => shapeBuildAPI.generateDownloadTaskPayloadsFromSelection(...args),

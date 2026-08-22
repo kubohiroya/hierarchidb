@@ -229,6 +229,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
               anchorEl={resetDeleteMenuAnchorEl}
               open={resetDeleteMenuOpen}
               onClose={handleResetDeleteMenuClose}
+              disableRestoreFocus={false}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               MenuListProps={{

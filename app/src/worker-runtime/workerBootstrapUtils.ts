@@ -60,6 +60,10 @@ import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/i
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveCanonicalPluginBuildAPI } from './resolveCanonicalPluginBuildAPI.js';
+import {
+  resolveShapeBuildExtensions,
+  type ShapeDownloadTaskPayload,
+} from './resolveShapeBuildExtensions.js';
 import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 import {
   resolveShapeBuildExtensions,
@@ -1289,6 +1293,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           setUiStorageBridge: async (bridge: UiStorageBridge): Promise<void> => {
             const auth = await AuthService.getSingleton();
             await auth.setUiStorageBridge(bridge);
+            await shapeBuildExtensions.setUiStorageBridge(bridge);
           },
           setCorsProxyBaseURL: async (url: string): Promise<void> => {
             applyCorsProxyBaseURL(url);
