@@ -240,10 +240,12 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 ### プロパティ別の更新ルール
 
 - 始点/終点の座標変更または admin code 変更:
-  - 該当 route ノードで該当経路の fetch キャッシュを削除
-  - route UI に `rebuild required` タグを表示
-  - sessions に「再ビルド予約」項目を作成
+  - 該当 route ノードの route feature に `rebuildRequired=true` と `rebuildRequiredAt` を保存する。
+  - route DB の vector tile / tile index と ephemeral DB の source / geometry / tile relation / build task 成果物を削除する。
+  - route UI は `rebuildRequired` を根拠に `rebuild required` タグを表示する。
+  - sessions に「再ビルド予約」項目を作成する。
     - 予約は route ノード単位でまとめる（経路単位では作らない）
+    - 既存の route build session が `running` の場合は、成果物だけを無効化し、running status / config は上書きしない。
 - それ以外（admin name など）:
   - 対応 route metadata を即時更新
 

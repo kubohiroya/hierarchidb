@@ -50,6 +50,8 @@ export interface RouteFeature extends GroupEntity {
   distance?: number;
   speed?: number;
   metadata?: Record<string, string | number | boolean>;
+  rebuildRequired?: boolean;
+  rebuildRequiredAt?: number;
 }
 
 export type RouteLineString = RouteFeature;
