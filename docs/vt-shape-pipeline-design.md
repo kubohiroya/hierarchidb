@@ -15,6 +15,11 @@
 - Step5: ビルド
 - Step6: プレビュー
 
+Step3 の country-availability Dedicated Worker は UI と別の JavaScript realm であるため、
+Worker entry 自身が API 公開前に build-time database prefix から exact `shape-chunks` 名を構成し、
+inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の初期化を Worker realm へ共有されたものと
+みなさず、未初期化、空の database prefix、または別名での再初期化は fail closed とする。
+
 ## ステージ構成（shape）
 
 - `source`

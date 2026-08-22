@@ -3,6 +3,7 @@
 import {
   getOriginCoordinatorSourceSha,
   installOriginCoordinatorBridgeResponder,
+  requireOriginCoordinatorDedicatedWorkerTarget,
 } from '@hierarchidb/origin-coordinator';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import type { StylerTableRow } from '~/common/types/StylerEntity';
@@ -24,7 +25,7 @@ type FilterResponse = {
 const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 
 installOriginCoordinatorBridgeResponder({
-  target: ctx.navigator.serviceWorker,
+  target: requireOriginCoordinatorDedicatedWorkerTarget(ctx),
   releaseId: getOriginCoordinatorSourceSha(),
   revokeLegacyYamlAccess: () => undefined,
 });

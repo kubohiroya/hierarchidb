@@ -65,6 +65,7 @@
   "countrySelection": {
     "loading": "Loading country metadata...",
     "loadError": "Failed to load country metadata: {{message}}",
+    "retry": "Retry",
     "title": "Select Countries & Administrative Levels",
     "description": "Select countries and their administrative levels to include. Use the matrix to make precise selections."
   },
