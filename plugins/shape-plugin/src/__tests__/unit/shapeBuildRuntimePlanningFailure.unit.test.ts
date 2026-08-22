@@ -81,6 +81,7 @@ vi.mock('../../services/CacheValidator.js', () => ({
 }));
 
 vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
+  emitHeartbeat: vi.fn(),
   emitSessionLifecyclePhaseUpdated: vi.fn(),
   emitSessionStatusUpdated: emitSessionStatusUpdatedMock,
   emitStageSnapshotUpdated: vi.fn(),

@@ -30,6 +30,7 @@ export type CanonicalAuthRouteState = {
 
 export type CanonicalAuthController = {
   signIn(): Promise<void>;
+  readonly authorizationHeader: string;
   readonly routeState: CanonicalAuthRouteState;
 };
 
@@ -179,6 +180,10 @@ class CanonicalAuthControllerImpl implements CanonicalAuthController {
     readonly routeState: CanonicalAuthRouteState
   ) {}
 
+  get authorizationHeader(): string {
+    return `Bearer ${MOCK_ACCESS_TOKEN}`;
+  }
+
   async signIn(): Promise<void> {
     if (this.hasSignedIn) {
       throw new Error('Canonical E2E authentication may only run once per test context');
@@ -187,7 +192,18 @@ class CanonicalAuthControllerImpl implements CanonicalAuthController {
 
     await this.page.goto(buildAppUrl('auth/login'), { waitUntil: 'domcontentloaded' });
     const loginHeading = this.page.getByRole('heading', { name: 'Sign In' });
-    await expect(loginHeading).toBeVisible({ timeout: 30_000 });
+    const bootstrapFailure = this.page
+      .locator('#hdb-hydrate-progress-message')
+      .filter({ hasText: /failed/i });
+    await expect(loginHeading.or(bootstrapFailure).first()).toBeVisible({ timeout: 30_000 });
+    if (await bootstrapFailure.isVisible()) {
+      const bootstrapMessage = (await bootstrapFailure.textContent())?.trim();
+      const workerMessage = (await this.page.locator('#root').textContent())?.trim();
+      throw new Error(
+        `Canonical E2E app bootstrap failed before sign-in: ${bootstrapMessage}; worker=${workerMessage}`
+      );
+    }
+    await expect(loginHeading).toBeVisible();
 
     await this.page.getByRole('button', { name: 'Sign in with GitHub' }).click();
     await this.page.waitForFunction(

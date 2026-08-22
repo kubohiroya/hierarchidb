@@ -276,7 +276,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const isControlMenuDisabled = isResetSessionLoading || summary.buildStatus === 'idle';
   const isStartButtonLoading = isResetSessionLoading
     ? false
-    : (summary.buildStatus === 'running' || controls.startPending || startPendingHold);
+    : (!isTerminalStatus && (summary.buildStatus === 'running' || controls.startPending || startPendingHold));
 
   const tasksByStageForDisplay = useMemo(() => {
     if (!isResetSessionLoading) return tasksByStage;

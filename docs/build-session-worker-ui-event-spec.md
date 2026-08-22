@@ -168,7 +168,7 @@ type StageSnapshotUpdatedEvent = {
 - `stageStartedAt` and `stageInactiveMs` are required finite, non-negative numbers.
 - When `stageCompletedAt` is present, it must be finite and non-negative, and `stageCompletedAt - stageStartedAt - stageInactiveMs` must be non-negative.
 - Missing or invalid timing throws immediately. It must not be replaced with `Date.now()` / `0`, clamped, or silently skipped.
-- `Date.now()` is allowed only as the actual current clock for a running duration, or as the explicit timestamp recorded when a stage starts.
+- `Date.now()` is allowed only as the actual current clock for a running duration, as the explicit timestamp recorded when a stage starts, or as the explicit heartbeat endpoint emitted immediately before persisting a confirmed `paused` session.
 
 **Stage elapsed time derivation (UI-side)**:
 
@@ -182,9 +182,11 @@ duration = end - stageStartedAt - stageInactiveMs
 assert finite(duration) and duration >= 0
 ```
 
+Because `paused` status and `heartbeat` are delivered as separate events, the UI can render a confirmed paused phase before the heartbeat endpoint for the same stop is observed. During that transient state, active-stage elapsed display freezes at the last accepted `stageDurationMsByStageAtom` value, and session elapsed freezes at the sum of accepted stage durations. It must not substitute the current clock or invent a heartbeat. Once heartbeat arrives, the persisted heartbeat endpoint becomes the source for paused active-stage and session duration.
+
 An unstarted stage has `timing === null` and contributes `0`; no timing sentinel is generated. A started stage with missing or invalid timing throws instead of contributing `0`.
 
-Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted heartbeat endpoint, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock for a missing persisted endpoint.
+Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted heartbeat endpoint emitted by the Worker after the active pipeline has settled and before the `paused` session status is emitted, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock for a missing persisted endpoint.
 
 ---
 
@@ -237,10 +239,6 @@ type TaskProgressUpdatedEvent = {
   common command/query/subscription contract; moving the current Route and Location
   UI-owned execution path to that transport is a separate migration. Runtime bootstrap
   never resolves a plugin-specific build API name or listener fallback.
-- Shape's atom bridge uses the shared canonical subscription kernel for the Worker
-  subscription handlers. Its plugin-owned atom tree remains the only Shape
-  build-session SSOT; probe/recovery and Worker diagnostics remain Shape-specific and
-  outside the four canonical state channels.
 - Route canonical progress and commands use the Worker-owned canonical API. Location
   command ownership remains separate while its build manager is UI-realm owned.
 - Shape Worker diagnostics remain outside the canonical state tree and are subscribed
@@ -375,6 +373,11 @@ sessionStageDurationByStageSnapshot: useAtomValue(stageDurationMsByStageAtom),
 ### Reset
 
 `resetBuildSessionStateAtom` must also reset `stageTimingByStageAtom` to its initial value (`{ source: null, geometry: null, tileEmit: null }`). The successful-recovery write atom invokes that reset and then increments `buildSessionRecoveryRevisionAtom`; cancellation invokes neither operation.
+
+When reset produces `phase=idle` and an empty authoritative task tree, the UI must
+exclude any React-retained task snapshot in that same render. Deferred effect cleanup
+may release the retained snapshot afterward, but it must not temporarily reconstruct a
+terminal display status against the reset session timing.
 
 ---
 
