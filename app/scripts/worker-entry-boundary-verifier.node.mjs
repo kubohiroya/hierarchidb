@@ -54,6 +54,23 @@ test('rejects non-entry artifacts that import the SharedWorker entry', async () 
   );
 });
 
+test('rejects a SharedWorker entry with a bare vt-pbf import', async () => {
+  await withDist(
+    {
+      'shared-worker.js':
+        'import "@maplibre/vt-pbf";import "./assets/worker-runtime-shared-ok.js";',
+      'assets/worker-runtime-shared-ok.js':
+        'const csv="/hierarchidb/iso3166-2-level1.csv";',
+    },
+    async (distRoot) => {
+      await assert.rejects(
+        () => verifyWorkerEntryBoundary({ distRoot }),
+        /must bundle @maplibre\/vt-pbf/,
+      );
+    },
+  );
+});
+
 test('rejects worker ISO consumers with unresolved runtime base fallback', async () => {
   await withDist(
     {

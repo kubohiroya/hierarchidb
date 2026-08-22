@@ -103,6 +103,7 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 
 - 固定タスク（1+64+4096） + band3 予約タスク
 - geojson-vt でタイル生成し VTMutationAPI へ保存
+- production の SharedWorker artifact は tile encoder の `@maplibre/vt-pbf` を build 時に bundle する。ブラウザが解決できない bare module specifier を entry/chunk に残さず、artifact boundary 検証で違反を fail-fast に拒否する
 - `tileEmitConfig.invalidGeometryFilter` は5つの boolean check を持つ必須 config とし、旧 source/fetch config key を読まない
 - invalid geometry filtering の stage owner は tileEmit とし、geometry artifact を GeoJSON collection に復元した後、tileEmit が使用する geojson-vt index の作成直前に一度だけ適用する
 - legacy の tile-local `enableTopojsonSimplify=true` は canonical filter 後にgeometryを再変形してtask単位メトリクスと最終入力を乖離させるため、設定契約違反として拒否する。再有効化には簡略化をcanonical filter前へ移す設計変更を必須とする

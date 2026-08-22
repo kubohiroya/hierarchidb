@@ -5,6 +5,8 @@ const appRoot = resolve(import.meta.dirname, '..');
 const defaultDistRoot = resolve(appRoot, 'dist');
 const sharedWorkerImportPattern =
   /\b(?:from\s*|import\s*(?:\(\s*)?)["'][^"']*shared-worker\.js(?:[?#][^"']*)?["']/;
+const bareVtPbfImportPattern =
+  /\b(?:from\s*|import\s*(?:\(\s*)?)["'`]@maplibre\/vt-pbf["'`]/;
 const isoCsvAssetName = 'iso3166-2-level1.csv';
 const workerRuntimeArtifactPattern = /(?:^|\/)(?:worker|shared-worker|worker-runtime-shared-[^/]+)\.js$/;
 const unresolvedIsoBasePattern =
@@ -44,6 +46,7 @@ export const verifyWorkerEntryBoundary = async ({ distRoot = defaultDistRoot } =
   const sharedWorkerEntry = resolve(distRoot, 'shared-worker.js');
   const artifacts = await collectJavaScriptFiles(distRoot);
   const sharedWorkerEntryImportArtifacts = [];
+  const unresolvedVtPbfArtifacts = [];
   const unresolvedIsoBaseArtifacts = [];
   let foundIsoCsvConsumer = false;
 
@@ -60,6 +63,10 @@ export const verifyWorkerEntryBoundary = async ({ distRoot = defaultDistRoot } =
       sharedWorkerEntryImportArtifacts.push(relativeArtifact);
     }
 
+    if (bareVtPbfImportPattern.test(source)) {
+      unresolvedVtPbfArtifacts.push(relativeArtifact);
+    }
+
     if (workerRuntimeArtifactPattern.test(artifact) && source.includes(isoCsvAssetName)) {
       foundIsoCsvConsumer = true;
       if (hasUnresolvedIsoBaseResolver(source)) {
@@ -71,6 +78,12 @@ export const verifyWorkerEntryBoundary = async ({ distRoot = defaultDistRoot } =
   if (sharedWorkerEntryImportArtifacts.length > 0) {
     throw new Error(
       `Worker artifacts must not import the SharedWorker entry: ${sharedWorkerEntryImportArtifacts.sort().join(', ')}`,
+    );
+  }
+
+  if (unresolvedVtPbfArtifacts.length > 0) {
+    throw new Error(
+      `Production artifacts must bundle @maplibre/vt-pbf: ${unresolvedVtPbfArtifacts.sort().join(', ')}`,
     );
   }
 
