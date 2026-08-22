@@ -48,7 +48,7 @@ const mockEntities = vi.hoisted(() => ([
 
 let strategyCreateCount = 0;
 
-vi.mock('../../../../../plugins/shape-plugin/src/services/metadata/MetadataLoader.js', () => {
+vi.mock('~/services/metadata/MetadataLoader', () => {
   class MetadataLoader {
     static getInstance(): MetadataLoader {
       return metadataLoader;
@@ -79,7 +79,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/metadata/MetadataLoade
   return { MetadataLoader, metadataLoader };
 });
 
-vi.mock('../../../../../plugins/shape-plugin/src/services/datasources/DataSourceStrategyFactory.js', () => {
+vi.mock('~/services/datasources/DataSourceStrategyFactory', () => {
   const fetchDelayMs = 50;
 
   class MockStrategy {
@@ -292,6 +292,7 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
     sourceConfig: {
       ...DEFAULT_BUILD_CONFIG.sourceConfig,
       maxConcurrent: 1,
+      timeoutMs: 1000,
       retryAttempts: 0,
       retryLimit: 0,
     },
@@ -313,7 +314,7 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
 
 const downloadTaskPayloads: SourceTaskPayload[] = [
   {
-    url: 'mock://geoboundaries/jp/admin0',
+    url: 'https://mock.local/geoboundaries/jp/admin0',
     countryCode: 'JP',
     countryName: 'Japan',
     adminLevel: 0,
