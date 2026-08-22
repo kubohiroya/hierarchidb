@@ -192,8 +192,8 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - YAML plugin、step component、executor は app config や environment variable を直接読まない。
 - flag が OFF の場合、Step 4 を effective step config に含めず、既存の3ステップ構成を維持する。
 - environment variable や複数 config 経路への fallback を設けない。
-- app側の実装配置は `app/src/yaml-ide-gsm/` とする。`yamlIdeGsmConfig.ts` が startup-fixed config の唯一の読取元であり、`VITE_YAML_IDE_GSM_STEP4_ENABLED` は未設定または `0` で `false`、`1` で `true` とする。その他の値は起動時契約違反として扱う。
-- executor は `app/src/yaml-ide-gsm/yamlIdeGsmExecutor.ts` に置き、caller注入の runtime credential provider、worker `YamlCanonicalZipAPI`、`IdeGsmClient` factoryだけを side-effect 境界にする。executor は app config、environment variable、localStorage、IndexedDBを直接読まない。
+- app側の実装配置は `app/src/yaml-ide-gsm/` とする。`YamlIdeGsmAppConfig.ts` が startup-fixed config の唯一の読取元であり、`VITE_YAML_IDE_GSM_STEP4_ENABLED` は未設定または `0` で `false`、`1` で `true` とする。その他の値は起動時契約違反として扱う。
+- executor は `app/src/yaml-ide-gsm/createYamlIdeGsmExecutor.ts` に置き、caller注入の runtime credential provider、worker `YamlCanonicalZipAPI`、`IdeGsmClient` factoryだけを side-effect 境界にする。executor は app config、environment variable、localStorage、IndexedDBを直接読まない。
 - runtime credential provider は `app/src/yaml-ide-gsm/yamlIdeGsmCredentialProvider.ts` に置く。endpoint、JWT、GitHub token は関数呼び出しでその都度取得し、node、draft、TreeNode、IndexedDB、URL、localStorage、log、public error resultへ保存・露出しない。
 
 ## Migration と import

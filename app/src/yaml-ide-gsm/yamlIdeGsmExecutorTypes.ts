@@ -3,7 +3,7 @@ import type { IdeGsmCommand, TaskResult } from '@hierarchidb/ide-gsm-client';
 import type { YamlCanonicalZipAPI } from '@hierarchidb/worker-api';
 import type { YamlCanonicalFilename, YamlCommandId } from '@hierarchidb/yaml-api';
 import type { ValidatedYamlCanonicalPayload } from '@hierarchidb/yaml-api/validation';
-import type { YamlIdeGsmAppConfig } from './yamlIdeGsmConfig.js';
+import type { YamlIdeGsmAppConfig } from './YamlIdeGsmAppConfig.js';
 import type {
   YamlIdeGsmCredentialProvider,
   YamlIdeGsmCredentials,

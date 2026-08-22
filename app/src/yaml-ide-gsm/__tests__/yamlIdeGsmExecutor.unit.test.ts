@@ -2,9 +2,9 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskResult } from '@hierarchidb/ide-gsm-client';
 import type { YamlCanonicalZipAPI } from '@hierarchidb/worker-api';
 import { describe, expect, it, vi } from 'vitest';
-import { resolveYamlIdeGsmAppConfig } from '../yamlIdeGsmConfig.js';
+import { createYamlIdeGsmExecutor } from '../createYamlIdeGsmExecutor.js';
+import { resolveYamlIdeGsmAppConfig } from '../YamlIdeGsmAppConfig.js';
 import { createRuntimeYamlIdeGsmCredentialProvider } from '../yamlIdeGsmCredentialProvider.js';
-import { createYamlIdeGsmExecutor } from '../yamlIdeGsmExecutor.js';
 import type { YamlIdeGsmClientPort } from '../yamlIdeGsmExecutorTypes.js';
 
 const parentId = 'parent-node' as NodeId;

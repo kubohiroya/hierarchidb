@@ -1,7 +1,7 @@
 import { IdeGsmClient } from '@hierarchidb/ide-gsm-client';
-import { YAML_IDE_GSM_APP_CONFIG } from './yamlIdeGsmConfig.js';
+import { createYamlIdeGsmExecutor } from './createYamlIdeGsmExecutor.js';
+import { YAML_IDE_GSM_APP_CONFIG } from './YamlIdeGsmAppConfig.js';
 import type { YamlIdeGsmCredentials } from './yamlIdeGsmCredentialProvider.js';
-import { createYamlIdeGsmExecutor } from './yamlIdeGsmExecutor.js';
 import type {
   YamlIdeGsmExecutor,
   YamlIdeGsmExecutorDependencies,
