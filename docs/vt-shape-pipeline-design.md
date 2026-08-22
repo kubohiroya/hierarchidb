@@ -152,7 +152,7 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 
 本節は #548 の実装前 inventory であり、現行 runtime の仕様を変更しない。国境・海岸線・共有境界の storage、spatial index、shared arc、arc simplification、polygon reconstruction は、以下の現行 Shape pipeline 契約を前提に小粒 Issue へ分割する。
 
-Storage identity と schema の正規契約は `docs/shape-border-geometry-storage-identity.md` を参照する。本節の inventory は現行実装の棚卸しであり、border geometry storage の SSOT ではない。
+Storage identity と schema の正規契約は `docs/shape-border-geometry-storage-identity.md` を参照する。spatial index と containment / adjacency query の正規契約は `docs/shape-spatial-index-containment-query-contract.md` を参照する。本節の inventory は現行実装の棚卸しであり、border geometry storage や spatial index の SSOT ではない。
 
 ### 現行永続形式
 
