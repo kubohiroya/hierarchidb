@@ -312,15 +312,16 @@ export function useDialogSteps({
   const normalizedConfigs = useMemo<
     PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>[]
   >(() => {
-    return (composedConfigs.configs ?? []).map(
-      (cfg: PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>) => ({
-        ...cfg,
-        validate: cfg.validate
-          ? (data?: Partial<PluginDefinedEntity>) =>
-              Promise.resolve(cfg.validate?.(data ?? {})).then(Boolean)
-          : undefined,
-      })
-    );
+    return (composedConfigs.configs ?? []).map((cfg) => ({
+      ...cfg,
+      componentFactory: (
+        props: PluginPluginStepProps<Partial<PluginDefinedEntity>, DialogUiState>
+      ) => cfg.componentFactory(props),
+      validate: cfg.validate
+        ? (data?: Partial<PluginDefinedEntity>) =>
+            Promise.resolve(cfg.validate?.(data ?? {})).then(Boolean)
+        : undefined,
+    }));
   }, [composedConfigs.configs]);
 
   const currentStepData = useMemo<Partial<PluginDefinedEntity>>(

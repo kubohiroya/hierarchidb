@@ -69,7 +69,8 @@
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/styler-plugin": "workspace:*",
-    "@hierarchidb/timeline-plugin": "workspace:*"
+    "@hierarchidb/timeline-plugin": "workspace:*",
+    "@hierarchidb/yaml-plugin": "workspace:*"
   },
   "peerDependencies": {},
   "peerDependenciesMeta": {},
@@ -91,7 +92,8 @@
           "@hierarchidb/shape-plugin#build",
           "@hierarchidb/spreadsheet-plugin#build",
           "@hierarchidb/styler-plugin#build",
-          "@hierarchidb/timeline-plugin#build"
+          "@hierarchidb/timeline-plugin#build",
+          "@hierarchidb/yaml-plugin#build"
         ],
         "outputs": [
           "dist/**",

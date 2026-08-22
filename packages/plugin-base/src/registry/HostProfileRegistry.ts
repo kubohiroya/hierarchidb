@@ -1,4 +1,5 @@
 import type { BivariantCallback, PluginStepConfig, StepData } from './PluginStepRegistry.js';
+import { erasePluginStepConfig } from './PluginStepRegistry.js';
 
 export type HostName = string;
 
@@ -28,7 +29,14 @@ export class HostProfileRegistry {
   }
 
   register<TData extends StepData>(provider: HostProfileProvider<TData>): void {
-    this.providers.set(provider.name, provider as unknown as HostProfileProvider<StepData>);
+    this.providers.set(provider.name, {
+      name: provider.name,
+      getBaseStepConfigs: (mode, ctx) =>
+        provider.getBaseStepConfigs(mode, ctx).map(erasePluginStepConfig),
+      canSubmit: provider.canSubmit
+        ? (data) => provider.canSubmit?.(data as TData) ?? false
+        : undefined,
+    });
     this.emitChange();
   }
 

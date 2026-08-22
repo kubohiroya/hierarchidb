@@ -5,6 +5,7 @@
 
 import type { TaskStatus } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeGeometryTaskQueue } from '@hierarchidb/shape-api';
 import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 /**
@@ -35,7 +36,7 @@ export const isNonTerminalStatus = (status: TaskStatus): boolean => {
  * Get task status from task queue
  */
 export const getTaskStatus = async (
-  taskQueue: VtTaskQueueDb,
+  taskQueue: ShapeGeometryTaskQueue,
   taskId: string
 ): Promise<TaskStatus | null> => {
   try {
@@ -52,7 +53,7 @@ export const getTaskStatus = async (
  * Throws error if task status is non-terminal
  */
 export const validateCacheWriteAllowed = async (
-  taskQueue: VtTaskQueueDb,
+  taskQueue: ShapeGeometryTaskQueue,
   taskId: string,
   cacheType: 'geometry' | 'source'
 ): Promise<void> => {

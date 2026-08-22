@@ -6,6 +6,7 @@ import type {
 import type {
   ShapeBuildTaskRecordInput,
   ShapeBuildTaskRecordUpdate,
+  ShapeBuildTaskStatus,
   ShapeDataSourceMetadata,
   ShapeFeatureMetadata,
   ShapeGeometryCache,
@@ -13,9 +14,14 @@ import type {
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
+export interface ShapeGeometryTaskQueueTask {
+  readonly status?: ShapeBuildTaskStatus;
+}
+
 export interface ShapeGeometryTaskQueue {
-  readonly tasks?: unknown;
-  readonly transaction?: unknown;
+  readonly tasks: {
+    get(taskId: string): Promise<ShapeGeometryTaskQueueTask | undefined>;
+  };
 }
 
 export interface ShapeMutationAPI {

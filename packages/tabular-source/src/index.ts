@@ -7,4 +7,5 @@ export * from './processors/createRequiredColumnsValidator.js';
 export * from './registryUtils.js';
 export * from './storeTypes.js';
 export * from './TabularService.js';
+export * from './tabularRowJsonSchema.js';
 export * from './types.js';

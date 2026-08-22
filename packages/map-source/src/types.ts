@@ -11,8 +11,16 @@ export interface TileCoord {
   y: number;
 }
 
-export type FeatureProperties = Record<string, unknown>;
-export type FeatureFilters = Record<string, unknown>;
+export type FeaturePropertyValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly FeaturePropertyValue[]
+  | { readonly [key: string]: FeaturePropertyValue };
+
+export type FeatureProperties = Record<string, FeaturePropertyValue>;
+export type FeatureFilters = Record<string, FeaturePropertyValue | readonly FeaturePropertyValue[]>;
 export type GeoJsonPosition = readonly [number, number, ...number[]];
 export type GeoJsonCoordinates = GeoJsonPosition | readonly GeoJsonCoordinates[];
 

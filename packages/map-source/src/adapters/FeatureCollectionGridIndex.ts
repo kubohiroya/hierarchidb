@@ -1,4 +1,5 @@
 import type { BBox, FeatureCollection, GeoFeature, MapSourcePort, TileCoord } from '~/types';
+import { assertFeatureCollection } from '../featureCollectionJsonSchema.js';
 
 interface Cell {
   feats: GeoFeature[];
@@ -15,6 +16,7 @@ export class FeatureCollectionGridIndex implements MapSourcePort {
   }
 
   build(fc: FeatureCollection): void {
+    assertFeatureCollection(fc);
     this.featureCount = fc.features.length;
     for (const f of fc.features) {
       const b = featureBBox(f);
