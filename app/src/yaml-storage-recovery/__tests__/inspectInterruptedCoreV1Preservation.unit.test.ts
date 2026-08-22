@@ -7,6 +7,22 @@ const TIMESTAMP = '2026-08-22T00:00:00.000Z';
 const DATABASE_NAME = 'hidb-core';
 const NATIVE_VERSION = 10;
 const VALID_DIGEST = '0123456789abcdef'.repeat(4);
+const ZERO_ADDITIONAL_NODE_TYPE_COUNTS = {
+  yamlFile: 0,
+  yaml: 0,
+  file: 0,
+  folder: 0,
+  otherString: 0,
+};
+const ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS = {
+  legacyYamlPayload: 0,
+  hostSplitYamlPayload: 0,
+  canonicalYamlPayload: 0,
+  mixedYamlPayload: 0,
+  incompleteYamlPayload: 0,
+  otherPayload: 0,
+  noPayload: 0,
+};
 
 function createCoreV1Stores(database: IDBDatabase, extraStore = false): void {
   const trees = database.createObjectStore('trees', { keyPath: 'id' });
@@ -195,6 +211,14 @@ describe('inspectInterruptedCoreV1Preservation', () => {
               },
             },
             additionalNodeCounts: { yaml: 1, nonYaml: 0 },
+            additionalNodeTypeCounts: {
+              ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+              yamlFile: 1,
+            },
+            additionalNodePayloadShapeCounts: {
+              ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+              legacyYamlPayload: 1,
+            },
             graphStatus: 'exact',
             yamlPlanningStatus: 'valid',
             yamlSlotCounts: {
@@ -272,6 +296,8 @@ describe('inspectInterruptedCoreV1Preservation', () => {
             },
           },
           additionalNodeCounts: { yaml: 0, nonYaml: 0 },
+          additionalNodeTypeCounts: ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+          additionalNodePayloadShapeCounts: ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
           graphStatus: 'not-evaluated',
           yamlPlanningStatus: 'not-run',
           yamlSlotCounts: null,
