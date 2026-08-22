@@ -46,6 +46,10 @@ export const validateSessionStatusUpdatedPayload = (
     payload.completedAt === undefined
       ? undefined
       : requireFiniteNonNegativeNumber(payload.completedAt, 'completedAt');
+  const pausedAt =
+    payload.pausedAt === undefined
+      ? undefined
+      : requireFiniteNonNegativeNumber(payload.pausedAt, 'pausedAt');
 
   if (payload.phase !== 'idle' && payload.phase !== 'starting' && startedAt === undefined) {
     throw new Error(`[canonicalSessionEvents] startedAt is required for phase ${payload.phase}`);
@@ -53,11 +57,25 @@ export const validateSessionStatusUpdatedPayload = (
   if ((payload.phase === 'completed' || payload.phase === 'failed') && completedAt === undefined) {
     throw new Error(`[canonicalSessionEvents] completedAt is required for phase ${payload.phase}`);
   }
+  if (payload.phase === 'paused' && pausedAt === undefined) {
+    throw new Error('[canonicalSessionEvents] pausedAt is required for phase paused');
+  }
+  if (payload.phase !== 'paused' && pausedAt !== undefined) {
+    throw new Error(`[canonicalSessionEvents] pausedAt must be absent for phase ${payload.phase}`);
+  }
   if (startedAt !== undefined && completedAt !== undefined) {
     const durationMs = completedAt - startedAt - inactiveMs;
     if (!Number.isFinite(durationMs) || durationMs < 0) {
       throw new Error(
         `[canonicalSessionEvents] session duration must be finite and non-negative, received ${String(durationMs)}`
+      );
+    }
+  }
+  if (startedAt !== undefined && pausedAt !== undefined) {
+    const durationMs = pausedAt - startedAt - inactiveMs;
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      throw new Error(
+        `[canonicalSessionEvents] paused session duration must be finite and non-negative, received ${String(durationMs)}`
       );
     }
   }

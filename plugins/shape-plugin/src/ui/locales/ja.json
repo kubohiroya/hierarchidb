@@ -65,6 +65,7 @@
   "countrySelection": {
     "loading": "国別メタデータを読み込み中...",
     "loadError": "国別メタデータの読み込みに失敗しました: {{message}}",
+    "retry": "再試行",
     "title": "国・行政レベルの選択",
     "description": "取得する国と行政レベルを選択してください。行列で細かく指定できます。"
   },

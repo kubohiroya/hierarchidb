@@ -203,7 +203,12 @@ describe('full lifecycle phase transitions', () => {
   const dispatchPhase = (phase: string) => {
     store.set(dispatchBuildSessionEventAtom, {
       type: 'sessionStatusUpdated',
-      payload: { nodeId: 'node-1', phase: phase as never, isActive: true },
+      payload: {
+        nodeId: 'node-1',
+        phase: phase as never,
+        isActive: true,
+        pausedAt: phase === 'paused' ? 200 : undefined,
+      },
     });
   };
 
@@ -270,12 +275,14 @@ describe('sessionStatusUpdated lifecycle extras', () => {
         phase: 'paused',
         isActive: false,
         startedAt: 100,
+        pausedAt: 200,
         stopReason: 'user-pause',
       },
     });
     const runtime = store.get(buildSessionLifecycleAtom);
     expect(runtime.phase).toBe('paused');
     expect(runtime.startedAt).toBe(100);
+    expect(runtime.heartbeatAt).toBe(200);
     expect(runtime.stopReason).toBe('user-pause');
   });
 
@@ -378,7 +385,7 @@ describe('criticalError event', () => {
   it('forces failed even from paused phase', () => {
     store.set(dispatchBuildSessionEventAtom, {
       type: 'sessionStatusUpdated',
-      payload: { nodeId: 'node-1', phase: 'paused', isActive: false },
+      payload: { nodeId: 'node-1', phase: 'paused', isActive: false, pausedAt: 100 },
     });
 
     store.set(dispatchBuildSessionEventAtom, {

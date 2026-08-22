@@ -9,7 +9,12 @@ import {
 } from '@hierarchidb/origin-coordinator';
 import { CoreDB } from '@hierarchidb/runtime-worker';
 import { activateYamlStorageCoreDb } from '@hierarchidb/runtime-worker/yaml-storage-production';
-import { digestSha256Hex, getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import {
+  digestSha256Hex,
+  getBuildDatabasePrefix,
+  getDBName,
+  isRetainedLegacyYamlDatabaseName,
+} from '@hierarchidb/util';
 import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store/legacy-close';
 import { RouterProvider } from '@tanstack/react-router';
 import { useEffect } from 'react';
@@ -105,7 +110,8 @@ const clearIndexedDbViaBrowserApi = async (): Promise<string[]> => {
         typeof name === 'string' &&
         name.length > 0 &&
         name !== ORIGIN_COORDINATOR_DATABASE_NAME &&
-        name !== correctiveRecoveryDatabaseName
+        name !== correctiveRecoveryDatabaseName &&
+        !isRetainedLegacyYamlDatabaseName(name)
     );
   for (const name of names) {
     await deleteNamedDatabase(name);

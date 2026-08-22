@@ -8,7 +8,13 @@ export type EphemeralDomainType = 'shape' | 'route' | 'tileEmit';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
-export type StopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
+export type StopReason =
+  | 'route-leave'
+  | 'user-pause'
+  | 'auth-required'
+  | 'failed'
+  | 'completed'
+  | 'unknown';
 
 export type BuildStage = 'source' | 'geometry' | 'tileEmit';
 

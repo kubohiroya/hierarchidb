@@ -153,6 +153,9 @@ export const useShapeBuildSessionProgressState = ({
       ? Date.now()
       : (runtimeTiming.stageCompletedAt ?? runtimeTiming.heartbeatAt);
     if (stageEndAt === undefined) {
+      if (buildStatus === 'paused') {
+        return stageElapsedMs;
+      }
       throw new Error(`[shape elapsed] stage end timestamp is required for build status ${buildStatus}`);
     }
     const activeStageElapsedMs = resolveStageElapsedMs({
@@ -181,6 +184,9 @@ export const useShapeBuildSessionProgressState = ({
   ), [sessionStageDurationSnapshot, resolvedStageElapsedMs, timingStageId]);
 
   const resolvedSessionElapsedMs = useMemo(() => {
+    if (buildStatus === 'paused' && runtimeTiming.heartbeatAt === undefined) {
+      return Object.values(stageElapsedByStage).reduce((total, elapsedMs) => total + elapsedMs, 0);
+    }
     return resolveSessionElapsedMs({
       buildStatus,
       startedAt: runtimeTiming.startedAt,
@@ -195,6 +201,7 @@ export const useShapeBuildSessionProgressState = ({
     runtimeTiming.heartbeatAt,
     runtimeTiming.inactiveMs,
     runtimeTiming.startedAt,
+    stageElapsedByStage,
   ]);
 
   const totalElapsedMs = useMemo(() => resolveTotalElapsedMs({

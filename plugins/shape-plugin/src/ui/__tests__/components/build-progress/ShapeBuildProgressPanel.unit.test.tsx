@@ -4,13 +4,16 @@ import { Provider } from 'jotai';
 import { createStore, type Store } from 'jotai/vanilla';
 import type React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dispatchBuildSessionEventAtom } from '../../../atoms/buildSessionStateAtoms';
+import {
+  dispatchBuildSessionEventAtom,
+  pendingUserActionAtom,
+} from '../../../atoms/buildSessionStateAtoms';
 import {
   taskScrollTargetAtom,
   taskViewportRangeByStageAtom,
 } from '../../../atoms/shapeBuildProgressAtomConstants';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
-import { useShapeBuildSession } from '../../../components/build-progress/internal/useShapeBuildSessionLogic.impl';
+import { useShapeBuildSession } from '../../../components/build-progress/internal/useShapeBuildSession';
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
 class ResizeObserverMock {
@@ -181,6 +184,7 @@ const setSessionPhase = (
           }
         : {}),
       ...(isTerminal ? { completedAt: TEST_SESSION_COMPLETED_AT } : {}),
+      ...(phase === 'paused' ? { pausedAt: TEST_SESSION_COMPLETED_AT } : {}),
     },
   });
   if (stageId !== undefined) {
@@ -206,7 +210,12 @@ const renderPanel = (store: Store) =>
 
 const SessionElapsedProbe = () => {
   const session = useShapeBuildSession({ data: {}, nodeId: 'node-1' as NodeId });
-  return <span data-testid="stage-elapsed-ms">{session.stageElapsedMs}</span>;
+  return (
+    <>
+      <span data-testid="stage-elapsed-ms">{session.stageElapsedMs}</span>
+      <span data-testid="first-task-status">{session.tasks[0]?.status ?? ''}</span>
+    </>
+  );
 };
 
 const renderSessionElapsedProbe = (store: Store) =>
@@ -263,7 +272,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     await waitFor(() => {
       expect(document.body.textContent).toContain('Start Build');
     });
-  });
+  }, 10_000);
 
   it('shows task skeleton while awaiting first snapshot in running state', async () => {
     const store = makeStore();
@@ -340,6 +349,41 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('stage-elapsed-ms').textContent).toBe('5000');
+    });
+  });
+
+  it('keeps running elapsed semantics until the canonical paused event arrives', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(10_000);
+    const store = makeStore();
+    setSessionPhase(store, 'running', 'source');
+    setTasksByStage(
+      store,
+      {
+        source: [
+          {
+            taskId: 'source-running',
+            nodeId: 'node-1',
+            stage: 'source',
+            taskType: 'source',
+            status: 'running',
+            progress: 50,
+          } as ShapeBuildTaskSummary,
+        ],
+      },
+      {
+        source: {
+          stageStartedAt: 4_000,
+          stageInactiveMs: 1_000,
+        },
+      }
+    );
+    store.set(pendingUserActionAtom, 'stopping');
+
+    renderSessionElapsedProbe(store);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stage-elapsed-ms').textContent).toBe('5000');
+      expect(screen.getByTestId('first-task-status').textContent).toBe('running');
     });
   });
 

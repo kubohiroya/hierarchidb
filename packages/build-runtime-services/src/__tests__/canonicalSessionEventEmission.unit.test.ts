@@ -1,5 +1,7 @@
+import type { BuildSessionState } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createSessionStatusUpdatedPayload } from '../createSessionStatusUpdatedPayload.js';
 import { emitSessionStatusUpdated } from '../emitSessionStatusUpdated.js';
 import { emitStageSnapshotUpdated } from '../emitStageSnapshotUpdated.js';
 import { emitHeartbeat, emitTaskProgressUpdated } from '../eventEmissionUtils.js';
@@ -51,6 +53,31 @@ describe('canonical session event emission', () => {
     expect(stageEvents).toHaveLength(1);
   });
 
+  it('carries the persisted pause endpoint in the paused status event', () => {
+    const state: BuildSessionState = {
+      nodeId,
+      status: 'paused',
+      startedAt: 100,
+      lastActivity: 250,
+      stopReason: 'user-pause',
+    };
+    const payload = createSessionStatusUpdatedPayload(state, null);
+
+    expect(payload).toEqual({
+      nodeId,
+      phase: 'paused',
+      isActive: false,
+      startedAt: 100,
+      completedAt: undefined,
+      pausedAt: 250,
+      stopReason: 'user-pause',
+      stageId: undefined,
+      stageStartedAt: undefined,
+      stageInactiveMs: undefined,
+    });
+    expect(() => emitSessionStatusUpdated(payload)).not.toThrow();
+  });
+
   it('rejects timing and task progress contract violations', () => {
     expect(() =>
       emitSessionStatusUpdated({
@@ -83,5 +110,24 @@ describe('canonical session event emission', () => {
     );
 
     expect(() => emitHeartbeat(nodeId, Number.NaN)).toThrow('heartbeatAt must be finite');
+
+    expect(() =>
+      emitSessionStatusUpdated({
+        nodeId,
+        phase: 'paused',
+        isActive: false,
+        startedAt: 100,
+      })
+    ).toThrow('pausedAt is required for phase paused');
+
+    expect(() =>
+      emitSessionStatusUpdated({
+        nodeId,
+        phase: 'running',
+        isActive: true,
+        startedAt: 100,
+        pausedAt: 200,
+      })
+    ).toThrow('pausedAt must be absent for phase running');
   });
 });

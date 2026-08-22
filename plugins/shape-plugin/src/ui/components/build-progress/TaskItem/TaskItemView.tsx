@@ -95,11 +95,36 @@ export const TaskItemView: React.FC<Props> = ({
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: '2px' }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: '2px', minHeight: 24 }}
+        >
           {leadingIcon ? (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>{leadingIcon}</Box>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: '0 0 auto',
+                minHeight: 20,
+              }}
+            >
+              {leadingIcon}
+            </Box>
           ) : null}
-          <Typography variant="caption" sx={{ flex: 1, fontSize: '14px' }}>
+          <Typography
+            variant="caption"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flex: 1,
+              minHeight: 20,
+              fontSize: '14px',
+              lineHeight: 1.25,
+            }}
+          >
             {title}
           </Typography>
           <Chip

@@ -30,6 +30,12 @@
 
 `isActive` は `starting / running / pausing / resuming / finalizing` のいずれかのとき `true` となる。
 
+### 停止理由（規範）
+
+Shape の正規停止理由は `route-leave / user-pause / auth-required / failed / completed / unknown` の6種類だけとする。型境界、Worker command、永続 Entity 読み取り、Worker→UI adapter は同じ集合を検証し、集合外の文字列を補完・破棄せず契約違反として失敗させる。
+
+`auth-required` は、認証済み request が必要になったため build を停止したことを示す。source planning 中に認証要求を検出した場合は pipeline 開始前に、active pipeline 中に検出した場合は実 pipeline の停止と interrupted task の再キューを確認した後に、Worker は `paused / canResume=true / stopReason=auth-required` を永続化する。UI の認証ダイアログ host が送る pause command も同じ値を使用する。認証成功後の再開命令は認証ダイアログ host が所有し、通常の `route-leave` 自動再開へ読み替えない。
+
 ### Pause 完了条件（規範）
 
 1. pause 要求を受けたセッションは、まず `pausing` へ遷移して session の AbortController を abort する。
@@ -37,7 +43,11 @@
 3. `running` task の `queued` への戻しと `paused` の永続化は、実 pipeline の停止確認後にのみ行う。停止確認前に task status を書き換えて drain 済みと見せてはならない。
 4. 規定時間内に停止を確認できない場合は `failed` を永続化し、pause command を型付き timeout error で reject する。UI command handler はその reject を UI 内部の `criticalError` に変換する。timeout を `paused` や再開可能状態へ読み替えない。
 5. `paused` の `canResume` は、停止確認後の再キューが完了した場合にのみ `true` とする。
-6. AbortController 等の非シリアライズ可能な runtime handle は、nodeId に対応する SSOT 状態木エントリに保持する。React state / ref / module-scope collection に同じ session 状態を複製しない。
+6. `paused` を永続化する transaction は、停止確認後に取得した明示的な pause 完了時刻を `buildSessionHeartbeats.lastHeartbeatAt` として同時に保存する。Worker は同じ時刻を `sessionStatusUpdated(paused).pausedAt` に必須で載せ、同時に同値の `heartbeat` も発行する。UI は `sessionStatusUpdated(paused)` の適用時に phase と停止端点を同じ SSOT atom 更新で確定し、別チャネルの到着順には依存しない。直前の周期 heartbeat、read 時刻、`Date.now()` fallback で pause 完了時刻を推測しない。
+7. UI の pause command pending 状態は、操作中表示と重複操作防止だけに使う。pending 状態から表示用 lifecycle を `paused` に先行変更してはならず、`sessionStatusUpdated(paused)` が phase と `pausedAt` を同時に確定するまでは直前の canonical phase の時間計算を維持する。
+8. `startBuildSession` が永続済み `paused` session を検出した場合、`canResume=true` と有限・非負の `startedAt` を必須契約として検証する。違反時は planning / cleanup / task queue 変更より前に typed resume-contract error で失敗する。
+9. `paused / canResume=true` の再開は同一 session identity を保持する。Worker は永続済み `startedAt` を Auth context と pipeline runId に再利用し、既存 task queue を reconcile 対象として使う。fresh build 用の tile artifact invalidation、task history clear、task queue delete を再開経路へ適用してはならない。
+10. AbortController 等の非シリアライズ可能な runtime handle は、nodeId に対応する SSOT 状態木エントリに保持する。React state / ref / module-scope collection に同じ session 状態を複製しない。
 
 ### 旧形式セッションの明示回復（規範）
 

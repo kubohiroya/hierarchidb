@@ -10,6 +10,14 @@ export class AuthService {
   getAuthHeaders(): Record<string, string> {
     return {};
   }
+
+  setBuildSessionContext(_nodeId: string, _sessionId: string, _sessionStartedAt: number): void {
+    // no-op for headless tests
+  }
+
+  clearBuildSessionContext(): void {
+    // no-op for headless tests
+  }
 }
 
 // Legacy alias

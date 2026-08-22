@@ -219,8 +219,12 @@ describe('RouteBuildSession canonical events', () => {
 
   it('aborts the active route task before publishing paused state', async () => {
     const phases: string[] = [];
+    let pausedAt: number | undefined;
     unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
-      if (event.type === 'sessionStatusUpdated') phases.push(event.payload.phase);
+      if (event.type === 'sessionStatusUpdated') {
+        phases.push(event.payload.phase);
+        if (event.payload.phase === 'paused') pausedAt = event.payload.pausedAt;
+      }
     });
     let resolveGeneration: (() => void) | null = null;
     const generationStarted = new Promise<void>((resolve) => {
@@ -287,6 +291,7 @@ describe('RouteBuildSession canonical events', () => {
       stopReason: 'route-leave',
     });
     expect(phases.slice(-2)).toEqual(['pausing', 'paused']);
+    expect(pausedAt).toEqual(expect.any(Number));
     const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
     expect(runningTasks).toEqual([]);
     const queuedTasks = await listTasksByStatus(taskQueue, nodeId, 'queued');

@@ -7,7 +7,49 @@ import {
 
 export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN' | 'XX';
 
-export const DEFAULT_ISO3166_CSV_URL = resolveIso3166CsvUrl();
+const ISO3166_CSV_FILE = 'iso3166-2-level1.csv';
+
+const normalizeBasePath = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '/';
+  const withLeading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeading.endsWith('/') ? withLeading : `${withLeading}/`;
+};
+
+const inferBasePathFromWorkerLocation = (pathname: string): string | null => {
+  const trimmed = pathname.trim();
+  if (!trimmed.startsWith('/')) return null;
+  const sharedWorkerIndex = trimmed.lastIndexOf('/shared-worker.js');
+  if (sharedWorkerIndex >= 0) {
+    return normalizeBasePath(trimmed.slice(0, sharedWorkerIndex + 1));
+  }
+  const assetsIndex = trimmed.lastIndexOf('/assets/');
+  if (assetsIndex >= 0) {
+    return normalizeBasePath(trimmed.slice(0, assetsIndex + 1));
+  }
+  return null;
+};
+
+export const resolveShapeIso3166CsvUrlFromPath = (
+  fallbackUrl: string,
+  locationPathname?: string,
+): string => {
+  const inferredBase = locationPathname
+    ? inferBasePathFromWorkerLocation(locationPathname)
+    : null;
+  if (!inferredBase || inferredBase === '/') return fallbackUrl;
+  return `${inferredBase}${ISO3166_CSV_FILE}`;
+};
+
+const resolveGlobalLocationPathname = (): string | undefined => {
+  const location = (globalThis as { location?: { pathname?: unknown } }).location;
+  return typeof location?.pathname === 'string' ? location.pathname : undefined;
+};
+
+export const DEFAULT_ISO3166_CSV_URL = resolveShapeIso3166CsvUrlFromPath(
+  resolveIso3166CsvUrl(),
+  resolveGlobalLocationPathname(),
+);
 
 const isOffline = (): boolean => (
   typeof navigator !== 'undefined' && navigator.onLine === false

@@ -84,7 +84,9 @@ export const listRawDataDataSourceMetadataForNode = async (
   nodeId: NodeId
 ): Promise<ChunkStoreMetadata[]> => {
   const store = createShapeChunkStore(databaseName);
-  return store.listMetadataForNode(nodeId);
+  return (await store.listMetadataForNode(nodeId)).filter((entry) =>
+    isRawDataDataSourceCacheKey(entry.cacheKey)
+  );
 };
 
 export const countSourceDataSourceBuffersForNode = async (
@@ -92,7 +94,7 @@ export const countSourceDataSourceBuffersForNode = async (
   nodeId: NodeId
 ): Promise<number> => {
   const metadata = await listRawDataDataSourceMetadataForNode(databaseName, nodeId);
-  return metadata.filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey)).length;
+  return metadata.length;
 };
 
 export const hasRawDataDataSourceBuffer = async (
@@ -100,6 +102,7 @@ export const hasRawDataDataSourceBuffer = async (
   nodeId: NodeId,
   cacheKey: string
 ): Promise<boolean> => {
+  if (!isRawDataDataSourceCacheKey(cacheKey)) return false;
   const store = createShapeChunkStore(databaseName);
   return store.hasRelationForNode(nodeId, cacheKey);
 };

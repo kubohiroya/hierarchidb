@@ -1,18 +1,29 @@
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import {
-  memo,
+  Box,
+  Chip,
+  CircularProgress,
+  IconButton,
+  LinearProgress,
+  MenuItem,
+  Skeleton,
+  Stack,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import {
   type FC,
   type MouseEvent,
+  memo,
   type ReactNode,
   useCallback,
   useEffect,
   useState,
 } from 'react';
-import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
-import { Box, Chip, CircularProgress, IconButton, LinearProgress, MenuItem, Skeleton, Stack, Typography, useTheme } from '@mui/material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
-import TaskAltIcon from '@mui/icons-material/TaskAlt';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 export type BuildStepStageMenuItem = {
   id: string;
@@ -86,7 +97,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const completed = taskCount?.Completed ?? 0;
   const failed = taskCount?.Failed ?? 0;
   const skipped = taskCount?.Skip ?? 0;
-  const total = taskCount?.Total ?? (completed + failed + skipped);
+  const total = taskCount?.Total ?? completed + failed + skipped;
   const doneTotal = completed + failed + skipped;
   const progressPercent = total > 0 ? Math.round((doneTotal / total) * 100) : 0;
   const completedLabel = `${Math.min(total, completed)}/${total}`;
@@ -95,51 +106,59 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const isFailedVisible = failed > 0;
   const isCompletedDisabled = completedVisibleCount === 0;
   const isSkippedVisible = skipped > 0;
-  const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
-  const completedVariant = isCompletedDisabled ? 'outlined' : (completedMode ? 'filled' : 'outlined');
+  const failedVariant = isFailedDisabled ? 'outlined' : failedMode ? 'filled' : 'outlined';
+  const completedVariant = isCompletedDisabled ? 'outlined' : completedMode ? 'filled' : 'outlined';
   const isSkippedDisabled = skipped === 0;
-  const skippedVariant = isSkippedDisabled ? 'outlined' : (skippedMode ? 'filled' : 'outlined');
+  const skippedVariant = isSkippedDisabled ? 'outlined' : skippedMode ? 'filled' : 'outlined';
   const indicatorCount = Math.max(0, Math.floor(concurrencyIndicator?.count ?? 0));
   const isIndicatorRunning = concurrencyIndicator?.isRunning ?? false;
   const indicatorVariant = isIndicatorRunning ? 'indeterminate' : 'determinate';
-  const indicatorIdleColor = theme.palette.mode === 'dark'
-    ? theme.palette.grey[800]
-    : theme.palette.grey[400];
+  const indicatorIdleColor =
+    theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[400];
   const indicatorSx = isIndicatorRunning ? undefined : { color: indicatorIdleColor };
-  const indicatorNode = indicatorCount > 0 ? (
-    <Stack
-      component={onConcurrencyIndicatorClick ? 'button' : 'div'}
-      type={onConcurrencyIndicatorClick ? 'button' : undefined}
-      aria-label={onConcurrencyIndicatorClick ? (concurrencyIndicatorAriaLabel ?? 'Edit stage concurrency') : undefined}
-      direction="row"
-      spacing={0.5}
-      alignItems="center"
-      onClick={onConcurrencyIndicatorClick}
-      sx={onConcurrencyIndicatorClick ? {
-        p: 0,
-        m: 0,
-        border: 0,
-        background: 'none',
-        cursor: 'pointer',
-        '&:focus-visible': {
-          outline: '2px solid',
-          outlineColor: 'primary.main',
-          outlineOffset: 2,
-          borderRadius: 1,
-        },
-      } : undefined}
-    >
-      {Array.from({ length: indicatorCount }).map((_, index) => (
-        <CircularProgress
-          key={`stage-slot-${index}`}
-          size={14}
-          variant={indicatorVariant}
-          value={indicatorVariant === 'determinate' ? 100 : undefined}
-          sx={indicatorSx}
-        />
-      ))}
-    </Stack>
-  ) : null;
+  const indicatorNode =
+    indicatorCount > 0 ? (
+      <Stack
+        component={onConcurrencyIndicatorClick ? 'button' : 'div'}
+        type={onConcurrencyIndicatorClick ? 'button' : undefined}
+        aria-label={
+          onConcurrencyIndicatorClick
+            ? (concurrencyIndicatorAriaLabel ?? 'Edit stage concurrency')
+            : undefined
+        }
+        direction="row"
+        spacing={0.5}
+        alignItems="center"
+        onClick={onConcurrencyIndicatorClick}
+        sx={
+          onConcurrencyIndicatorClick
+            ? {
+                p: 0,
+                m: 0,
+                border: 0,
+                background: 'none',
+                cursor: 'pointer',
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2,
+                  borderRadius: 1,
+                },
+              }
+            : undefined
+        }
+      >
+        {Array.from({ length: indicatorCount }, (_, index) => index + 1).map((slotNumber) => (
+          <CircularProgress
+            key={`stage-slot-${slotNumber}`}
+            size={14}
+            variant={indicatorVariant}
+            value={indicatorVariant === 'determinate' ? 100 : undefined}
+            sx={indicatorSx}
+          />
+        ))}
+      </Stack>
+    ) : null;
   const hasMenuItems = (menuItems?.length ?? 0) > 0;
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const isMenuOpen = Boolean(menuAnchorEl);
@@ -202,27 +221,25 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   );
   const headerChips = chipPlacement === 'header' ? chips : null;
   const progressPercentNode = (
-    <Typography
-      variant="subtitle2"
-      sx={{ fontWeight: 600, fontSize: '1rem' }}
-    >
+    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '1rem' }}>
       {progressPercent}%
     </Typography>
   );
-  const footerChips = chipPlacement === 'belowProgress' ? (
-    <Box display="flex" alignItems="center" sx={{ mt: '2px', mb: '2px' }}>
-      {(leadingControl || indicatorNode) ? (
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          {leadingControl}
-          {indicatorNode}
+  const footerChips =
+    chipPlacement === 'belowProgress' ? (
+      <Box display="flex" alignItems="center" sx={{ mt: '2px', mb: '2px' }}>
+        {leadingControl || indicatorNode ? (
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {leadingControl}
+            {indicatorNode}
+          </Stack>
+        ) : null}
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 'auto' }}>
+          {chips}
+          {progressPercentNode}
         </Stack>
-      ) : null}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 'auto' }}>
-        {chips}
-        {progressPercentNode}
-      </Stack>
-    </Box>
-  ) : null;
+      </Box>
+    ) : null;
   if (loading) {
     return (
       <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
@@ -287,6 +304,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                   anchorEl={menuAnchorEl}
                   open={isMenuOpen}
                   onClose={handleMenuClose}
+                  disableRestoreFocus={false}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
@@ -325,12 +343,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
           </Typography>
         ) : null}
         {footerChips}
-        {progressContent ?? (
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-          />
-        )}
+        {progressContent ?? <LinearProgress variant="determinate" value={progress} />}
       </Stack>
       {children ? (
         <Box flex={1} minHeight={0}>
