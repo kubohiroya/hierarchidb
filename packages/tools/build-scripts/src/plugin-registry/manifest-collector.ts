@@ -172,7 +172,6 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
         : Boolean(databaseSourceEntry);
     const hasIconEntry =
       mode === 'dist-url' ? Boolean(iconSourceEntry || iconDistEntry) : Boolean(iconSourceEntry);
-    const hasCommon = Boolean(commonSourceEntry);
 
     const defaultDatabaseSpecifier = databaseSourceEntry ? `${pkgName}/database` : pkgName;
 
@@ -243,6 +242,7 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
       (mode === 'dist-url'
         ? Boolean(commonSourceEntry || commonDistEntry)
         : Boolean(commonSourceEntry)) && hasExportPath(Array.from(exportPathSet), 'common');
+    const hasCommon = hasExportedCommon;
 
     const filteredExportPaths = Array.from(exportPathSet).filter((value) => {
       const cleaned = value.replace(/^\.?\//, '');

@@ -26,6 +26,7 @@
 - ルール（プラグイン／利用側）
   - 公開エントリ（`@hierarchidb/*`）のみ import。`rootDir` 固定は不要。
   - `module: "ESNext"` + `moduleResolution: "node"` を使用。
+- `src/common/` は package 内部の共通実装置き場として利用できます。外部利用をサポートする場合だけ `exports["./common"]` を追加し、registry の public module として扱います。
 - 備考: UI パッケージ群で TS2742（jsx-runtime 依存の暗黙型）を防ぐため、公開 TSX は戻り値型を明示すること（下記参照）。
 
 ## 公開 TSX コンポーネントの戻り値型（MUST）

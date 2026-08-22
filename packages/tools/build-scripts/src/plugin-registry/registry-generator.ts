@@ -69,7 +69,7 @@ function formatModulesLiteral(summary: ManifestSummary, mode: PluginSpecifierMod
     );
   }
 
-  if (summary.commonSourceEntry || summary.commonDistEntry) {
+  if (summary.hasCommon && (summary.commonSourceEntry || summary.commonDistEntry)) {
     const specExpr = resolveSpecifierExpression(
       `${summary.packageName}/common`,
       summary.commonDistEntry,

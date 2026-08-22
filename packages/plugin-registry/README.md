@@ -34,6 +34,9 @@ pnpm --workspace-root run tools:gen-plugin-registry
 
 The registry is built after all plugins have been built (dependency order guaranteed by Turbo pipeline).
 
+`src/common/` inside a plugin is treated as internal unless the package explicitly exports `./common`.
+The generated registry only includes a `common` module for plugins that publish that export path.
+
 ## Dependencies
 
 Directly depends on all 11 plugins:

@@ -334,10 +334,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         specifier: "@hierarchidb/linker-plugin/worker",
         source: "plugins/linker-plugin/src/worker/index.ts",
       },
-    common: {
-        specifier: "@hierarchidb/linker-plugin/common",
-        source: "plugins/linker-plugin/src/common/index.ts",
-      },
     icon: {
         specifier: "@hierarchidb/linker-plugin/icon",
         source: "plugins/linker-plugin/src/icon/index.ts",
@@ -1511,10 +1507,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/timeline-plugin/ui",
         source: "plugins/timeline-plugin/src/ui/index.ts",
-      },
-    common: {
-        specifier: "@hierarchidb/timeline-plugin/common",
-        source: "plugins/timeline-plugin/src/common/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/timeline-plugin/icon",
