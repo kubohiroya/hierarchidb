@@ -10,6 +10,7 @@ export type BorderGeometrySpatialIndexKind =
   | 'tileCover';
 
 export type BorderGeometryBoundingBox = readonly [number, number, number, number];
+export type BorderGeometryCoordinate = readonly [number, number];
 
 export interface BorderGeometryDatasetRecord {
   datasetId: string;
@@ -32,6 +33,7 @@ export interface BorderGeometryArcRecord {
   nodeId: NodeId;
   classification: BorderGeometryArcClassification;
   orientation: string;
+  coordinates: readonly BorderGeometryCoordinate[];
   coordinateHash: string;
   endpointHash: string;
   ownerPolygonIds: readonly string[];

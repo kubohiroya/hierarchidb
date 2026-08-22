@@ -73,11 +73,14 @@ Arc identity は dataset identity に属し、次の field を必須とする。
 | `datasetId` | 親 dataset record の identity。 |
 | `classification` | `coastline` または `sharedBorder`。それ以外は契約違反。 |
 | `orientation` | canonical coordinate order。ring reference はこの orientation に対する `forward` / `reverse` を持つ。 |
+| `coordinates` | canonical WGS84 coordinate sequence。2点未満、非 finite、範囲外座標は拒否する。 |
 | `coordinateHash` | coordinate sequence の canonical hash。非 finite coordinate、WGS84 範囲外 coordinate、2点未満は拒否する。 |
 | `endpointHash` | endpoint pair の canonical hash。shared-border matching の入力であり、snap 補正の結果ではない。 |
 | `ownerPolygonIds` | coastline は1件以上、shared border は原則2件。仕様で例外を定義するまで不足/過剰を成功扱いしない。 |
 
 Arc identity は source polygon の一時的な feature index や vector tile id から導出してはならない。dataset 内で feature order が変わっても同一 topology が同一 identity になる設計を優先するが、そのために曖昧な matching を成功扱いしない。
+
+初期抽出実装は source ring の隣接 edge を検証単位として扱い、同一 ring 上で連続する同一 `classification` / `ownerPolygonIds` の run を1つの arc record に coalesce する。共有境界は逆向きに出現する同一 coordinate sequence を canonical orientation へ正規化して単一 arc として保存し、ring relation は `forward` / `reverse` で参照する。3つ以上の polygon が同一 edge を所有する場合は曖昧な topology として失敗する。
 
 ### Ring And Reconstruction Identity
 
@@ -120,6 +123,7 @@ Cleanup は node ownership を検証してから下流 artifact へ cascade す�
 - 必須 identity field の欠落、空文字、非 canonical 値
 - `nodeId` または `datasetId` の ownership 不一致
 - 非 finite coordinate、WGS84 範囲外 coordinate、2点未満 arc
+- 3つ以上の polygon が同一 border edge を共有する曖昧な topology
 - `classification`、`orientation`、`role`、`direction` の未知値
 - coastline / shared-border owner polygon cardinality の不一致
 - open ring、orientation mismatch、arc reference 欠落
