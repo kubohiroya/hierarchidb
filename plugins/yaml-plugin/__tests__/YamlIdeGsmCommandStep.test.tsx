@@ -115,4 +115,31 @@ describe('YamlIdeGsmCommandStep', () => {
     expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
     expect(execute).not.toHaveBeenCalled();
   });
+
+  it('blocks absolute and parent-traversal project paths', () => {
+    const execute = vi.fn<YamlIdeGsmExecutorLike['execute']>();
+    renderCommandStep({ execute });
+
+    fireEvent.change(screen.getByRole('textbox', { name: /Project path/ }), {
+      target: { value: '../project' },
+    });
+
+    expect(
+      screen.getByText('Project path must be relative and must not include parent traversal.')
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('recovers the run button when the executor rejects unexpectedly', async () => {
+    const execute = vi.fn<YamlIdeGsmExecutorLike['execute']>(async () => {
+      throw new Error('unexpected transport failure');
+    });
+    renderCommandStep({ execute });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(await screen.findByText('Command failed')).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Run' })).not.toBeDisabled());
+  });
 });

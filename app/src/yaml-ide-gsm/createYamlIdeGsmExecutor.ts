@@ -103,12 +103,25 @@ function readOptionalNumber(record: RecordValue, key: string): number | undefine
 }
 
 function readProjectRelativePath(runtimeInput: YamlIdeGsmRuntimeInput): string {
-  return readRequiredString(runtimeInput, 'projectRelativePath');
+  const projectRelativePath = readRequiredString(runtimeInput, 'projectRelativePath');
+  assertProjectRelativePath(projectRelativePath);
+  return projectRelativePath;
 }
 
 function assertRsyncConnectionType(value: string): asserts value is 'remote' | 'ssh' | 'ec2' {
   if (value !== 'remote' && value !== 'ssh' && value !== 'ec2') {
     throw new Error('connectionType must be remote, ssh, or ec2');
+  }
+}
+
+function assertProjectRelativePath(value: string): void {
+  if (
+    value.startsWith('/') ||
+    value.startsWith('\\') ||
+    /^[A-Za-z]:[\\/]/.test(value) ||
+    value.split(/[\\/]+/).includes('..')
+  ) {
+    throw new Error('projectRelativePath must be a relative path without parent traversal');
   }
 }
 

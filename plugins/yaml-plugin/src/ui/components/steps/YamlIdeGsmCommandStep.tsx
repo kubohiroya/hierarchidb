@@ -98,6 +98,19 @@ function errorLabel(code: string): string {
   return ERROR_LABELS[code] ?? 'Command failed';
 }
 
+function validateProjectRelativePath(value: string): string | null {
+  if (value.trim().length === 0) return 'Project path is required.';
+  if (
+    value.startsWith('/') ||
+    value.startsWith('\\') ||
+    /^[A-Za-z]:[\\/]/.test(value) ||
+    value.split(/[\\/]+/).includes('..')
+  ) {
+    return 'Project path must be relative and must not include parent traversal.';
+  }
+  return null;
+}
+
 export const YamlIdeGsmCommandStep: FC<YamlIdeGsmCommandStepProps> = ({
   data,
   parentId,
@@ -129,6 +142,7 @@ export const YamlIdeGsmCommandStep: FC<YamlIdeGsmCommandStepProps> = ({
     commands[0]?.commandId ??
     '';
   const requiresConnectionType = commandId === 'rsync-push' || commandId === 'rsync-pull';
+  const projectPathError = validateProjectRelativePath(projectRelativePath);
   const canRun =
     !disabled &&
     step4Runtime.enabled &&
@@ -136,7 +150,7 @@ export const YamlIdeGsmCommandStep: FC<YamlIdeGsmCommandStepProps> = ({
     validation.ok &&
     parentId !== undefined &&
     commandId !== '' &&
-    projectRelativePath.length > 0 &&
+    projectPathError === null &&
     runningCommand === null;
 
   const runCommand = async (executor: YamlIdeGsmExecutorLike, filename: YamlCanonicalFilename) => {
@@ -146,28 +160,33 @@ export const YamlIdeGsmCommandStep: FC<YamlIdeGsmCommandStepProps> = ({
     setStatus(null);
     setError(null);
     setSuccess(null);
-    const result = await executor.execute(
-      {
-        parentId: parentId as NodeId,
-        filename,
-        payload: {
-          subtype,
-          schemaId: data.schemaId,
-          content: data.content,
+    try {
+      const result = await executor.execute(
+        {
+          parentId: parentId as NodeId,
+          filename,
+          payload: {
+            subtype,
+            schemaId: data.schemaId,
+            content: data.content,
+          },
+          commandId: activeCommand,
+          runtimeInput: buildRuntimeInput(activeCommand, projectRelativePath, connectionType),
         },
-        commandId: activeCommand,
-        runtimeInput: buildRuntimeInput(activeCommand, projectRelativePath, connectionType),
-      },
-      (nextStatus) => {
-        setStatus(nextStatus);
+        (nextStatus) => {
+          setStatus(nextStatus);
+        }
+      );
+      if (result.ok) {
+        setSuccess(result.commandTaskId);
+      } else {
+        setError(errorLabel(result.code));
       }
-    );
-    if (result.ok) {
-      setSuccess(result.commandTaskId);
-    } else {
-      setError(errorLabel(result.code));
+    } catch {
+      setError(errorLabel('COMMAND_FAILED'));
+    } finally {
+      setRunningCommand(null);
     }
-    setRunningCommand(null);
   };
 
   if (subtype === null) {
@@ -215,6 +234,8 @@ export const YamlIdeGsmCommandStep: FC<YamlIdeGsmCommandStepProps> = ({
         onChange={(event) => setProjectRelativePath(event.target.value)}
         required
         fullWidth
+        error={projectPathError !== null}
+        helperText={projectPathError ?? undefined}
       />
       {requiresConnectionType ? (
         <FormControl fullWidth size="small">
