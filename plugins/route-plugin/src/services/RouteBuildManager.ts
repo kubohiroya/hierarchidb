@@ -6,9 +6,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   RouteBuildConfig,
-  RouteFeature,
+  RouteBuildRouteInput,
   RouteGenerationConfig,
-  RouteMode,
 } from '@hierarchidb/route-api';
 import type { RouteEnginesProvider } from '@hierarchidb/route-engine';
 import { deleteTasksByNode, putTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
@@ -23,17 +22,6 @@ import { buildRouteSourceIdentity } from './routeSourceIdentity.js';
 export type RouteBuildManagerDeps = {
   engines?: RouteEnginesProvider;
   session?: RouteBuildSessionDeps;
-};
-
-export type RouteBuildRouteInput = {
-  startLocationId: NodeId;
-  endLocationId: NodeId;
-  startCoordinates: [number, number];
-  endCoordinates: [number, number];
-  routeMode: RouteMode;
-  metadata?: RouteFeature['metadata'];
-  method?: RouteGenerationConfig['method'];
-  methodOptions?: RouteGenerationConfig['options'];
 };
 
 export class RouteBuildManager {
