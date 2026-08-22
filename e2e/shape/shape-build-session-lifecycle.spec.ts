@@ -32,7 +32,6 @@ const WAIT_FOR_DOWNLOAD_TIMEOUT_MS = 10_000;
 const WAIT_FOR_COMPLETION_TIMEOUT_MS = 45_000;
 const WAIT_FOR_UI_TIMEOUT_MS = 7_500;
 const WAIT_FOR_DIALOG_APPEAR_TIMEOUT_MS = 2_000;
-const WAIT_FOR_RESET_TIMEOUT_MS = 10_000;
 const CLEANUP_TIMEOUT_MS = 3_000;
 const SHORT_SCENARIO_TIMEOUT_MS = 45_000;
 const LIFECYCLE_SCENARIO_TIMEOUT_MS = 75_000;
@@ -581,10 +580,7 @@ test.describe('Shape canonical build-session lifecycle', () => {
     }
   });
 
-  test('cancels queued work as idle plus stopReason', async ({
-    page,
-    canonicalAuth,
-  }) => {
+  test('cancels queued work as idle plus stopReason', async ({ page, canonicalAuth }) => {
     test.setTimeout(SHORT_SCENARIO_TIMEOUT_MS);
     const consoleFailures = collectConsoleFailures(page);
     let node: ShapeNode | null = null;
