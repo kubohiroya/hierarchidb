@@ -32,7 +32,7 @@ import type {
 import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   storeRawDataDataSourceBufferForNode,
-} from '~/services/utils/createShapeChunkStore';
+} from '~/services/utils/chunkStore';
 import { resolveCountryContinentName, resolveCountryName } from '~/services/utils/iso3166';
 import {
   toEphemeralBuildSessionRecord,

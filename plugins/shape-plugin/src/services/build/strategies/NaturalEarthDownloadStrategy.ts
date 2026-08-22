@@ -11,7 +11,7 @@ import type { CountryMetadata, SourceTask, SourceTaskPayload } from '~/common/ty
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobufUtils.js';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/shapeBuildUtils';
-import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '~/services/utils/createShapeChunkStore';
+import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '~/services/utils/chunkStore';
 
 type CountryLookup = Map<string, CountryMetadata>;
 
