@@ -1,5 +1,6 @@
-export {
-  clearShapeDatabases as clearDatabases,
-} from './ShapeDB.js';
+export * from './BorderGeometryStorageTypes.js';
+export * from './borderGeometryStorageValidationUtils.js';
+export * from './isShapeBorderGeometryStorageEnabled.js';
 export * from './ShapeDB.js';
-export * from "./VectorTileRecord";
+export { clearShapeDatabases as clearDatabases } from './ShapeDB.js';
+export * from './VectorTileRecord';
