@@ -90,7 +90,7 @@ export const verifyCacheDataConsistency = async (
     await taskQueue.tasks
       .where('nodeId')
       .equals(nodeId)
-      .filter((task: any) => isNonTerminalStatus(task.status))
+      .filter((task: { status: TaskStatus }) => isNonTerminalStatus(task.status))
       .toArray();
 
     const inconsistentTasks: Array<{ taskId: string; status: TaskStatus }> = [];

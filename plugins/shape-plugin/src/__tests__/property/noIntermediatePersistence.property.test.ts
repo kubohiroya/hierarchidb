@@ -5,6 +5,7 @@
 
 import type { TaskStatus } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -14,12 +15,12 @@ import {
 } from '../../worker/api/cacheWriteValidationConstants';
 
 // Mock task queue for testing
-const createMockTaskQueue = () =>
+const createMockTaskQueue = (): VtTaskQueueDb =>
   ({
     tasks: {
       get: vi.fn(),
     },
-  }) as any;
+  }) as unknown as VtTaskQueueDb;
 
 describe('Property 12: No Intermediate Persistence', () => {
   it('should prevent cache writes for running tasks', async () => {

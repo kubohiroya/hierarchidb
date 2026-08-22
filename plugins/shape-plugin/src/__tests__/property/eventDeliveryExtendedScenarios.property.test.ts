@@ -213,8 +213,11 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
           const mgr = new UIEventBufferManager();
           let threw = false;
           try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            mgr.enqueue({ notificationType: wrongType as any, payload: {}, timestamp: Date.now() });
+            mgr.enqueue({
+              notificationType: wrongType as unknown as BufferedEvent['notificationType'],
+              payload: {},
+              timestamp: Date.now(),
+            });
           } catch {
             threw = true;
           }

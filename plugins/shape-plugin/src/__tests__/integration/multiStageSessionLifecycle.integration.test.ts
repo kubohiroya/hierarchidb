@@ -9,7 +9,7 @@
 
 import type { BuildStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { type EphemeralBuildTaskRecord, ephemeralDB } from '@hierarchidb/gis-sdk';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   ensureSessionTaskConsistency,
@@ -77,7 +77,7 @@ const createStageTask = (
   nodeId: NodeId,
   stage: BuildStage,
   status: 'queued' | 'running' | 'completed' | 'failed' = 'queued'
-) => ({
+): EphemeralBuildTaskRecord<Record<string, unknown>, Record<string, unknown>> => ({
   taskId,
   nodeId,
   status,
@@ -97,7 +97,7 @@ interface EventSequence {
   taskId?: string;
   stage?: string;
   seqNum?: number;
-  data?: any;
+  data?: unknown;
 }
 
 class SessionEventTracker {
@@ -237,7 +237,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
     ];
 
     // Store all tasks
-    await ephemeralDB.buildTasks.bulkPut(allTasks as any);
+    await ephemeralDB.buildTasks.bulkPut(allTasks);
 
     // Simulate session execution through all stages
     const stages: BuildStage[] = ['source', 'geometry', 'tileEmit'];
@@ -349,7 +349,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
       (t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'source')
     );
 
-    await ephemeralDB.buildTasks.bulkPut(sourceTasks as any);
+    await ephemeralDB.buildTasks.bulkPut(sourceTasks);
 
     let currentSeqNum = 1;
 
@@ -472,7 +472,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
       (t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'geometry')
     );
 
-    await ephemeralDB.buildTasks.bulkPut([...sourceTasks, ...geometryTasks] as any);
+    await ephemeralDB.buildTasks.bulkPut([...sourceTasks, ...geometryTasks]);
 
     let currentSeqNum = 1;
 
@@ -570,7 +570,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
     const nodeId = 'test-node-cache-sequence' as NodeId;
     const task = createStageTask('cache-test-task', nodeId, 'geometry');
 
-    await ephemeralDB.buildTasks.put(task as any);
+    await ephemeralDB.buildTasks.put(task);
     await taskStateProtection.createTaskSnapshot(task.taskId);
 
     let currentSeqNum = 1;
@@ -644,7 +644,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
       ),
     ];
 
-    await ephemeralDB.buildTasks.bulkPut(allTasks as any);
+    await ephemeralDB.buildTasks.bulkPut(allTasks);
 
     let currentSeqNum = 1;
     const controllers: AbortController[] = [];

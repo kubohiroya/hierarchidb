@@ -9,6 +9,19 @@ import type {
  */
 export type OptimizationLevel = 'none' | 'basic' | 'aggressive';
 
+export interface MappingSchema {
+  properties: Record<
+    string,
+    {
+      type: 'unknown';
+      required?: boolean;
+      source?: string;
+    }
+  >;
+}
+
+type CompiledMappingFunction = (data: unknown) => unknown;
+
 /**
  * Compiled mapping function metadata
  */
@@ -18,8 +31,8 @@ export interface CompiledMapping {
   compiledFunction: string;
   compiledAt: number;
   metadata: {
-    inputSchema: any;
-    outputSchema: any;
+    inputSchema: MappingSchema;
+    outputSchema: MappingSchema;
     optimizationLevel: OptimizationLevel;
     executionPlan: ExecutionPlan;
     estimatedSpeedup: number;
@@ -637,12 +650,12 @@ export class MappingCompiler {
   /**
    * Extract input schema from mapping rules
    */
-  private extractInputSchema(rules: PropertyMappingRule[]): any {
-    const properties: Record<string, any> = {};
+  private extractInputSchema(rules: PropertyMappingRule[]): MappingSchema {
+    const properties: MappingSchema['properties'] = {};
 
     rules.forEach((rule) => {
       properties[rule.sourceProperty] = {
-        type: 'any', // Would be inferred from actual data
+        type: 'unknown', // Would be inferred from actual data
         required: rule.isRequired,
       };
     });
@@ -653,12 +666,12 @@ export class MappingCompiler {
   /**
    * Extract output schema from mapping rules
    */
-  private extractOutputSchema(rules: PropertyMappingRule[]): any {
-    const properties: Record<string, any> = {};
+  private extractOutputSchema(rules: PropertyMappingRule[]): MappingSchema {
+    const properties: MappingSchema['properties'] = {};
 
     rules.forEach((rule) => {
       properties[rule.targetProperty] = {
-        type: 'any', // Would be inferred from transformation
+        type: 'unknown', // Would be inferred from transformation
         source: rule.sourceProperty,
       };
     });
@@ -683,12 +696,12 @@ export class MappingCompiler {
   /**
    * Execute compiled mapping
    */
-  async execute(compiled: CompiledMapping, data: any): Promise<any> {
+  async execute(compiled: CompiledMapping, data: unknown): Promise<unknown> {
     const startTime = performance.now();
 
     try {
       // Create function from compiled string
-      const func = new Function('return ' + compiled.compiledFunction)();
+      const func = new Function('return ' + compiled.compiledFunction)() as CompiledMappingFunction;
 
       // Execute the function
       const result = func(data);

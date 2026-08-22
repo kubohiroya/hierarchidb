@@ -1,6 +1,12 @@
 import type { PropertyMappingRule } from '~/common/types/index';
 
-export type CompiledFunction = (data: any) => any;
+type JsonRecord = Record<string, unknown>;
+type TransformFunction = (value: unknown) => unknown;
+
+const isRecord = (value: unknown): value is JsonRecord =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+export type CompiledFunction = (data: unknown) => JsonRecord;
 
 /**
  * Simple MappingCompiler for testing
@@ -10,8 +16,8 @@ export class MappingCompiler {
    * Compile mapping rules into a function
    */
   compile(mappingRules: PropertyMappingRule[]): CompiledFunction {
-    return (data: any) => {
-      const result: any = {};
+    return (data: unknown) => {
+      const result: JsonRecord = {};
 
       for (const rule of mappingRules) {
         // Get value from source path
@@ -24,14 +30,14 @@ export class MappingCompiler {
             // Create a safe evaluation context
             // Handle both single expressions and multi-line functions
             const funcBody = rule.transformFunction.trim();
-            let transformFn: Function;
+            let transformFn: TransformFunction;
 
             if (funcBody.includes('return') || funcBody.includes(';')) {
               // Multi-line function body
-              transformFn = new Function('value', funcBody);
+              transformFn = new Function('value', funcBody) as TransformFunction;
             } else {
               // Single expression
-              transformFn = new Function('value', `return (${funcBody})`);
+              transformFn = new Function('value', `return (${funcBody})`) as TransformFunction;
             }
 
             transformedValue = transformFn(value);
@@ -57,13 +63,16 @@ export class MappingCompiler {
   /**
    * Get value from object by dot-notation path
    */
-  private getValueByPath(obj: any, path: string): any {
+  private getValueByPath(obj: unknown, path: string): unknown {
     const parts = path.split('.');
     let current = obj;
 
     for (const part of parts) {
       if (current === null || current === undefined) {
         return undefined;
+      }
+      if (!isRecord(current)) {
+        throw new Error(`Cannot read property "${part}" from non-object mapping input`);
       }
       current = current[part];
     }
@@ -74,14 +83,20 @@ export class MappingCompiler {
   /**
    * Set value in object by dot-notation path
    */
-  private setValueByPath(obj: any, path: string, value: any): void {
+  private setValueByPath(obj: JsonRecord, path: string, value: unknown): void {
     const parts = path.split('.');
-    const lastPart = parts.pop()!;
+    const lastPart = parts.pop();
+    if (!lastPart) {
+      throw new Error('Mapping target path must not be empty');
+    }
     let current = obj;
 
     for (const part of parts) {
       if (!(part in current)) {
         current[part] = {};
+      }
+      if (!isRecord(current[part])) {
+        throw new Error(`Cannot write through non-object mapping target "${part}"`);
       }
       current = current[part];
     }

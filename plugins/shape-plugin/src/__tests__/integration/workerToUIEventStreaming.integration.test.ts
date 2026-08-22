@@ -6,15 +6,49 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { UIEventBufferManager } from '../../ui/components/build-progress/eventBufferingUI';
 import {
+  type EventPayload,
+  eventDeliveryMonitor,
   type NotificationType,
-  type SequencedEvent,
-  UIEventBufferManager,
-} from '../../ui/components/build-progress/eventBufferingUI';
-import { eventDeliveryMonitor, unconditionalEventStreamer } from '../../worker/api/eventBuffering';
+  unconditionalEventStreamer,
+} from '../../worker/api/eventBuffering';
+
+type LegacyEventPayload = Exclude<EventPayload, { type: 'heartbeat' }>;
+type SequencedEvent = LegacyEventPayload & {
+  seqNum: number;
+  notificationType: Exclude<NotificationType, 'heartbeat'>;
+};
+
+type EventEmissionMessage = {
+  type: 'event-emission';
+  nodeId: NodeId;
+  eventType: Exclude<NotificationType, 'heartbeat'>;
+  sequencedEvent: SequencedEvent;
+};
 
 // Test utilities for Worker-to-UI communication
 const createNodeId = (id: string): NodeId => id as NodeId;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const asLegacyEventPayload = (payload: Record<string, unknown>): LegacyEventPayload =>
+  payload as unknown as LegacyEventPayload;
+
+const getPayloadRecord = (payload: unknown): Record<string, unknown> => {
+  if (!isRecord(payload)) {
+    throw new Error('Expected event payload to be an object');
+  }
+  return payload;
+};
+
+const isEventEmissionMessage = (value: unknown): value is EventEmissionMessage =>
+  isRecord(value) &&
+  value.type === 'event-emission' &&
+  typeof value.nodeId === 'string' &&
+  typeof value.eventType === 'string' &&
+  isRecord(value.sequencedEvent);
 
 // Mock Worker environment for testing
 class MockWorkerEnvironment {
@@ -99,9 +133,9 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       unconditionalEventStreamer.configureDistributedSeqNum(nodeId, 0, 1);
 
       // Set up message handler to simulate UI receiving events
-      const receivedMessages: any[] = [];
+      const receivedMessages: EventEmissionMessage[] = [];
       mockWorker.addMessageHandler((event) => {
-        if (event.data?.type === 'event-emission') {
+        if (isEventEmissionMessage(event.data)) {
           receivedMessages.push(event.data);
         }
       });
@@ -124,7 +158,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
 
       // Emit events from Worker
       eventsToEmit.forEach(({ type, payload }) => {
-        unconditionalEventStreamer.emitEvent(nodeId, type, payload as any);
+        unconditionalEventStreamer.emitEvent(nodeId, type, asLegacyEventPayload(payload));
       });
 
       // Wait for async message processing
@@ -177,7 +211,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
         (sequencedEvent) => {
           global.postMessage({
             type: 'event-batch',
-            eventId: (sequencedEvent.payload as any).eventId,
+            eventId: getPayloadRecord(sequencedEvent.payload).eventId,
             sequencedEvent,
           });
         }
@@ -188,7 +222,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
         unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', {
           eventId: i,
           progress: (i / eventCount) * 100,
-        } as any);
+        });
       }
 
       // Wait for message processing
@@ -242,7 +276,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
           unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', {
             workerIndex,
             eventIndex: i,
-          } as any);
+          });
         }
 
         eventsByWorker.push({ workerIndex, events: workerEvents });
@@ -297,7 +331,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       // Emit interleaved events
       for (let round = 0; round < 5; round++) {
         notificationTypes.forEach((type) => {
-          unconditionalEventStreamer.emitEvent(nodeId, type, { round, type } as any);
+          unconditionalEventStreamer.emitEvent(nodeId, type, asLegacyEventPayload({ round, type }));
         });
       }
 
@@ -336,7 +370,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
         unconditionalEventStreamer.emitEvent(nodeId, 'session-state', {
           session: 1,
           event: i,
-        } as any);
+        });
       }
 
       expect(firstSessionSeqNums).toEqual([0, 1, 2]);
@@ -356,7 +390,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
         unconditionalEventStreamer.emitEvent(nodeId, 'session-state', {
           session: 2,
           event: i,
-        } as any);
+        });
       }
 
       // Verify seqNums reset to start from 0 again
@@ -388,7 +422,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
 
         unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', {
           timestamp: Date.now(),
-        } as any);
+        });
       }, 10); // Emit every 10ms
 
       // Let events flow for a short time
@@ -429,9 +463,17 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       );
 
       // Emit events before abort
-      unconditionalEventStreamer.emitEvent(nodeId, 'session-state', { status: 'starting' } as any);
+      unconditionalEventStreamer.emitEvent(
+        nodeId,
+        'session-state',
+        asLegacyEventPayload({ status: 'starting' })
+      );
 
-      unconditionalEventStreamer.emitEvent(nodeId, 'session-state', { status: 'running' } as any);
+      unconditionalEventStreamer.emitEvent(
+        nodeId,
+        'session-state',
+        asLegacyEventPayload({ status: 'running' })
+      );
 
       expect(emittedEvents).toHaveLength(2);
 
@@ -444,12 +486,15 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       if (shouldEmit) {
         unconditionalEventStreamer.emitEvent(nodeId, 'session-state', {
           status: 'completed',
-        } as any);
+        });
       }
 
       // Verify no events emitted after abort
       expect(emittedEvents).toHaveLength(2);
-      expect(emittedEvents.map((e) => (e.payload as any).status)).toEqual(['starting', 'running']);
+      expect(emittedEvents.map((e) => getPayloadRecord(e.payload).status)).toEqual([
+        'starting',
+        'running',
+      ]);
 
       unsubscribe();
     });
@@ -474,7 +519,11 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
 
       // Emit some events
       Object.keys(receivedEventsByType).forEach((type) => {
-        unconditionalEventStreamer.emitEvent(nodeId, type as any, { type, data: 'test' } as any);
+        unconditionalEventStreamer.emitEvent(
+          nodeId,
+          type as unknown as Exclude<NotificationType, 'heartbeat'>,
+          asLegacyEventPayload({ type, data: 'test' })
+        );
       });
 
       // Verify events were received
@@ -490,8 +539,8 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       Object.keys(receivedEventsByType).forEach((type) => {
         unconditionalEventStreamer.emitEvent(
           nodeId,
-          type as any,
-          { type, data: 'after-cleanup' } as any
+          type as unknown as Exclude<NotificationType, 'heartbeat'>,
+          asLegacyEventPayload({ type, data: 'after-cleanup' })
         );
       });
 
@@ -533,7 +582,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
             workerIndex,
             eventIndex: i,
             timestamp: Date.now(),
-          } as any);
+          });
         }
 
         unsubscribe();
@@ -590,7 +639,11 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       ];
 
       eventPayloads.forEach((payload) => {
-        unconditionalEventStreamer.emitEvent(nodeId, 'session-state', payload as any);
+        unconditionalEventStreamer.emitEvent(
+          nodeId,
+          'session-state',
+          asLegacyEventPayload(payload)
+        );
       });
 
       // Wait for retries to complete
@@ -603,7 +656,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       // Verify event ordering is maintained despite failures
       bufferedEvents.forEach((event, index) => {
         expect(event.seqNum).toBe(index);
-        expect((event.payload as any).status).toBe(eventPayloads[index]!.status);
+        expect(getPayloadRecord(event.payload).status).toBe(eventPayloads[index]?.status);
       });
 
       unsubscribe();
@@ -631,7 +684,11 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
       // Emit events and verify monitoring
       const eventCount = 5; // Reduced for simpler testing
       for (let i = 0; i < eventCount; i++) {
-        unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', { eventIndex: i } as any);
+        unconditionalEventStreamer.emitEvent(
+          nodeId,
+          'task-progress',
+          asLegacyEventPayload({ eventIndex: i })
+        );
       }
 
       // Wait for artificial latency processing

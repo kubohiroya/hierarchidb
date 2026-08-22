@@ -4,6 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
 import { LocationSelectionStep } from '../../LocationSelectionStep';
 
+type MockCountrySelection = {
+  countryCode: string;
+  selections: Record<string, boolean>;
+};
+
 vi.mock('@hierarchidb/ui-country-select', () => ({
   useIsoCountries: () => ({
     status: 'ready',
@@ -14,7 +19,7 @@ vi.mock('@hierarchidb/ui-country-select', () => ({
     onSelectionsChange,
   }: {
     matrixConfig: { columns: { id: string; label: string }[] };
-    onSelectionsChange: (value: any) => void;
+    onSelectionsChange: (value: MockCountrySelection[]) => void;
   }) => (
     <div>
       <div>{matrixConfig.columns[0]?.label}</div>

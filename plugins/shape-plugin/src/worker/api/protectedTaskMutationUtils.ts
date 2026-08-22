@@ -121,14 +121,14 @@ export async function markTaskStarted(taskId: string, abortSignal?: AbortSignal)
  */
 export async function markTaskCompleted(
   taskId: string,
-  output?: any,
+  output?: ShapeBuildTaskRecordUpdate['outputData'],
   abortSignal?: AbortSignal
 ): Promise<void> {
   const updates: ShapeBuildTaskRecordUpdate = {
     status: 'completed',
     completedAt: Date.now(),
     progress: 100,
-    ...(output && { output }),
+    ...(output !== undefined ? { outputData: output } : {}),
   };
 
   await updateBuildTaskProtected(taskId, updates, abortSignal);
