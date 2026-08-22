@@ -12,7 +12,7 @@ import {
   deleteRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNodeKeys,
   isRawDataDataSourceCacheKey,
-} from '~/services/utils/createShapeChunkStore';
+} from '~/services/utils/chunkStore';
 
 export type ShapeArtifactCleanupSelection = {
   countryCode: string;

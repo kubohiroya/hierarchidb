@@ -17,7 +17,7 @@ import {
   buildRawDataDataSourceCacheKey,
   deleteRawDataDataSourceBuffersForNode,
   storeRawDataDataSourceBufferForNode,
-} from '../../services/utils/createShapeChunkStore';
+} from '../../services/utils/chunkStore';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],

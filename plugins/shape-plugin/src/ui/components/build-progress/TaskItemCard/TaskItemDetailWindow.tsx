@@ -26,7 +26,7 @@ import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
   buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
-} from '~/services/utils/createShapeChunkStore';
+} from '~/services/utils/chunkStore';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import {
   isGeometryLikeStageId,

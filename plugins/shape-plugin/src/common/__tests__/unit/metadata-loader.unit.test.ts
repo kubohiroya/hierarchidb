@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { metadataLoader } from '../../../services/metadata/MetadataLoader';
-import * as chunkStore from '../../../services/utils/createShapeChunkStore';
+import * as chunkStore from '../../../services/utils/chunkStore';
 import { GEOBOUNDARIES_ALL_METADATA_URL } from '../../../services/utils/geoboundariesEndpoints';
 
 const cache = new Map<string, { value: unknown; metadata?: unknown }>();
@@ -47,7 +47,7 @@ vi.mock('../../../services/utils/iso3166.js', () => ({
   ...isoMocks,
 }));
 
-vi.mock('../../../services/utils/createShapeChunkStore.js', () => ({
+vi.mock('../../../services/utils/chunkStore.js', () => ({
   buildShapeCacheKey: vi.fn((prefix: string, url: string) => `${prefix}:${url}`),
   createShapeChunkStore: vi.fn(() => ({
     getOrFetchForNode,

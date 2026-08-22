@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '~/common/types/index';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { deleteRawDataDataSourceBuffersForDataSource } from '~/services/utils/createShapeChunkStore';
+import { deleteRawDataDataSourceBuffersForDataSource } from '~/services/utils/chunkStore';
 import { invalidateCountrySelectionCaches } from '~/ui/hooks/invalidateCountrySelectionCaches';
 
 export const clearShapeDataSourceCache = async (

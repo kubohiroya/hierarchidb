@@ -16,7 +16,7 @@ import type { ShapeFeaturePayload } from '~/common/types/index';
 import {
   buildRawDataDataSourceCacheKey,
   type RetryConfig,
-} from '~/services/utils/createShapeChunkStore';
+} from '~/services/utils/chunkStore';
 import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 

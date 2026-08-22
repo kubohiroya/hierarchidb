@@ -3,7 +3,7 @@ import {
   createShapeChunkStore,
   jsonDeserializer,
   jsonSerializer,
-} from './createShapeChunkStore.js';
+} from './chunkStore.js';
 import type { NodeId } from '@hierarchidb/core-types';
 
 const parseAdminLevel = (value: unknown): number | null => {

@@ -7,7 +7,7 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
   listRawDataDataSourceMetadataForNode,
   storeRawDataDataSourceBufferForNode,
-} from '../../../services/utils/createShapeChunkStore';
+} from '../../../services/utils/chunkStore';
 import { createShapeNetworkPort } from '../../../services/utils/createShapeNetworkPort';
 import { initializeShapeChunkStore } from '../../../services/utils/initializeShapeChunkStore';
 import { setShapeCorsProxyBaseURL } from '../../../services/utils/setShapeCorsProxyBaseURL';

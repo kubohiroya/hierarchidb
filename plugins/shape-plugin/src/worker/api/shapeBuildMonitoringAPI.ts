@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ProcessingStatus, TileInfo } from '~/common/types/index';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/createShapeChunkStore';
+import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
 

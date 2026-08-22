@@ -5,7 +5,7 @@ import {
   jsonSerializer,
   textDeserializer,
   textSerializer,
-} from '~/services/utils/createShapeChunkStore';
+} from '~/services/utils/chunkStore';
 import { createShapeNetworkPort } from '~/services/utils/createShapeNetworkPort';
 import type { CountryMetadata } from '~/common/types/index';
 import {
