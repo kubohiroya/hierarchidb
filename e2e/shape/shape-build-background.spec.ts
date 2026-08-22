@@ -78,7 +78,7 @@ test.describe('Shape build background (real pipeline)', () => {
 
     await canonicalAuth.signIn();
 
-    await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
+    await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded' });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
     await page.waitForFunction(
@@ -240,7 +240,7 @@ test.describe('Shape build background (real pipeline)', () => {
       throw new Error('startBuildSession returned null');
     }
 
-    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'networkidle' });
+    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'domcontentloaded' });
     await waitForTreeTableLoad(page);
 
     const waitForCompletion = async () => {
@@ -338,7 +338,7 @@ test.describe('Shape build background (real pipeline)', () => {
 
     await waitForCompletion();
 
-    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'networkidle' });
+    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'domcontentloaded' });
     await waitForTreeTableLoad(page);
     const nodeLinkAfter = page.getByRole('link', { name: new RegExp(shapeNode.name) });
     await expect(nodeLinkAfter).toBeVisible({ timeout: 10000 });

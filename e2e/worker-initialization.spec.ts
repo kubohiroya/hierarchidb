@@ -1,16 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
-
-type WorkerAPIClientModule = {
-  WorkerAPIClient?: {
-    isReady: () => boolean;
-    getSingleton: () => {
-      ping: () => Promise<{ response: 'pong' }>;
-    };
-  };
-};
+import { buildAppUrl } from './utils/test-helpers';
 
 type WindowWithWorkerImport = Window & {
-  import?: (url: string) => Promise<WorkerAPIClientModule>;
+  __HDB_WORKER_READY__?: boolean;
 };
 
 test.describe('Worker Initialization System', () => {
@@ -36,7 +28,7 @@ test.describe('Worker Initialization System', () => {
 
   test('should initialize worker before rendering app content', async () => {
     // Navigate to the app
-    await page.goto('/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle',
       timeout: 30000
     });
@@ -63,7 +55,7 @@ test.describe('Worker Initialization System', () => {
   });
 
   test('should properly handle Worker-UI communication', async () => {
-    await page.goto('/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle'
     });
 
@@ -75,15 +67,7 @@ test.describe('Worker Initialization System', () => {
     const hasWorkerAPI = await page.evaluate(async () => {
       // Check if WorkerAPIClient is available globally or in window
       try {
-        // Try to access the Worker API through a global method if exposed
-        const { WorkerAPIClient } = await (window as WindowWithWorkerImport).import?.('/src/WorkerAPIClient.js')?.catch(() => ({ WorkerAPIClient: null })) || {};
-        
-        if (WorkerAPIClient && WorkerAPIClient.isReady()) {
-          const client = WorkerAPIClient.getSingleton();
-          // Try to ping the worker
-          const result = await client.ping();
-          return result?.response === 'pong';
-        }
+        return (window as WindowWithWorkerImport).__HDB_WORKER_READY__ === true;
       } catch (e) {
         console.error('Worker API check failed:', e);
       }
@@ -107,7 +91,7 @@ test.describe('Worker Initialization System', () => {
     });
 
     // Navigate and immediately start checking for loading atoms
-    const navigationPromise = page.goto('/hierarchidb/', {
+    const navigationPromise = page.goto(buildAppUrl(), {
       waitUntil: 'commit' // Don't wait for load to complete
     });
 
@@ -167,7 +151,7 @@ test.describe('Worker Initialization System', () => {
       } as typeof window.Worker;
     });
 
-    await page.goto('/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle',
       timeout: 30000
     });
@@ -182,7 +166,7 @@ test.describe('Worker Initialization System', () => {
   });
 
   test('should establish Comlink communication after Worker ready', async () => {
-    await page.goto('/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle'
     });
 
@@ -214,7 +198,7 @@ test.describe('Worker Initialization System', () => {
   });
 
   test('should maintain Worker connection during navigation', async () => {
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle'
     });
 
@@ -223,9 +207,9 @@ test.describe('Worker Initialization System', () => {
 
     // Perform multiple navigations to test connection stability
     const navigationTests = [
-      '/hierarchidb/info',
-      '/hierarchidb/plugin-loader',
-      '/hierarchidb/'
+      buildAppUrl('info'),
+      buildAppUrl('plugin-loader'),
+      buildAppUrl()
     ];
 
     for (const path of navigationTests) {
@@ -259,7 +243,7 @@ test.describe('Worker Initialization System', () => {
       }
     });
 
-    await page.goto('/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle'
     });
 
@@ -297,7 +281,7 @@ test.describe('Worker API Facade Usage', () => {
       }
     });
 
-    await page.goto('/hierarchidb/', {
+    await page.goto(buildAppUrl(), {
       waitUntil: 'networkidle'
     });
 

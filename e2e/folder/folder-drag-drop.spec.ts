@@ -8,6 +8,7 @@ import {
   createChildFolder,
   performDragDrop,
   waitForSubTreeUpdate,
+  buildAppUrl,
 } from '../utils/test-helpers';
 
 /**
@@ -22,7 +23,7 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
-    await page.goto('/treeconsole-simple');
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
   });
@@ -322,7 +323,7 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
     // タッチデバイスをエミュレート
     //await page.emulate(require('@playwright/test').devices['iPad']);
 
-    await page.goto('/treeconsole-simple');
+    await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 

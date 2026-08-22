@@ -1,58 +1,17 @@
 import { Page, Locator, expect } from '@playwright/test';
+import {
+  buildAppUrl,
+  resolveE2EUrlContract,
+} from './e2e-url-contract';
+
 export type CreateMenuMatcher = string | RegExp;
-const normalizeBasePath = (value: string | undefined): string => {
-  if (!value) return '';
-  return value.replace(/^\/+|\/+$/g, '');
-};
+const e2eUrlContract = resolveE2EUrlContract();
 
-const appName = normalizeBasePath(
-  process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME ?? 'hierarchidb'
-);
-const defaultBaseURL = (() => {
-  const basePath = appName ? `/${appName}` : '';
-  return `http://localhost:4200${basePath}`;
-})();
+export const APP_BASE_URL = e2eUrlContract.baseURL;
 
-const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
-const rawRouterMode = process.env.PLAYWRIGHT_ROUTER_MODE ?? process.env.VITE_ROUTER_MODE ?? (process.env.VITE_USE_HASH_ROUTING === 'false' ? 'browser' : 'hash');
-const normalizedRouterMode = typeof rawRouterMode === 'string' ? rawRouterMode.toLowerCase() : 'hash';
-const IS_HASH_ROUTER = normalizedRouterMode !== 'browser';
+export const APP_BASE_URL_WITH_SLASH = e2eUrlContract.baseURLWithSlash;
 
-export const APP_BASE_URL = rawBaseURL.replace(/\/*$/, '');
-
-export const APP_BASE_URL_WITH_SLASH = `${APP_BASE_URL}/`;
-
-const toHashPath = (input: string): string => {
-  if (!input) return '#/';
-  if (input.startsWith('#')) {
-    const trimmed = input.replace(/^#+/, '');
-    if (!trimmed) return '#/';
-    return `#/${trimmed.replace(/^\/+/,'')}`;
-  }
-  return `#/${input.replace(/^\/+/,'')}`;
-};
-
-export const buildAppUrl = (path = ''): string => {
-  if (IS_HASH_ROUTER) {
-    const hashPath = toHashPath(path);
-    return `${APP_BASE_URL_WITH_SLASH}${hashPath}`;
-  }
-
-  if (!path) return APP_BASE_URL_WITH_SLASH;
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
-  }
-
-  if (path.startsWith('#')) {
-    return `${APP_BASE_URL_WITH_SLASH}${path}`;
-  }
-
-  if (path.startsWith('/')) {
-    return `${APP_BASE_URL}${path}`;
-  }
-
-  return `${APP_BASE_URL_WITH_SLASH}${path}`;
-};
+export { buildAppUrl };
 
 /**
  * E2E Test Helper Functions

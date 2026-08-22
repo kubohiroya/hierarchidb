@@ -8,6 +8,11 @@
 
 ### 主な提供機能
 - ベース URL の組み立て（ブラウザルーター/ハッシュルーター両対応） `buildAppUrl`
+- URL契約のSSOT `e2e/utils/e2e-url-contract.ts`
+  - `PLAYWRIGHT_BASE_URL` 未指定時は `VITE_APP_NAME` / `PLAYWRIGHT_APP_NAME` / 既定
+    `hierarchidb` から production preview と同じ base path を決める。
+  - `playwright.config.ts`、`e2e/global-setup.ts`、spec helper はこの契約を共有し、spec から
+    `localhost:<port>` や root `/` へ直接遷移しない。
 - ガイドツアー解消・TreeTable/Working Copy 待機・Undo/Redo 操作などの UI 操作ヘルパー
 - SpeedDial を介したフォルダ CRUD、ドラッグ＆ドロップ、Archive 復旧といった主要動線の共通化
 - シナリオ別データ初期化 `setupTestData`、アニメーション待機、スクリーンショット・コンソール追跡
@@ -50,12 +55,16 @@ MapLibre preview を含む Playwright E2E は、route/location/shape など個�
 - MapLibre preview 到達時の `Failed to initialize WebGL` / `webglcontextcreationerror` は、通常の E2E では未許可の console error として扱う。
 - 環境制約により WebGL unavailable を意図的に許容する場合は、対象 spec または helper で理由と許容メッセージ範囲を明示する。route/location canonical flow の fixture や Step2-Step6 の責務に混ぜない。
 
-## 5. 期待動作のレビュー観点
+## 5. Firefox 起動確認
+
+Playwright の `firefox` project が `--project=firefox` で明示選択された場合、global setup はテスト本体の前に短い Firefox launch probe を実行する。起動に失敗した場合は、アプリ assertion やURL契約の失敗と混ぜず、環境/ブラウザ起動障害として fail-fast する。project 未指定の full suite では Chromium など他 project の実行到達を妨げないよう、Firefox 起動可否は Playwright の project 実行結果として分離する。suite 成功扱いにするための skip、retry、fallback、過剰 timeout は追加しない。
+
+## 6. 期待動作のレビュー観点
 
 - **新しい Playwright シナリオを追加する場合**: 既存ヘルパーで解決できない UI 操作かどうかを確認し、汎用化できるコードは `test-helpers.ts` に追加。履歴としてこの文書と対象 GitHub Issue に整備方針を追記すると良い。
 - **環境依存エラーが疑われる場合**: `skip-if-disabled.ts` の判定や `test-helpers.ts` 中の `addInitScript` など初期化ロジックを確認。WFL で再現するかどうかを切り分ける。
 
-## 6. 参考リンク
+## 7. 参考リンク
 - Playwright ガイド: `docs/testing/cp-routing-wc-playwright.md`
 - runtime-worker WFL ガイド: `docs/testing/runtime-worker-wfl.md`
 - ResolverDialog headless テストメモ: `docs/testing/resolver-dialog-headless-e2e.md`

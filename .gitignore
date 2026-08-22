@@ -180,6 +180,7 @@ wrangler.toml
 
 generated/
 .codex/
+e2e-results/
 e2e-results.*
 
 # Legacy E2E auth seeds may contain live session tokens and are unsupported.

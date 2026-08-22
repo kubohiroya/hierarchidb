@@ -1,21 +1,10 @@
-import { chromium, FullConfig } from '@playwright/test';
+import { chromium, firefox, FullConfig } from '@playwright/test';
+import { resolveE2EUrlContract } from './utils/e2e-url-contract';
 
-const normalizeBasePath = (value: string | undefined): string => {
-  if (!value) return '';
-  return value.replace(/^\/+|\/+$/g, '');
-};
-
-const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
-const defaultBaseURL = (() => {
-  const basePath = appName ? `/${appName}` : '';
-  return `http://localhost:4200${basePath}`;
-})();
-
-const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
-const normalizedBaseURL = rawBaseURL.replace(/\/*$/, '');
-const baseURLWithSlash = `${normalizedBaseURL}/`;
+const e2eUrlContract = resolveE2EUrlContract();
 const SERVER_READY_TIMEOUT_MS = 180000;
 const NAVIGATION_TIMEOUT_MS = 120000;
+const FIREFOX_LAUNCH_PROBE_TIMEOUT_MS = 30_000;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
   setTimeout(resolve, ms);
@@ -45,6 +34,47 @@ const waitForServerReady = async (serverUrl: string, timeoutMs: number): Promise
   throw new Error(`Server readiness check timed out (${timeoutMs}ms): ${serverUrl} (${lastError})`);
 };
 
+const getExplicitProjectFilters = (): string[] => {
+  const filters: string[] = [];
+  const args = process.argv;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === '--project' && typeof args[index + 1] === 'string') {
+      filters.push(args[index + 1]);
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--project=')) {
+      filters.push(arg.slice('--project='.length));
+    }
+  }
+  return filters;
+};
+
+const shouldProbeFirefox = (config: FullConfig): boolean => {
+  const hasFirefoxProject = config.projects.some((project) => project.name === 'firefox');
+  if (!hasFirefoxProject) return false;
+
+  const projectFilters = getExplicitProjectFilters();
+  if (projectFilters.length === 0) return false;
+  return projectFilters.some((filter) => filter.split(',').some((part) => part === 'firefox'));
+};
+
+const probeFirefoxLaunchIfSelected = async (config: FullConfig): Promise<void> => {
+  if (!shouldProbeFirefox(config)) return;
+
+  try {
+    const browser = await firefox.launch({ timeout: FIREFOX_LAUNCH_PROBE_TIMEOUT_MS });
+    await browser.close();
+  } catch (error) {
+    const details = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Firefox launch probe failed before running E2E test bodies. ` +
+        `This is an environment/browser startup failure, not an application assertion failure. ${details}`,
+    );
+  }
+};
+
 /**
  * Global setup for E2E tests
  *
@@ -52,10 +82,11 @@ const waitForServerReady = async (serverUrl: string, timeoutMs: number): Promise
  */
 async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting HierarchiDB E2E Test Setup...');
+  await probeFirefoxLaunchIfSelected(config);
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  const serverUrl = config.webServer?.url ?? baseURLWithSlash;
+  const serverUrl = config.webServer?.url ?? e2eUrlContract.baseURLWithSlash;
   const skipWebServer = !config.webServer;
 
   let progressTimer: NodeJS.Timeout | undefined;

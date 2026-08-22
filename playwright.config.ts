@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolveE2EUrlContract } from './e2e/utils/e2e-url-contract';
 
 /**
  * HierarchiDB E2E Test Configuration
@@ -6,23 +7,13 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1';
-
-const normalizeBasePath = (value: string | undefined): string => {
-  if (!value) return '';
-  return value.replace(/^\/+|\/+$/g, '');
-};
-
-const appName = normalizeBasePath(
-  process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME ?? 'hierarchidb'
+const e2eUrlContract = resolveE2EUrlContract();
+const previewURL = new URL(e2eUrlContract.baseURL);
+const previewHost = process.env.PLAYWRIGHT_PREVIEW_HOST ?? (
+  previewURL.hostname === 'localhost' ? '127.0.0.1' : previewURL.hostname
 );
-const defaultBaseURL = (() => {
-  const basePath = appName ? `/${appName}` : '';
-  return `http://localhost:4200${basePath}`;
-})();
-
-const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
-const normalizedBaseURL = rawBaseURL.replace(/\/*$/, '');
-const baseURLWithSlash = `${normalizedBaseURL}/`;
+const previewPort = previewURL.port || (previewURL.protocol === 'https:' ? '443' : '80');
+const shellValue = (value: string): string => JSON.stringify(value);
 const fastArtifacts = process.env.HIERARCHIDB_E2E_FAST_ARTIFACTS === '1';
 const chromiumWebGLLaunchArgs = [
   '--use-gl=swiftshader',
@@ -51,8 +42,8 @@ export default defineConfig({
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: baseURLWithSlash,
+    /* Base URL to use in app navigation helpers and relative Playwright actions. */
+    baseURL: e2eUrlContract.baseURLWithSlash,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: fastArtifacts ? 'off' : 'on-first-retry',
@@ -108,9 +99,8 @@ export default defineConfig({
     ? undefined
     : {
         // Build and preview the app to avoid file watcher limits in CI/sandboxes
-        command:
-          'HDB_SOURCE_SHA=0000000000000000000000000000000000000000 VITE_APP_NAME=hierarchidb pnpm -w turbo run build --filter @hierarchidb/app... && pnpm --filter @hierarchidb/app exec vite preview --host 127.0.0.1 --port 4200',
-        url: baseURLWithSlash,
+        command: `HDB_SOURCE_SHA=0000000000000000000000000000000000000000 VITE_APP_NAME=${shellValue(e2eUrlContract.appName)} pnpm -w turbo run build --filter @hierarchidb/app... && pnpm --filter @hierarchidb/app exec vite preview --host ${shellValue(previewHost)} --port ${shellValue(previewPort)}`,
+        url: e2eUrlContract.baseURLWithSlash,
         reuseExistingServer: !process.env.CI,
         timeout: 480 * 1000, // allow enough headroom because the app stage routinely exceeds 3 minutes
       },

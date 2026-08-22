@@ -10,7 +10,8 @@ OAuth callback、session検証・保存、認証済みUIまでを決定論的に
 ## SSOT
 
 - E2E fixture: `e2e/fixtures/canonicalAuthFixture.ts`
-- E2E URL構築: `playwright.config.ts` と `e2e/utils/test-helpers.ts`
+- E2E URL構築: `e2e/utils/e2e-url-contract.ts` をSSOTとし、`playwright.config.ts`、
+  `e2e/global-setup.ts`、`e2e/utils/test-helpers.ts` は同じ契約を参照する
 - 製品session契約: `docs/auth-session-contract.md`
 - 製品callback: `app/src/router/routes/auth/auth.callback.tsx`
 - session検証・保存: `packages/ui/auth/src/services/AuthSessionStorage.ts`
@@ -32,8 +33,8 @@ OAuth callback、session検証・保存、認証済みUIまでを決定論的に
 mockするのはOAuth/BFFのnetwork境界だけである。callback route、session persistence、React consumer、
 UI-to-worker bridgeをlocalStorage直接書込で迂回してはならない。
 
-`playwright.config.ts` とURL helperは、環境変数未指定時も同じ既定base path `/hierarchidb` を使用する。
-不一致によるroot pathへのnavigationを許容しない。
+`playwright.config.ts`、global setup、URL helperは、環境変数未指定時も同じ既定base path
+`/hierarchidb` を使用する。不一致によるroot pathへのnavigationを許容しない。
 
 ## 禁止する認証経路
 
