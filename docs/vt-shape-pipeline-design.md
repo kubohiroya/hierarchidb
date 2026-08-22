@@ -141,6 +141,7 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 - 正規 lineage は `selection meta -> source artifact -> geometry artifact -> tileEmit artifact` とする
 - 上流 artifact の削除・置換・invalid化は、参照する下流 artifactと未完了taskを下流端まで cascade cleanup する
 - 永続 vector tile record は source/geometry cache への逆参照を持たないため、source/geometry invalidation は対象 nodeId の vector tile、tile summary、feature metadata、data-source metadata をすべて削除する。この node 単位削除は正規の lineage 境界であり、曖昧な fallback ではない
+- border geometry validation artifact を有効化した build では、source/geometry invalidation 時の永続 artifact cleanup は対象 nodeId の `borderGeometryDatasets`、`borderGeometryArcs`、`borderGeometryRings`、`borderGeometryPolygonRelations`、`borderSpatialIndexes` も削除する。flag off 時に border geometry reader/writer を呼ばないが、rollback cleanup は stale topology artifact を残さない
 - cleanup 順序は、永続 tile/metadata の単一 ShapeDB transaction、source artifact に保存された正規 `rawSourceCacheKey` で特定する対象 raw chunk、relation/task/error と対象 geometry/source cache の単一 EphemeralDB transaction とする。source cache ID を chunk metadata ID へ読み替えず、上流 cache を先に消して下流探索を不能にしない
 - cleanup target の cache ID は対象 nodeId に所有されることを削除前に検証し、別 node の data/meta record を指す場合は契約違反として失敗させる
 - fresh build は task生成前に対象 nodeId の tileEmit artifact/relation/task を無効化し、旧config/hashの tile を新規出力と混在させない
@@ -217,7 +218,7 @@ Storage identity と schema の正規契約は `docs/shape-border-geometry-stora
    - Rollback: flag OFF、reconstructed artifact の破棄。
 7. `feat(shape): integrate border geometry pipeline and regression validation`
    - 入力: reconstruction。
-   - DoD: source/geometry/tileEmit lineage、cache cleanup、Step5/preview validation、benchmark を通す。
+   - DoD: `validateShapeBorderGeometryPipeline` の default-off boundary で flag off の既存挙動維持、flag on の extract/simplify/reconstruct/storage、source/geometry/tileEmit lineage cleanup、Step5/preview 用 reconstructed polygon output、fixture benchmark metrics を通す。
    - Rollback: flag OFF、対象 artifact cleanup。
 
 ### #548 実装時の禁止事項

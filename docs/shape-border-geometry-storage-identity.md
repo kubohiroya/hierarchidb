@@ -156,6 +156,25 @@ Storage implementation は default-off feature flag 配下で導入する。flag
 
 永続 schema を追加する issue は、migration / recovery / non-reversible operation の扱いをその issue 本文と PR に明記する。rollback は flag off と対象 border geometry artifact の破棄を基本とし、既存 cache identity の再解釈を rollback 手段にしない。
 
+## Pipeline Validation Boundary
+
+#1486 の初期 pipeline integration は、既存 `source` / `geometry` / `tileEmit` stage の cache identity を置き換えず、`validateShapeBorderGeometryPipeline` を default-off の検証境界として追加する。この境界は flag off では storage、extractor、simplifier、reconstructor を呼ばず `skipped` を返す。flag on の場合のみ、同一 dataset で次の順序を実行する。
+
+```text
+source FeatureCollection
+  -> border geometry dataset
+  -> extractBorderGeometryArcs
+  -> simplifyBorderGeometryArcs
+  -> reconstructBorderGeometryPolygons
+  -> ShapeDB border geometry tables
+```
+
+この境界での失敗は呼び出し元へ例外として返す。open ring、ownership mismatch、invalid coordinate、invalid tolerance、dataset lineage mismatch を legacy cache reuse、default 補完、silent repair で成功扱いしてはならない。保存は抽出、簡略化、再構成がすべて成功した後に行い、失敗入力では border geometry table を変更しない。
+
+Rollback / cleanup は `HDB_SHAPE_BORDER_GEOMETRY_STORAGE` を off にした上で、対象 node の `borderGeometryDatasets`、`borderGeometryArcs`、`borderGeometryRings`、`borderGeometryPolygonRelations`、`borderSpatialIndexes` を既存 persistent artifact cleanup と同じ node ownership 境界で削除する。source / geometry / tileEmit artifact を border geometry identity へ読み替えて cleanup 対象を推測してはならない。
+
+CI regression fixture の最小 benchmark 閾値は wall-clock time を合否条件にしない。`adjacentSquares` fixture では、flag on の validation が arc 4件、ring 2件、polygon relation 2件、reconstructed polygon 2件を生成し、`durationMs` が finite かつ `>= 0` であることを合格条件とする。production data の絶対時間・メモリ閾値は実データ benchmark が承認されるまでこの仕様へ追加しない。
+
 ## Follow-up Issue Contracts
 
 - #1481 は本仕様の dataset / arc / ring identity を前提に spatial index と containment query boundary を定義する。
