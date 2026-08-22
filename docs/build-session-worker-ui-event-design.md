@@ -243,7 +243,10 @@ selects the same-realm event-streamer transport. There is no implicit fallback b
 these transports. The same-realm streamer remains live-only, so its UI subscription must
 be ready before the local session starts. `useBuildSessionStateTreeBridge` consumes the
 kernel and does not call the legacy aggregate progress hook or reconstruct task counts
-from `sessionStatusUpdated`.
+from `sessionStatusUpdated`. Shape also consumes the same kernel directly from its
+plugin-owned atom bridge; probe/recovery and worker diagnostics stay Shape-specific,
+while canonical event validation, buffering, heartbeat delivery, and per-task version
+gating are shared.
 
 All three build-capable worker modules also export the same `canonicalBuildAPI`
 registration surface. The SharedWorker bootstrap resolves only that exact export and
@@ -270,8 +273,10 @@ creates a current clock timestamp or zero-count compatibility payload for missin
 canonical data.
 
 Route and Location UI consumers use this derived snapshot directly. Shape UI keeps
-its plugin-owned SSOT state tree and does not convert aggregate progress through a
-second mapper. Aggregate hooks are not exported by
+its plugin-owned SSOT atom tree as the only Shape build-session state owner and reduces
+the shared kernel's accepted canonical events into that tree. It does not convert
+aggregate progress through a second mapper, reintroduce a local event buffer, or derive
+task readiness from React state/ref. Aggregate hooks are not exported by
 `@hierarchidb/ui-build-sessions`.
 
 Route progress and controls target the Worker-owned canonical API. Location remains
@@ -377,12 +382,11 @@ There is no global or cross-stream `eventVersion` counter.
 
 `taskProgressUpdated` uses `version` only as a per-`taskId` ordering key. An event is
 accepted when its version is greater than the last accepted version for that task;
-equal or lower versions are dropped. Shape's `UIEventBufferManager` runs this gate
-before `BuildSessionWorkerEventAdapter`. The shared UI bridge compares against the
-greatest task version retained in its authoritative state tree and buffers events that
-arrive before the first snapshot. A delayed lower-version snapshot updates membership,
-ordering, and status without lowering that retained progress version or its associated
-progress fields. Neither path uses a global event-version value.
+equal or lower versions are dropped. The shared canonical subscription kernel owns
+this gate for Shape, Route, and Location consumers, and buffers events that arrive
+before the first authoritative stage snapshot. A delayed lower-version snapshot
+updates membership, ordering, and status without lowering an already accepted progress
+version or its associated progress fields. No path uses a global event-version value.
 
 `sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
 arrival order. `heartbeat` is applied immediately on receipt.

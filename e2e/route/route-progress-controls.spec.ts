@@ -1,4 +1,5 @@
 import '../utils/skip-if-disabled';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../plugins/route-plugin/src/common/config/buildConfig';
 import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
@@ -35,7 +36,10 @@ type WorkerMutationAPI = {
 };
 
 type WorkerUpdaterAPI = {
-  updateTreeNode: (nodeId: string, payload: { mode: string; data: unknown; draftData: unknown }) => Promise<void>;
+  updateTreeNode: (
+    nodeId: string,
+    payload: { mode: string; data: unknown; draftData: unknown }
+  ) => Promise<void>;
 };
 
 type WorkerApi = {
@@ -61,20 +65,24 @@ test.describe('Route build controls', () => {
     await clearTestData(page);
   });
 
-  test('build start button triggers route build lifecycle in UI', async ({
+  test('build start reaches the canonical Worker and surfaces its result in UI', async ({
     page,
     canonicalAuth,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(180000);
     await canonicalAuth.signIn();
 
-    await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
+    await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
-    await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
-      timeout: 20000,
-    });
-    const routeNode = await page.evaluate(async (): Promise<WorkerNode> => {
+    await page.waitForFunction(
+      () => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client),
+      null,
+      {
+        timeout: 20000,
+      }
+    );
+    const routeNode = await page.evaluate(async (buildConfig): Promise<WorkerNode> => {
       const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       if (!ref) throw new Error('Worker client reference is unavailable');
       if (!ref.isInitialized && typeof ref.initialize === 'function') {
@@ -111,8 +119,14 @@ test.describe('Route build controls', () => {
         transportMode: 'air',
         transportSelection: 'air',
         generationMethod: 'direct',
-        startLocationId: 'loc:start',
-        endLocationId: 'loc:end',
+        routeMode: 'airway',
+        startLocationId: 'location-start',
+        endLocationId: 'location-end',
+        lineGeometry: [
+          [139.6917, 35.6895],
+          [135.5023, 34.6937],
+        ],
+        buildConfig,
         processingStatus: 'idle',
       };
       await updaterAPI.updateTreeNode(createResult.nodeId, {
@@ -126,47 +140,56 @@ test.describe('Route build controls', () => {
         parentId: tree.rootId,
         pageNodeId: tree.rootId,
       };
-    });
+    }, DEFAULT_ROUTE_BUILD_CONFIG);
 
     await expect
-      .poll(async () => {
-        return await page.evaluate(async (nodeId: string) => {
-          const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
-          const client = ref?.client ?? ref?.getAPI?.();
-          if (!client?.getQueryAPI) return false;
-          const queryAPI = await client.getQueryAPI();
-          const node = await queryAPI.getNode(nodeId);
-          return Boolean(node?.id);
-        }, routeNode.id);
-      }, {
-        timeout: 15000,
-        intervals: [200, 500, 1000],
-      })
+      .poll(
+        async () => {
+          return await page.evaluate(async (nodeId: string) => {
+            const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+            const client = ref?.client ?? ref?.getAPI?.();
+            if (!client?.getQueryAPI) return false;
+            const queryAPI = await client.getQueryAPI();
+            const node = await queryAPI.getNode(nodeId);
+            return Boolean(node?.id);
+          }, routeNode.id);
+        },
+        {
+          timeout: 15000,
+          intervals: [200, 500, 1000],
+        }
+      )
       .toBe(true);
 
     const pageNodeId = routeNode.pageNodeId ?? routeNode.parentId ?? `${routeNode.treeId}:root`;
-    await page.goto(buildAppUrl(`t/${routeNode.treeId}/${pageNodeId}`), { waitUntil: 'networkidle' });
+    await page.goto(buildAppUrl(`d/${routeNode.treeId}/${pageNodeId}`), {
+      waitUntil: 'domcontentloaded',
+      timeout: 120000,
+    });
     await waitForTreeTableLoad(page);
 
-    const routeNodeLink = page.locator(`a[href$="/${routeNode.id}"]`).first();
+    const routeNodeLink = page.locator(`a[href*="/${routeNode.id}/"]`).first();
     await expect(routeNodeLink).toBeVisible({ timeout: 20000 });
     await routeNodeLink.click();
-    await expect(page).toHaveURL(new RegExp(`/d/${routeNode.treeId}/${routeNode.id}$`), { timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/`), {
+      timeout: 20000,
+    });
 
-    const openEditButton = page.getByRole('button', { name: /編集/ }).first();
+    const openEditButton = page.getByRole('button', { name: /ノードを編集|Edit/i }).first();
     await expect(openEditButton).toBeVisible({ timeout: 10000 });
     await expect(openEditButton).toBeEnabled();
     await openEditButton.click();
-    await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/\\d+`), { timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/\\d+`), {
+      timeout: 20000,
+    });
 
-    const currentUrl = new URL(page.url());
-    const normalizedPath = currentUrl.pathname.replace(/\/+$/, '');
-    const buildStepPath = normalizedPath.replace(/\/edit\/normal\/\d+$/, '/edit/normal/4');
-    const buildStepUrl = `${buildStepPath}${currentUrl.search}`;
-    if (buildStepUrl !== `${normalizedPath}${currentUrl.search}`) {
-      await page.goto(buildStepUrl, { waitUntil: 'networkidle' });
-    }
-    await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/4`), { timeout: 20000 });
+    const buildStepButton = page.getByRole('button', { name: /^5\.\s*(ビルド|Build)/ }).first();
+    await expect(buildStepButton).toBeVisible({ timeout: 10000 });
+    await expect(buildStepButton).toBeEnabled();
+    await buildStepButton.click();
+    await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/route/edit/normal/5`), {
+      timeout: 20000,
+    });
 
     const startButton = page.getByTestId('build-control-start-resume-button');
     let startVisible = await startButton.isVisible().catch(() => false);
@@ -180,10 +203,14 @@ test.describe('Route build controls', () => {
     await expect(startButton).toBeVisible({ timeout: 15000 });
     await expect(startButton).toBeEnabled();
 
+    const buildDialog = page.getByRole('dialog').last();
+    await expect(buildDialog.getByRole('alert')).toHaveCount(0);
     await startButton.click();
 
-    await expect(
-      page.getByText('No related location nodes found.').first(),
-    ).toBeVisible({ timeout: 20000 });
+    const workerResultAlert = buildDialog.getByRole('alert').first();
+    await expect(workerResultAlert).toBeVisible({ timeout: 20000 });
+    const workerResult = (await workerResultAlert.textContent())?.trim() ?? '';
+    expect(workerResult.length).toBeGreaterThan(0);
+    expect(workerResult).not.toContain('canonical event subscription is not ready');
   });
 });

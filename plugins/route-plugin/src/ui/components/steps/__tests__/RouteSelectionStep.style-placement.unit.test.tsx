@@ -1,6 +1,6 @@
-import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@hierarchidb/ui-auth', () => ({
   AuthReadyGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -17,9 +17,7 @@ vi.mock('../../../common/i18n/index.js', () => ({
 }));
 
 vi.mock('../useRouteSelectionStep.js', () => ({
-  ROUTE_MODE_COLUMNS: [
-    { id: 'airway', labelKey: 'transportModes.air', icon: () => null },
-  ],
+  ROUTE_MODE_COLUMNS: [{ id: 'airway', labelKey: 'transportModes.air', icon: () => null }],
   ROUTE_STYLE_OPTIONS: [
     { id: 'solid', labelKey: 'routeConfig.style.lineStyle.solid', fallback: 'Solid' },
   ],
@@ -35,7 +33,13 @@ vi.mock('../useRouteSelectionStep.js', () => ({
     draft: {},
     dataSourceName: 'ide-gsm',
     isIdeGsm: true,
-    coverage: { coverageByCountry: { JP: ['airway'] }, errors: [] },
+    coverage: {
+      coverageByCountryOr: { JP: ['airway'] },
+      coverageByCountryAnd: { JP: ['airway'] },
+      rowCount: 1,
+      errorCount: 0,
+      errors: [],
+    },
     coverageLoading: false,
     selectionErrorMessage: null,
     errorDialogOpen: false,
@@ -46,6 +50,7 @@ vi.mock('../useRouteSelectionStep.js', () => ({
       columns: [{ id: 'airway' }],
       virtualization: { rowHeight: 40, overscan: 8 },
     },
+    selectableCountries: [{ code: 'JP', name: 'Japan', nativeName: 'Japan', continent: 'AS' }],
     currentSelections: [],
     applySelections: vi.fn(),
     isCellEnabledForCountry: () => true,
@@ -71,7 +76,7 @@ describe('RouteSelectionStep style placement', () => {
         onUpdate={() => undefined}
         onValidationChange={() => undefined}
         mode="create"
-      />,
+      />
     );
 
     expect(screen.getByTestId('country-matrix')).toBeTruthy();

@@ -448,8 +448,8 @@ HTML entry `yaml-storage-preflight.html`, never by conversation-generated DevToo
 clipboard payload. The entry does not import the coordinator worker or its fixed validator graph,
 does not load the application entry, and does not register or message a Service Worker. Loading the
 page is inert: an exact single `mode=pre`, `mode=post`, `mode=recovery-pre`,
-`mode=recovery-post`, `mode=recovery-interrupted-core`, or
-`mode=recovery-interrupted-core-v1` query and one explicit button click are required before one
+`mode=recovery-post`, `mode=recovery-interrupted-core`, `mode=recovery-interrupted-core-v1`, or
+`mode=recovery-interrupted-core-preservation` query and one explicit button click are required before one
 inspection starts.
 It does not poll, retry, navigate, persist state, write to a
 clipboard, or transmit evidence.
@@ -526,6 +526,32 @@ duplicate catalog entry, blocked or upgrade open, or any topology mismatch rejec
 The public result is limited to source SHA, timestamp, native version, `exact-logical-v1 | mismatch`,
 aggregate record count, and a stable code. It does not change recovery acceptance or claims, load the
 application root, or write, repair, copy, rename, delete, retry, or expose raw records or store counts.
+
+The separately reviewed `recovery-interrupted-core-preservation` mode is available only after the
+logical-v1 diagnostic reports a non-empty exact snapshot. It retains the same literal database name,
+native version, catalog cardinality, no-upgrade open, and runtime-worker topology authority. After
+those gates pass, it reads all five stores in one readonly transaction and requires every record to
+be accounted as exact initializer state, modified initializer identity, additional state, or invalid.
+For historical logical-v1 nodes, an absent `references` property or an own data property whose value
+is `undefined` both represent no graph edges for this read-only classification only. The classifier
+does not add an array or mutate the record, and own `undefined` prevents a default identity from being
+classified as exact initializer state. Null, non-array, sparse, non-string, accessor-bearing, and
+symbol-bearing forms remain rejected.
+It validates the contract-defined virtual root anchors and tag relations, and delegates YAML slot
+classification to the existing migration planner. The public result contains only store and aggregate
+counts, stable graph and YAML planning status, and invalid diagnostics limited to store-level counts,
+coarse reason-code counts, and identity-class counts (`defaultIdentity`, `additionalIdentity`,
+`unavailableIdentity`). These diagnostics never expose the identity value. They are used only to plan
+a later recovery decision; `SNAPSHOT_INVALID` remains rejected. The result excludes raw records,
+record IDs, names, metadata bodies, YAML text, timestamps, individual digests, native errors,
+database prefixes, and inferred database names. Page load remains inert and exactly one explicit
+click can start the inspection. This mode is not a recovery claim or write authority and never creates,
+upgrades, copies, merges, renames, deletes, repairs, reloads, or retries storage. All public counters
+must be internally consistent with store totals and classification totals; any mismatch is a sanitized
+internal failure, not a rounded or accepted result. Accessor-bearing, symbol-bearing, and non-plain raw
+records fail as `record-shape` without reading their values. The app boundary reconstructs the exact
+summary allowlist and repeats the counter-consistency check before publishing the result; extra fields
+or a mismatch become the same sanitized internal failure.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

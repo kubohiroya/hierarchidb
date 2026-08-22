@@ -1,3 +1,6 @@
+import type { NodeId } from '@hierarchidb/core-types';
+import type { RouteFeature, RouteGenerationConfig, RouteMode } from './ROUTE_MODES.js';
+
 export type RouteBuildError = {
   id: string;
   stage: 'source' | 'geometry' | 'tileEmit';
@@ -5,4 +8,26 @@ export type RouteBuildError = {
   sourceKey?: string;
   featureId?: string;
   createdAt: number;
+};
+
+export type RouteBuildRouteInput = {
+  startLocationId: NodeId;
+  endLocationId: NodeId;
+  startCoordinates: [number, number];
+  endCoordinates: [number, number];
+  routeMode: RouteMode;
+  metadata?: RouteFeature['metadata'];
+  method?: RouteGenerationConfig['method'];
+  methodOptions?: RouteGenerationConfig['options'];
+};
+
+export type RouteBuildStartInput =
+  | { kind: 'direct-route' }
+  | { kind: 'selection-driven'; routes: RouteBuildRouteInput[] };
+
+export type IdeGsmRouteBuildRoutesRequest = {
+  nodeId: NodeId;
+  tabularSourceId: string;
+  selectedArrayByCountries: unknown;
+  locationNodeIds?: NodeId[];
 };

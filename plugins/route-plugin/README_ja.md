@@ -52,7 +52,7 @@ route-plugin は `PluginStepRegistry` ベースの 5 ステップウィザード
 | コンポーネント | 説明 |
 | --- | --- |
 | `RouteDataSourceStep` | データソース選択 UI（ライセンス確認を含む） |
-| `RouteSelectionStep` | 国×交通モードのチェックボックスマトリックス（OR/AND 切り替え） |
+| `RouteSelectionStep` | Step2 coverage に存在する国だけを描画する国×交通モードのチェックボックスマトリックス（OR/AND 切り替え、1国10 boolean） |
 | `RouteProcessingStep` | ビルドパラメータ設定（geometry / tileEmit 設定） |
 | `RouteBuildStep` | ビルド実行・進捗モニタリング |
 | `RoutePreviewStep` | MapLibre ベースのルートプレビュー |

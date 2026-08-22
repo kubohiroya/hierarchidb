@@ -237,6 +237,10 @@ type TaskProgressUpdatedEvent = {
   common command/query/subscription contract; moving the current Route and Location
   UI-owned execution path to that transport is a separate migration. Runtime bootstrap
   never resolves a plugin-specific build API name or listener fallback.
+- Shape's atom bridge uses the shared canonical subscription kernel for the Worker
+  subscription handlers. Its plugin-owned atom tree remains the only Shape
+  build-session SSOT; probe/recovery and Worker diagnostics remain Shape-specific and
+  outside the four canonical state channels.
 - Route canonical progress and commands use the Worker-owned canonical API. Location
   command ownership remains separate while its build manager is UI-realm owned.
 - Shape Worker diagnostics remain outside the canonical state tree and are subscribed

@@ -12,6 +12,7 @@ import type {
 import {
   buildSessionLifecycleAtom,
   buildSessionSnapshotHandshakeReceivedAtom,
+  buildSessionStageProgressAtom,
   buildSessionTasksByStageAtom,
   completeBuildSessionRecoveryAtom,
   dispatchBuildSessionEventAtom,
@@ -235,6 +236,50 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
       stageInactiveMs: 0,
       stageCompletedAt: undefined,
     });
+
+    view.unmount();
+  });
+
+  it('uses the shared canonical kernel to buffer progress until the stage snapshot arrives', async () => {
+    const store = createStore();
+    const { callbacks, view } = await startBridge(store);
+
+    act(() => {
+      callbacks.onProgressEvent({
+        type: 'taskProgressUpdated',
+        payload: {
+          taskId: 'geometry-task-1',
+          version: 4,
+          stageId: 'geometry',
+          value: 75,
+          message: 'geometry progress',
+        },
+      });
+    });
+
+    expect(store.get(buildSessionStageProgressAtom).geometry).toBe(0);
+
+    act(() => {
+      callbacks.onTaskEvent({
+        type: 'stageSnapshotUpdated',
+        payload: {
+          stageId: 'geometry',
+          tasks: [
+            {
+              taskId: 'geometry-task-1',
+              version: 3,
+              stage: 'geometry',
+              status: 'running',
+              progress: 40,
+            },
+          ],
+          stageStartedAt: 1_100,
+          stageInactiveMs: 0,
+        },
+      });
+    });
+
+    expect(store.get(buildSessionStageProgressAtom).geometry).toBe(75);
 
     view.unmount();
   });

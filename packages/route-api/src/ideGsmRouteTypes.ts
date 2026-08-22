@@ -26,10 +26,6 @@ export type IdeGsmRouteImportResult = {
 export type IdeGsmRouteCoverageResult = {
   coverageByCountryOr: Record<ISO2, RouteMode[]>;
   coverageByCountryAnd: Record<ISO2, RouteMode[]>;
-  /**
-   * Backward-compatible alias for OR coverage.
-   */
-  coverageByCountry: Record<ISO2, RouteMode[]>;
   rowCount: number;
   errorCount: number;
   errors: IdeGsmRouteError[];

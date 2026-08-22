@@ -57,13 +57,20 @@ cache identity の正規仕様（SSOT）とする。
   - OR 条件（始点または終点が一致）: 空路 / 海路 / 高速鉄道 / 在来線鉄道 / 道路
   - AND 条件（始点かつ終点が一致）: 空路 / 海路 / 高速鉄道 / 在来線鉄道 / 道路
 - 1 国あたり 10 チェックボックスを持つ。
+- `selectedArrayByCountries[countryCode]` の正規順序は、前半5セルが
+  `airway / waterway / high-speed-railway / railway / road` の OR、後半5セルが同じ順序の AND とする。
+  route UI と worker/runtime の source planning は `@hierarchidb/route-api` の
+  `IDE_GSM_ROUTE_SELECTION_MODE_ORDER` を唯一の列順SSOTとして参照する。
 
 ### 初期状態
 
 - Step2 のデータソースが返したcoverageに存在する「国×交通モード」だけチェックボックスを有効化する。
+- Step3の行はcoverageに存在する国だけで構成する。coverage外のISO国をdisabled行として描画しない。
 - 生成されたチェックボックスは初期状態で `checked` とする。
 - coverageはデータソース入力の実在範囲であり、location DB内の現在のノード集合ではない。
   したがって、coverageに存在する国はlocation DBに解決可能なPointがまだ無くても表示する。
+- coverage APIの正規payloadは `coverageByCountryOr` と `coverageByCountryAnd` だけである。
+  `coverageByCountry` alias、5-cell行、nullish fallback、空coverage、不明route modeは契約違反として失敗させる。
 - 選択されたroute行の始点/終点をsourceステージで解決できない場合は、理由を持つtask errorとして
   可視化する。「処理対象なし」や空成果物へ読み替えない。
 
@@ -75,7 +82,12 @@ cache identity の正規仕様（SSOT）とする。
 ### state 更新
 
 - Step3 の操作結果は `selectedArrayByCountries` に反映する。
+- `selectedArrayByCountries` はcoverage国だけをkeyに持ち、各rowはOR 5列 + AND 5列の10 booleanだけを保持する。
 - Step5 の fetch 対象は `selectedArrayByCountries` を唯一の選択入力として扱う。
+- source planning は `selectedArrayByCountries` を strict に
+  `IdeGsmRouteSelectionEntry[]` へ変換してから IDE-GSM 行を抽出する。国コードは uppercase ISO2、
+  各行は10個の boolean、OR cell が true の場合は対応する AND cell も true でなければならない。
+  空選択、5-cell legacy row、非 boolean cell、不正国コードは start 時の契約違反として失敗する。
 
 ## Step4: Build 設定
 
@@ -105,6 +117,18 @@ cache identity の正規仕様（SSOT）とする。
 
 - build ステップの UI 構成と動作は shape と基本的に同一とする。
 - 実装は最大限共用し、route 固有差分のみ差し込む。
+- `RouteBuildStep` は Container、hooksを持たない `RouteBuildStepView`、
+  `useRouteBuildStepState` に分離する。Viewは共通`BuildSessionProgressPanel`を直接使用し、
+  route専用の再ラップcomponentやbrowser-local lifecycle stateを持たない。
+- route UI adapterが所有するのは`source / geometry / tileEmit`のstage vocabulary、表示label、
+  必須build入力、Worker transport指定、結果表示へのdraft反映だけとする。購読検証、snapshot readiness、
+  progress buffering、command mutation stateは`@hierarchidb/ui-build-sessions`の共通kernelを使用する。
+- subscriptionおよびcommand transportの初期化が完了するまでstart/resumeを禁止する。
+  canonical sessionが`queued`の間はqueued cancelだけを表示し、
+  `cancelQueuedBuildSession`へ接続する。pause/resume/cancel成功をlocal stateで合成しない。
+- canonical `paused / completed / failed`とRoute固有の前回crash insightは、共通Panelの
+  suspend/completion/crash dialog surfaceへ接続する。canonical timingの欠落を
+  draft timestampや`Date.now()`で補完しない。
 
 ### 内部パイプライン
 
@@ -216,10 +240,12 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 ### プロパティ別の更新ルール
 
 - 始点/終点の座標変更または admin code 変更:
-  - 該当 route ノードで該当経路の fetch キャッシュを削除
-  - route UI に `rebuild required` タグを表示
-  - sessions に「再ビルド予約」項目を作成
+  - 該当 route ノードの route feature に `rebuildRequired=true` と `rebuildRequiredAt` を保存する。
+  - route DB の vector tile / tile index と ephemeral DB の source / geometry / tile relation / build task 成果物を削除する。
+  - route UI は `rebuildRequired` を根拠に `rebuild required` タグを表示する。
+  - sessions に「再ビルド予約」項目を作成する。
     - 予約は route ノード単位でまとめる（経路単位では作らない）
+    - 既存の route build session が `running` の場合は、成果物だけを無効化し、running status / config は上書きしない。
 - それ以外（admin name など）:
   - 対応 route metadata を即時更新
 
@@ -247,13 +273,22 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 
 ## canonical Worker start入力
 
-- Runtime bootstrapはTreeNodeの`draftData`を無加工でroute pluginへ渡す。
-- 現行のdirect-route入力は`RouteEntityPayload.buildConfig / routeMode / startLocationId /
-  endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を始点・終点座標として使う。
+- Runtime bootstrapはroute nodeTypeの開始時だけTreeNodeの`draftData`を正規化し、
+  pluginへ渡すtransient入力に明示discriminator `routeBuildInput.kind`を追加する。
+- `routeBuildInput.kind = "direct-route"` は`RouteEntityPayload.buildConfig / routeMode /
+  startLocationId / endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を
+  始点・終点座標として使う。
+- `routeBuildInput.kind = "selection-driven"` は`tabularSourceId`とstrict
+  `selectedArrayByCountries`からruntime `RouteMutationAPI.resolveIdeGsmRouteBuildRoutes`
+  が解決した`RouteBuildRouteInput[]`だけをpluginへ渡す。`draftData.routes`は永続入力SSOTとして
+  追加しない。
+- selection-driven startでは`selectedArrayByCountries`だけから選択対象を決め、未選択行を
+  task化しない。location ID、始点/終点座標、route mode、directionality metadataは
+  IDE-GSM rowと関連locationから解決済みの`RouteBuildRouteInput`に含める。
+- direct-route入力とselection-driven入力が同時に存在する場合は契約違反としてstartを失敗させる。
 - `routeMode`は`ROUTE_MODES`の正規値を直接保持する。`transportMode`や`transportSelection`から
   暗黙変換せず、欠落・不正値はstart時の契約違反として失敗させる。
-- 存在しない`draftData.routes`を別の入力SSOTとして追加しない。
 - 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
   routeMode、location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
-- `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
-  location連動とStep3選択契約を実装するIssue #262の対象であり、direct-route入力と混在させない。
+- selection-driven planningで必須location/coordinate/modeが欠落または不正な場合は、理由付きで
+  startを失敗させる。fallbackや空successへ丸めない。
