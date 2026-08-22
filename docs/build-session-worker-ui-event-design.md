@@ -102,6 +102,11 @@ redundantly separated.
 | `stageStartedAt` | `number \| undefined` | Unix ms — required when `stageId` is present |
 | `stageInactiveMs` | `number \| undefined` | Required when `stageId` is present |
 
+Shape emits `auth-required` when source planning or pipeline execution cannot
+continue without authentication, as well as when the auth-dialog host requests the
+corresponding pause. Planning detection occurs before pipeline startup; pipeline
+detection emits the paused snapshot only after task interruption and drain complete.
+
 **UI effect**: Update `lifecycleAtom` (phase, isActive, startedAt, inactiveMs,
 completedAt) and `lifecycleExtrasAtom` (stopReason). A paused event applies `phase` and
 `pausedAt` as the elapsed endpoint in the same SSOT update; it does not wait for a

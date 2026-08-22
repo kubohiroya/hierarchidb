@@ -40,7 +40,6 @@ import {
   readStartedStageTiming,
 } from './eventEmissionConstantsUtils.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
 class SourceTaskPayloadGenerationError extends Error {
   constructor(message: string) {
@@ -773,6 +772,7 @@ const startBuildSessionInternal = async (
             nodeId: nodeForSession,
             selectedArrayByCountries: draftEntity.selectedArrayByCountries,
             status: 'paused',
+            stopReason: 'auth-required',
             startedAt: buildStartedAt,
             lastHeartbeatAt: pausedAt,
             canResume: true,
@@ -1119,7 +1119,7 @@ const startBuildSessionInternal = async (
             nodeForSession,
             {
               status: 'paused',
-              stopReason: 'user-pause',
+              stopReason: 'auth-required',
               lastHeartbeatAt: pausedAt,
               canResume: true,
             },
@@ -1277,6 +1277,22 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   )));
 };
 
+const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason =>
+  value === 'route-leave' ||
+  value === 'user-pause' ||
+  value === 'auth-required' ||
+  value === 'failed' ||
+  value === 'completed' ||
+  value === 'unknown';
+
+const resolveCommandStopReason = (
+  command: 'session/pause' | 'session/cancel-queued',
+  value: unknown,
+): ShapeBuildStopReason => {
+  if (value === undefined) return 'user-pause';
+  if (isShapeBuildStopReason(value)) return value;
+  throw new Error(`[shapeBuildAPI] invalid ${command} stopReason: ${String(value)}`);
+};
 
 const invokeShapeBuildCommand = async (
   command: string,
@@ -1285,14 +1301,7 @@ const invokeShapeBuildCommand = async (
   if (command === 'session/pause') {
     const nodeId = payload.nodeId as NodeId;
     if (!nodeId) throw new Error('[shapeBuildAPI] session/pause requires nodeId');
-    const rawStopReason = payload.stopReason;
-    if (
-      rawStopReason !== undefined &&
-      (typeof rawStopReason !== 'string' || !isStopReason(rawStopReason))
-    ) {
-      throw new Error(`[shapeBuildAPI] invalid session/pause stopReason: ${String(rawStopReason)}`);
-    }
-    const stopReason = rawStopReason ?? 'user-pause';
+    const stopReason = resolveCommandStopReason('session/pause', payload.stopReason);
     console.warn('[shapeBuildAPI][PauseTrace] pause-requested', {
       nodeId,
       stopReason: stopReason ?? null,
@@ -1442,8 +1451,7 @@ const invokeShapeBuildCommand = async (
   if (command === 'session/cancel-queued') {
     const nodeId = payload.nodeId as NodeId;
     if (!nodeId) throw new Error('[shapeBuildAPI] session/cancel-queued requires nodeId');
-    const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
-    const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : 'user-pause';
+    const stopReason = resolveCommandStopReason('session/cancel-queued', payload.stopReason);
     // If the session is currently running, delegate to pause instead of wiping the queue.
     const currentSession = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     if (currentSession?.status === 'running') {

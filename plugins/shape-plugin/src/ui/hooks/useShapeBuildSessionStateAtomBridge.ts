@@ -17,7 +17,7 @@ import {
   buildSessionRecoveryRevisionAtom,
   dispatchBuildSessionEventAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
-import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapterConstants';
+import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapterConstantsUtils';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = [

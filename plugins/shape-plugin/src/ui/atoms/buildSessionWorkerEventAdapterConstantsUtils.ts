@@ -15,6 +15,7 @@ const resolveShapeStageId = (value: unknown): ShapeStageId => {
 const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason => (
   value === 'route-leave'
   || value === 'user-pause'
+  || value === 'auth-required'
   || value === 'failed'
   || value === 'completed'
   || value === 'unknown'

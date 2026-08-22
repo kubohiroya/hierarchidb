@@ -30,6 +30,12 @@
 
 `isActive` は `starting / running / pausing / resuming / finalizing` のいずれかのとき `true` となる。
 
+### 停止理由（規範）
+
+Shape の正規停止理由は `route-leave / user-pause / auth-required / failed / completed / unknown` の6種類だけとする。型境界、Worker command、永続 Entity 読み取り、Worker→UI adapter は同じ集合を検証し、集合外の文字列を補完・破棄せず契約違反として失敗させる。
+
+`auth-required` は、認証済み request が必要になったため build を停止したことを示す。source planning 中に認証要求を検出した場合は pipeline 開始前に、active pipeline 中に検出した場合は実 pipeline の停止と interrupted task の再キューを確認した後に、Worker は `paused / canResume=true / stopReason=auth-required` を永続化する。UI の認証ダイアログ host が送る pause command も同じ値を使用する。認証成功後の再開命令は認証ダイアログ host が所有し、通常の `route-leave` 自動再開へ読み替えない。
+
 ### Pause 完了条件（規範）
 
 1. pause 要求を受けたセッションは、まず `pausing` へ遷移して session の AbortController を abort する。

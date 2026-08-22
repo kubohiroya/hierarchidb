@@ -15,7 +15,7 @@ import {
   stageTimingByStageAtom,
   dispatchBuildSessionEventAtom,
 } from '../../../atoms/buildSessionStateAtoms';
-import { createBuildSessionWorkerEventAdapter } from '../../../atoms/buildSessionWorkerEventAdapterConstants';
+import { createBuildSessionWorkerEventAdapter } from '../../../atoms/buildSessionWorkerEventAdapterConstantsUtils';
 
 describe('buildSessionWorkerEventAdapter', () => {
   const store = createStore();

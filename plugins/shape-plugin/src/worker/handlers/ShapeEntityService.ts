@@ -43,7 +43,18 @@ const isShapeBuildConfig = (value: unknown): value is ShapeBuildConfig =>
   isRecord(value) && isString(value.dataSourceName);
 
 const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason =>
-  isString(value);
+  value === 'route-leave' ||
+  value === 'user-pause' ||
+  value === 'auth-required' ||
+  value === 'failed' ||
+  value === 'completed' ||
+  value === 'unknown';
+
+const readShapeBuildStopReason = (value: unknown): ShapeBuildStopReason | undefined => {
+  if (value === undefined) return undefined;
+  if (isShapeBuildStopReason(value)) return value;
+  throw new Error(`[ShapeEntityService] unsupported stopReason: ${String(value)}`);
+};
 
 const isProcessingStatus = (
   value: unknown,
@@ -103,7 +114,7 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
       ? selectedArrayByCountriesValue
       : undefined,
     processingStatus: isProcessingStatus(record.processingStatus) ? record.processingStatus : undefined,
-    stopReason: isShapeBuildStopReason(record.stopReason) ? record.stopReason : undefined,
+    stopReason: readShapeBuildStopReason(record.stopReason),
     buildStartedAt: getNumber(record, 'buildStartedAt'),
     buildFinishedAt: getNumber(record, 'buildFinishedAt'),
     buildElapsedMs: getNumber(record, 'buildElapsedMs'),

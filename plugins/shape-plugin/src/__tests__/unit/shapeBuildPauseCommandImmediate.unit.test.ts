@@ -138,6 +138,59 @@ describe('shape build pause command pipeline drain', () => {
     await ephemeralDB.clearNodeData(TEST_NODE_ID);
   });
 
+  it.each([null, 'expired-auth'])('rejects invalid pause stopReason %s', async (stopReason) => {
+    await expect(
+      shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/pause', {
+        nodeId: TEST_NODE_ID,
+        stopReason,
+      })
+    ).rejects.toThrowError(
+      `[shapeBuildAPI] invalid session/pause stopReason: ${String(stopReason)}`
+    );
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid cancel-queued stopReason', async () => {
+    await expect(
+      shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/cancel-queued', {
+        nodeId: TEST_NODE_ID,
+        stopReason: 'expired-auth',
+      })
+    ).rejects.toThrowError(
+      '[shapeBuildAPI] invalid session/cancel-queued stopReason: expired-auth'
+    );
+    expect(getBuildSessionRecordMock).not.toHaveBeenCalled();
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts auth-required as a canonical pause stopReason', async () => {
+    const deferred = createDeferred();
+    const abortController = new AbortController();
+    activePipelineStore.set(String(TEST_NODE_ID), {
+      promise: deferred.promise,
+      abortController,
+      runId: 'run-auth-required',
+    });
+
+    const command = shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/pause', {
+      nodeId: TEST_NODE_ID,
+      stopReason: 'auth-required',
+    });
+    deferred.resolve();
+    await command;
+
+    expect(updateBuildSessionMock).toHaveBeenCalledWith(
+      TEST_NODE_ID,
+      expect.objectContaining({
+        status: 'paused',
+        stopReason: 'auth-required',
+        canResume: true,
+      })
+    );
+  });
+
   it('keeps pausing until the exact pipeline promise settles', async () => {
     const deferred = createDeferred();
     const abortController = new AbortController();
