@@ -12,14 +12,14 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TaskQueueRecord } from '@hierarchidb/build-api';
+import type { TaskDisplayPayload, TaskQueueRecord, TaskStatus } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
     SessionPhase,
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
 } from '~/common/types/session-events';
-import { VtTaskQueueDb, listTasksByStage } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { unconditionalEventStreamer } from './eventBuffering.js';
 import { mapTaskQueueRecordToTaskSummary } from './taskSummaryMapping.js';
 
@@ -39,6 +39,70 @@ const requireFiniteNonNegativeNumber = (value: unknown, label: string): number =
         throw new Error(`[eventEmission] ${label} must be a finite non-negative number, received ${String(value)}`);
     }
     return value;
+};
+
+const requirePositiveInteger = (value: unknown, label: string): number => {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+        throw new Error(`[eventEmission] ${label} must be a positive integer, received ${String(value)}`);
+    }
+    return value;
+};
+
+const requireTaskProgress = (value: unknown, label: string): number => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100) {
+        throw new Error(`[eventEmission] ${label} must be a finite number within 0..100, received ${String(value)}`);
+    }
+    return value;
+};
+
+const requireTaskStatus = (value: unknown, label: string): TaskStatus => {
+    if (
+        value === 'queued'
+        || value === 'running'
+        || value === 'completed'
+        || value === 'failed'
+        || value === 'recycled'
+    ) {
+        return value;
+    }
+    throw new Error(`[eventEmission] ${label} is unsupported: ${String(value)}`);
+};
+
+const requireTaskDisplay = (value: unknown, label: string): TaskDisplayPayload | undefined => {
+    if (value === undefined) return undefined;
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error(`[eventEmission] ${label} must be an object, received ${String(value)}`);
+    }
+    const kind = (value as { kind?: unknown }).kind;
+    if (
+        kind !== 'phase'
+        && kind !== 'summary'
+        && kind !== 'skip'
+        && kind !== 'error'
+        && kind !== 'info'
+    ) {
+        throw new Error(`[eventEmission] ${label}.kind is unsupported: ${String(kind)}`);
+    }
+    return value as TaskDisplayPayload;
+};
+
+const readCanonicalStageTasks = async (
+    taskQueue: VtTaskQueueDb,
+    nodeId: NodeId,
+    stage: ShapeTaskStage,
+): Promise<TaskQueueRecord[]> => {
+    const storedTasks = await taskQueue.tasks
+        .where('[nodeId+stage]')
+        .equals([nodeId, stage])
+        .sortBy('index');
+    return storedTasks.map((task) => ({
+        ...task,
+        version: requirePositiveInteger(task.version, `task.version (${task.taskId})`),
+        stage,
+        status: requireTaskStatus(task.status, `task.status (${task.taskId})`),
+        progress: requireTaskProgress(task.progress, `task.progress (${task.taskId})`),
+        display: requireTaskDisplay(task.display, `task.display (${task.taskId})`),
+    }));
 };
 
 export const validateSessionTimingContract = (
@@ -224,11 +288,26 @@ export const emitStageSnapshotUpdated = async (
     stageCompletedAt?: number,
     shouldEmit?: () => boolean,
 ): Promise<void> => {
-    validateStageTimingContract(stageStartedAt, stageInactiveMs, stageCompletedAt);
+    validateStageTimingContract(stageStartedAt, stageInactiveMs);
     const taskQueue = new VtTaskQueueDb();
-    const rawTasks = await listTasksByStage(taskQueue, nodeId, stage);
+    const rawTasks = await readCanonicalStageTasks(taskQueue, nodeId, stage);
     if (shouldEmit?.() === false) return;
     const tasks = rawTasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
+    const resolvedStageCompletedAt = stageCompletedAt ?? (() => {
+        if (tasks.length === 0) return undefined;
+        const hasActiveTask = tasks.some((task) => (
+            task.status === 'queued' || task.status === 'running'
+        ));
+        if (hasActiveTask) return undefined;
+        const completionTimestamps = rawTasks.map((task) => (
+            requireFiniteNonNegativeNumber(
+                task.completedAt,
+                `completedAt for terminal task ${task.taskId}`,
+            )
+        ));
+        return Math.max(...completionTimestamps);
+    })();
+    validateStageTimingContract(stageStartedAt, stageInactiveMs, resolvedStageCompletedAt);
 
     const event: StageSnapshotUpdatedEvent = {
         type: 'stageSnapshotUpdated',
@@ -237,7 +316,7 @@ export const emitStageSnapshotUpdated = async (
             tasks,
             stageStartedAt,
             stageInactiveMs,
-            stageCompletedAt,
+            stageCompletedAt: resolvedStageCompletedAt,
         },
     };
     unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', event);

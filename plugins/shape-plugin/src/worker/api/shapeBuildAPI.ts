@@ -1,5 +1,12 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
+import type {
+  BuildContinuationPolicy,
+  BuildTaskSummary,
+  BuildTaskUpdateEvent,
+  TaskProgressUpdatedEvent,
+  TaskStage,
+  TaskStatus,
+} from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
   SessionStatusUpdatedEvent,
@@ -40,6 +47,7 @@ import {
   emitStageSnapshotUpdated,
   readStartedStageTiming,
 } from './eventEmissionConstantsUtils.js';
+import { resolveEffectiveTaskStatus } from './taskQueueManagement.js';
 
 export const shapeBuildAPI = {
 
@@ -435,15 +443,125 @@ export const shapeBuildAPI = {
     const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
     let subscriptionActive = true;
+    let snapshotDispatchChain = Promise.resolve();
+    const taskStatusById = new Map<string, TaskStatus>();
+    const taskStageById = new Map<string, TaskStage>();
+    const timingByStage = new Map<TaskStage, {
+      stageStartedAt: number;
+      stageInactiveMs: number;
+    }>();
+
+    const resolveTaskStage = (value: unknown): TaskStage => {
+      if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
+        return value;
+      }
+      throw new Error(`[shapeBuildAPI] unsupported stage snapshot stage: ${String(value)}`);
+    };
+    const resolveTaskStatus = (value: unknown): TaskStatus => {
+      if (
+        value === 'queued'
+        || value === 'running'
+        || value === 'completed'
+        || value === 'failed'
+        || value === 'recycled'
+      ) {
+        return value;
+      }
+      throw new Error(`[shapeBuildAPI] unsupported stage snapshot task status: ${String(value)}`);
+    };
+
+    const surfaceSnapshotDispatchFailure = (
+      stage: TaskStage | 'initial-subscription',
+      error: unknown,
+    ): void => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[shapeBuildAPI] task-status stage snapshot failed', {
+        nodeId,
+        stage,
+        error,
+      });
+      unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
+        nodeId,
+        timestamp: Date.now(),
+        level: 'error',
+        message: '[stageSnapshotUpdated] task-status snapshot failed',
+        data: { stage, error: message },
+      });
+    };
+
+    const enqueueAuthoritativeStageSnapshot = (stage: TaskStage): void => {
+      if (!timingByStage.has(stage)) return;
+      snapshotDispatchChain = snapshotDispatchChain
+        .then(async () => {
+          if (!subscriptionActive) return;
+          const timing = timingByStage.get(stage);
+          if (!timing) {
+            throw new Error(`[shapeBuildAPI] stage timing disappeared before snapshot: ${stage}`);
+          }
+          await emitStageSnapshotUpdated(
+            nodeId,
+            stage,
+            timing.stageStartedAt,
+            timing.stageInactiveMs,
+          );
+        })
+        .catch((error: unknown) => {
+          if (subscriptionActive) {
+            surfaceSnapshotDispatchFailure(stage, error);
+          }
+        });
+    };
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (event) => {
-      callback(event as StageSnapshotUpdatedEvent);
+      const snapshot = event as StageSnapshotUpdatedEvent;
+      const stage = resolveTaskStage(snapshot.payload.stageId);
+      timingByStage.set(stage, {
+        stageStartedAt: snapshot.payload.stageStartedAt,
+        stageInactiveMs: snapshot.payload.stageInactiveMs,
+      });
+      for (const [taskId, taskStage] of taskStageById) {
+        if (taskStage !== stage) continue;
+        taskStageById.delete(taskId);
+        taskStatusById.delete(taskId);
+      }
+      snapshot.payload.tasks.forEach((task) => {
+        const taskStage = resolveTaskStage(task.stage);
+        if (taskStage !== stage) {
+          throw new Error(
+            `[shapeBuildAPI] snapshot task stage mismatch: ${taskStage} !== ${stage}`,
+          );
+        }
+        taskStageById.set(task.taskId, taskStage);
+        taskStatusById.set(task.taskId, resolveTaskStatus(task.status));
+      });
+      callback(snapshot);
+    });
+
+    const unsubscribeTaskQueue = shapeBuildRuntimeCore.onTaskQueueUpdate(nodeId, (event) => {
+      if (event.type === 'delete') {
+        const stage = taskStageById.get(event.taskId);
+        taskStageById.delete(event.taskId);
+        taskStatusById.delete(event.taskId);
+        if (stage) enqueueAuthoritativeStageSnapshot(stage);
+        return;
+      }
+      const stage = resolveTaskStage(event.task.stage);
+      const status = resolveTaskStatus(resolveEffectiveTaskStatus(event.task));
+      const previousStatus = taskStatusById.get(event.task.taskId);
+      taskStageById.set(event.task.taskId, stage);
+      taskStatusById.set(event.task.taskId, status);
+      if (previousStatus === status) return;
+      enqueueAuthoritativeStageSnapshot(stage);
     });
 
     const unsubscribe = () => {
       subscriptionActive = false;
+      unsubscribeTaskQueue();
       unsubscribeStream();
+      taskStatusById.clear();
+      taskStageById.clear();
+      timingByStage.clear();
       shapeBuildRuntimeCore.stageSnapshotCallbacks.delete(key);
     };
 
@@ -464,7 +582,7 @@ export const shapeBuildAPI = {
       );
     }).catch((error: unknown) => {
       if (!subscriptionActive) return;
-      throw error;
+      surfaceSnapshotDispatchFailure('initial-subscription', error);
     });
 
     return () => {

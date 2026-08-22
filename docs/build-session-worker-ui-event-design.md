@@ -38,11 +38,35 @@ tasks for that stage have been removed.
 **UI effect**: Replace `tasksById` / `taskOrder` for the stage atomically. Update
 `stageTimingByStageAtom` for the stage.
 
+The full task list preserves optional task presentation fields such as `display` and
+`message`. A persisted skip display is authoritative even when the storage status is
+`completed`; dropping it would merge the skipped and completed outcome categories.
+
 The Worker initializes `stageStartedAt` and `stageInactiveMs = 0` when the stage
 actually starts. Snapshot emission then reads those persisted fields and validates
 them; it never manufactures missing values. `stageStartedAt` and `stageInactiveMs`
 must be finite and non-negative. If `stageCompletedAt` exists, the completed duration
 must also be finite and non-negative. Invalid timing aborts emission.
+
+For Shape, the subscription boundary also observes authoritative task-queue updates.
+It keeps per-subscription canonical task status/stage keys only to suppress full
+snapshots for message, metadata, or progress writes that leave status unchanged.
+Status transitions and known-task deletions are serialized into full stage snapshots.
+The serialized read uses the latest valid start and inactive timing already emitted
+for that stage; before that timing exists, the initial or stage-start snapshot owns
+synchronization. The producer reads persisted task rows without the task queue's
+legacy version normalization and rejects unsupported status/display values,
+non-positive versions, and progress outside `0..100` before mapping a canonical
+summary.
+When every task in the authoritative non-empty stage snapshot is terminal, Shape sets
+`stageCompletedAt` to the greatest persisted task `completedAt`. A missing or invalid
+terminal-task completion timestamp aborts emission. Active or empty snapshots leave
+`stageCompletedAt` undefined, so a deletion cannot retain an earlier completion. This
+delivery cache is not a second build-session state owner and is discarded on
+unsubscribe.
+Initial-subscription and serialized status-triggered failures are reported through
+the Worker log channel; the producer does not rethrow from a detached Promise and
+create an unhandled rejection.
 
 ---
 
@@ -96,7 +120,7 @@ redundantly separated.
 | `startedAt` | `number \| undefined` | Unix ms — required after `starting` completes |
 | `completedAt` | `number \| undefined` | Unix ms — required for `completed` / `failed` |
 | `pausedAt` | `number \| undefined` | Unix ms — required only for `paused`; forbidden for every other phase |
-| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states); Shape accepts `route-leave / user-pause / failed / completed / unknown` only |
+| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states); Shape accepts `route-leave / user-pause / auth-required / failed / completed / unknown` only |
 | `stageId` | `StageId \| undefined` | Current stage at time of event |
 | `inactiveMs` | `number \| undefined` | Cumulative session inactivity; absence means none recorded |
 | `stageStartedAt` | `number \| undefined` | Unix ms — required when `stageId` is present |

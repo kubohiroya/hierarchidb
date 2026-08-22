@@ -20,6 +20,7 @@ import {
 export type ShapeBuildTaskSummary = BuildTaskSummary & {
     nodeId?: NodeId;
     title?: string;
+    message?: string;
     error?: string;
     errorMessage?: string;
     index?: number;
@@ -42,6 +43,7 @@ export const mapTaskQueueRecordToTaskSummary = (
         status: resolveEffectiveTaskStatus(task),
         progress: resolveTaskProgress(task),
         display: task.display,
+        message: task.message,
         title: base.title,
         error: base.error,
         errorMessage: base.errorMessage,
