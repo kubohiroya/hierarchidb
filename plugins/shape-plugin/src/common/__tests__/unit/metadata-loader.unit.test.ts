@@ -85,6 +85,9 @@ vi.mock('../../../services/utils/chunkStore.js', () => ({
   jsonDeserializer: vi.fn(),
   textSerializer: vi.fn(),
   textDeserializer: vi.fn(),
+  createShapeNetworkPort: vi.fn(() => ({
+    fetch: vi.fn(),
+  })),
 }));
 
 vi.mock('../../../services/utils/createShapeNetworkPort.js', () => ({
