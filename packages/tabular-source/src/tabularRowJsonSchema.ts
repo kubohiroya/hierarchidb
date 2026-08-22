@@ -25,7 +25,13 @@ export const tabularRowJsonSchema = {
   },
 } as const;
 
-const ajv = new Ajv({ allErrors: true, strict: true });
+const ajv = new Ajv({
+  strict: true,
+  allErrors: true,
+  coerceTypes: false,
+  useDefaults: false,
+  removeAdditional: false,
+});
 const validateTabularRow = ajv.compile(tabularRowJsonSchema);
 
 export const isTabularRow = (value: unknown): value is TabularRow =>

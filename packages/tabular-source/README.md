@@ -11,9 +11,16 @@ Tabular data parsing and ingestion package for HierarchiDB. Provides `TabularSer
 - Processors: `createColumnRenameProcessor`, `createNumberCoerceProcessor`, `createRequiredColumnsValidator`
 - `registerTabularSource` / `isTabularSource` — Per-nodeType data source registration and detection
 
+## Row Schema
+
+`tabularRowJsonSchema` validates parsed JSON-like rows as object maps of JSON values. The
+validator uses Ajv strict mode with no coercion, defaults, or additional-property removal.
+Column-level constraints remain processor-owned; the row schema intentionally does not
+declare required columns.
+
 ## Dependencies
 
-`@hierarchidb/util`
+`@hierarchidb/util`, `ajv`
 
 ## Related Packages
 

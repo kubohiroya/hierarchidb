@@ -11,9 +11,15 @@ HierarchiDB の表形式データパース・取り込みパッケージ。`Tabu
 - プロセッサ: `createColumnRenameProcessor`, `createNumberCoerceProcessor`, `createRequiredColumnsValidator`
 - `registerTabularSource` / `isTabularSource` — nodeType 別のデータソース登録・判定
 
+## Row Schema
+
+`tabularRowJsonSchema` は parsed JSON-like row を JSON value の object map として検証する。
+validator は Ajv strict mode で動作し、型変換、既定値補完、追加プロパティ削除は行わない。
+列単位の制約は processor が所有し、row schema は required column を宣言しない。
+
 ## 依存関係
 
-`@hierarchidb/util`
+`@hierarchidb/util`, `ajv`
 
 ## 関連パッケージ
 

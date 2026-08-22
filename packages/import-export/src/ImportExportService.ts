@@ -6,7 +6,6 @@ import type {
   ImportExportAPI,
   ImportNodesParams,
   ImportResult,
-  ImportValidationIssue,
   ImportValidationResult,
   OperationStatus,
   ValidateImportParams,
@@ -14,20 +13,20 @@ import type {
 import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { generateUUID, SingletonMixin } from '@hierarchidb/util';
 import { strToU8, zipSync } from 'fflate';
+import {
+  assertJsonExportEnvelope,
+  assertVectorTileArchiveMetadata,
+  assertVectorTileArchiveSummary,
+  type JsonExportEnvelope,
+  type VectorTileArchiveMetadata,
+  type VectorTileArchiveSummary,
+} from './exportArtifactSchemaValidators.js';
 import type { ImportExportDBPort, VectorTileRecord } from './types.js';
+import { validateImportDataPayload } from './validateImportDataPayload.js';
 
 type ImportNodeInput<T> = ImportData<T>['nodes'][number];
-type ValidationIssue = ImportValidationIssue;
 type ExportFormat = ExportNodesParams['format'];
-type VectorTileZipMetadata = {
-  exportDate: string;
-  nodeCount: number;
-  tileCount: number;
-  format: ExportFormat;
-  includeMetadata: boolean;
-  totalBytes: number;
-  nodeIds: NodeId[];
-};
+type VectorTileExportFormat = Extract<ExportFormat, 'pbf.zip' | 'mvf'>;
 
 export class ImportExportService<T> implements ImportExportAPI<T> {
   private operations = new Map<string, OperationStatus>();
@@ -358,35 +357,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   }
 
   async validateImportData(params: ValidateImportParams<T>): Promise<ImportValidationResult> {
-    const issues: ValidationIssue[] = [];
-    const nodeTypes = new Map<string, number>();
-    let maxDepth = 0;
-
-    const validateNode = (node: ImportNodeInput<T>, path: string, depth: number) => {
-      maxDepth = Math.max(maxDepth, depth);
-      if (!node.name) issues.push({ code: 'MISSING_NAME', message: 'Node name is required', path });
-      const nodeType = node.nodeType || 'folder';
-      nodeTypes.set(nodeType, (nodeTypes.get(nodeType) || 0) + 1);
-      if (node.children && Array.isArray(node.children)) {
-        node.children.forEach((child: ImportNodeInput<T>, index: number) => {
-          validateNode(child, `${path}.children[${index}]`, depth + 1);
-        });
-      }
-    };
-
-    if (!params.data?.nodes) {
-      issues.push({
-        code: 'INVALID_STRUCTURE',
-        message: 'Import data must contain a nodes array',
-        path: 'nodes',
-      });
-    } else if (!Array.isArray(params.data.nodes)) {
-      issues.push({ code: 'INVALID_NODES', message: 'Nodes must be an array', path: 'nodes' });
-    } else {
-      params.data.nodes.map((node: ImportNodeInput<T>, index: number) =>
-        validateNode(node, `nodes[${index}]`, 0)
-      );
-    }
+    const issues = validateImportDataPayload(params.data);
 
     if (issues.length === 0) {
       return { valid: true };
@@ -431,7 +402,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   }
 
   private formatAsJSON(nodes: TreeNode[], _includeMetadata?: boolean): string {
-    const exportData = {
+    const exportData: JsonExportEnvelope = {
       version: '1.0',
       exportDate: new Date().toISOString(),
       nodeCount: nodes.length,
@@ -441,6 +412,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
         description: node.metadata?.description ?? '',
       })),
     };
+    assertJsonExportEnvelope(exportData);
     return JSON.stringify(exportData, null, 2);
   }
 
@@ -487,22 +459,14 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   private buildVectorTileSummary(
     shapeNodeIds: NodeId[],
     tiles: VectorTileRecord[],
-    format: ExportFormat,
+    format: VectorTileExportFormat,
     includeMetadata?: boolean
-  ): {
-    exportDate: string;
-    nodeCount: number;
-    tileCount: number;
-    format: ExportFormat;
-    includeMetadata: boolean;
-    totalBytes: number;
-    nodeIds: NodeId[];
-  } {
+  ): VectorTileArchiveSummary {
     const totalBytes = tiles.reduce(
       (acc, tile) => acc + (tile.size || tile.data_Uint8Array.byteLength),
       0
     );
-    return {
+    const summary: VectorTileArchiveSummary = {
       exportDate: new Date().toISOString(),
       nodeCount: shapeNodeIds.length,
       tileCount: tiles.length,
@@ -511,12 +475,14 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
       totalBytes,
       nodeIds: [...shapeNodeIds],
     };
+    assertVectorTileArchiveSummary(summary);
+    return summary;
   }
 
   private buildVectorTileZipExport(
-    format: ExportFormat,
+    format: VectorTileExportFormat,
     tiles: VectorTileRecord[],
-    summary: VectorTileZipMetadata,
+    summary: VectorTileArchiveSummary,
     includeMetadata?: boolean
   ): Blob {
     const files: Record<string, Uint8Array> = {};
@@ -532,10 +498,11 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
     }
 
     if (includeMetadata) {
-      files['metadata.json'] = strToU8(
-        JSON.stringify({ format: 'vector-tile-export', summary }, null, 2)
-      );
+      const metadata: VectorTileArchiveMetadata = { format: 'vector-tile-export', summary };
+      assertVectorTileArchiveMetadata(metadata);
+      files['metadata.json'] = strToU8(JSON.stringify(metadata, null, 2));
     }
+    assertVectorTileArchiveSummary(summary);
     files['summary.json'] = strToU8(JSON.stringify(summary, null, 2));
 
     // zipSync with DEFLATE compression (level 6)

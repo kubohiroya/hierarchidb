@@ -19,6 +19,7 @@ import {
   type RawDataPipeline,
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
+import { assertGadmGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadValidators.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  GADM
@@ -210,7 +211,10 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         return { stream: bufferToStream(rawBuffer), contentType: zipContentType };
       },
       decodeBuffer: async (buffer) => {
-        const geojson = await this.decodeGeoJson(buffer);
+        const geojson = assertGadmGeoJsonSourcePayload(
+          await this.decodeGeoJson(buffer),
+          metadata.level
+        );
         return {
           geojson,
           metadata: {
@@ -233,7 +237,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       let geojson: GADMGeoJSON;
 
       if (rawData.geojson) {
-        geojson = rawData.geojson;
+        geojson = assertGadmGeoJsonSourcePayload(rawData.geojson, rawData.metadata.level);
       } else {
         throw new Error('No valid data found in raw data');
       }

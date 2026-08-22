@@ -87,9 +87,13 @@ export interface ImportData<T> {
   nodes: Array<{
     name: string;
     nodeType?: string;
+    /** Optional parent node ID when no target parent is provided. */
+    parentNodeId?: NodeId;
     /** Optional source version for imported nodes (defaults to 1 if omitted). */
     version?: number;
     description?: string;
+    /** Optional top-level tags. Metadata tags take precedence only when this is absent. */
+    tags?: string[];
     /** Tree-level metadata (name/description/tags 等)。name/description は上位フィールドが優先される。 */
     metadata?: Record<string, unknown>;
     /** Persisted data payload for the node. */

@@ -8,6 +8,10 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
+    "test": "node --test __tests__/*.test.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
+  },
+  "devDependencies": {
+    "ajv": "^8.18.0"
   }
 }

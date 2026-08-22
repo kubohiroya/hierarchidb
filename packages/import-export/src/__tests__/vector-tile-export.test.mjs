@@ -4,7 +4,12 @@ import assert from 'node:assert/strict';
 import { unzipSync } from 'fflate';
 import { SingletonMixin } from '@hierarchidb/util';
 import { toNodeType } from '@hierarchidb/core-types';
-import { ImportExportService } from '../../dist/index.js';
+import {
+  assertJsonExportEnvelope,
+  assertVectorTileArchiveMetadata,
+  ExportArtifactValidationError,
+  ImportExportService,
+} from '../../dist/index.js';
 
 /** @typedef {import('@hierarchidb/core-types').NodeId} NodeId */
 /** @typedef {import('@hierarchidb/tree-api').TreeNode} TreeNode */
@@ -120,6 +125,9 @@ const loadZip = async (blob) => {
   return unzipSync(new Uint8Array(buf));
 };
 
+/** @param {Uint8Array} bytes @returns {unknown} */
+const parseJsonEntry = (bytes) => JSON.parse(new TextDecoder().decode(bytes));
+
 describe('ExportService vector tile export', () => {
   beforeEach(() => {
     SingletonMixin.terminate('ImportExportService');
@@ -153,6 +161,96 @@ describe('ExportService vector tile export', () => {
     assert.ok(names.includes('shape-node/1/2/3.pbf'));
     assert.ok(names.includes('metadata.json'));
     assert.ok(names.includes('summary.json'));
+
+    const metadataEntry = zip['metadata.json'];
+    assert.ok(metadataEntry);
+    const metadata = parseJsonEntry(metadataEntry);
+    assertVectorTileArchiveMetadata(metadata);
+    assert.equal(metadata.format, 'vector-tile-export');
+    assert.equal(metadata.summary.format, 'pbf.zip');
+    assert.equal(metadata.summary.tileCount, 2);
+    assert.deepEqual(metadata.summary.nodeIds, ['shape-node']);
+  });
+
+  it('exports json envelope that satisfies its public schema', async () => {
+    const svc = await ImportExportService.getSingleton(
+      new InMemoryExportPort(createNodeSet())
+    );
+
+    const result = await svc.exportNodes({
+      nodeIds: [/** @type {NodeId} */ ('folder-node')],
+      format: 'json',
+      includeChildren: true,
+      includeMetadata: true,
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(result.mimeType, 'application/json');
+    assert.equal(typeof result.data, 'string');
+
+    const envelope = JSON.parse(result.data);
+    assertJsonExportEnvelope(envelope);
+    assert.equal(envelope.version, '1.0');
+    assert.equal(envelope.nodeCount, 2);
+    assert.deepEqual(
+      envelope.nodes.map((node) => node.name),
+      ['Folder', 'Shape']
+    );
+  });
+
+  it('rejects invalid json export envelopes without coercion or property removal', () => {
+    assert.throws(
+      () => assertJsonExportEnvelope({
+        version: '1.0',
+        exportDate: '2026-08-23T00:00:00.000Z',
+        nodeCount: '1',
+        nodes: [{ name: 'Folder', nodeType: 'folder', description: '' }],
+      }),
+      ExportArtifactValidationError
+    );
+
+    assert.throws(
+      () => assertJsonExportEnvelope({
+        version: '1.0',
+        exportDate: '2026-08-23T00:00:00.000Z',
+        nodeCount: 1,
+        nodes: [{ name: 'Folder', nodeType: 'folder', description: '', extra: true }],
+      }),
+      /EXPORT_ARTIFACT_SCHEMA_INVALID:json-export-envelope/
+    );
+  });
+
+  it('rejects invalid vector tile metadata without defaults', () => {
+    assert.throws(
+      () => assertVectorTileArchiveMetadata({
+        format: 'vector-tile-export',
+        summary: {
+          exportDate: '2026-08-23T00:00:00.000Z',
+          nodeCount: 1,
+          tileCount: 2,
+          format: 'pbf.zip',
+          totalBytes: 24,
+          nodeIds: ['shape-node'],
+        },
+      }),
+      /EXPORT_ARTIFACT_SCHEMA_INVALID:vector-tile-archive-metadata/
+    );
+
+    assert.throws(
+      () => assertVectorTileArchiveMetadata({
+        format: 'vector-tile-export',
+        summary: {
+          exportDate: '2026-08-23T00:00:00.000Z',
+          nodeCount: 2,
+          tileCount: 2,
+          format: 'pbf.zip',
+          includeMetadata: true,
+          totalBytes: 24,
+          nodeIds: ['shape-node'],
+        },
+      }),
+      /EXPORT_ARTIFACT_SCHEMA_INVALID:vector-tile-archive-summary/
+    );
   });
 
   it('exports mvf as binary zip archive with zip mime conversion', async () => {

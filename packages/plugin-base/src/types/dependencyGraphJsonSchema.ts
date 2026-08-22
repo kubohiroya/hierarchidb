@@ -105,7 +105,13 @@ export const dependencyGraphJsonSchema = {
   },
 } as const;
 
-const ajv = new Ajv({ allErrors: true, strict: true });
+const ajv = new Ajv({
+  strict: true,
+  allErrors: true,
+  coerceTypes: false,
+  useDefaults: false,
+  removeAdditional: false,
+});
 const validateDependencyGraph = ajv.compile(dependencyGraphJsonSchema);
 
 export const isDependencyGraph = (value: unknown): value is DependencyGraph =>

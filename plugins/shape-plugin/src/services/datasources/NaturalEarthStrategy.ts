@@ -21,6 +21,7 @@ import {
   type FetchOptions,
   type ProcessOptions,
 } from './DataSourceStrategy.js';
+import { assertNaturalEarthGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadValidators.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  Natural Earth
@@ -219,7 +220,9 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<
 
     try {
       //  ShapefileGeoJSON
-      const geojson = await this.convertShapefilesToGeoJSON(rawData.files);
+      const geojson = assertNaturalEarthGeoJsonSourcePayload(
+        await this.convertShapefilesToGeoJSON(rawData.files)
+      );
 
       let features: NaturalEarthFeature[] = geojson.features as NaturalEarthFeature[];
       const inputStats = summarizeGeojsonFeatures(features);
@@ -303,7 +306,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<
       Geometry,
       NaturalEarthProperties
     >;
-    return geojson;
+    return assertNaturalEarthGeoJsonSourcePayload(geojson);
   }
 
   private generateEntityId(properties: NaturalEarthProperties, index: number): string {

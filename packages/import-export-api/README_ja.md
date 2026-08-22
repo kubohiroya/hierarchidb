@@ -4,6 +4,13 @@
 
 HierarchiDB のインポート/エクスポート API 型定義パッケージ。エクスポート形式型、インポートオプション、競合解決戦略等を定義する。
 
+## ImportData Schema
+
+このパッケージは JSON-like `ImportData<T>` payload の正規 JSON Schema として
+`importDataJsonSchema` を export する。import envelope、node envelope、metadata、
+draft metadata、再帰的な `children`、`version` を定義する。plugin が所有する
+`data` / `draftData` は、意図的に generic JSON value としてのみ制約する。
+
 ## 依存関係
 
 `@hierarchidb/core-types`

@@ -75,7 +75,13 @@ export const featureCollectionJsonSchema = {
   },
 } as const;
 
-const ajv = new Ajv({ allErrors: true, strict: true });
+const ajv = new Ajv({
+  strict: true,
+  allErrors: true,
+  coerceTypes: false,
+  useDefaults: false,
+  removeAdditional: false,
+});
 const validateFeatureCollection = ajv.compile(featureCollectionJsonSchema);
 
 export const assertFeatureCollection = (value: FeatureCollection): void => {

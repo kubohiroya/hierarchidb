@@ -34,6 +34,7 @@ import {
   type RawDataPipeline,
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
+import { assertGeoBoundariesGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadValidators.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
@@ -248,7 +249,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<
       },
       transformStream: async (stream) => {
         const buffer = await streamToBuffer(stream);
-        const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
+        const geojson = assertGeoBoundariesGeoJsonSourcePayload(
+          JSON.parse(new TextDecoder('utf-8').decode(buffer))
+        );
         const encoded = await encodeFlatGeoJson(geojson);
         return { stream: bufferToStream(encoded), contentType };
       },
@@ -258,11 +261,11 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<
           type: 'FeatureCollection',
           features: raw.features.map((feature) => ({
             ...feature,
-            properties: feature.properties ?? {},
           })) as GeoBoundariesFeature[],
         };
+        const validatedGeojson = assertGeoBoundariesGeoJsonSourcePayload(geojson);
         return {
-          geojson,
+          geojson: validatedGeojson,
           metadata: {
             source: 'geoboundaries',
             downloadedAt: new Date().toISOString(),
@@ -292,8 +295,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<
       if (!rawData.geojson || !rawData.geojson.features) {
         throw new Error('Invalid GeoJSON data');
       }
+      const geojson = assertGeoBoundariesGeoJsonSourcePayload(rawData.geojson);
 
-      let features: GeoBoundariesFeature[] = rawData.geojson.features.filter(
+      let features: GeoBoundariesFeature[] = geojson.features.filter(
         (feature): feature is GeoBoundariesFeature => Boolean(feature)
       );
       const inputStats = summarizeGeojsonFeatures(features);
