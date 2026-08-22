@@ -4188,6 +4188,9 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
+      '@hierarchidb/route-store':
+        specifier: workspace:*
+        version: link:../../packages/route-store
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../../packages/shape-store

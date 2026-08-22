@@ -1,7 +1,7 @@
-import {
-  type ChunkStoreDeserializer,
-  type ChunkStoreMetadata,
-  type ChunkStoreSerializer,
+import type {
+  ChunkStoreDeserializer,
+  ChunkStoreMetadata,
+  ChunkStoreSerializer,
 } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import { LocalShapeChunkStore } from './LocalShapeChunkStore.js';
@@ -65,7 +65,9 @@ export const storeRawDataDataSourceBufferForNode = async (params: {
 }): Promise<{ contentType: string; sizeBytes: number }> => {
   const { nodeId, cacheKey, buffer } = params;
   if (!isRawDataDataSourceCacheKey(cacheKey)) {
-    throw new Error(`[runtime-worker][shape-chunk-store] invalid raw source cache key: ${cacheKey}`);
+    throw new Error(
+      `[runtime-worker][shape-chunk-store] invalid raw source cache key: ${cacheKey}`
+    );
   }
   const store = createShapeChunkStore(params.databaseName);
   const resolvedContentType = params.contentType ?? RAW_DATA_DEFAULT_CONTENT_TYPE;

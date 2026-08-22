@@ -441,6 +441,19 @@ hydrate fallback remains mounted for an activation reload and for a terminal fai
 only after the runtime-ready provider tree commits. No branch retries bootstrap or falls back to a
 legacy runtime.
 
+The production SharedWorker entry URL carries release and gate query parameters. A dynamically
+loaded worker chunk must never import the queryless `shared-worker.js` entry, because the browser
+would evaluate that distinct module URL again inside the same worker and create a second set of
+module singletons. Shared runtime modules are emitted in a side-effect-free neutral chunk referenced
+by both the entry and dynamic chunks. Production build acceptance rejects any non-entry worker
+artifact that imports `shared-worker.js`.
+
+Generated worker-readable assets use the exact Vite `BASE_URL` that was replaced during the
+production build. The ISO-3166 CSV browser entry reads `import.meta.env.BASE_URL` directly so Vite
+can fold the deployed application base path into both window and worker bundles. Worker artifacts
+that still contain an `import.meta.env` ISO base resolver, `/iso3166-2-level1.csv`, or any other
+origin-root fallback fail the production boundary verifier.
+
 ## Source-controlled production preflight surface
 
 Production evidence before and after the single activation is collected by the independent Vite
@@ -532,6 +545,11 @@ logical-v1 diagnostic reports a non-empty exact snapshot. It retains the same li
 native version, catalog cardinality, no-upgrade open, and runtime-worker topology authority. After
 those gates pass, it reads all five stores in one readonly transaction and requires every record to
 be accounted as exact initializer state, modified initializer identity, additional state, or invalid.
+For historical logical-v1 nodes, an absent `references` property or an own data property whose value
+is `undefined` both represent no graph edges for this read-only classification only. The classifier
+does not add an array or mutate the record, and own `undefined` prevents a default identity from being
+classified as exact initializer state. Null, non-array, sparse, non-string, accessor-bearing, and
+symbol-bearing forms remain rejected.
 It validates the contract-defined virtual root anchors and tag relations, and delegates YAML slot
 classification to the existing migration planner. The public result contains only store and aggregate
 counts, stable graph and YAML planning status, and invalid diagnostics limited to store-level counts,

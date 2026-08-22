@@ -30,6 +30,22 @@ const ZERO_INVALID_DIAGNOSTICS = {
     unavailableIdentity: 0,
   },
 };
+const ZERO_ADDITIONAL_NODE_TYPE_COUNTS = {
+  yamlFile: 0,
+  yaml: 0,
+  file: 0,
+  folder: 0,
+  otherString: 0,
+};
+const ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS = {
+  legacyYamlPayload: 0,
+  hostSplitYamlPayload: 0,
+  canonicalYamlPayload: 0,
+  mixedYamlPayload: 0,
+  incompleteYamlPayload: 0,
+  otherPayload: 0,
+  noPayload: 0,
+};
 
 function defaultTree(treeId: 'r' | 'p'): Readonly<Record<string, unknown>> {
   return {
@@ -164,6 +180,8 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
         },
         invalidDiagnostics: ZERO_INVALID_DIAGNOSTICS,
         additionalNodeCounts: { yaml: 0, nonYaml: 0 },
+        additionalNodeTypeCounts: ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+        additionalNodePayloadShapeCounts: ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
         graphStatus: 'exact',
         yamlPlanningStatus: 'valid',
         yamlSlotCounts: {
@@ -222,6 +240,14 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     });
     expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 1, nonYaml: 0 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      yamlFile: 1,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      legacyYamlPayload: 1,
+    });
     expect(result.summary.yamlSlotCounts).toEqual({
       canonical: 0,
       legacyWithName: 1,
@@ -258,6 +284,47 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     });
     expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 0, nonYaml: 1 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      folder: 1,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      noPayload: 1,
+    });
+  });
+
+  it('reports sanitized YAML-like payload buckets without broadening nodeType acceptance', async () => {
+    const baseline = createDefaultSnapshot();
+    const yamlLikeFileNode = {
+      ...legacyYamlNode(),
+      nodeType: 'file',
+    };
+
+    const result = await classify({
+      ...baseline,
+      nodes: [...baseline.nodes, yamlLikeFileNode],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok === false) throw new Error('Expected preservation classification acceptance');
+    expect(result.summary.additionalNodeCounts).toEqual({ yaml: 0, nonYaml: 1 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      file: 1,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      legacyYamlPayload: 1,
+    });
+    expect(result.summary.yamlPlanningStatus).toBe('valid');
+    expect(result.summary.yamlSlotCounts).toEqual({
+      canonical: 0,
+      legacyWithName: 0,
+      hostSplitLegacy: 0,
+      temporaryPlaceholder: 0,
+      metadataOnlyDraft: 0,
+    });
   });
 
   it('preserves older initializer omissions as a modified default identity without filling them', async () => {
@@ -290,15 +357,17 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(Object.hasOwn(olderRoot.metadata, 'tags')).toBe(false);
   });
 
-  it('accepts historical null draftData as an absent draft without mutating records', async () => {
+  it('accepts historical null draftData and own undefined references without mutating records', async () => {
     const baseline = createDefaultSnapshot();
     const historicalRoot = {
       ...defaultNode('p', 'root'),
       draftData: null,
+      references: undefined,
     };
     const firstYamlNode = {
       ...legacyYamlNode(),
       draftData: null,
+      references: undefined,
     };
     const secondYamlNode = {
       ...legacyYamlNode(),
@@ -310,6 +379,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
         content: 'sources: []\n',
       },
       draftData: null,
+      references: undefined,
     };
     const thirdYamlNode = {
       ...legacyYamlNode(),
@@ -321,6 +391,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
         content: 'url: https://example.test/repository.git\n',
       },
       draftData: null,
+      references: undefined,
     };
 
     const result = await classify({
@@ -354,6 +425,16 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     });
     expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 3, nonYaml: 0 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      yamlFile: 3,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      legacyYamlPayload: 3,
+    });
+    expect(result.summary.graphStatus).toBe('exact');
+    expect(result.summary.yamlPlanningStatus).toBe('valid');
     expect(result.summary.yamlSlotCounts).toEqual({
       canonical: 0,
       legacyWithName: 3,
@@ -364,6 +445,61 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(Object.hasOwn(historicalRoot, 'draftData')).toBe(true);
     expect(historicalRoot.draftData).toBeNull();
     expect(firstYamlNode.draftData).toBeNull();
+    for (const historicalNode of [historicalRoot, firstYamlNode, secondYamlNode, thirdYamlNode]) {
+      expect(Object.hasOwn(historicalNode, 'references')).toBe(true);
+      expect(historicalNode.references).toBeUndefined();
+    }
+  });
+
+  it.each([
+    ['null', null],
+    ['non-array', { 0: 'target-node' }],
+    ['sparse array', Object.assign([] as unknown[], { length: 1 })],
+    ['non-string array member', ['target-node', 1]],
+    [
+      'symbol-bearing array',
+      Object.assign(['target-node'], { [Symbol('sensitive-reference-symbol')]: 'sensitive' }),
+    ],
+  ])('rejects %s historical references values', async (_caseName, references) => {
+    const baseline = createDefaultSnapshot();
+    const invalidNode = { ...legacyYamlNode(), references };
+    const result = await classify({ ...baseline, nodes: [...baseline.nodes, invalidNode] });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID');
+    if (result.ok) throw new Error('Expected invalid historical references rejection');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { nodes: 1, total: 1 },
+      byReason: { 'required-field-contract': 1 },
+      byIdentityClass: { additionalIdentity: 1 },
+    });
+    expect(result.summary?.graphStatus).toBe('not-evaluated');
+    expect(result.summary?.yamlPlanningStatus).toBe('not-run');
+  });
+
+  it('rejects an accessor references property without reading it', async () => {
+    const baseline = createDefaultSnapshot();
+    const invalidNode = { ...legacyYamlNode() };
+    let referencesRead = false;
+    Object.defineProperty(invalidNode, 'references', {
+      enumerable: true,
+      get() {
+        referencesRead = true;
+        throw new Error('sensitive-references-accessor');
+      },
+    });
+
+    const result = await classify({ ...baseline, nodes: [...baseline.nodes, invalidNode] });
+
+    expect(referencesRead).toBe(false);
+    expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID');
+    if (result.ok) throw new Error('Expected accessor references rejection');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { nodes: 1, total: 1 },
+      byReason: { 'record-shape': 1 },
+      byIdentityClass: { unavailableIdentity: 1 },
+    });
+    expect(JSON.stringify(result)).not.toContain('sensitive-references-accessor');
   });
 
   it('aggregates canonical, host-split legacy, and temporary placeholder YAML states', async () => {
@@ -415,6 +551,16 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(result.ok).toBe(true);
     if (result.ok === false) throw new Error('Expected YAML aggregate acceptance');
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 3, nonYaml: 0 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      yamlFile: 3,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      canonicalYamlPayload: 1,
+      hostSplitYamlPayload: 1,
+      otherPayload: 1,
+    });
     expect(result.summary.yamlSlotCounts).toEqual({
       canonical: 1,
       legacyWithName: 0,

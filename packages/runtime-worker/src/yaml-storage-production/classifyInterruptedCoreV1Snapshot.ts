@@ -112,6 +112,22 @@ export interface InterruptedCoreV1PreservationSummary {
     readonly yaml: number;
     readonly nonYaml: number;
   }>;
+  readonly additionalNodeTypeCounts: Readonly<{
+    readonly yamlFile: number;
+    readonly yaml: number;
+    readonly file: number;
+    readonly folder: number;
+    readonly otherString: number;
+  }>;
+  readonly additionalNodePayloadShapeCounts: Readonly<{
+    readonly legacyYamlPayload: number;
+    readonly hostSplitYamlPayload: number;
+    readonly canonicalYamlPayload: number;
+    readonly mixedYamlPayload: number;
+    readonly incompleteYamlPayload: number;
+    readonly otherPayload: number;
+    readonly noPayload: number;
+  }>;
   readonly graphStatus: 'not-evaluated' | 'exact' | 'invalid';
   readonly yamlPlanningStatus: 'not-run' | 'valid' | 'invalid';
   readonly yamlSlotCounts: Readonly<{
@@ -174,6 +190,22 @@ const INVALID_IDENTITY_CLASS_NAMES = Object.freeze([
   'unavailableIdentity',
 ] as const);
 const ADDITIONAL_NODE_COUNT_NAMES = Object.freeze(['yaml', 'nonYaml'] as const);
+const ADDITIONAL_NODE_TYPE_COUNT_NAMES = Object.freeze([
+  'yamlFile',
+  'yaml',
+  'file',
+  'folder',
+  'otherString',
+] as const);
+const ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNT_NAMES = Object.freeze([
+  'legacyYamlPayload',
+  'hostSplitYamlPayload',
+  'canonicalYamlPayload',
+  'mixedYamlPayload',
+  'incompleteYamlPayload',
+  'otherPayload',
+  'noPayload',
+] as const);
 const YAML_SLOT_COUNT_NAMES = Object.freeze([
   'canonical',
   'legacyWithName',
@@ -186,6 +218,8 @@ const SUMMARY_PROPERTY_NAMES = Object.freeze([
   'recordClassification',
   'invalidDiagnostics',
   'additionalNodeCounts',
+  'additionalNodeTypeCounts',
+  'additionalNodePayloadShapeCounts',
   'graphStatus',
   'yamlPlanningStatus',
   'yamlSlotCounts',
@@ -474,9 +508,10 @@ function classifyNodes(states: RecordState[]): ParsedNode[] {
       draftDataProperty.value === null ||
       isPlainRecord(draftDataProperty.value);
     const visibleValid = !visibleProperty.found || typeof visibleProperty.value === 'boolean';
-    const references = !referencesProperty.found
-      ? Object.freeze([])
-      : readExactStringArray(referencesProperty.value);
+    const references =
+      !referencesProperty.found || referencesProperty.value === undefined
+        ? Object.freeze([])
+        : readExactStringArray(referencesProperty.value);
     if (id === null) {
       setInvalidReason(state, 'required-identity');
       continue;
@@ -781,6 +816,83 @@ function isDefaultIdentity(state: RecordState): boolean {
   );
 }
 
+function countAdditionalNodeTypes(
+  additionalNodes: readonly ParsedNode[]
+): Readonly<Record<(typeof ADDITIONAL_NODE_TYPE_COUNT_NAMES)[number], number>> {
+  const counts = {
+    yamlFile: 0,
+    yaml: 0,
+    file: 0,
+    folder: 0,
+    otherString: 0,
+  };
+  for (const node of additionalNodes) {
+    if (node.nodeType === 'yaml-file') counts.yamlFile += 1;
+    else if (node.nodeType === 'yaml') counts.yaml += 1;
+    else if (node.nodeType === 'file') counts.file += 1;
+    else if (node.nodeType === 'folder') counts.folder += 1;
+    else counts.otherString += 1;
+  }
+  return Object.freeze(counts);
+}
+
+type AdditionalPayloadShape = (typeof ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNT_NAMES)[number];
+
+function classifyPayloadShape(value: unknown): AdditionalPayloadShape {
+  if (!isPlainRecord(value)) return 'otherPayload';
+  const nameProperty = readOwnDataProperty(value, 'name');
+  const subtypeProperty = readOwnDataProperty(value, 'subtype');
+  const schemaIdProperty = readOwnDataProperty(value, 'schemaId');
+  const contentProperty = readOwnDataProperty(value, 'content');
+  const hasName = nameProperty.found;
+  const hasSubtype = subtypeProperty.found;
+  const hasSchemaId = schemaIdProperty.found;
+  const hasContent = contentProperty.found;
+  const yamlKeyCount = [hasName, hasSubtype, hasSchemaId, hasContent].filter(Boolean).length;
+  if (hasName && hasSubtype) return 'mixedYamlPayload';
+  if (hasName && hasSchemaId && hasContent && yamlKeyCount === 3) return 'legacyYamlPayload';
+  if (hasSchemaId && hasContent && yamlKeyCount === 2) return 'hostSplitYamlPayload';
+  if (hasSubtype && hasSchemaId && hasContent && yamlKeyCount === 3) {
+    return 'canonicalYamlPayload';
+  }
+  return yamlKeyCount > 0 ? 'incompleteYamlPayload' : 'otherPayload';
+}
+
+function classifyAdditionalNodePayloadShape(node: ParsedNode): AdditionalPayloadShape {
+  if (!isPlainRecord(node.state.value)) return 'otherPayload';
+  const dataProperty = readOwnDataProperty(node.state.value, 'data');
+  const draftDataProperty = readOwnDataProperty(node.state.value, 'draftData');
+  const payloads = [dataProperty, draftDataProperty]
+    .filter(
+      (property): property is Readonly<{ readonly found: true; readonly value: unknown }> =>
+        property.found && property.value !== undefined && property.value !== null
+    )
+    .map((property) => classifyPayloadShape(property.value));
+  if (payloads.length === 0) return 'noPayload';
+  for (const shape of ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNT_NAMES) {
+    if (shape !== 'noPayload' && payloads.includes(shape)) return shape;
+  }
+  return 'otherPayload';
+}
+
+function countAdditionalNodePayloadShapes(
+  additionalNodes: readonly ParsedNode[]
+): Readonly<Record<AdditionalPayloadShape, number>> {
+  const counts = {
+    legacyYamlPayload: 0,
+    hostSplitYamlPayload: 0,
+    canonicalYamlPayload: 0,
+    mixedYamlPayload: 0,
+    incompleteYamlPayload: 0,
+    otherPayload: 0,
+    noPayload: 0,
+  };
+  for (const node of additionalNodes) {
+    counts[classifyAdditionalNodePayloadShape(node)] += 1;
+  }
+  return Object.freeze(counts);
+}
+
 function createEmptyReasonCounts(): Record<InterruptedCoreV1InvalidReasonCode, number> {
   return {
     'record-shape': 0,
@@ -837,6 +949,8 @@ function summarize(
     }
   }
   const additionalNodes = nodes.filter((node) => node.state.classification === 'additional');
+  const additionalNodeTypeCounts = countAdditionalNodeTypes(additionalNodes);
+  const additionalNodePayloadShapeCounts = countAdditionalNodePayloadShapes(additionalNodes);
   const storeCounts = {
     trees: statesByStore.trees.length,
     nodes: statesByStore.nodes.length,
@@ -857,6 +971,8 @@ function summarize(
       yaml: additionalNodes.filter((node) => node.nodeType === 'yaml-file').length,
       nonYaml: additionalNodes.filter((node) => node.nodeType !== 'yaml-file').length,
     }),
+    additionalNodeTypeCounts,
+    additionalNodePayloadShapeCounts,
     graphStatus,
     yamlPlanningStatus,
     yamlSlotCounts,
@@ -878,6 +994,13 @@ function summaryCountersAreConsistent(summary: InterruptedCoreV1PreservationSumm
     summary.invalidDiagnostics.byIdentityClass.defaultIdentity +
     summary.invalidDiagnostics.byIdentityClass.additionalIdentity +
     summary.invalidDiagnostics.byIdentityClass.unavailableIdentity;
+  const additionalNodeTypeTotal = Object.values(summary.additionalNodeTypeCounts).reduce(
+    (total, count) => total + count,
+    0
+  );
+  const additionalNodePayloadShapeTotal = Object.values(
+    summary.additionalNodePayloadShapeCounts
+  ).reduce((total, count) => total + count, 0);
   return (
     summary.storeCounts.total === storeTotal &&
     summary.storeCounts.total === classificationTotal &&
@@ -894,7 +1017,10 @@ function summaryCountersAreConsistent(summary: InterruptedCoreV1PreservationSumm
     invalidReasonTotal === summary.recordClassification.invalid &&
     invalidIdentityTotal === summary.recordClassification.invalid &&
     summary.additionalNodeCounts.yaml + summary.additionalNodeCounts.nonYaml <=
-      summary.recordClassification.additional
+      summary.recordClassification.additional &&
+    additionalNodeTypeTotal ===
+      summary.additionalNodeCounts.yaml + summary.additionalNodeCounts.nonYaml &&
+    additionalNodePayloadShapeTotal === additionalNodeTypeTotal
   );
 }
 
@@ -931,6 +1057,11 @@ export function sanitizeInterruptedCoreV1PreservationSummary(
     const recordClassificationProperty = readOwnDataProperty(value, 'recordClassification');
     const invalidDiagnosticsProperty = readOwnDataProperty(value, 'invalidDiagnostics');
     const additionalNodeCountsProperty = readOwnDataProperty(value, 'additionalNodeCounts');
+    const additionalNodeTypeCountsProperty = readOwnDataProperty(value, 'additionalNodeTypeCounts');
+    const additionalNodePayloadShapeCountsProperty = readOwnDataProperty(
+      value,
+      'additionalNodePayloadShapeCounts'
+    );
     const graphStatusProperty = readOwnDataProperty(value, 'graphStatus');
     const yamlPlanningStatusProperty = readOwnDataProperty(value, 'yamlPlanningStatus');
     const yamlSlotCountsProperty = readOwnDataProperty(value, 'yamlSlotCounts');
@@ -939,6 +1070,8 @@ export function sanitizeInterruptedCoreV1PreservationSummary(
       !recordClassificationProperty.found ||
       !invalidDiagnosticsProperty.found ||
       !additionalNodeCountsProperty.found ||
+      !additionalNodeTypeCountsProperty.found ||
+      !additionalNodePayloadShapeCountsProperty.found ||
       !graphStatusProperty.found ||
       !yamlPlanningStatusProperty.found ||
       !yamlSlotCountsProperty.found
@@ -954,10 +1087,20 @@ export function sanitizeInterruptedCoreV1PreservationSummary(
       additionalNodeCountsProperty.value,
       ADDITIONAL_NODE_COUNT_NAMES
     );
+    const additionalNodeTypeCounts = readExactCounterRecord(
+      additionalNodeTypeCountsProperty.value,
+      ADDITIONAL_NODE_TYPE_COUNT_NAMES
+    );
+    const additionalNodePayloadShapeCounts = readExactCounterRecord(
+      additionalNodePayloadShapeCountsProperty.value,
+      ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNT_NAMES
+    );
     if (
       storeCounts === null ||
       recordClassification === null ||
       additionalNodeCounts === null ||
+      additionalNodeTypeCounts === null ||
+      additionalNodePayloadShapeCounts === null ||
       !isPlainRecord(invalidDiagnosticsProperty.value) ||
       !hasExactOwnDataProperties(invalidDiagnosticsProperty.value, [
         'byStore',
@@ -1007,6 +1150,8 @@ export function sanitizeInterruptedCoreV1PreservationSummary(
       recordClassification,
       invalidDiagnostics: Object.freeze({ byStore, byReason, byIdentityClass }),
       additionalNodeCounts,
+      additionalNodeTypeCounts,
+      additionalNodePayloadShapeCounts,
       graphStatus,
       yamlPlanningStatus,
       yamlSlotCounts,

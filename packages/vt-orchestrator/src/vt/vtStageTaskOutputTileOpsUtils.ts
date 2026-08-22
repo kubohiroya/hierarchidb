@@ -9,6 +9,7 @@ import type { VtTileTaskContext } from './vtStageTaskOutputTypes.js';
 type TileWriter = VTStageContext['tileWriter'];
 
 type TileLayerMap = Record<string, Tile>;
+type VtPbfLayerMap = Parameters<typeof import('@maplibre/vt-pbf').fromGeojsonVt>[0];
 
 type TileEncodeInput = {
   z: number;
@@ -47,8 +48,7 @@ export const encodeTileForVt = ({
 }: TileEncodeInput): { bytes: Uint8Array; durationMs: number } => {
   const encodeStartedAt = Date.now();
   try {
-    const layersArg = Object.values(layers);
-    const bytes = vtpbf.fromGeojsonVt(layersArg as any, {
+    const bytes = vtpbf.fromGeojsonVt(layers as unknown as VtPbfLayerMap, {
       version: 2,
       extent: tileEmitConfig.extent,
     }) as Uint8Array;
