@@ -428,6 +428,12 @@ module singletons. Shared runtime modules are emitted in a side-effect-free neut
 by both the entry and dynamic chunks. Production build acceptance rejects any non-entry worker
 artifact that imports `shared-worker.js`.
 
+Generated worker-readable assets use the exact Vite `BASE_URL` that was replaced during the
+production build. The ISO-3166 CSV browser entry reads `import.meta.env.BASE_URL` directly so Vite
+can fold the deployed application base path into both window and worker bundles. Worker artifacts
+that still contain an `import.meta.env` ISO base resolver, `/iso3166-2-level1.csv`, or any other
+origin-root fallback fail the production boundary verifier.
+
 ## Source-controlled production preflight surface
 
 Production evidence before and after the single activation is collected by the independent Vite

@@ -31,45 +31,31 @@ const memoryStore = {
 
 const normalizeBasePath = (value: string): string => {
   const trimmed = value.trim();
-  if (!trimmed) return "/";
+  if (!trimmed) {
+    throw new Error("Vite BASE_URL is required to resolve ISO-3166 CSV assets.");
+  }
   if (/^https?:\/\//i.test(trimmed)) {
-    try {
-      const url = new URL(trimmed);
-      const path = url.pathname || "/";
-      return path.endsWith("/") ? path : `${path}/`;
-    } catch {
-      return "/";
+    const url = new URL(trimmed);
+    const path = url.pathname;
+    if (!path || path === "/") {
+      throw new Error("Vite BASE_URL must include the deployed application base path.");
     }
+    return path.endsWith("/") ? path : `${path}/`;
   }
   const withLeading = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return withLeading.endsWith("/") ? withLeading : `${withLeading}/`;
 };
 
+const requireViteBaseUrl = (): string => {
+  const baseUrl = import.meta.env.BASE_URL;
+  if (typeof baseUrl !== "string" || baseUrl.length === 0) {
+    throw new Error("Vite BASE_URL is required to resolve ISO-3166 CSV assets.");
+  }
+  return baseUrl;
+};
+
 const resolveBaseUrl = (): string => {
-  const env = (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } }).env;
-  const envBase = env?.VITE_BASE_URL || env?.BASE_URL;
-  if (typeof envBase === "string" && envBase.length > 0) {
-    return normalizeBasePath(envBase);
-  }
-  if (typeof window !== "undefined") {
-    const hinted = (window as Window & { __HDB_APP_BASE__?: unknown }).__HDB_APP_BASE__;
-    if (typeof hinted === "string" && hinted.length > 0) {
-      return normalizeBasePath(hinted);
-    }
-  }
-  if (typeof document !== "undefined") {
-    try {
-      const baseEl = document.querySelector("base");
-      const href = baseEl?.getAttribute("href");
-      if (typeof href === "string" && href.length > 0) {
-        const url = new URL(href, window.location.origin);
-        return normalizeBasePath(url.pathname);
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return "/";
+  return normalizeBasePath(requireViteBaseUrl());
 };
 
 export const resolveIso3166CsvUrl = (csvFile = "iso3166-2-level1.csv"): string => {
