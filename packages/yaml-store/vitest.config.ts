@@ -14,6 +14,10 @@ export default defineConfig({
         alias: {
             '@hierarchidb/core-types': path.resolve(workspaceRoot, 'packages/core-types/src/index.ts'),
             '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
+            '@hierarchidb/yaml-api/validation': path.resolve(
+                workspaceRoot,
+                'packages/yaml-api/src/validation/index.ts',
+            ),
             '@hierarchidb/yaml-api': path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
         },
     },
