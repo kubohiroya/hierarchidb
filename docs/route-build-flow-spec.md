@@ -57,6 +57,10 @@ cache identity の正規仕様（SSOT）とする。
   - OR 条件（始点または終点が一致）: 空路 / 海路 / 高速鉄道 / 在来線鉄道 / 道路
   - AND 条件（始点かつ終点が一致）: 空路 / 海路 / 高速鉄道 / 在来線鉄道 / 道路
 - 1 国あたり 10 チェックボックスを持つ。
+- `selectedArrayByCountries[countryCode]` の正規順序は、前半5セルが
+  `airway / waterway / high-speed-railway / railway / road` の OR、後半5セルが同じ順序の AND とする。
+  route UI と worker/runtime の source planning は `@hierarchidb/route-api` の
+  `IDE_GSM_ROUTE_SELECTION_MODE_ORDER` を唯一の列順SSOTとして参照する。
 
 ### 初期状態
 
@@ -80,6 +84,10 @@ cache identity の正規仕様（SSOT）とする。
 - Step3 の操作結果は `selectedArrayByCountries` に反映する。
 - `selectedArrayByCountries` はcoverage国だけをkeyに持ち、各rowはOR 5列 + AND 5列の10 booleanだけを保持する。
 - Step5 の fetch 対象は `selectedArrayByCountries` を唯一の選択入力として扱う。
+- source planning は `selectedArrayByCountries` を strict に
+  `IdeGsmRouteSelectionEntry[]` へ変換してから IDE-GSM 行を抽出する。国コードは uppercase ISO2、
+  各行は10個の boolean、OR cell が true の場合は対応する AND cell も true でなければならない。
+  空選択、5-cell legacy row、非 boolean cell、不正国コードは start 時の契約違反として失敗する。
 
 ## Step4: Build 設定
 
