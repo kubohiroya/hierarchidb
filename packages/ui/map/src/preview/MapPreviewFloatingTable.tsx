@@ -1,5 +1,9 @@
-import type React from 'react';
-import { FeatureTableToolbar, type FeatureTableSearchConfig } from './FeatureTableToolbar.js';
+import {
+  type GridColumn,
+  type GridGroupingState,
+  type GridSortingState,
+  TanstackDataGrid,
+} from '@hierarchidb/ui-grid';
 import {
   Box,
   Button,
@@ -18,12 +22,8 @@ import {
   RadioGroup,
   Typography,
 } from '@mui/material';
-import {
-  TanstackDataGrid,
-  type GridColumn,
-  type GridGroupingState,
-  type GridSortingState,
-} from '@hierarchidb/ui-grid';
+import type React from 'react';
+import { type FeatureTableSearchConfig, FeatureTableToolbar } from './FeatureTableToolbar.js';
 import { useMapPreviewFloatingTable } from './useMapPreviewFloatingTable.js';
 import { useMapPreviewFloatingTableView } from './useMapPreviewFloatingTableView.js';
 
@@ -68,7 +68,11 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   selectionMode?: 'single' | 'multiple';
   selectedRows?: Set<string>;
   onSelectionChange?: (selected: Set<string | number>) => void;
-  rowSx?: (state: { selected: boolean; matched: boolean; hovered: boolean }) => Record<string, unknown> | undefined;
+  rowSx?: (state: {
+    selected: boolean;
+    matched: boolean;
+    hovered: boolean;
+  }) => Record<string, unknown> | undefined;
   maxHeight?: number | string;
   emptyContent?: React.ReactNode;
   errorSummaryById?: MapPreviewErrorSummaryById;
@@ -99,15 +103,15 @@ export const buildErrorSummaryById = <TError,>(
     getId: (row: TError) => string | undefined | null;
     getMessage?: (row: TError) => string | undefined | null;
     getKind?: (row: TError) => 'error' | 'repair';
-  },
+  }
 ): MapPreviewErrorSummaryById => {
   const summary = new Map<string, MapPreviewErrorSummary>();
   errors.forEach((row) => {
     const id = options.getId(row);
     if (!id) return;
     const key = String(id);
-    const entry = summary.get(key) ?? { 
-      count: 0, 
+    const entry = summary.get(key) ?? {
+      count: 0,
       messages: [],
       errorCount: 0,
       repairCount: 0,
@@ -129,7 +133,7 @@ export const buildErrorSummaryById = <TError,>(
 };
 
 export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
-  props: MapPreviewFloatingTableProps<Row>,
+  props: MapPreviewFloatingTableProps<Row>
 ) => {
   const {
     title,
@@ -163,11 +167,12 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     containerSx,
     rowFilterConfig,
   } = props;
-  const { resolvedStatusLabels, resolvedErrorLabels, resolvedFormatMessage } = useMapPreviewFloatingTable({
-    statusLabels,
-    errorColumnLabels,
-    formatErrorMessage,
-  });
+  const { resolvedStatusLabels, resolvedErrorLabels, resolvedFormatMessage } =
+    useMapPreviewFloatingTable({
+      statusLabels,
+      errorColumnLabels,
+      formatErrorMessage,
+    });
   let resolvedColumns = columns;
   if (resolvedErrorLabels && errorSummaryById) {
     const statusColumn: GridColumn<Row> = {
@@ -310,14 +315,14 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
               return (
                 <FormControlLabel
                   key={id}
-                  control={(
+                  control={
                     <Checkbox
                       checked={isVisible}
                       onChange={(event) => {
                         handleColumnVisibilityToggle(id, event.target.checked);
                       }}
                     />
-                  )}
+                  }
                   label={column.label}
                 />
               );
@@ -326,13 +331,13 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           {rowFilterConfig ? (
             <Box sx={{ mt: 2 }}>
               <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle2">
-                {rowFilterConfig.labels?.title ?? 'Rows'}
-              </Typography>
+              <Typography variant="subtitle2">{rowFilterConfig.labels?.title ?? 'Rows'}</Typography>
               <FormControl component="fieldset" sx={{ mt: 1 }}>
                 <RadioGroup
                   value={rowFilterConfig.mode}
-                  onChange={(event) => rowFilterConfig.onModeChange(event.target.value as 'all' | 'viewport')}
+                  onChange={(event) =>
+                    rowFilterConfig.onModeChange(event.target.value as 'all' | 'viewport')
+                  }
                 >
                   <FormControlLabel
                     value="all"
@@ -342,17 +347,23 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
                   <FormControlLabel
                     value="viewport"
                     control={<Radio />}
-                    label={rowFilterConfig.labels?.viewportRows ?? 'Show locations in the current viewport'}
+                    label={
+                      rowFilterConfig.labels?.viewportRows ??
+                      'Show locations in the current viewport'
+                    }
                   />
                 </RadioGroup>
                 <FormControlLabel
-                  control={(
+                  control={
                     <Checkbox
                       checked={rowFilterConfig.searchOnly}
                       onChange={(event) => rowFilterConfig.onSearchOnlyChange(event.target.checked)}
                     />
-                  )}
-                  label={rowFilterConfig.labels?.searchOnly ?? 'Show only locations matching the search field'}
+                  }
+                  label={
+                    rowFilterConfig.labels?.searchOnly ??
+                    'Show only locations matching the search field'
+                  }
                 />
               </FormControl>
             </Box>

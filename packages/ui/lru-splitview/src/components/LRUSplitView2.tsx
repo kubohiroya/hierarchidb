@@ -3,10 +3,10 @@
  * @module @hierarchidb/ui-lru-splitview/components
  */
 
-import type React from 'react';
-import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
+import { Box } from '@mui/material';
 import { Allotment } from 'allotment';
+import type React from 'react';
 import 'allotment/dist/style.css';
 
 import type { LRUSplitViewConfig, PaneProgress, PaneState } from '~/types/LRUSplitView';
@@ -61,25 +61,19 @@ export const LRUSplitView2: React.FC<LRUSplitView2Props> = ({
   width = '100%',
   sx,
 }) => {
-  const {
-    containerRef,
-    paneStates,
-    sizes,
-    layoutKey,
-    handlePaneReorder,
-    togglePane,
-  } = useLRUSplitView2({
-    panes,
-    maxExpandedPanes,
-    responsiveBreakpoints,
-    initialPaneSizesByBreakpoint,
-    autoCloseCountsByBreakpoint,
-    defaultCollapsedSize,
-    autoExpand,
-    progress,
-    onPaneToggle,
-    onPaneReorder,
-  });
+  const { containerRef, paneStates, sizes, layoutKey, handlePaneReorder, togglePane } =
+    useLRUSplitView2({
+      panes,
+      maxExpandedPanes,
+      responsiveBreakpoints,
+      initialPaneSizesByBreakpoint,
+      autoCloseCountsByBreakpoint,
+      defaultCollapsedSize,
+      autoExpand,
+      progress,
+      onPaneToggle,
+      onPaneReorder,
+    });
 
   return (
     <Box ref={containerRef} sx={[{ height, width }, sx] as SxProps<Theme>}>

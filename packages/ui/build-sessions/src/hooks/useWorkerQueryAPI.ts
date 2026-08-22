@@ -1,6 +1,6 @@
 import type { TreeQueryAPI } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
 import { useCallback, useEffect, useRef } from 'react';
 
@@ -25,11 +25,10 @@ export function useWorkerQueryAPI(): UseWorkerQueryApiResult {
       return;
     }
     initializeRequestedRef.current = true;
-    void initialize()
-      .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn('[useWorkerQueryAPI] worker initialize failed', message);
-      });
+    void initialize().catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('[useWorkerQueryAPI] worker initialize failed', message);
+    });
   }, [api, initialize, loading]);
 
   const getQueryAPIOrNull = useCallback(async (): Promise<TreeQueryAPI | null> => {

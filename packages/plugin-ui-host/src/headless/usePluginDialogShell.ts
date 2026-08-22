@@ -19,23 +19,27 @@ export function usePluginDialogShell(props: PluginDialogShellProps): PluginDialo
   const { unsavedChangeDialog } = controller;
 
   const backdropSx = unsavedChangeDialog?.open ? { pointerEvents: 'none' as const } : undefined;
-  const unsavedDialogSlotProps = useMemo(() => ({
-    root: {
-      sx: {
-        zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
-      },
-    },
-    backdrop: {
-      sx: {
-        zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
-      },
-    },
-    paper: {
-      sx: {
-        zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8001,
-      },
-    },
-  }) as const, []);
+  const unsavedDialogSlotProps = useMemo(
+    () =>
+      ({
+        root: {
+          sx: {
+            zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
+          },
+        },
+        backdrop: {
+          sx: {
+            zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
+          },
+        },
+        paper: {
+          sx: {
+            zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8001,
+          },
+        },
+      }) as const,
+    []
+  );
 
   return {
     ...controller,

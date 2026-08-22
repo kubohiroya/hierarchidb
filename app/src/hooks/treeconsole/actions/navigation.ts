@@ -21,11 +21,13 @@ export function buildFolderPath(
   pageNodeId: string | undefined,
   viewMode: string,
   sortMode: string,
-  targetNodeId?: string,
+  targetNodeId?: string
 ): string {
   const target = targetNodeId ?? '-';
   const page = pageNodeId ?? `${treeId}:root`;
-  const segments = [`/f/${encodeURIComponent(treeId)}/${encodeURIComponent(page)}/${encodeURIComponent(target)}/folder/${encodeURIComponent(viewMode)}`];
+  const segments = [
+    `/f/${encodeURIComponent(treeId)}/${encodeURIComponent(page)}/${encodeURIComponent(target)}/folder/${encodeURIComponent(viewMode)}`,
+  ];
   if (sortMode && sortMode !== 'name') {
     segments.push(sortMode);
   }

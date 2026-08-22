@@ -1,18 +1,5 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-
-import type { ManifestSummary, PluginSpecifierMode } from './types.js';
-import {
-  buildDatabasePrewarmTargets,
-  capitalize,
-  deriveNodeType,
-  normalizeMuiIconName,
-  sanitizeDependencies,
-  sanitizeManifest,
-} from './manifest-utils.js';
-import { loadPluginManifestFromFile } from './manifest-loader.js';
-import { fileExists, loadAppPackage, loadJsonIfExists, readPluginPackageJSON } from './fs-utils.js';
-import { repoRoot } from './paths.js';
 import {
   COMMON_DIST_ENTRY_BASENAMES,
   COMMON_ENTRY_BASENAMES,
@@ -27,6 +14,18 @@ import {
   WORKER_ENTRY_BASENAMES,
 } from './entries.js';
 import { findEntryFile, hasExportPath } from './entry-resolver.js';
+import { fileExists, loadAppPackage, loadJsonIfExists, readPluginPackageJSON } from './fs-utils.js';
+import { loadPluginManifestFromFile } from './manifest-loader.js';
+import {
+  buildDatabasePrewarmTargets,
+  capitalize,
+  deriveNodeType,
+  normalizeMuiIconName,
+  sanitizeDependencies,
+  sanitizeManifest,
+} from './manifest-utils.js';
+import { repoRoot } from './paths.js';
+import type { ManifestSummary, PluginSpecifierMode } from './types.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -98,7 +97,11 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
     const nodeType = deriveNodeType(pkgName);
     if (!nodeType) continue;
 
-    const { json: pluginPkg, path: pkgPath, dir: pkgDir } = await readPluginPackageJSON(pkgName, nodeType);
+    const {
+      json: pluginPkg,
+      path: pkgPath,
+      dir: pkgDir,
+    } = await readPluginPackageJSON(pkgName, nodeType);
     if (!pluginPkg || !pkgDir || !pkgPath) {
       continue;
     }
@@ -119,7 +122,9 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
     }
 
     const manifest = await loadPluginManifestFromFile(manifestPath);
-    const sanitizedManifest = sanitizeManifest(manifest, { packageDescription: pluginPkg.description });
+    const sanitizedManifest = sanitizeManifest(manifest, {
+      packageDescription: pluginPkg.description,
+    });
     if (!sanitizedManifest) continue;
 
     const packageVersion = typeof pluginPkg.version === 'string' ? pluginPkg.version : '0.0.0';
@@ -155,56 +160,68 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
     const iconSourceEntry = await findEntryFile(pkgDir, ICON_ENTRY_BASENAMES);
     const iconDistEntry = await findEntryFile(pkgDir, ICON_DIST_ENTRY_BASENAMES);
 
-    const hasWorkerEntry = mode === 'dist-url'
-      ? Boolean(workerSourceEntry || workerDistEntry)
-      : Boolean(workerSourceEntry);
-    const hasUiEntry = mode === 'dist-url'
-      ? Boolean(uiSourceEntry || uiDistEntry)
-      : Boolean(uiSourceEntry);
-    const hasDatabaseEntry = mode === 'dist-url'
-      ? Boolean(databaseSourceEntry || databaseDistEntry)
-      : Boolean(databaseSourceEntry);
-    const hasIconEntry = mode === 'dist-url'
-      ? Boolean(iconSourceEntry || iconDistEntry)
-      : Boolean(iconSourceEntry);
+    const hasWorkerEntry =
+      mode === 'dist-url'
+        ? Boolean(workerSourceEntry || workerDistEntry)
+        : Boolean(workerSourceEntry);
+    const hasUiEntry =
+      mode === 'dist-url' ? Boolean(uiSourceEntry || uiDistEntry) : Boolean(uiSourceEntry);
+    const hasDatabaseEntry =
+      mode === 'dist-url'
+        ? Boolean(databaseSourceEntry || databaseDistEntry)
+        : Boolean(databaseSourceEntry);
+    const hasIconEntry =
+      mode === 'dist-url' ? Boolean(iconSourceEntry || iconDistEntry) : Boolean(iconSourceEntry);
     const hasCommon = Boolean(commonSourceEntry);
 
     const defaultDatabaseSpecifier = databaseSourceEntry ? `${pkgName}/database` : pkgName;
 
     const iconRecord = getRecord(sanitizedManifest.icon);
     const iconComponentConfig = iconRecord ? getRecord(iconRecord.component) : null;
-    const iconComponent = iconComponentConfig && hasIconEntry && typeof iconComponentConfig.specifier === 'string'
-      ? {
-          specifier: iconComponentConfig.specifier,
-          exportName: typeof iconComponentConfig.exportName === 'string'
-            ? iconComponentConfig.exportName
-            : undefined,
-          sourceEntry: iconSourceEntry,
-          distEntry: iconDistEntry,
-        }
-      : undefined;
+    const iconComponent =
+      iconComponentConfig && hasIconEntry && typeof iconComponentConfig.specifier === 'string'
+        ? {
+            specifier: iconComponentConfig.specifier,
+            exportName:
+              typeof iconComponentConfig.exportName === 'string'
+                ? iconComponentConfig.exportName
+                : undefined,
+            sourceEntry: iconSourceEntry,
+            distEntry: iconDistEntry,
+          }
+        : undefined;
 
     const databaseRecord = getRecord(sanitizedManifest.database);
     const databasePrewarmTargets = buildDatabasePrewarmTargets(
       databaseRecord ? databaseRecord.prewarm : undefined,
-      defaultDatabaseSpecifier,
+      defaultDatabaseSpecifier
     );
 
     const databaseModuleSpecifier = defaultDatabaseSpecifier;
 
     sanitizedManifest.dependencies = dependencies;
     sanitizedManifest.packageName = pkgName;
-    sanitizedManifest.nodeType = (typeof sanitizedManifest.nodeType === 'string' ? sanitizedManifest.nodeType : undefined) ?? nodeType;
-    sanitizedManifest.displayName = (typeof sanitizedManifest.displayName === 'string' ? sanitizedManifest.displayName : undefined) ?? capitalize(nodeType);
-    sanitizedManifest.name = (typeof sanitizedManifest.name === 'string' ? sanitizedManifest.name : undefined) ?? (typeof pluginPkg.name === 'string' ? pluginPkg.name : undefined) ?? pkgName;
-    sanitizedManifest.version = (typeof sanitizedManifest.version === 'string' ? sanitizedManifest.version : undefined) ?? packageVersion;
+    sanitizedManifest.nodeType =
+      (typeof sanitizedManifest.nodeType === 'string' ? sanitizedManifest.nodeType : undefined) ??
+      nodeType;
+    sanitizedManifest.displayName =
+      (typeof sanitizedManifest.displayName === 'string'
+        ? sanitizedManifest.displayName
+        : undefined) ?? capitalize(nodeType);
+    sanitizedManifest.name =
+      (typeof sanitizedManifest.name === 'string' ? sanitizedManifest.name : undefined) ??
+      (typeof pluginPkg.name === 'string' ? pluginPkg.name : undefined) ??
+      pkgName;
+    sanitizedManifest.version =
+      (typeof sanitizedManifest.version === 'string' ? sanitizedManifest.version : undefined) ??
+      packageVersion;
 
     const ensuredIcon: Record<string, unknown> = iconRecord ?? {};
     sanitizedManifest.icon = ensuredIcon;
 
     const normalizedMuiIcon = normalizeMuiIconName(
       (typeof ensuredIcon.muiIconName === 'string' ? ensuredIcon.muiIconName : undefined) ??
-      (typeof ensuredIcon.mui === 'string' ? ensuredIcon.mui : undefined),
+        (typeof ensuredIcon.mui === 'string' ? ensuredIcon.mui : undefined)
     );
     if (normalizedMuiIcon) {
       ensuredIcon.muiIconName = normalizedMuiIcon;
@@ -266,9 +283,13 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
     }
 
     const workerRecord = getRecord(sanitizedManifest.worker);
-    const workerPreloadExports = hasExportedWorker && Array.isArray(workerRecord?.preload)
-      ? workerRecord.preload.filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
-      : [];
+    const workerPreloadExports =
+      hasExportedWorker && Array.isArray(workerRecord?.preload)
+        ? workerRecord.preload.filter(
+            (value: unknown): value is string =>
+              typeof value === 'string' && value.trim().length > 0
+          )
+        : [];
 
     manifests.push({
       manifest: sanitizedManifest,

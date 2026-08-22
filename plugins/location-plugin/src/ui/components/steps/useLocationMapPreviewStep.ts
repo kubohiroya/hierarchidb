@@ -1,29 +1,35 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTheme } from '@mui/material';
+import { useFloatingWindow } from '@hierarchidb/components';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { MapAttributionItem, MapToggleSelection, MapViewState } from '@hierarchidb/ui-map';
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-map';
-import type { LocationEntity, LocationType } from '~/common/types/index';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useFloatingWindow } from '@hierarchidb/components';
-import { LOCATION_TYPE_STYLES } from './locationTypes.js';
-import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import { useTheme } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
+import type { LocationEntity, LocationType } from '~/common/types/index';
 import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
 import { subscribeIdeGsmProgress } from '~/ui/state/ideGsmProgressUtils';
-import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
-import {
-  DEFAULT_TYPE_COLORS,
-} from './locationMapPreviewConstants.js';
+import type {
+  LocationTerrainToggleOption,
+  LocationTypeFormatterProps,
+} from './LocationMapPreviewStepElements.js';
+import { DEFAULT_TYPE_COLORS } from './locationMapPreviewConstants.js';
 import { resolveCountryFlag } from './locationMapPreviewUtils.js';
-import { useLocationPreviewConfig } from './useLocationPreviewConfig.js';
-import { buildMetadataColumns, useLocationMapPreviewMetadata } from './useLocationMapPreviewMetadata.js';
-import type { LocationTerrainToggleOption, LocationTypeFormatterProps } from './LocationMapPreviewStepElements.js';
+import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { useLocationMapPreviewMap } from './useLocationMapPreviewMap.js';
+import {
+  buildMetadataColumns,
+  useLocationMapPreviewMetadata,
+} from './useLocationMapPreviewMetadata.js';
+import { useLocationPreviewConfig } from './useLocationPreviewConfig.js';
 
-const LOCATION_TYPE_OPTIONS = (Object.entries(LOCATION_TYPE_STYLES) as Array<
-  [LocationType, (typeof LOCATION_TYPE_STYLES)[LocationType]]
->).map(([key, value]) => {
+const LOCATION_TYPE_OPTIONS = (
+  Object.entries(LOCATION_TYPE_STYLES) as Array<
+    [LocationType, (typeof LOCATION_TYPE_STYLES)[LocationType]]
+  >
+).map(([key, value]) => {
   const Icon = value.icon;
   return {
     id: key,
@@ -57,29 +63,25 @@ export const useLocationMapPreviewStep = ({
   const theme = useTheme();
   const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
-  const {
-    api: workerApi,
-    loading: workerLoading,
-    error: workerError,
-  } = useWorkerAPI();
+  const { api: workerApi, loading: workerLoading, error: workerError } = useWorkerAPI();
 
   useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
   const [rowFilterMode, setRowFilterMode] = useState<'all' | 'viewport'>('all');
   const [rowSearchOnly, setRowSearchOnly] = useState(true);
-  const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
-    Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
+  const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(
+    () =>
+      Object.fromEntries(
+        LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])
+      ) as MapToggleSelection
   );
 
-  const {
-    tilesMaxZoom,
-    representationConfig,
-    iconConfig,
-    labelConfig,
-  } = useLocationPreviewConfig(draft);
+  const { tilesMaxZoom, representationConfig, iconConfig, labelConfig } =
+    useLocationPreviewConfig(draft);
 
   const metadataRefreshKey = useMemo(
-    () => `${draft.ideGsmSelectionHash ?? ''}|${draft.lastProcessedAt ?? ''}|${draft.processedAt ?? ''}|${draft.processingStatus ?? ''}`,
-    [draft.ideGsmSelectionHash, draft.lastProcessedAt, draft.processedAt, draft.processingStatus],
+    () =>
+      `${draft.ideGsmSelectionHash ?? ''}|${draft.lastProcessedAt ?? ''}|${draft.processedAt ?? ''}|${draft.processingStatus ?? ''}`,
+    [draft.ideGsmSelectionHash, draft.lastProcessedAt, draft.processedAt, draft.processingStatus]
   );
 
   const {
@@ -132,9 +134,10 @@ export const useLocationMapPreviewStep = ({
     });
   }, [metadataRows, locationTypeSelection]);
 
-  const viewportRowIds = useMemo(() => (
-    new Set(previewPoints.map((point) => String(point.id)))
-  ), [previewPoints]);
+  const viewportRowIds = useMemo(
+    () => new Set(previewPoints.map((point) => String(point.id))),
+    [previewPoints]
+  );
 
   const displayedMetadataRows = useMemo(() => {
     if (rowFilterMode !== 'viewport') return filteredMetadataRows;
@@ -144,7 +147,7 @@ export const useLocationMapPreviewStep = ({
 
   const displayedMetadataColumns = useMemo(
     () => buildMetadataColumns(displayedMetadataRows),
-    [displayedMetadataRows],
+    [displayedMetadataRows]
   );
 
   useEffect(() => {
@@ -162,21 +165,23 @@ export const useLocationMapPreviewStep = ({
 
   const showIdeGsmProgress = ideGsmProgress?.phase === 'save';
 
-  const terrainToggleOptions = useMemo<LocationTerrainToggleOption[]>(() => (
-    LOCATION_TYPE_OPTIONS.map((option) => {
-      const type = option.id as LocationType;
-      const Icon = LOCATION_TYPE_STYLES[type].icon;
-      const iconColor = iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
-      const labelColor = labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
-      return {
-        id: option.id as LocationType,
-        label: t(`locationTypes.${type}`, option.label),
-        Icon,
-        iconColor,
-        labelColor,
-      };
-    })
-  ), [iconConfig, labelConfig, t]);
+  const terrainToggleOptions = useMemo<LocationTerrainToggleOption[]>(
+    () =>
+      LOCATION_TYPE_OPTIONS.map((option) => {
+        const type = option.id as LocationType;
+        const Icon = LOCATION_TYPE_STYLES[type].icon;
+        const iconColor = iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
+        const labelColor = labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
+        return {
+          id: option.id as LocationType,
+          label: t(`locationTypes.${type}`, option.label),
+          Icon,
+          iconColor,
+          labelColor,
+        };
+      }),
+    [iconConfig, labelConfig, t]
+  );
 
   const terrainWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:location:terrain',
@@ -201,29 +206,28 @@ export const useLocationMapPreviewStep = ({
 
   const dataSourceAttribution = useMemo(
     () => resolveLocationAttribution(draft.dataSource ?? null),
-    [draft.dataSource],
+    [draft.dataSource]
   );
 
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceAttribution) return [];
-    return [{
-      id: `location:${dataSourceAttribution.id}`,
-      label: dataSourceAttribution.label,
-      attribution: dataSourceAttribution.attribution,
-      url: dataSourceAttribution.url,
-      license: dataSourceAttribution.license,
-      licenseUrl: dataSourceAttribution.licenseUrl,
-    }];
+    return [
+      {
+        id: `location:${dataSourceAttribution.id}`,
+        label: dataSourceAttribution.label,
+        attribution: dataSourceAttribution.attribution,
+        url: dataSourceAttribution.url,
+        license: dataSourceAttribution.license,
+        licenseUrl: dataSourceAttribution.licenseUrl,
+      },
+    ];
   }, [dataSourceAttribution]);
 
   const handleLocationToggle = useCallback((id: string) => {
     setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
-  const initialViewState = useMemo(
-    () => buildInitialViewState(undefined),
-    [],
-  );
+  const initialViewState = useMemo(() => buildInitialViewState(undefined), []);
 
   return {
     t,

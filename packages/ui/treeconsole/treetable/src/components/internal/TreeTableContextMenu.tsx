@@ -7,7 +7,10 @@ import { getTreeNodeName } from '@hierarchidb/tree-api';
 import { type NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { type ComponentType } from 'react';
 import type { BuildSessionIndicator, TreeTableController } from '~/types';
-import { type TreeTableContextMenuState, useTreeTableContextMenu } from './useTreeTableContextMenu.js';
+import {
+  type TreeTableContextMenuState,
+  useTreeTableContextMenu,
+} from './useTreeTableContextMenu.js';
 
 interface TreeTableContextMenuProps {
   contextMenuState: TreeTableContextMenuState;

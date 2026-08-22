@@ -1,12 +1,12 @@
-import type { Dispatch, SetStateAction, MouseEvent as ReactMouseEvent } from 'react';
-import { TableBody, TableCell, TableRow, Checkbox, Box } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
-import { flexRender } from '@tanstack/react-table';
-import type { Table as ReactTable } from '@tanstack/react-table';
-import { NameCell, IndentSpace, StyledTableRow } from '~/components/TreeTableStyles';
+import { Box, Checkbox, TableBody, TableCell, TableRow } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { Link as RouterLink } from '@tanstack/react-router';
+import type { Table as ReactTable } from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
+import type { Dispatch, MouseEvent as ReactMouseEvent, SetStateAction } from 'react';
+import { IndentSpace, NameCell, StyledTableRow } from '~/components/TreeTableStyles';
 import { getArchiveRowSx, useTreeTableRows } from './useTreeTableRows.js';
 
 export { getArchiveRowSx } from './useTreeTableRows.js';
@@ -32,7 +32,9 @@ export interface TreeTableRowsProps {
   forbiddenTargets: Set<NodeId>;
   setForbiddenTargets: Dispatch<SetStateAction<Set<NodeId>>>;
   getDescendants: (nodeId: NodeId) => Set<NodeId>;
-  controller: {onMoveNodes?: (nodes: string[], target: string) => void | Promise<void>} | undefined;
+  controller:
+    | { onMoveNodes?: (nodes: string[], target: string) => void | Promise<void> }
+    | undefined;
   disableDragAndDrop: boolean;
   visualSelectionSet: Set<NodeId>;
   useArchiveColumns: boolean;
@@ -100,47 +102,80 @@ export function TreeTableRows({
         selected={visualSelectionSet.has(node.id as NodeId)}
         draggable={false}
         onClick={(e) => handleRowClick(node, e)}
-        sx={useArchiveColumns ? ((theme: Theme) => getArchiveRowSx(theme)) : undefined}
+        sx={useArchiveColumns ? (theme: Theme) => getArchiveRowSx(theme) : undefined}
       >
-        <TableCell sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}>
+        <TableCell
+          sx={{
+            width: `${columnWidths.selection}px`,
+            minWidth: `${columnWidths.selection}px`,
+            maxWidth: `${columnWidths.selection}px`,
+          }}
+        >
           <Checkbox
             checked={fallbackState.visuallyChecked}
             disabled={fallbackState.disableCheckbox}
             onChange={(e) => {
-              handleFallbackCheckboxChange(node.id as NodeId, e.target.checked, fallbackState.disableCheckbox);
+              handleFallbackCheckboxChange(
+                node.id as NodeId,
+                e.target.checked,
+                fallbackState.disableCheckbox
+              );
             }}
             size="small"
             onClick={(e) => e.stopPropagation()}
           />
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px, paddingLeft: '4px'` }}>
+        <TableCell
+          sx={{
+            width: `${columnWidths.name}px`,
+            minWidth: `${columnWidths.name}px`,
+            maxWidth: `${columnWidths.name}px, paddingLeft: '4px'`,
+          }}
+        >
           <NameCell>
             <IndentSpace depth={fallbackState.indentDepth} />
             <Box
               component={RouterLink}
               to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
-              sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+              sx={{
+                mr: 0.5,
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
             >
               {getTreeNodeName(node)}
             </Box>
           </NameCell>
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px`, paddingLeft: '4px' }}>
+        <TableCell
+          sx={{
+            width: `${columnWidths.description}px`,
+            minWidth: `${columnWidths.description}px`,
+            maxWidth: `${columnWidths.description}px`,
+            paddingLeft: '4px',
+          }}
+        >
           {getTreeNodeDescription(node) || '-'}
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
-          {createdAt ? (
-            <span title={createdAt.timeLabel}>{createdAt.dateLabel}</span>
-          ) : (
-            '-'
-          )}
+        <TableCell
+          sx={{
+            width: `${columnWidths.createdAt}px`,
+            minWidth: `${columnWidths.createdAt}px`,
+            maxWidth: `${columnWidths.createdAt}px`,
+          }}
+        >
+          {createdAt ? <span title={createdAt.timeLabel}>{createdAt.dateLabel}</span> : '-'}
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px`, paddingLeft: '4px' }}>
-          {updatedAt ? (
-            <span title={updatedAt.timeLabel}>{updatedAt.dateLabel}</span>
-          ) : (
-            '-'
-          )}
+        <TableCell
+          sx={{
+            width: `${columnWidths.updatedAt}px`,
+            minWidth: `${columnWidths.updatedAt}px`,
+            maxWidth: `${columnWidths.updatedAt}px`,
+            paddingLeft: '4px',
+          }}
+        >
+          {updatedAt ? <span title={updatedAt.timeLabel}>{updatedAt.dateLabel}</span> : '-'}
         </TableCell>
       </StyledTableRow>
     );
@@ -148,7 +183,7 @@ export function TreeTableRows({
 
   return (
     <TableBody>
-      {(table.getRowModel().rows.length === 0 && visibleData.length === 0) && (
+      {table.getRowModel().rows.length === 0 && visibleData.length === 0 && (
         <TableRow>
           <TableCell colSpan={columnsLength} align="center" sx={{ py: 6, color: 'text.secondary' }}>
             No data
@@ -156,9 +191,9 @@ export function TreeTableRows({
         </TableRow>
       )}
 
-      {table.getRowModel().rows.length === 0 && visibleData.length > 0 && (
-        visibleData.map((node) => renderFallbackRow(node))
-      )}
+      {table.getRowModel().rows.length === 0 &&
+        visibleData.length > 0 &&
+        visibleData.map((node) => renderFallbackRow(node))}
 
       {table.getRowModel().rows.map((row) => {
         const node = row.original;

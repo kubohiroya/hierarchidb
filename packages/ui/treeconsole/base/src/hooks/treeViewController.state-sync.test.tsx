@@ -3,11 +3,11 @@
  * @description TDD tests for TreeViewController atoms synchronization
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type NodeId } from '@hierarchidb/core-types';
 import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import { type NodeId } from '@hierarchidb/core-types';
 
 type MockStateManager = {
   [name: string]: ReturnType<typeof vi.fn>;
@@ -100,7 +100,7 @@ describe('useTreeViewController', () => {
         expect.objectContaining({
           selectedNodeIds: expect.any(Array),
           expandedNodeIds: expect.any(Array),
-        }),
+        })
       );
     });
   });

@@ -1,4 +1,8 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import KeyIcon from '@mui/icons-material/Key';
+import PreviewIcon from '@mui/icons-material/Preview';
 import {
   Accordion,
   AccordionDetails,
@@ -10,12 +14,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import PreviewIcon from '@mui/icons-material/Preview';
-import KeyIcon from '@mui/icons-material/Key';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useAtomValue, useSetAtom } from 'jotai';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   binCountAtom,
   histogramStatsAtom,
@@ -90,7 +90,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
         <Typography variant="body2" color="text.secondary">
           {t(
             'styleSettings.keyValuePair.description',
-            'Select the key and value columns to drive calculations and review basic statistics.',
+            'Select the key and value columns to drive calculations and review basic statistics.'
           )}
         </Typography>
         <KeyValueSourcePanel
@@ -117,12 +117,24 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
                 <Box component="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <tbody>
                     {[
-                      { label: t('styleSettings.keyValuePair.stats.count', 'Count'), value: stats.count },
+                      {
+                        label: t('styleSettings.keyValuePair.stats.count', 'Count'),
+                        value: stats.count,
+                      },
                       { label: t('styleSettings.keyValuePair.stats.min', 'Min'), value: stats.min },
                       { label: t('styleSettings.keyValuePair.stats.max', 'Max'), value: stats.max },
-                      { label: t('styleSettings.keyValuePair.stats.mean', 'Average'), value: stats.mean },
-                      { label: t('styleSettings.keyValuePair.stats.median', 'Median'), value: stats.median },
-                      { label: t('styleSettings.keyValuePair.stats.stdDev', 'Std Dev'), value: stats.stdDev },
+                      {
+                        label: t('styleSettings.keyValuePair.stats.mean', 'Average'),
+                        value: stats.mean,
+                      },
+                      {
+                        label: t('styleSettings.keyValuePair.stats.median', 'Median'),
+                        value: stats.median,
+                      },
+                      {
+                        label: t('styleSettings.keyValuePair.stats.stdDev', 'Std Dev'),
+                        value: stats.stdDev,
+                      },
                     ].map(({ label, value }) => (
                       <tr key={label} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
                         <td style={{ padding: '4px 8px', whiteSpace: 'nowrap' }}>
@@ -174,7 +186,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
                     valueLabel={
                       selectedValueColumn && typeof selectedValueColumn === 'string'
                         ? selectedValueColumn
-                        : t('styleSettings.keyValuePair.value', 'Value') ?? undefined
+                        : (t('styleSettings.keyValuePair.value', 'Value') ?? undefined)
                     }
                     keyLabel={t('styleSettings.keyValuePair.key', 'frequency') ?? undefined}
                   />
@@ -186,7 +198,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
           <Typography variant="body2" color="text.secondary">
             {t(
               'styleSettings.keyValuePair.stats.empty',
-              'Select a value column with numeric values to view statistics.',
+              'Select a value column with numeric values to view statistics.'
             )}
           </Typography>
         )}
@@ -206,7 +218,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
       stats,
       t,
       translationNamespace,
-    ],
+    ]
   );
 
   return (
@@ -219,9 +231,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
         >
           {t('filtering.processing', 'Processing tabular data...')}
         </Typography>
-        <LinearProgress
-          sx={{ mt: 0.5, visibility: isProcessing ? 'visible' : 'hidden' }}
-        />
+        <LinearProgress sx={{ mt: 0.5, visibility: isProcessing ? 'visible' : 'hidden' }} />
       </Box>
       <Accordion defaultExpanded disableGutters square>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -259,7 +269,10 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
           <AccordionDetails>
             {previewSlot ?? (
               <Typography variant="body2" color="text.secondary">
-                {t('styleSettings.previewTabular.empty', 'Preview data will appear after filters are applied.')}
+                {t(
+                  'styleSettings.previewTabular.empty',
+                  'Preview data will appear after filters are applied.'
+                )}
               </Typography>
             )}
           </AccordionDetails>

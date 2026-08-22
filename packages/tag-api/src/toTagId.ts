@@ -2,8 +2,7 @@
  * Tag Entity Types
  */
 
-import type { RelationalEntity } from '@hierarchidb/core-types';
-import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { NodeId, RelationalEntity, Timestamp } from '@hierarchidb/core-types';
 
 export type TagId = string & { readonly __brand: 'TagId' };
 

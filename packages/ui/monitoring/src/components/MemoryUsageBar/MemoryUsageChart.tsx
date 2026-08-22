@@ -135,7 +135,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
               {new Date(hoveredPoint.data.timestamp).toLocaleTimeString()}
             </Typography>
             <Typography variant="caption" display="block" fontWeight="bold">
-              Total: {formatBytes(hoveredPoint.data.used)} ({hoveredPoint.data.percentage.toFixed(1)}%)
+              Total: {formatBytes(hoveredPoint.data.used)} (
+              {hoveredPoint.data.percentage.toFixed(1)}%)
             </Typography>
             {hoveredPoint.data.breakdown && (
               <Box sx={{ mt: 0.5 }}>

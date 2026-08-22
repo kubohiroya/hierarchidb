@@ -1,7 +1,6 @@
-import { useCallback, useEffect } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { SearchResult } from '~/types/index';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect } from 'react';
 import {
   clearSelectionAtom,
   searchResultsAtom,
@@ -12,6 +11,7 @@ import {
   selectRangeAtom,
   toggleNodeSelectionAtom,
 } from '~/state/index';
+import type { SearchResult } from '~/types/index';
 
 interface UseMultiSelectionProps {
   results: SearchResult[];
@@ -36,10 +36,10 @@ interface UseMultiSelectionReturn {
 }
 
 export const useMultiSelection = ({
-                                    results,
-                                    onSelectionChange,
-                                    onMapFocus,
-                                  }: UseMultiSelectionProps): UseMultiSelectionReturn => {
+  results,
+  onSelectionChange,
+  onMapFocus,
+}: UseMultiSelectionProps): UseMultiSelectionReturn => {
   // Atoms
   const [, setSearchResults] = useAtom(searchResultsAtom);
   const selectedResults = useAtomValue(selectedNodeIdsAtom);
@@ -79,7 +79,7 @@ export const useMultiSelection = ({
 
       toggleNodeSelection(result.nodeId);
     },
-    [selectNode, selectRange, toggleNodeSelection],
+    [selectNode, selectRange, toggleNodeSelection]
   );
 
   const handleMapFocus = useCallback(
@@ -88,7 +88,7 @@ export const useMultiSelection = ({
         onMapFocus(result);
       }
     },
-    [onMapFocus],
+    [onMapFocus]
   );
 
   const selectAll = useCallback(() => {
@@ -103,7 +103,7 @@ export const useMultiSelection = ({
     (result: SearchResult) => {
       toggleNodeSelection(result.nodeId);
     },
-    [toggleNodeSelection],
+    [toggleNodeSelection]
   );
 
   return {

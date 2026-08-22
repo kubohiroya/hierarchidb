@@ -5,10 +5,10 @@
  * @module components/ui/NotificationSystem
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import type { ReactElement } from 'react';
-import { Alert, IconButton, Slide, Snackbar, Stack } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import { Alert, IconButton, Slide, Snackbar, Stack } from '@mui/material';
+import type { ReactElement } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { announceToScreenReader } from '~/AriaLiveRegion/AriaLiveRegion';
 
 export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';
@@ -50,7 +50,7 @@ export function showNotification(
       label: string;
       onClick: () => void;
     };
-  },
+  }
 ) {
   if (globalState) {
     globalState.addNotification({

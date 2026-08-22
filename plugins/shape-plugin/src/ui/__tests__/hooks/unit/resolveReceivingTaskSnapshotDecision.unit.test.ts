@@ -153,7 +153,8 @@ describe('resolveReceivingTaskSnapshotDecision', () => {
       reason: 'failed-before-task-start',
       transitionFinish: {
         level: 'error',
-        message: 'Build failed before task execution started (worker stage: pipeline:source-stage:error).',
+        message:
+          'Build failed before task execution started (worker stage: pipeline:source-stage:error).',
       },
     });
   });

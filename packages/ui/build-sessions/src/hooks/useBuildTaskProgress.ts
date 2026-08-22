@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildTaskSummary } from '../../../../build-api';
+import { useMemo } from 'react';
 import { buildTaskCountSummary } from '~/utils/taskProgressSummary';
+import type { BuildTaskSummary } from '../../../../build-api';
 
-const resolveTaskMetadataMessage = (metadata: Record<string, unknown> | undefined): string | undefined => {
+const resolveTaskMetadataMessage = (
+  metadata: Record<string, unknown> | undefined
+): string | undefined => {
   if (!metadata) return undefined;
   const keys = [
     'message',
@@ -41,7 +43,7 @@ export const useBuildTaskProgress = <T extends BuildTaskSummary>(
   overallProgress: number,
   buildStatus: BuildStatus,
   tasks: T[],
-  options?: { isExcludedTask?: (task: T) => boolean },
+  options?: { isExcludedTask?: (task: T) => boolean }
 ) => {
   const isExcludedTask = options?.isExcludedTask;
   const stageProgress = useMemo(() => {
@@ -84,13 +86,18 @@ export const useBuildTaskProgress = <T extends BuildTaskSummary>(
         ? stageTasks.filter((task) => !isExcludedTask(task))
         : stageTasks;
       const taskCount = effectiveTasks.length;
-      const counts = buildTaskCountSummary(stageTasks, isSkippedTask, { isExcluded: isExcludedTask });
+      const counts = buildTaskCountSummary(stageTasks, isSkippedTask, {
+        isExcluded: isExcludedTask,
+      });
       const taskCountEffective = Math.max(0, counts.total - counts.skipped);
       const completedCount = counts.completed;
       const failedCount = counts.failed;
-      const progressValue = taskCount > 0
-        ? Math.round(effectiveTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
-        : 0;
+      const progressValue =
+        taskCount > 0
+          ? Math.round(
+              effectiveTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount
+            )
+          : 0;
       const derivedStatus = failedCount > 0 ? 'failed' : buildStatus;
       return {
         paneId: stage.id,

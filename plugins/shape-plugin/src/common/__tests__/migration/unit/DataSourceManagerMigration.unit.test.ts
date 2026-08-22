@@ -1,17 +1,17 @@
 /**
-  * @file DataSourceManagerMigration.test.ts
+ * @file DataSourceManagerMigration.test.ts
  * @description ERIA-CartographDataSourceManager (TDD Red Phase)
-   * - source-metadataDataSourceManager
+ * - source-metadataDataSourceManager
  * - GeoBoundariesOpenStreetMap
  * -
-   * - @hierarchidb/runtime-worker-ui-datasource
+ * - @hierarchidb/runtime-worker-ui-datasource
  * - source-save-metadata
  * - DataSourceManager
-  */
+ */
 
-import { beforeEach, describe, expect, it } from 'vitest';
-import type { DataSourceName } from '@hierarchidb/ui-datasource';
 import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
+import type { DataSourceName } from '@hierarchidb/ui-datasource';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('DataSourceManager Migration Tests', () => {
   let dataSourceManager: DataSourceManager;
@@ -67,7 +67,6 @@ describe('DataSourceManager Migration Tests', () => {
       //  GeoBoundaries
       expect(metadata.adminLevels).toBeDefined();
     });
-
   });
 
   describe('エラーハンドリングテスト', () => {
@@ -78,7 +77,7 @@ describe('DataSourceManager Migration Tests', () => {
 
       //  When & Then:
       await expect(
-        dataSourceManager.getCountryMetadata(dataSource, invalidCountryCode),
+        dataSourceManager.getCountryMetadata(dataSource, invalidCountryCode)
       ).rejects.toThrow('not found');
     });
 
@@ -87,9 +86,9 @@ describe('DataSourceManager Migration Tests', () => {
       const invalidDataSource = 'nonexistent' as DataSourceName;
 
       //  When & Then:
-      await expect(
-        dataSourceManager.getCountryMetadata(invalidDataSource, 'JP'),
-      ).rejects.toThrow('Data source nonexistent not found');
+      await expect(dataSourceManager.getCountryMetadata(invalidDataSource, 'JP')).rejects.toThrow(
+        'Data source nonexistent not found'
+      );
     });
   });
 

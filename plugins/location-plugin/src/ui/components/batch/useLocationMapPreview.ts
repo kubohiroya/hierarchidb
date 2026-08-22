@@ -1,10 +1,10 @@
 import type { LocationNearestPointResponse } from '@hierarchidb/location-api';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { Place } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { Place } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LocationType, NodeId } from '~/common/types/index';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { LOCATION_TYPE_STYLES } from '~/ui/components/steps/locationTypes';
 import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewMarkers.js';
 import type {
@@ -146,11 +146,14 @@ export const useLocationMapPreview = (
     [t]
   );
   const mapRef = useRef<HTMLDivElement | null>(null);
-  const [mapSize, setMapSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const [mapSize, setMapSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(
-    Object.keys(TYPE_SETTINGS_BASE).filter((type) =>
-      TYPE_SETTINGS_BASE[type as LocationType]?.defaultVisible
+    Object.keys(TYPE_SETTINGS_BASE).filter(
+      (type) => TYPE_SETTINGS_BASE[type as LocationType]?.defaultVisible
     ) as LocationType[]
   );
   const [zoom, setZoom] = useState(10);
@@ -213,7 +216,10 @@ export const useLocationMapPreview = (
       clusters: displayMode === 'clusters' ? Math.ceil(filteredLocations.length / 10) : 0,
       density: filteredLocations.length / 100,
       viewport: {
-        bounds: [[-180, -90], [180, 90]],
+        bounds: [
+          [-180, -90],
+          [180, 90],
+        ],
         zoom,
         center,
       },
@@ -348,7 +354,9 @@ export const useLocationMapPreview = (
   );
 
   const handleTypeToggle = useCallback((type: LocationType) => {
-    setVisibleTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
+    setVisibleTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
   }, []);
 
   const scheduleHoverLookup = useCallback(
@@ -413,8 +421,10 @@ export const useLocationMapPreview = (
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
-      const longitude = hoverBounds.minLon + (x / rect.width) * (hoverBounds.maxLon - hoverBounds.minLon);
-      const latitude = hoverBounds.maxLat - (y / rect.height) * (hoverBounds.maxLat - hoverBounds.minLat);
+      const longitude =
+        hoverBounds.minLon + (x / rect.width) * (hoverBounds.maxLon - hoverBounds.minLon);
+      const latitude =
+        hoverBounds.maxLat - (y / rect.height) * (hoverBounds.maxLat - hoverBounds.minLat);
       if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
       scheduleHoverLookup(longitude, latitude);
     },
@@ -440,7 +450,7 @@ export const useLocationMapPreview = (
     const typeLabel =
       nearest.type && typeSettings[nearest.type as LocationType]?.name
         ? typeSettings[nearest.type as LocationType].name
-        : nearest.type ?? 'unknown';
+        : (nearest.type ?? 'unknown');
     const countryLabel = nearest.admin0 ?? '';
     const regionLabel = nearest.region ?? '';
     const latText = Number.isFinite(nearest.latitude)
@@ -460,12 +470,11 @@ export const useLocationMapPreview = (
   }, [hoverInfo, typeSettings]);
 
   useEffect(
-    () =>
-      () => {
-        if (hoverTimerRef.current) {
-          window.clearTimeout(hoverTimerRef.current);
-        }
-      },
+    () => () => {
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current);
+      }
+    },
     []
   );
 

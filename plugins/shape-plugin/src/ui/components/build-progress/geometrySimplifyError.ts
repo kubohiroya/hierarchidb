@@ -33,7 +33,9 @@ const parseKeyValueBlock = (text: string): Record<string, string> => {
   return result;
 };
 
-export const parseGeometrySimplifyError = (message?: string | null): GeometrySimplifyErrorDetails | null => {
+export const parseGeometrySimplifyError = (
+  message?: string | null
+): GeometrySimplifyErrorDetails | null => {
   if (!message || !message.includes('geometry simplify error')) return null;
   const blocks = message.match(/\([^)]*\)/g) ?? [];
   const details: GeometrySimplifyErrorDetails = {};

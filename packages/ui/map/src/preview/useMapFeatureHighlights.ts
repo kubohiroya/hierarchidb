@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
 import { defaultFeatureIdAccessor } from '~/lib/feature-identification';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
 
 type MapLibreSourceWithType = { type?: string };
 type MapLibreLayerWithSource = { source?: string; sourceLayer?: string; 'source-layer'?: string };
 
-export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number; sourceLayer?: string; layerId?: string }> = {
+export type UseMapFeatureHighlightsParams<
+  HighlightEntry extends {
+    source: string;
+    id: string | number;
+    sourceLayer?: string;
+    layerId?: string;
+  },
+> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
   searchMatches: HighlightEntry[];
@@ -15,7 +22,14 @@ export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: strin
   onMissingLayers?: (layerIds: string[]) => void;
 };
 
-export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number; sourceLayer?: string; layerId?: string }>({
+export const useMapFeatureHighlights = <
+  HighlightEntry extends {
+    source: string;
+    id: string | number;
+    sourceLayer?: string;
+    layerId?: string;
+  },
+>({
   mapInstance,
   highlightLayerIds,
   searchMatches,
@@ -30,33 +44,46 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
   const missingLayerTimerRef = useRef<number | null>(null);
   const lastMissingLayerIdsRef = useRef<string[]>([]);
 
-  const resolveSourceLayer = useCallback((entry: HighlightEntry): string | undefined => {
-    if (entry.sourceLayer) return entry.sourceLayer;
-    if (!mapInstance || !entry.layerId || typeof mapInstance.getLayer !== 'function') return undefined;
-    const layer = mapInstance.getLayer(entry.layerId) as MapLibreLayerWithSource | undefined;
-    if (!layer) return undefined;
-    if (layer.source && layer.source !== entry.source) return undefined;
-    if (typeof layer.sourceLayer === 'string') return layer.sourceLayer;
-    if (typeof layer['source-layer'] === 'string') return layer['source-layer'];
-    return undefined;
-  }, [mapInstance]);
+  const resolveSourceLayer = useCallback(
+    (entry: HighlightEntry): string | undefined => {
+      if (entry.sourceLayer) return entry.sourceLayer;
+      if (!mapInstance || !entry.layerId || typeof mapInstance.getLayer !== 'function')
+        return undefined;
+      const layer = mapInstance.getLayer(entry.layerId) as MapLibreLayerWithSource | undefined;
+      if (!layer) return undefined;
+      if (layer.source && layer.source !== entry.source) return undefined;
+      if (typeof layer.sourceLayer === 'string') return layer.sourceLayer;
+      if (typeof layer['source-layer'] === 'string') return layer['source-layer'];
+      return undefined;
+    },
+    [mapInstance]
+  );
 
-  const isVectorSource = useCallback((sourceId: string): boolean => {
-    if (!mapInstance || typeof mapInstance.getSource !== 'function') return false;
-    const source = mapInstance.getSource(sourceId) as MapLibreSourceWithType | undefined;
-    return source?.type === 'vector';
-  }, [mapInstance]);
+  const isVectorSource = useCallback(
+    (sourceId: string): boolean => {
+      if (!mapInstance || typeof mapInstance.getSource !== 'function') return false;
+      const source = mapInstance.getSource(sourceId) as MapLibreSourceWithType | undefined;
+      return source?.type === 'vector';
+    },
+    [mapInstance]
+  );
 
-  const hasSource = useCallback((sourceId: string): boolean => {
-    if (!mapInstance || typeof mapInstance.getSource !== 'function') return false;
-    return Boolean(mapInstance.getSource(sourceId));
-  }, [mapInstance]);
+  const hasSource = useCallback(
+    (sourceId: string): boolean => {
+      if (!mapInstance || typeof mapInstance.getSource !== 'function') return false;
+      return Boolean(mapInstance.getSource(sourceId));
+    },
+    [mapInstance]
+  );
 
-  const hasLayer = useCallback((layerId?: string): boolean => {
-    if (!layerId) return true;
-    if (!mapInstance || typeof mapInstance.getLayer !== 'function') return false;
-    return Boolean(mapInstance.getLayer(layerId));
-  }, [mapInstance]);
+  const hasLayer = useCallback(
+    (layerId?: string): boolean => {
+      if (!layerId) return true;
+      if (!mapInstance || typeof mapInstance.getLayer !== 'function') return false;
+      return Boolean(mapInstance.getLayer(layerId));
+    },
+    [mapInstance]
+  );
 
   const updateViewportFeatures = useCallback(() => {
     if (!mapInstance) return;
@@ -68,7 +95,9 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         }
         missingLayerTimerRef.current = window.setTimeout(() => {
           if (!mapInstance) return;
-          const stillMissing = highlightLayerIds.filter((layerId) => !mapInstance.getLayer(layerId));
+          const stillMissing = highlightLayerIds.filter(
+            (layerId) => !mapInstance.getLayer(layerId)
+          );
           if (stillMissing.length === 0) return;
           lastMissingLayerIdsRef.current = stillMissing;
           onMissingLayers?.(stillMissing);
@@ -93,7 +122,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
           [0, 0],
           [canvas.width, canvas.height],
         ],
-        { layers: highlightLayerIds },
+        { layers: highlightLayerIds }
       ) as MapLibreGeoJSONFeature[];
     } catch (error) {
       console.debug('[MapPreview] Failed to query viewport features', error);
@@ -124,12 +153,20 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         if (typeof mapInstance.isStyleLoaded === 'function' && !mapInstance.isStyleLoaded()) return;
         if (!hasLayer(entry.layerId)) return;
         if (!hasSource(entry.source)) {
-          console.debug('[MapPreview] Missing source for feature state', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          console.debug('[MapPreview] Missing source for feature state', {
+            source: entry.source,
+            id: entry.id,
+            layerId: entry.layerId,
+          });
           return;
         }
         const sourceLayer = resolveSourceLayer(entry);
         if (!sourceLayer && isVectorSource(entry.source)) {
-          console.debug('[MapPreview] Missing sourceLayer for vector source', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          console.debug('[MapPreview] Missing sourceLayer for vector source', {
+            source: entry.source,
+            id: entry.id,
+            layerId: entry.layerId,
+          });
           return;
         }
         const target = sourceLayer
@@ -140,7 +177,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         console.debug('[MapPreview] Failed to clear feature-atoms', error);
       }
     },
-    [hasLayer, hasSource, isVectorSource, mapInstance, resolveSourceLayer],
+    [hasLayer, hasSource, isVectorSource, mapInstance, resolveSourceLayer]
   );
 
   const applyHighlightKey = useCallback(
@@ -150,12 +187,20 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         if (typeof mapInstance.isStyleLoaded === 'function' && !mapInstance.isStyleLoaded()) return;
         if (!hasLayer(entry.layerId)) return;
         if (!hasSource(entry.source)) {
-          console.debug('[MapPreview] Missing source for feature state', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          console.debug('[MapPreview] Missing source for feature state', {
+            source: entry.source,
+            id: entry.id,
+            layerId: entry.layerId,
+          });
           return;
         }
         const sourceLayer = resolveSourceLayer(entry);
         if (!sourceLayer && isVectorSource(entry.source)) {
-          console.debug('[MapPreview] Missing sourceLayer for vector source', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          console.debug('[MapPreview] Missing sourceLayer for vector source', {
+            source: entry.source,
+            id: entry.id,
+            layerId: entry.layerId,
+          });
           return;
         }
         const target = sourceLayer
@@ -166,7 +211,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         console.debug('[MapPreview] Failed to set feature-atoms', error);
       }
     },
-    [hasLayer, hasSource, isVectorSource, mapInstance, resolveSourceLayer],
+    [hasLayer, hasSource, isVectorSource, mapInstance, resolveSourceLayer]
   );
 
   useEffect(() => {
@@ -187,22 +232,34 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
 
   useEffect(() => {
     if (!mapInstance) return;
-    appliedSearchMatchesRef.current.forEach((entry) => {clearHighlightKey(entry, 'hdbSearch');});
-    searchMatches.forEach((entry) => {applyHighlightKey(entry, 'hdbSearch');});
+    appliedSearchMatchesRef.current.forEach((entry) => {
+      clearHighlightKey(entry, 'hdbSearch');
+    });
+    searchMatches.forEach((entry) => {
+      applyHighlightKey(entry, 'hdbSearch');
+    });
     appliedSearchMatchesRef.current = searchMatches;
   }, [applyHighlightKey, clearHighlightKey, mapInstance, searchMatches]);
 
   useEffect(() => {
     if (!mapInstance) return;
-    appliedHoverRef.current.forEach((entry) => {clearHighlightKey(entry, 'hdbHover');});
-    hoverMatches.forEach((entry) => {applyHighlightKey(entry, 'hdbHover');});
+    appliedHoverRef.current.forEach((entry) => {
+      clearHighlightKey(entry, 'hdbHover');
+    });
+    hoverMatches.forEach((entry) => {
+      applyHighlightKey(entry, 'hdbHover');
+    });
     appliedHoverRef.current = hoverMatches;
   }, [applyHighlightKey, clearHighlightKey, hoverMatches, mapInstance]);
 
   useEffect(() => {
     if (!mapInstance) return;
-    appliedSelectedRef.current.forEach((entry) => {clearHighlightKey(entry, 'hdbSelected');});
-    selectedMatches.forEach((entry) => {applyHighlightKey(entry, 'hdbSelected');});
+    appliedSelectedRef.current.forEach((entry) => {
+      clearHighlightKey(entry, 'hdbSelected');
+    });
+    selectedMatches.forEach((entry) => {
+      applyHighlightKey(entry, 'hdbSelected');
+    });
     appliedSelectedRef.current = selectedMatches;
   }, [applyHighlightKey, clearHighlightKey, mapInstance, selectedMatches]);
 };

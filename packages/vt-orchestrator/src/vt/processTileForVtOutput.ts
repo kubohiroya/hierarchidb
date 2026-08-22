@@ -1,14 +1,23 @@
 import type { Tile } from 'geojson-vt';
-import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
-import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
-import { packTileId } from '~/tiles/tileId';
-import type { VtTileTaskContext } from './vtStageTaskOutputTypes.js';
-import { encodeTileForVt, storeTileForVt } from './vtStageTaskOutputTileOpsUtils.js';
-import { calculateInputTileStats, calculateOutputTileStats } from './vtStageTaskOutputHelpers.js';
-import { recordEncodeStats, recordInputTileStats, recordOutputTileStats, recordStoreStats } from './vtStageTaskOutputStats.js';
-import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
 import type { VTStageContext } from '~/contextTypes';
-import { type VtInputTileStats, type VtOutputTileStats } from './vtStageTaskOutputHelpers.js';
+import { packTileId } from '~/tiles/tileId';
+import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
+import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
+import {
+  calculateInputTileStats,
+  calculateOutputTileStats,
+  type VtInputTileStats,
+  type VtOutputTileStats,
+} from './vtStageTaskOutputHelpers.js';
+import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
+import {
+  recordEncodeStats,
+  recordInputTileStats,
+  recordOutputTileStats,
+  recordStoreStats,
+} from './vtStageTaskOutputStats.js';
+import { encodeTileForVt, storeTileForVt } from './vtStageTaskOutputTileOpsUtils.js';
+import type { VtTileTaskContext } from './vtStageTaskOutputTypes.js';
 
 type TileLayerMap = Record<string, Tile>;
 
@@ -34,7 +43,7 @@ export type VtTileProcessorResult = {
 };
 
 export const processTileForVtOutput = async (
-  input: VtTileProcessorInput,
+  input: VtTileProcessorInput
 ): Promise<VtTileProcessorResult> => {
   const {
     z,
@@ -57,7 +66,7 @@ export const processTileForVtOutput = async (
   const inputStats = calculateInputTileStats(
     featureStats,
     bufferSizes,
-    expandTileBBox(tileBBox, tileBuffer, tileEmitConfig.extent),
+    expandTileBBox(tileBBox, tileBuffer, tileEmitConfig.extent)
   );
   const outputStats = calculateOutputTileStats(layers);
 

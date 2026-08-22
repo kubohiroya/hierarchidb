@@ -30,20 +30,28 @@ export type VectorTileStageTaskRegistryPort<
     stage: 'vectortile',
     tasks: TTask[],
     existingTaskIds: Set<string> | undefined,
-    inputsByTaskId: Map<string, TInput>,
+    inputsByTaskId: Map<string, TInput>
   ) => Promise<void>;
 
   resolveStageTasks: (
     stage: 'vectortile',
-    tasks: TTask[],
-  ) => Promise<{ runnableTasks: TTask[]; completedCount: number; failedCount: number; total: number }>;
+    tasks: TTask[]
+  ) => Promise<{
+    runnableTasks: TTask[];
+    completedCount: number;
+    failedCount: number;
+    total: number;
+  }>;
 };
 
 export type VectorTileStagePostprocessPort = {
   persistPlaceholderMetadata: (replace: boolean) => Promise<number>;
   syncVectorTilesToShapeStore: () => Promise<void>;
   summarizeVectorTilesByOrigin: () => Promise<Map<string, GeometryStatsSummary>>;
-  updateDataSourceMetadataStage: (stage: 'vectorTile', statsByOrigin: Map<string, GeometryStatsSummary>) => Promise<void>;
+  updateDataSourceMetadataStage: (
+    stage: 'vectorTile',
+    statsByOrigin: Map<string, GeometryStatsSummary>
+  ) => Promise<void>;
   clearFeatureCache?: () => Promise<void> | void;
 };
 
@@ -72,19 +80,19 @@ export type RunVectorTileStageOrchestratorParams<
   afterRun: (summary: VectorTileStageSummary) => Promise<void>;
 } & (
   | {
-    /**
-     * Runtime progress events emitted from this orchestrator (base/synthesized) must be mapped to consumer progress type.
-     */
-    progressCallback: (progress: TProgress) => void;
+      /**
+       * Runtime progress events emitted from this orchestrator (base/synthesized) must be mapped to consumer progress type.
+       */
+      progressCallback: (progress: TProgress) => void;
 
-    /**
-     * Converts orchestrator-synthesized ProgressInfo into consumer progress type.
-     * Adapter-emitted progress is already TProgress.
-     */
-    progressFactory: (progress: ProgressInfo) => TProgress;
-  }
+      /**
+       * Converts orchestrator-synthesized ProgressInfo into consumer progress type.
+       * Adapter-emitted progress is already TProgress.
+       */
+      progressFactory: (progress: ProgressInfo) => TProgress;
+    }
   | {
-    progressCallback?: undefined;
-    progressFactory?: undefined;
-  }
+      progressCallback?: undefined;
+      progressFactory?: undefined;
+    }
 );

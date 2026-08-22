@@ -1,21 +1,26 @@
 /**
-  * Natural Earth
+ * Natural Earth
  * https://www.naturalearthdata.com/ Shapefile
-  */
+ */
 
-import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeFeaturePayload } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import JSZip, { type JSZipObject } from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import JSZip, { type JSZipObject } from 'jszip';
+import type { ShapeFeaturePayload } from '~/common/types/index';
 import {
-  buildShapeCacheKey,
   bufferDeserializer,
   bufferSerializer,
+  buildShapeCacheKey,
   createShapeChunkStore,
   getOrFetchWithRetry,
   type RetryConfig,
 } from '~/services/utils/chunkStore';
+import {
+  BaseDataSourceStrategy,
+  type DataSourceConfig,
+  type FetchOptions,
+  type ProcessOptions,
+} from './DataSourceStrategy.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  Natural Earth
@@ -48,9 +53,12 @@ type NaturalEarthGeoJSON = FeatureCollection<Geometry, NaturalEarthProperties>;
 type NaturalEarthFeature = Feature<Geometry, NaturalEarthProperties>;
 
 /**
-  * Natural Earth
-  */
-export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRawData, NaturalEarthProcessedData> {
+ * Natural Earth
+ */
+export class NaturalEarthStrategy extends BaseDataSourceStrategy<
+  NaturalEarthRawData,
+  NaturalEarthProcessedData
+> {
   readonly id = 'natural-earth-shapes';
   readonly name = 'Natural Earth Vector Data';
   readonly config: DataSourceConfig = {
@@ -99,7 +107,8 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       ],
       transformations: [
         { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }, //  WGS84
-        { type: 'extract', tolerance: 0.001 }],
+        { type: 'extract', tolerance: 0.001 },
+      ],
     },
     cache: {
       ttl: 86400000 * 7, //  1
@@ -108,23 +117,18 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
   };
 
   async fetchData(options?: FetchOptions): Promise<NaturalEarthRawData> {
-    const {
-      endpoint = 'countries-50m',
-      adminLevel,
-      bbox: _bbox,
-      signal,
-    } = options || {};
+    const { endpoint = 'countries-50m', adminLevel, bbox: _bbox, signal } = options || {};
     const resolvedNodeId = options?.nodeId;
     if (!resolvedNodeId) {
       throw new Error('NaturalEarth fetchData requires nodeId.');
     }
     const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
-    const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
+    const retries =
+      options?.retryConfig ??
+      ({ count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig);
 
     const isDirectUrl = typeof endpoint === 'string' && endpoint.startsWith('http');
-    const selectedEndpoint = isDirectUrl
-      ? endpoint
-      : this.selectEndpoint(endpoint, adminLevel);
+    const selectedEndpoint = isDirectUrl ? endpoint : this.selectEndpoint(endpoint, adminLevel);
     if (!selectedEndpoint) {
       throw new Error(`Unknown endpoint: ${selectedEndpoint}`);
     }
@@ -149,9 +153,10 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         downloadUrl,
         {
           accept: 'application/zip',
-          cacheKey: cacheKeyMode === 'url'
-            ? downloadUrl
-            : buildShapeCacheKey(`naturalearth:${selectedEndpoint}`, downloadUrl),
+          cacheKey:
+            cacheKeyMode === 'url'
+              ? downloadUrl
+              : buildShapeCacheKey(`naturalearth:${selectedEndpoint}`, downloadUrl),
           signal,
           onDownloadProgress: ({ percentage }) => {
             if (typeof percentage === 'number' && Number.isFinite(percentage)) {
@@ -160,7 +165,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
           },
         },
         retries,
-        options?.onRetryAttempt,
+        options?.onRetryAttempt
       );
       const zipBuffer = entry.value;
 
@@ -188,19 +193,29 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
           totalSize: zipBuffer.byteLength,
         },
       };
-
     } catch (error) {
       const baseMessage = error instanceof Error ? error.message : String(error);
-      const cause = error instanceof Error && error.cause
-        ? (error.cause instanceof Error ? error.cause.message : String(error.cause))
-        : '';
+      const cause =
+        error instanceof Error && error.cause
+          ? error.cause instanceof Error
+            ? error.cause.message
+            : String(error.cause)
+          : '';
       const suffix = cause ? ` (${cause})` : '';
       throw new Error(`Failed to download Natural Earth data: ${baseMessage}${suffix}`);
     }
   }
 
-  async processData(rawData: NaturalEarthRawData, options?: ProcessOptions): Promise<NaturalEarthProcessedData> {
-    const { filters, transformations, extract: _extract = true, tolerance: _tolerance = 0.001 } = options || {};
+  async processData(
+    rawData: NaturalEarthRawData,
+    options?: ProcessOptions
+  ): Promise<NaturalEarthProcessedData> {
+    const {
+      filters,
+      transformations,
+      extract: _extract = true,
+      tolerance: _tolerance = 0.001,
+    } = options || {};
 
     try {
       //  ShapefileGeoJSON
@@ -250,9 +265,10 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       };
 
       return result;
-
     } catch (error) {
-      throw new Error(`Failed to process Natural Earth data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to process Natural Earth data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -270,8 +286,9 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     return endpoint;
   }
 
-
-  private async convertShapefilesToGeoJSON(files: Map<string, ArrayBuffer>): Promise<NaturalEarthGeoJSON> {
+  private async convertShapefilesToGeoJSON(
+    files: Map<string, ArrayBuffer>
+  ): Promise<NaturalEarthGeoJSON> {
     if (!files || files.size === 0) {
       throw new Error('No shapefile entries to convert');
     }
@@ -282,7 +299,10 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     }
     const zipBuffer = await zip.generateAsync({ type: 'arraybuffer' });
     const shp = (await import('shpjs')).default;
-    const geojson = (await shp.parseZip(zipBuffer)) as FeatureCollection<Geometry, NaturalEarthProperties>;
+    const geojson = (await shp.parseZip(zipBuffer)) as FeatureCollection<
+      Geometry,
+      NaturalEarthProperties
+    >;
     return geojson;
   }
 
@@ -292,7 +312,10 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       this.getString(properties, 'ISO_A3') ||
       this.getString(properties, 'ISO_3166_1') ||
       this.getString(properties, 'adm0_a3');
-    const name = this.getString(properties, 'NAME') || this.getString(properties, 'NAME_EN') || this.getString(properties, 'name');
+    const name =
+      this.getString(properties, 'NAME') ||
+      this.getString(properties, 'NAME_EN') ||
+      this.getString(properties, 'name');
 
     if (iso) return `ne-${iso.toLowerCase()}`;
     if (name) return `ne-${name.toLowerCase().replace(/\s+/g, '-')}`;

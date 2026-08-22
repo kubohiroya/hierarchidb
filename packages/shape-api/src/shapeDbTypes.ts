@@ -21,7 +21,7 @@ export interface ShapeSourceStageMaxima {
 export interface ShapeBuildSessionRecord<
   Progress = ShapeBuildProgressSummary,
   StageMap = Record<string, unknown>,
-  ResourceUsage = Record<string, unknown>
+  ResourceUsage = Record<string, unknown>,
 > {
   nodeId: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';

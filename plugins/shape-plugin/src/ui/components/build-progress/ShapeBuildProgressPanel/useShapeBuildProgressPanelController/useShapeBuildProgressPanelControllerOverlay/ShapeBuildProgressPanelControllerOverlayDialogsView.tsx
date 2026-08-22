@@ -1,20 +1,28 @@
-import { DialogSafePopover } from '@hierarchidb/ui-dialog';
-import { type ReactNode } from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Alert, Typography } from '@mui/material';
-import { DownloadRetryControls, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
 import { TreeTableSearchInput } from '@hierarchidb/components';
+import { DownloadRetryControls, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
+import { DialogSafePopover } from '@hierarchidb/ui-dialog';
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Snackbar,
+  Typography,
+} from '@mui/material';
+import { type ReactNode } from 'react';
 import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase';
 
 type ToLabel = (text: string | null | undefined) => string;
 
-type ShapeBuildProgressPanelControllerOverlayDialogsArgs = ShapeBuildProgressPanelControllerBaseResult;
+type ShapeBuildProgressPanelControllerOverlayDialogsArgs =
+  ShapeBuildProgressPanelControllerBaseResult;
 
 type ConcurrencyEditorCardArgs = Pick<
   ShapeBuildProgressPanelControllerOverlayDialogsArgs,
-  | 't'
-  | 'concurrencyEditorStageId'
-  | 'processingConfigForEdit'
-  | 'applyProcessingConfigUpdate'
+  't' | 'concurrencyEditorStageId' | 'processingConfigForEdit' | 'applyProcessingConfigUpdate'
 > & {
   disabledEditors: boolean;
   toLabel: ToLabel;
@@ -22,16 +30,19 @@ type ConcurrencyEditorCardArgs = Pick<
 
 type SourceRetryEditorCardArgs = Pick<
   ShapeBuildProgressPanelControllerOverlayDialogsArgs,
-  | 'sourceRetryConfigForEdit'
-  | 'applySourceRetryConfigUpdate'
-  | 't'
+  'sourceRetryConfigForEdit' | 'applySourceRetryConfigUpdate' | 't'
 > & {
   disabledEditors: boolean;
 };
 
 type CompletionDialogContentArgs = Pick<
   ShapeBuildProgressPanelControllerOverlayDialogsArgs,
-  't' | 'completionSnapshot' | 'completionStageLabel' | 'completionTaskTitle' | 'completionTaskMessage' | 'completionReason'
+  | 't'
+  | 'completionSnapshot'
+  | 'completionStageLabel'
+  | 'completionTaskTitle'
+  | 'completionTaskMessage'
+  | 'completionReason'
 >;
 
 type FooterArgs = Pick<
@@ -83,7 +94,9 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
       <WorkerNumberConfigCard
         title={t('processing.download.workers', 'Concurrent Source Workers')}
         value={processingConfigForEdit.source.maxConcurrent}
-        helperText={toLabel(t('processing.download.workersHelp', 'Controls how many source tasks run in parallel.'))}
+        helperText={toLabel(
+          t('processing.download.workersHelp', 'Controls how many source tasks run in parallel.')
+        )}
         warningText={undefined}
         onChange={(maxConcurrent) => {
           applyProcessingConfigUpdate({
@@ -96,7 +109,9 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
         min={1}
         max={4}
         step={1}
-        formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+        formatLabel={(value) =>
+          t('processing.workers.countLabel', '{{count}} workers', { count: value })
+        }
         disabled={disabledEditors}
         disableHoverEffect
       />
@@ -108,10 +123,12 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
       <WorkerNumberConfigCard
         title={t('processing.geometry.workersStage1', 'Geometry Workers (Simplification)')}
         value={processingConfigForEdit.geometry.maxConcurrent}
-        helperText={toLabel(t(
-          'processing.geometry.workersStage1Help',
-          'Higher concurrency can speed up processing but may exhaust browser memory.',
-        ))}
+        helperText={toLabel(
+          t(
+            'processing.geometry.workersStage1Help',
+            'Higher concurrency can speed up processing but may exhaust browser memory.'
+          )
+        )}
         warningText={undefined}
         onChange={(maxConcurrent) => {
           applyProcessingConfigUpdate({
@@ -124,7 +141,9 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
         min={1}
         max={4}
         step={1}
-        formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+        formatLabel={(value) =>
+          t('processing.workers.countLabel', '{{count}} workers', { count: value })
+        }
         disabled={disabledEditors}
         disableHoverEffect
       />
@@ -135,7 +154,9 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
     <WorkerNumberConfigCard
       title={t('processing.tile.workers', 'Concurrent TileEmit Workers')}
       value={processingConfigForEdit.tileEmit.maxConcurrent}
-      helperText={toLabel(t('processing.tile.workersHelp', 'Concurrent workers for TileEmit generation.'))}
+      helperText={toLabel(
+        t('processing.tile.workersHelp', 'Concurrent workers for TileEmit generation.')
+      )}
       warningText={undefined}
       onChange={(maxConcurrent) => {
         const dynamicConcurrency = processingConfigForEdit.tileEmit.dynamicConcurrency ?? {
@@ -161,7 +182,9 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
       min={1}
       max={8}
       step={1}
-      formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+      formatLabel={(value) =>
+        t('processing.workers.countLabel', '{{count}} workers', { count: value })
+      }
       disabled={disabledEditors}
       disableHoverEffect
     />
@@ -193,20 +216,24 @@ export const ShapeBuildProgressPanelCompletionDialogContent = ({
 }: CompletionDialogContentArgs): ReactNode => (
   <>
     <Typography variant="body2">
-      {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+      {t('stage.progress.completedStageLabel', 'Stage')}:{' '}
+      {completionSnapshot?.stageLabel ?? completionStageLabel}
     </Typography>
     {completionSnapshot?.status === 'failed' ? (
       <>
         <Typography variant="body2">
-          {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+          {t('stage.progress.failedTaskLabel', 'Task')}:{' '}
+          {completionSnapshot?.taskTitle ?? completionTaskTitle}
         </Typography>
         <Typography variant="body2">
-          {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+          {t('stage.progress.failedMessageLabel', 'Message')}:{' '}
+          {completionSnapshot?.taskMessage ?? completionTaskMessage}
         </Typography>
       </>
     ) : (
       <Typography variant="body2">
-        {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+        {t('stage.progress.completedReasonLabel', 'Reason')}:{' '}
+        {completionSnapshot?.reason ?? completionReason}
       </Typography>
     )}
   </>
@@ -244,9 +271,7 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
     >
-      <Box sx={{ p: 2, width: 820, maxWidth: 'calc(100vw - 24px)' }}>
-        {sourceRetryEditorCard}
-      </Box>
+      <Box sx={{ p: 2, width: 820, maxWidth: 'calc(100vw - 24px)' }}>{sourceRetryEditorCard}</Box>
     </DialogSafePopover>
     <DialogSafePopover
       open={Boolean(concurrencyEditorAnchor && concurrencyEditorStageId)}
@@ -255,9 +280,7 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
     >
-      <Box sx={{ p: 2, width: 360, maxWidth: 'calc(100vw - 24px)' }}>
-        {concurrencyEditorCard}
-      </Box>
+      <Box sx={{ p: 2, width: 360, maxWidth: 'calc(100vw - 24px)' }}>{concurrencyEditorCard}</Box>
     </DialogSafePopover>
     <Snackbar
       open={isBuildStartupPending && !startupNoticeDismissed}
@@ -321,13 +344,14 @@ export const ShapeBuildProgressPanelControlRightContent = ({
   t,
   toLabel,
 }: ControlRightContentArgs): ReactNode => (
-  <Box sx={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1.5,
-    justifyContent: 'flex-end',
-    flexWrap: 'nowrap',
-  }}
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1.5,
+      justifyContent: 'flex-end',
+      flexWrap: 'nowrap',
+    }}
   >
     <TreeTableSearchInput
       fullWidth

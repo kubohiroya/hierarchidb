@@ -1,9 +1,9 @@
+import type { NodeId } from '@hierarchidb/core-types';
+import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Provider } from 'jotai';
 import { useState } from 'react';
-import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import { MapHighlightProvider, useMapHighlightContext } from '~/components/MapHighlightProvider';
-import type { NodeId } from '@hierarchidb/core-types';
 
 const meta: Meta<typeof MapHighlightProvider> = {
   title: 'SearchResult/MapHighlightProvider',
@@ -89,7 +89,7 @@ function MapHighlightDemo() {
 
       <Stack spacing={3}>
         {/*
-*/}
+         */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Current State
@@ -114,9 +114,7 @@ function MapHighlightDemo() {
             </Box>
 
             <Box>
-              <Typography variant="subtitle2">
-                Selected ({highlightState.selected.size})
-              </Typography>
+              <Typography variant="subtitle2">Selected ({highlightState.selected.size})</Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {Array.from(highlightState.selected).map((nodeId) => (
                   <Chip
@@ -149,7 +147,7 @@ function MapHighlightDemo() {
         </Paper>
 
         {/*
-*/}
+         */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Actions
@@ -157,70 +155,37 @@ function MapHighlightDemo() {
 
           <Stack spacing={2}>
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button
-                variant="contained"
-                color="warning"
-                onClick={handleSetSearchMatched}
-              >
+              <Button variant="contained" color="warning" onClick={handleSetSearchMatched}>
                 Set Search Matched
               </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSetSelected}
-              >
+              <Button variant="contained" color="primary" onClick={handleSetSelected}>
                 Set Selected
               </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={handleSetFocused}
-              >
+              <Button variant="outlined" color="secondary" onClick={handleSetFocused}>
                 Set Focused
               </Button>
             </Stack>
 
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button
-                variant="outlined"
-                onClick={handleAddSearchMatched}
-              >
+              <Button variant="outlined" onClick={handleAddSearchMatched}>
                 Add Search Matched
               </Button>
-              <Button
-                variant="outlined"
-                onClick={handleAddSelected}
-              >
+              <Button variant="outlined" onClick={handleAddSelected}>
                 Add Selected
               </Button>
-              <Button
-                variant="outlined"
-                onClick={handleUpdateStyles}
-              >
+              <Button variant="outlined" onClick={handleUpdateStyles}>
                 Update Styles
               </Button>
             </Stack>
 
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={clearSearchMatched}
-              >
+              <Button variant="outlined" color="warning" onClick={clearSearchMatched}>
                 Clear Search Matched
               </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={clearSelected}
-              >
+              <Button variant="outlined" color="primary" onClick={clearSelected}>
                 Clear Selected
               </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={clearAll}
-              >
+              <Button variant="outlined" color="error" onClick={clearAll}>
                 Clear All
               </Button>
             </Stack>
@@ -228,7 +193,7 @@ function MapHighlightDemo() {
         </Paper>
 
         {/*
-*/}
+         */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Styles
@@ -276,7 +241,7 @@ function CallbackDemo() {
   return (
     <MapHighlightProvider
       onStateChange={(state) => {
-        setStateChanges(prev => [
+        setStateChanges((prev) => [
           { timestamp: Date.now(), state: { ...state } },
           ...prev.slice(0, 9), //  10
         ]);

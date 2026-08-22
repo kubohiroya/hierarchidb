@@ -1,8 +1,16 @@
 /**
-  * GADM (Database of Global Administrative Areas)
+ * GADM (Database of Global Administrative Areas)
  * https://gadm.org/
-  */
+ */
 
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { ShapeFeaturePayload } from '~/common/types/index';
+import { buildRawDataDataSourceCacheKey, type RetryConfig } from '~/services/utils/chunkStore';
+import {
+  bufferToStream,
+  fetchRawDataWithPipeline,
+  streamToBuffer,
+} from '~/services/utils/RawDataPipelineResult';
 import {
   BaseDataSourceStrategy,
   type DataSourceConfig,
@@ -11,13 +19,6 @@ import {
   type RawDataPipeline,
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeFeaturePayload } from '~/common/types/index';
-import {
-  buildRawDataDataSourceCacheKey,
-  type RetryConfig,
-} from '~/services/utils/chunkStore';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/RawDataPipelineResult';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  GADM
@@ -54,8 +55,8 @@ type GADMGeoJSON = FeatureCollection<Geometry, GADMProperties>;
 type GADMFeature = Feature<Geometry, GADMProperties>;
 
 /**
-  * GADM
-  */
+ * GADM
+ */
 export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProcessedData> {
   readonly id = 'gadm-administrative-areas';
   readonly name = 'GADM Administrative Areas';
@@ -83,9 +84,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         { field: 'properties.GID_0', rule: 'required' },
         { field: 'properties.NAME_0', rule: 'required' },
       ],
-      transformations: [
-        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' },
-      ],
+      transformations: [{ type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }],
     },
     cache: {
       ttl: 86400000 * 30, //  30
@@ -95,32 +94,29 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
   //  ISO 3166-1 alpha-3
   private readonly countryMappings: Record<string, string> = {
-    'japan': 'JPN',
-    'usa': 'USA',
+    japan: 'JPN',
+    usa: 'USA',
     'united-states': 'USA',
-    'canada': 'CAN',
-    'mexico': 'MEX',
-    'brazil': 'BRA',
-    'argentina': 'ARG',
-    'australia': 'AUS',
-    'china': 'CHN',
-    'india': 'IND',
-    'russia': 'RUS',
-    'germany': 'DEU',
-    'france': 'FRA',
-    'italy': 'ITA',
-    'spain': 'ESP',
+    canada: 'CAN',
+    mexico: 'MEX',
+    brazil: 'BRA',
+    argentina: 'ARG',
+    australia: 'AUS',
+    china: 'CHN',
+    india: 'IND',
+    russia: 'RUS',
+    germany: 'DEU',
+    france: 'FRA',
+    italy: 'ITA',
+    spain: 'ESP',
     'united-kingdom': 'GBR',
     'south-africa': 'ZAF',
-    'egypt': 'EGY',
-    'nigeria': 'NGA',
+    egypt: 'EGY',
+    nigeria: 'NGA',
   };
 
   async fetchData(options?: FetchOptions): Promise<GADMRawData> {
-    const {
-      country = 'JPN',
-      adminLevel = 1,
-    } = options || {};
+    const { country = 'JPN', adminLevel = 1 } = options || {};
     const resolvedNodeId = options?.nodeId;
     if (!resolvedNodeId) {
       throw new Error('GADM fetchData requires nodeId.');
@@ -129,14 +125,19 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const normalizedCountry = this.normalizeCountryCode(country);
     const level = Math.min(Math.max(adminLevel, 0), 5); // GADM supports levels 0-5
     const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
-    const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
+    const retries =
+      options?.retryConfig ??
+      ({ count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig);
 
     try {
-      const downloadUrl = level === 0
-        ? `${this.config.access.baseUrl}json/gadm41_${normalizedCountry}_${level}.json`
-        : `${this.config.access.baseUrl}json/gadm41_${normalizedCountry}_${level}.json.zip`;
+      const downloadUrl =
+        level === 0
+          ? `${this.config.access.baseUrl}json/gadm41_${normalizedCountry}_${level}.json`
+          : `${this.config.access.baseUrl}json/gadm41_${normalizedCountry}_${level}.json.zip`;
 
-      console.log(`[GADM] Downloading JSON for ${normalizedCountry} level ${level}: ${downloadUrl}`);
+      console.log(
+        `[GADM] Downloading JSON for ${normalizedCountry} level ${level}: ${downloadUrl}`
+      );
 
       const pipeline = this.createRawDataPipeline({
         nodeId: resolvedNodeId,
@@ -164,9 +165,10 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
           rawSourceCacheKey: cacheKey,
         },
       };
-
     } catch (error) {
-      throw new Error(`Failed to download GADM data for ${normalizedCountry}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to download GADM data for ${normalizedCountry}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -180,14 +182,15 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const zipContentType = 'application/zip';
     return {
       prepareRequest: () => {
-        const cacheKey = metadata.cacheKeyMode === 'url'
-          ? metadata.downloadUrl
-          : buildRawDataDataSourceCacheKey({
-            dataSource: 'gadm',
-            countryCode: metadata.normalizedCountry,
-            adminLevel: metadata.level,
-            url: metadata.downloadUrl,
-          });
+        const cacheKey =
+          metadata.cacheKeyMode === 'url'
+            ? metadata.downloadUrl
+            : buildRawDataDataSourceCacheKey({
+                dataSource: 'gadm',
+                countryCode: metadata.normalizedCountry,
+                adminLevel: metadata.level,
+                url: metadata.downloadUrl,
+              });
         return {
           url: metadata.downloadUrl,
           cacheKey,
@@ -197,7 +200,11 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       transformStream: async (stream) => {
         const rawBuffer = await streamToBuffer(stream);
         if (metadata.level === 0) {
-          const zipped = await this.zipJsonBuffer(rawBuffer, metadata.normalizedCountry, metadata.level);
+          const zipped = await this.zipJsonBuffer(
+            rawBuffer,
+            metadata.normalizedCountry,
+            metadata.level
+          );
           return { stream: bufferToStream(zipped), contentType: zipContentType };
         }
         return { stream: bufferToStream(rawBuffer), contentType: zipContentType };
@@ -245,30 +252,33 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       }
 
       //  ShapeEntity
-      const entities: ShapeFeaturePayload[] = features.map((feature: GADMFeature, index: number) => {
-        const properties = feature.properties ?? {};
-        const processedAt = new Date().toISOString();
+      const entities: ShapeFeaturePayload[] = features.map(
+        (feature: GADMFeature, index: number) => {
+          const properties = feature.properties ?? {};
+          const processedAt = new Date().toISOString();
 
-        return {
-          //id: this.generateEntityId(properties, index),
-          // nodeId: this.generateNodeId(properties, index),
-          // name: this.extractName(properties),
-          // description: this.extractDescription(properties),
-          geometry: feature.geometry ?? undefined,
-          properties: {
-            ...properties,
-            source: 'gadm',
-            country: rawData.metadata.country,
-            adminLevel: this.extractAdminLevel(properties),
-            gadmVersion: rawData.metadata.version,
-            downloadedAt: rawData.metadata.downloadedAt,
-            processedAt,
-            originalIndex: index,
-          },
-        };
-      });
+          return {
+            //id: this.generateEntityId(properties, index),
+            // nodeId: this.generateNodeId(properties, index),
+            // name: this.extractName(properties),
+            // description: this.extractDescription(properties),
+            geometry: feature.geometry ?? undefined,
+            properties: {
+              ...properties,
+              source: 'gadm',
+              country: rawData.metadata.country,
+              adminLevel: this.extractAdminLevel(properties),
+              gadmVersion: rawData.metadata.version,
+              downloadedAt: rawData.metadata.downloadedAt,
+              processedAt,
+              originalIndex: index,
+            },
+          };
+        }
+      );
       const result = entities as GADMProcessedData;
-      const resolvedAdminLevel = typeof adminLevel === 'number' ? adminLevel : rawData.metadata.level;
+      const resolvedAdminLevel =
+        typeof adminLevel === 'number' ? adminLevel : rawData.metadata.level;
       result.metadata = {
         source: 'gadm',
         processedAt: new Date().toISOString(),
@@ -281,9 +291,10 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         version: rawData.metadata.version,
       };
       return result;
-
     } catch (error) {
-      throw new Error(`Failed to process GADM data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to process GADM data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -331,12 +342,15 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     throw new Error('No JSON file found in archive');
   }
 
-  private async zipJsonBuffer(buffer: ArrayBuffer, country: string, level: number): Promise<ArrayBuffer> {
+  private async zipJsonBuffer(
+    buffer: ArrayBuffer,
+    country: string,
+    level: number
+  ): Promise<ArrayBuffer> {
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     const fileName = `gadm41_${country}_${level}.json`;
     zip.file(fileName, buffer);
     return await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
   }
-
 }

@@ -1,16 +1,16 @@
-import { useRef } from 'react';
 import type { ComponentType } from 'react';
-import { PluginDialogHeader } from './PluginDialogHeader.js';
-import { PluginDialogContent } from './PluginDialogContent.js';
-import { PluginDialogFooter } from './PluginDialogFooter.js';
+import { useRef } from 'react';
 import type {
   AbstractDialogContentProps,
   AbstractDialogFooterProps,
   AbstractDialogHeaderProps,
 } from './AbstractDialogElements.js';
+import { PluginDialogContent } from './PluginDialogContent.js';
+import { PluginDialogFooter } from './PluginDialogFooter.js';
+import { PluginDialogHeader } from './PluginDialogHeader.js';
 import type {
-  HeadlessDialogContextValue,
   HeadlessDialogContentProps,
+  HeadlessDialogContextValue,
   HeadlessDialogFooterProps,
   HeadlessDialogHeaderProps,
   HeadlessDialogProps,
@@ -20,7 +20,9 @@ function asReadonlyArray(source?: ReadonlyArray<number>): ReadonlyArray<number> 
   return source ?? [];
 }
 
-function asReadonlyMap(source?: Readonly<Record<string, string>>): Readonly<Record<string, string>> {
+function asReadonlyMap(
+  source?: Readonly<Record<string, string>>
+): Readonly<Record<string, string>> {
   return source ?? {};
 }
 
@@ -103,14 +105,12 @@ export function useAbstractDialog<TData>(
     ...frameProps
   } = props;
   const HeaderComponent =
-    HeaderComponentProp ??
-    (PluginDialogHeader as ComponentType<HeadlessDialogHeaderProps<TData>>);
+    HeaderComponentProp ?? (PluginDialogHeader as ComponentType<HeadlessDialogHeaderProps<TData>>);
   const ContentComponent =
     ContentComponentProp ??
     (PluginDialogContent as ComponentType<HeadlessDialogContentProps<TData>>);
   const FooterComponent =
-    FooterComponentProp ??
-    (PluginDialogFooter as ComponentType<HeadlessDialogFooterProps<TData>>);
+    FooterComponentProp ?? (PluginDialogFooter as ComponentType<HeadlessDialogFooterProps<TData>>);
 
   const nextValue: HeadlessDialogContextValue<TData> = {
     open,

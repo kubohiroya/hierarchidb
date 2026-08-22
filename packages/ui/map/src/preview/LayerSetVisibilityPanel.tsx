@@ -1,7 +1,20 @@
+import {
+  Box,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemText,
+  Stack,
+  Switch,
+  Typography,
+} from '@mui/material';
 import React from 'react';
-import { Box, FormControlLabel, List, ListItem, ListItemText, Stack, Switch, Typography } from '@mui/material';
+import type {
+  LayerSetDefinition,
+  LayerSetId,
+  ResolvedLayerSetEntry,
+} from './layerSetDefinitions.js';
 import { formatAdminLevelLabel } from './layerSetDefinitions.js';
-import type { LayerSetDefinition, LayerSetId, ResolvedLayerSetEntry } from './layerSetDefinitions.js';
 import { useLayerSetVisibilityPanelView } from './useLayerSetVisibilityPanelView.js';
 
 export type LayerSetVisibility = Record<LayerSetId, boolean>;
@@ -42,28 +55,24 @@ export const LayerSetVisibilityPanel: React.FC<LayerSetVisibilityPanelProps> = (
   onToggle,
   items,
 }) => {
-  const { orderedSets, itemsBySet, itemsBySetAndHierarchy } = useLayerSetVisibilityPanelView<LayerSetListItem>({
-    layerSets,
-    items,
-  });
+  const { orderedSets, itemsBySet, itemsBySetAndHierarchy } =
+    useLayerSetVisibilityPanelView<LayerSetListItem>({
+      layerSets,
+      items,
+    });
 
   return (
     <Stack spacing={1.5}>
       {orderedSets.map((set) => {
         const visible = visibility[set.id] ?? false;
         const setItems = itemsBySet.get(set.id) ?? [];
-        const itemsByHierarchy = itemsBySetAndHierarchy.get(set.id) ?? new Map<string, LayerSetListItem[]>();
+        const itemsByHierarchy =
+          itemsBySetAndHierarchy.get(set.id) ?? new Map<string, LayerSetListItem[]>();
         return (
           <Box key={set.id}>
             <FormControlLabel
               sx={{ ml: 0 }}
-              control={(
-                <Switch
-                  size="small"
-                  checked={visible}
-                  onChange={() => onToggle(set.id)}
-                />
-              )}
+              control={<Switch size="small" checked={visible} onChange={() => onToggle(set.id)} />}
               label={set.label}
             />
             {setItems.length === 0 ? (
@@ -84,7 +93,10 @@ export const LayerSetVisibilityPanel: React.FC<LayerSetVisibilityPanelProps> = (
                             primary={item.label}
                             secondary={item.detail}
                             primaryTypographyProps={{ variant: 'caption' }}
-                            secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                            secondaryTypographyProps={{
+                              variant: 'caption',
+                              color: 'text.secondary',
+                            }}
                           />
                         </ListItem>
                       ))}

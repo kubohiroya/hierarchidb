@@ -1,9 +1,9 @@
-import type { BuildWorkerAPI } from '../../../../types/worker-api.ts';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { Remote } from 'comlink';
 import { describe, expect, it, vi } from 'vitest';
+import type { BuildWorkerAPI } from '../../../../types/worker-api.ts';
 import { useTreeConsoleBreadcrumbs } from '../../useTreeConsoleBreadcrumbs.ts';
 
 function createTreeNode(options: {

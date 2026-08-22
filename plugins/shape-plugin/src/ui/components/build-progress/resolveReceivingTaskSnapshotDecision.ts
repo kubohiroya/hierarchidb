@@ -1,5 +1,5 @@
-import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/ui-build-progress/build-session';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 
 type Notification = {
   level: BuildSessionTransitionNotificationLevel;
@@ -19,25 +19,25 @@ type TaskExecutionStarted = {
 export type ReceivingTaskSnapshotDecision =
   | { kind: 'continue' }
   | {
-    kind: 'success';
-    reason:
-      | 'task-execution-started'
-      | 'task-queue-observed'
-      | 'completed-without-generating-tasks';
-    taskExecutionStarted: TaskExecutionStarted;
-    notification: Notification;
-    transitionFinish?: TransitionFinish;
-  }
+      kind: 'success';
+      reason:
+        | 'task-execution-started'
+        | 'task-queue-observed'
+        | 'completed-without-generating-tasks';
+      taskExecutionStarted: TaskExecutionStarted;
+      notification: Notification;
+      transitionFinish?: TransitionFinish;
+    }
   | {
-    kind: 'error';
-    reason: 'failed-before-task-start';
-    transitionFinish: TransitionFinish;
-  }
+      kind: 'error';
+      reason: 'failed-before-task-start';
+      transitionFinish: TransitionFinish;
+    }
   | {
-    kind: 'cancelled';
-    reason: 'stopped-before-task-start';
-    transitionFinish: TransitionFinish;
-  };
+      kind: 'cancelled';
+      reason: 'stopped-before-task-start';
+      transitionFinish: TransitionFinish;
+    };
 
 export type ReceivingTaskSnapshotSuccessDecision = Extract<
   ReceivingTaskSnapshotDecision,
@@ -74,7 +74,7 @@ const isTransientStartupStage = (sessionStageId?: string | null): boolean => {
 };
 
 export const resolveReceivingTaskSnapshotDecision = (
-  input: ReceivingTaskSnapshotDecisionInput,
+  input: ReceivingTaskSnapshotDecisionInput
 ): ReceivingTaskSnapshotDecision => {
   if (input.hasReceivingTaskSnapshotSignal) {
     if (typeof input.taskCount === 'number' && input.taskCount === 0) {
@@ -101,19 +101,19 @@ export const resolveReceivingTaskSnapshotDecision = (
     return {
       kind: 'success',
       reason: input.hasStartedTasks ? 'task-execution-started' : 'task-queue-observed',
-        taskExecutionStarted: {
-          queuedOnly: !input.hasStartedTasks,
-          hasProgressTaskSignal: input.hasProgressTaskSignal,
-        },
+      taskExecutionStarted: {
+        queuedOnly: !input.hasStartedTasks,
+        hasProgressTaskSignal: input.hasProgressTaskSignal,
+      },
       notification: input.hasStartedTasks
         ? {
-          level: 'success',
-          message: 'Build task execution started.',
-        }
+            level: 'success',
+            message: 'Build task execution started.',
+          }
         : {
-          level: 'info',
-          message: 'Build task queue is ready.',
-      },
+            level: 'info',
+            message: 'Build task queue is ready.',
+          },
     };
   }
 
@@ -122,11 +122,15 @@ export const resolveReceivingTaskSnapshotDecision = (
   }
 
   if (input.buildStatus === 'failed') {
-    const hasSessionProgressEvidence = typeof input.sessionProgressTotal === 'number'
-      && input.sessionProgressTotal > 0;
+    const hasSessionProgressEvidence =
+      typeof input.sessionProgressTotal === 'number' && input.sessionProgressTotal > 0;
     // During resume/startup, build status can remain "failed" briefly while worker stage
     // has already moved into startup:*:start/finish. Avoid premature failure finalization.
-    if (isTransientStartupStage(input.sessionStageId) || input.hasProgressTaskSignal || hasSessionProgressEvidence) {
+    if (
+      isTransientStartupStage(input.sessionStageId) ||
+      input.hasProgressTaskSignal ||
+      hasSessionProgressEvidence
+    ) {
       return { kind: 'continue' };
     }
     return {

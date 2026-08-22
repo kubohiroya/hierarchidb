@@ -1,8 +1,10 @@
-import type { SpreadsheetEntityPayload, SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { MapLibreStyle } from '@hierarchidb/ui-map';
-
 import type { StepData } from '@hierarchidb/plugin-base';
+import type {
+  SpreadSheetDataSourceType,
+  SpreadsheetEntityPayload,
+} from '@hierarchidb/spreadsheet-store';
+import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
 export type { SpreadSheetDataSourceType };
 
@@ -26,13 +28,7 @@ export type MapLibreStyleProperty =
 export type ColorAlgorithm = 'linear' | 'log' | 'quantile' | 'jenks' | 'equal';
 
 export type ColorSpace = 'hsv' | 'rgb' | 'lab';
-export type ColorScheme =
-  | 'grayscale'
-  | 'redgreen'
-  | 'blueorange'
-  | 'viridis'
-  | 'magma'
-  | 'custom';
+export type ColorScheme = 'grayscale' | 'redgreen' | 'blueorange' | 'viridis' | 'magma' | 'custom';
 
 export interface StyleKeyValue {
   nodeId: NodeId;
@@ -140,7 +136,7 @@ export const StylerMappingDefault: StylerMapping = {
   targetProperty: null,
   valueType: 'color',
   mappingMode: 'map-interpolate',
-}
+};
 
 export const StylerConfigDefault: StylerConfig = {
   algorithm: 'linear',
@@ -309,12 +305,12 @@ export const STYLE_TYPE_OPTIONS: ReadonlyArray<{
 
 export type StylerStepData = StylerDialogData &
   StepData & {
-  dataSource?: SpreadSheetDataSourceType;
-  colorScheme?: string;
-  opacity?: number;
-  strokeWidth?: number;
-  stylerConfig?: StylerConfig;
-};
+    dataSource?: SpreadSheetDataSourceType;
+    colorScheme?: string;
+    opacity?: number;
+    strokeWidth?: number;
+    stylerConfig?: StylerConfig;
+  };
 
 export interface StylerEntityPayload extends SpreadsheetEntityPayload {
   //  - spreadsheetMetadataId?: string (SpreadsheetEntity)
@@ -335,7 +331,6 @@ export interface StylerEntityPayload extends SpreadsheetEntityPayload {
     colorMapping: Record<string, string>;
     lastUpdated: number;
   };
-
 }
 
 export type StylerEntity = PeerEntity<StylerEntityPayload>;

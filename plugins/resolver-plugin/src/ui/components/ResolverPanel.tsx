@@ -1,4 +1,16 @@
-import type React from 'react';
+import type { NodeId } from '@hierarchidb/core-types';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import {
+  Cached as CachedIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Link as LinkIcon,
+  Memory as MemoryIcon,
+  Merge as MergeIcon,
+  PlayArrow as PlayIcon,
+  Speed as SpeedIcon,
+  Timeline as TimelineIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -15,21 +27,9 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import Grid from '@mui/material/Grid';
-import {
-  Cached as CachedIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Link as LinkIcon,
-  Memory as MemoryIcon,
-  Merge as MergeIcon,
-  PlayArrow as PlayIcon,
-  Speed as SpeedIcon,
-  Timeline as TimelineIcon,
-} from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { ResolverEntity, PropertyMappingRule } from '~/common/types/index';
+import type React from 'react';
+import type { PropertyMappingRule, ResolverEntity } from '~/common/types/index';
 import { useResolverPanel } from './useResolverPanel.js';
 
 interface ResolverPanelProps {
@@ -43,22 +43,16 @@ interface ResolverPanelProps {
 }
 
 export const ResolverPanel: React.FC<ResolverPanelProps> = ({
-                                                              nodeId: _nodeId,
-                                                              entity,
-                                                              onEdit,
-                                                              onDelete,
-                                                              onTest,
-                                                              onCompile,
-                                                              onViewChain,
-                                                            }) => {
-  const {
-    anchorEl,
-    compilationStatus,
-    handleCompile,
-    handleMenuClose,
-    isProcessing,
-    statistics,
-  } = useResolverPanel(entity, onCompile);
+  nodeId: _nodeId,
+  entity,
+  onEdit,
+  onDelete,
+  onTest,
+  onCompile,
+  onViewChain,
+}) => {
+  const { anchorEl, compilationStatus, handleCompile, handleMenuClose, isProcessing, statistics } =
+    useResolverPanel(entity, onCompile);
 
   if (!entity) {
     return (
@@ -66,11 +60,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
         <Typography variant="body1" color="text.secondary">
           No Resolver configuration found for this node.
         </Typography>
-        <Button
-          variant="contained"
-          sx={{ mt: 2 }}
-          onClick={onEdit}
-        >
+        <Button variant="contained" sx={{ mt: 2 }} onClick={onEdit}>
           Create Configuration
         </Button>
       </Paper>
@@ -82,7 +72,6 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       {/* Header Card */}
       <Card sx={{ mb: 2 }}>
         <CardContent>
-
           <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Chip
               label={`${entity.mappingRules.length} Mappings`}
@@ -103,29 +92,16 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
               variant="outlined"
             />
             {compilationStatus === 'compiled' && (
-              <Chip
-                label="Optimized"
-                size="small"
-                color="success"
-                icon={<SpeedIcon />}
-              />
+              <Chip label="Optimized" size="small" color="success" icon={<SpeedIcon />} />
             )}
           </Box>
         </CardContent>
 
         <CardActions>
-          <Button
-            size="small"
-            startIcon={<EditIcon />}
-            onClick={onEdit}
-          >
+          <Button size="small" startIcon={<EditIcon />} onClick={onEdit}>
             Edit
           </Button>
-          <Button
-            size="small"
-            startIcon={<PlayIcon />}
-            onClick={onTest}
-          >
+          <Button size="small" startIcon={<PlayIcon />} onClick={onTest}>
             Test
           </Button>
           {compilationStatus !== 'compiled' && (
@@ -139,11 +115,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
             </Button>
           )}
           {onViewChain && (
-            <Button
-              size="small"
-              startIcon={<LinkIcon />}
-              onClick={onViewChain}
-            >
+            <Button size="small" startIcon={<LinkIcon />} onClick={onViewChain}>
               View Chain
             </Button>
           )}
@@ -187,7 +159,10 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color={compilationStatus === 'compiled' ? 'success.main' : 'text.disabled'}>
+              <Typography
+                variant="h4"
+                color={compilationStatus === 'compiled' ? 'success.main' : 'text.disabled'}
+              >
                 {compilationStatus === 'compiled' ? '10x' : '--'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -223,22 +198,22 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                     </Typography>
                   </Box>
                 }
-                secondary={rule.transformFunction && (
-                  <Chip
-                    label={rule.transformFunction}
-                    size="small"
-                    variant="outlined"
-                    sx={{ mt: 0.5 }}
-                  />
-                )}
+                secondary={
+                  rule.transformFunction && (
+                    <Chip
+                      label={rule.transformFunction}
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 0.5 }}
+                    />
+                  )
+                }
               />
             </ListItem>
           ))}
           {entity.mappingRules.length > 5 && (
             <ListItem>
-              <ListItemText
-                secondary={`... and ${entity.mappingRules.length - 5} more mappings`}
-              />
+              <ListItemText secondary={`... and ${entity.mappingRules.length - 5} more mappings`} />
             </ListItem>
           )}
           {entity.mappingRules.length === 0 && (
@@ -269,9 +244,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     Avg. Execution Time
                   </Typography>
-                  <Typography variant="body1">
-                    12.5ms → 1.2ms
-                  </Typography>
+                  <Typography variant="body1">12.5ms → 1.2ms</Typography>
                 </Box>
               </Box>
             </Grid>
@@ -282,9 +255,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     Memory Usage
                   </Typography>
-                  <Typography variant="body1">
-                    2.4MB → 0.8MB
-                  </Typography>
+                  <Typography variant="body1">2.4MB → 0.8MB</Typography>
                 </Box>
               </Box>
             </Grid>
@@ -295,9 +266,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     Cache Hit Rate
                   </Typography>
-                  <Typography variant="body1">
-                    89%
-                  </Typography>
+                  <Typography variant="body1">89%</Typography>
                 </Box>
               </Box>
             </Grid>
@@ -308,9 +277,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     Optimization Level
                   </Typography>
-                  <Typography variant="body1">
-                    Aggressive
-                  </Typography>
+                  <Typography variant="body1">Aggressive</Typography>
                 </Box>
               </Box>
             </Grid>
@@ -319,45 +286,51 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       )}
 
       {/* Context Menu */}
-      <DialogSafeMenu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => {
-          handleMenuClose();
-          onEdit?.();
-        }}>
+      <DialogSafeMenu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            onEdit?.();
+          }}
+        >
           <EditIcon sx={{ mr: 1 }} fontSize="small" />
           Edit Configuration
         </MenuItem>
-        <MenuItem onClick={() => {
-          handleMenuClose();
-          onTest?.();
-        }}>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            onTest?.();
+          }}
+        >
           <PlayIcon sx={{ mr: 1 }} fontSize="small" />
           Run Test
         </MenuItem>
-        <MenuItem onClick={() => {
-          handleMenuClose();
-          handleCompile();
-        }}>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            handleCompile();
+          }}
+        >
           <SpeedIcon sx={{ mr: 1 }} fontSize="small" />
           Compile & Optimize
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => {
-          handleMenuClose();
-          onViewChain?.();
-        }}>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            onViewChain?.();
+          }}
+        >
           <LinkIcon sx={{ mr: 1 }} fontSize="small" />
           View in Chain
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => {
-          handleMenuClose();
-          onDelete?.();
-        }}>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            onDelete?.();
+          }}
+        >
           <DeleteIcon sx={{ mr: 1 }} fontSize="small" color="error" />
           Delete
         </MenuItem>

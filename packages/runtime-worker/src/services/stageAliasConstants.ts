@@ -1,27 +1,27 @@
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 
 export const toLegacyBuildStageFromStageId = (
-  stageId: string | undefined,
+  stageId: string | undefined
 ): ShapeBuildStage | undefined => {
   if (!stageId) return undefined;
   if (
-    stageId === 'source-stage'
-    || stageId.includes(':source-stage:')
-    || stageId.includes(':source:')
+    stageId === 'source-stage' ||
+    stageId.includes(':source-stage:') ||
+    stageId.includes(':source:')
   ) {
     return 'source';
   }
   if (
-    stageId === 'geometry-stage'
-    || stageId.includes(':geometry-stage:')
-    || stageId.includes(':geometry:')
+    stageId === 'geometry-stage' ||
+    stageId.includes(':geometry-stage:') ||
+    stageId.includes(':geometry:')
   ) {
     return 'geometry';
   }
   if (
-    stageId === 'tile-emit-stage'
-    || stageId.includes(':tile-emit-stage:')
-    || stageId.includes(':tileEmit:')
+    stageId === 'tile-emit-stage' ||
+    stageId.includes(':tile-emit-stage:') ||
+    stageId.includes(':tileEmit:')
   ) {
     return 'tileEmit';
   }
@@ -30,7 +30,7 @@ export const toLegacyBuildStageFromStageId = (
 
 export const toLegacyBuildStage = (
   stage: unknown,
-  stageId?: string,
+  stageId?: string
 ): ShapeBuildStage | undefined => {
   const fromStageId = toLegacyBuildStageFromStageId(stageId);
   if (fromStageId !== undefined) return fromStageId;
@@ -41,7 +41,7 @@ export const toLegacyBuildStage = (
 };
 
 export const toCanonicalStageIdFromLegacyStage = (
-  stage: ShapeBuildStage | undefined,
+  stage: ShapeBuildStage | undefined
 ): string | undefined => {
   if (stage === 'source') return 'source-stage';
   if (stage === 'geometry') return 'geometry-stage';

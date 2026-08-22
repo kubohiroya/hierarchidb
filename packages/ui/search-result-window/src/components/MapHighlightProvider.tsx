@@ -1,8 +1,8 @@
-import type React from 'react';
-import { createContext, type ReactNode, useContext } from 'react'
 import type { NodeId } from '@hierarchidb/core-types';
-import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
+import type React from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import { useMapHighlight } from '~/hooks/useMapHighlightJotai';
+import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
 
 interface MapHighlightContextValue {
   highlightState: MapHighlightState;
@@ -29,13 +29,13 @@ interface MapHighlightProviderProps {
 }
 
 /**
-    */
+ */
 export const MapHighlightProvider: React.FC<MapHighlightProviderProps> = ({
-                                                                            children,
-                                                                            mapInstance,
-                                                                            initialStyles,
-                                                                            onStateChange,
-                                                                          }) => {
+  children,
+  mapInstance,
+  initialStyles,
+  onStateChange,
+}) => {
   const mapHighlight = useMapHighlight({
     mapInstance,
     initialStyles,
@@ -48,7 +48,7 @@ export const MapHighlightProvider: React.FC<MapHighlightProviderProps> = ({
 };
 
 /**
-    */
+ */
 export const useMapHighlightContext = (): MapHighlightContextValue => {
   const context = useContext(MapHighlightContext);
   if (!context) {

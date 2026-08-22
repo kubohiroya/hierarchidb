@@ -8,12 +8,6 @@
     "noUnusedParameters": false,
     "jsx": "react-jsx"
   },
-  "exclude": [
-    "dist",
-    "node_modules",
-    "src/stories/**"
-  ],
-  "include": [
-    "src/**/*"
-  ]
+  "exclude": ["dist", "node_modules", "src/stories/**"],
+  "include": ["src/**/*"]
 }

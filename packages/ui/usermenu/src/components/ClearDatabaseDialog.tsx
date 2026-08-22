@@ -1,3 +1,4 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Button,
   Dialog,
@@ -9,7 +10,6 @@ import {
   ListItem,
   ListItemText,
 } from '@mui/material';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface ClearDatabaseDialogProps {
   open: boolean;

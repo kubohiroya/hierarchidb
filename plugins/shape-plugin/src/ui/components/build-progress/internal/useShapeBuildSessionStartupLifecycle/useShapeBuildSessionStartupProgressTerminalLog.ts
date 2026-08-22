@@ -1,9 +1,11 @@
+import type { BuildSessionTransitionState } from '@hierarchidb/ui-build-progress/build-session';
 import { useEffect } from 'react';
 import { isTaskPhaseDisplay } from '~/common/utils/taskMessageUtils';
-import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
-import type { BuildSessionTransitionState } from '@hierarchidb/ui-build-progress/build-session';
+import type {
+  BuildProgress,
+  BuildSessionDisplayStatus,
+} from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildSessionTransitionPhase } from '../useShapeBuildSessionHelpers/startupTrace';
-import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 
 type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
   buildStatus: BuildSessionDisplayStatus['status'];
@@ -14,7 +16,7 @@ type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
   emitBuildSessionTransitionLog: (
     level: 'info' | 'warn' | 'error',
     message: string,
-    payload?: Record<string, unknown>,
+    payload?: Record<string, unknown>
   ) => void;
   buildSessionTransition: BuildSessionTransitionState<BuildSessionTransitionPhase>;
 };
@@ -29,27 +31,23 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
   buildSessionTransition,
 }: UseShapeBuildSessionStartupProgressTerminalLogArgs): void => {
   useEffect(() => {
-    const progressMessage = typeof effectiveProgress?.message === 'string'
-      ? effectiveProgress.message.trim()
-      : '';
+    const progressMessage =
+      typeof effectiveProgress?.message === 'string' ? effectiveProgress.message.trim() : '';
     const progressDisplay = effectiveProgress?.progressTaskDisplay;
     if (!progressDisplay && !progressMessage) return;
-    if (
-      !buildSessionTransition.active
-      && buildStatus !== 'running'
-      && runtimeStatus !== 'running'
-    ) return;
+    if (!buildSessionTransition.active && buildStatus !== 'running' && runtimeStatus !== 'running')
+      return;
 
     const progressTaskId = effectiveProgress?.progressTaskId;
     const progressTaskStatus = effectiveProgress?.progressTaskStatus;
-    const progressTaskTitle = typeof effectiveProgress?.progressTaskTitle === 'string'
-      ? effectiveProgress.progressTaskTitle.trim()
-      : '';
+    const progressTaskTitle =
+      typeof effectiveProgress?.progressTaskTitle === 'string'
+        ? effectiveProgress.progressTaskTitle.trim()
+        : '';
 
-    const isTerminalUpdate = (
-      progressTaskStatus === 'completed'
-      || ((effectiveProgress?.percentage ?? 0) >= 100 && !isTaskPhaseDisplay(progressDisplay))
-    );
+    const isTerminalUpdate =
+      progressTaskStatus === 'completed' ||
+      ((effectiveProgress?.percentage ?? 0) >= 100 && !isTaskPhaseDisplay(progressDisplay));
     if (!isTerminalUpdate) return;
 
     const key = `${progressTaskId ?? ''}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;

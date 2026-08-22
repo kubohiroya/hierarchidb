@@ -5,18 +5,14 @@
 
 import fs from 'node:fs';
 
-import type { FileEntry, FileAnalysis, ThresholdResult } from './types.js';
+import type { FileAnalysis, FileEntry, ThresholdResult } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 /** Patterns that identify test files to exclude from analysis. */
-const TEST_PATH_PATTERNS: readonly RegExp[] = [
-    /__tests__\//,
-    /\.test\.tsx?$/,
-    /\.spec\.tsx?$/,
-];
+const TEST_PATH_PATTERNS: readonly RegExp[] = [/__tests__\//, /\.test\.tsx?$/, /\.spec\.tsx?$/];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,7 +26,7 @@ const TEST_PATH_PATTERNS: readonly RegExp[] = [
  *   - files ending with `.test.ts`, `.test.tsx`, `.spec.ts`, `.spec.tsx`
  */
 function isTestFile(filePath: string): boolean {
-    return TEST_PATH_PATTERNS.some((re) => re.test(filePath));
+  return TEST_PATH_PATTERNS.some((re) => re.test(filePath));
 }
 
 /**
@@ -38,12 +34,12 @@ function isTestFile(filePath: string): boolean {
  * Returns 0 when the file cannot be read.
  */
 function countLines(absolutePath: string): number {
-    try {
-        const content = fs.readFileSync(absolutePath, 'utf-8');
-        return content.split('\n').length;
-    } catch {
-        return 0;
-    }
+  try {
+    const content = fs.readFileSync(absolutePath, 'utf-8');
+    return content.split('\n').length;
+  } catch {
+    return 0;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -53,11 +49,8 @@ function countLines(absolutePath: string): number {
 /**
  * Compute priority score as `lineCount × exportCount`.
  */
-export function computePriorityScore(
-    lineCount: number,
-    exportCount: number,
-): number {
-    return lineCount * exportCount;
+export function computePriorityScore(lineCount: number, exportCount: number): number {
+  return lineCount * exportCount;
 }
 
 /**
@@ -69,38 +62,38 @@ export function computePriorityScore(
  * Otherwise they default to 0.
  */
 export function filterByThreshold(
-    files: readonly FileEntry[],
-    threshold: number,
-    analyses?: ReadonlyMap<string, FileAnalysis>,
+  files: readonly FileEntry[],
+  threshold: number,
+  analyses?: ReadonlyMap<string, FileAnalysis>
 ): ThresholdResult[] {
-    const results: ThresholdResult[] = [];
+  const results: ThresholdResult[] = [];
 
-    for (const file of files) {
-        // Skip test files
-        if (isTestFile(file.relativePath) || isTestFile(file.absolutePath)) {
-            continue;
-        }
-
-        const lineCount = countLines(file.absolutePath);
-
-        if (lineCount < threshold) {
-            continue;
-        }
-
-        const analysis = analyses?.get(file.absolutePath);
-        const exportCount = analysis ? analysis.exports.length : 0;
-
-        results.push({
-            file,
-            lineCount,
-            exportCount,
-            estimatedCohesionGroups: 0,
-            priorityScore: computePriorityScore(lineCount, exportCount),
-        });
+  for (const file of files) {
+    // Skip test files
+    if (isTestFile(file.relativePath) || isTestFile(file.absolutePath)) {
+      continue;
     }
 
-    // Sort by lineCount descending
-    results.sort((a, b) => b.lineCount - a.lineCount);
+    const lineCount = countLines(file.absolutePath);
 
-    return results;
+    if (lineCount < threshold) {
+      continue;
+    }
+
+    const analysis = analyses?.get(file.absolutePath);
+    const exportCount = analysis ? analysis.exports.length : 0;
+
+    results.push({
+      file,
+      lineCount,
+      exportCount,
+      estimatedCohesionGroups: 0,
+      priorityScore: computePriorityScore(lineCount, exportCount),
+    });
+  }
+
+  // Sort by lineCount descending
+  results.sort((a, b) => b.lineCount - a.lineCount);
+
+  return results;
 }

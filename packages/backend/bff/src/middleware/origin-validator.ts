@@ -27,7 +27,11 @@ const extractOrigins = (values: string[]): string[] => {
   return origins;
 };
 
-const collectAllowedOrigins = (env: { ALLOWED_ORIGINS?: string; APP_BASE_URL?: string; APP_BASE_URLS?: string }) => {
+const collectAllowedOrigins = (env: {
+  ALLOWED_ORIGINS?: string;
+  APP_BASE_URL?: string;
+  APP_BASE_URLS?: string;
+}) => {
   const allowed = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
   const appBases = [env.APP_BASE_URL, ...parseAppBaseUrls(env.APP_BASE_URLS)].filter(
     (value): value is string => typeof value === 'string' && value.length > 0

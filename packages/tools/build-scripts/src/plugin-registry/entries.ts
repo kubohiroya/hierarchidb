@@ -105,11 +105,7 @@ export const ICON_ENTRY_BASENAMES = [
   'src/icon.js',
   'src/icon.cjs',
 ];
-export const ROOT_DIST_ENTRY_BASENAMES = [
-  'dist/index.js',
-  'dist/index.mjs',
-  'dist/index.cjs',
-];
+export const ROOT_DIST_ENTRY_BASENAMES = ['dist/index.js', 'dist/index.mjs', 'dist/index.cjs'];
 export const WORKER_DIST_ENTRY_BASENAMES = [
   'dist/worker/index.js',
   'dist/worker/index.mjs',

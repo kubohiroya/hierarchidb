@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import {
   BuildSessionRuntimeContextProvider,
   PageNodeContextProvider,
@@ -6,6 +5,7 @@ import {
   TargetNodeContextProvider,
   TreeContextProvider,
 } from '@hierarchidb/ui-build-sessions';
+import type { ReactNode } from 'react';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
 import type { TargetContextState } from './hooks/useTreeTargetContextState';
 import { TreeConsoleRouteThemeBoundary } from './TreeConsoleRouteThemeBoundary';
@@ -31,7 +31,9 @@ export function TreeConsoleRoutePageProviders({
             nodeType={targetContext.targetNodeType}
           >
             <BuildSessionRuntimeContextProvider>
-              <TargetNodeBuildSessionContextProvider>{children}</TargetNodeBuildSessionContextProvider>
+              <TargetNodeBuildSessionContextProvider>
+                {children}
+              </TargetNodeBuildSessionContextProvider>
             </BuildSessionRuntimeContextProvider>
           </TargetNodeContextProvider>
         </PageNodeContextProvider>

@@ -1,5 +1,5 @@
-import type { AuthScope } from '@hierarchidb/auth-api';
 import { AuthService } from '@hierarchidb/auth';
+import type { AuthScope } from '@hierarchidb/auth-api';
 import { resolveNetworkUrl } from './resolveNetworkUrl.js';
 
 /**
@@ -10,7 +10,7 @@ import { resolveNetworkUrl } from './resolveNetworkUrl.js';
 export async function authFetch(
   scope: string,
   input: string,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<Response> {
   const auth = await AuthService.getSingleton();
   const target = resolveNetworkUrl(input);

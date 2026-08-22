@@ -1,4 +1,16 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeBuildSessionProbeResult } from './ShapeBuildSessionContractError.js';
+import type {
+  ShapeBuildStage,
+  ShapeBuildTaskRecord,
+  ShapeDataSourceMetadata,
+  ShapeFeatureMetadata,
+  ShapeGeometryCache,
+  ShapeGeometryErrorRecord,
+  ShapeSourceCache,
+  ShapeTileEmitMetadata,
+} from './shapeBuildTypes.js';
+import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 import type {
   ShapeBuildSessionSummary,
   ShapeBuildTaskSummary,
@@ -7,18 +19,6 @@ import type {
   ShapeTileSummary,
   ShapeTileSummaryEntry,
 } from './shapeTypes.js';
-import type {
-  ShapeBuildTaskRecord,
-  ShapeBuildStage,
-  ShapeGeometryCache,
-  ShapeGeometryErrorRecord,
-  ShapeFeatureMetadata,
-  ShapeSourceCache,
-  ShapeDataSourceMetadata,
-  ShapeTileEmitMetadata,
-} from './shapeBuildTypes.js';
-import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
-import type { ShapeBuildSessionProbeResult } from './ShapeBuildSessionContractError.js';
 
 export interface ShapeQueryAPI {
   listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]>;
@@ -27,16 +27,24 @@ export interface ShapeQueryAPI {
   getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null>;
   probeBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionProbeResult>;
   listBuildSessionRecordsByStatus(
-    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
+    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
   ): Promise<ShapeBuildSessionRecord[]>;
   listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]>;
   listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]>;
-  listBuildTaskRecordsByStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]>;
+  listBuildTaskRecordsByStage(
+    nodeId: NodeId,
+    stage: ShapeBuildStage
+  ): Promise<ShapeBuildTaskRecord[]>;
   getBuildTaskRecord(taskId: string): Promise<ShapeBuildTaskRecord | null>;
   getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null>;
   getProcessedFeatureCount(nodeId: NodeId): Promise<number>;
   getVectorTileInfo(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeTileInfo | null>;
-  getVectorTileRecord(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeVectorTileRecord | null>;
+  getVectorTileRecord(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<ShapeVectorTileRecord | null>;
   getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listVectorTiles(nodeId: NodeId): Promise<ShapeTileSummaryEntry[]>;
   getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary>;

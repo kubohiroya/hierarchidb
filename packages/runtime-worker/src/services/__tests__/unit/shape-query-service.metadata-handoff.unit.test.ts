@@ -22,14 +22,16 @@ vi.mock('@hierarchidb/gis-sdk', () => ({
   ephemeralDB: {
     open: (...args: Parameters<typeof hoisted.ephemeralOpen>) => hoisted.ephemeralOpen(...args),
     buildTasks: {
-      where: (...args: Parameters<typeof hoisted.buildTasksWhere>) => hoisted.buildTasksWhere(...args),
+      where: (...args: Parameters<typeof hoisted.buildTasksWhere>) =>
+        hoisted.buildTasksWhere(...args),
     },
   },
 }));
 
-const createShapeDbStub = (): ShapeDB => ({
-  open: (...args: Parameters<typeof hoisted.dbOpen>) => hoisted.dbOpen(...args),
-} as unknown as ShapeDB);
+const createShapeDbStub = (): ShapeDB =>
+  ({
+    open: (...args: Parameters<typeof hoisted.dbOpen>) => hoisted.dbOpen(...args),
+  }) as unknown as ShapeDB;
 const SHAPE_CHUNK_STORE_DATABASE_NAME = 'test-shape-chunks';
 
 describe('ShapeQueryService listBuildTasks metadata handoff', () => {

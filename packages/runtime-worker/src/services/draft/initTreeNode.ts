@@ -37,8 +37,7 @@ export async function initTreeNode(
         const hasDraftMeta =
           (existing as { draftMetadata?: unknown }).draftMetadata !== null &&
           typeof (existing as { draftMetadata?: unknown }).draftMetadata !== 'undefined';
-        const hasDraftData =
-          typeof (existing as { draftData?: unknown }).draftData !== 'undefined';
+        const hasDraftData = typeof (existing as { draftData?: unknown }).draftData !== 'undefined';
 
         if (!hasDraftMeta || !hasDraftData) {
           const nextDraftMetadata = hasDraftMeta

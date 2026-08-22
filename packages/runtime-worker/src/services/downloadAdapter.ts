@@ -1,5 +1,5 @@
-import type { AuthScope } from '@hierarchidb/auth-api';
 import { AuthService } from '@hierarchidb/auth';
+import type { AuthScope } from '@hierarchidb/auth-api';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 import { getDBName } from '@hierarchidb/util';
@@ -33,7 +33,12 @@ export async function createSharedDownloadService(
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts.perHostConcurrency ?? 4,
-    authFetch: (url, init) => auth.fetchWithAuth(url, init, { scope, sessionId: opts.sessionId, sessionStartedAt: opts.sessionStartedAt }),
+    authFetch: (url, init) =>
+      auth.fetchWithAuth(url, init, {
+        scope,
+        sessionId: opts.sessionId,
+        sessionStartedAt: opts.sessionStartedAt,
+      }),
   });
   const storage = new DexieChunkStore<ArrayBuffer>({
     dbName: getDBName(opts.dbPrefix, 'chunks'),

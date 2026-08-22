@@ -3,8 +3,9 @@ import type { StageHandler, StageHandlerResult, VtTaskInput } from '~/types/type
 import { runVtTaskProcessorFlow } from './runVtTaskProcessorFlow.js';
 
 export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInput> => {
-  return async (task): Promise<StageHandlerResult> => runVtTaskProcessorFlow({
-    context,
-    task,
-  });
+  return async (task): Promise<StageHandlerResult> =>
+    runVtTaskProcessorFlow({
+      context,
+      task,
+    });
 };

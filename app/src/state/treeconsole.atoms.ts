@@ -1,10 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import type { SortMode, ViewMode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useState } from 'react';
-
-import type { ViewMode, SortMode } from '@hierarchidb/ui-treeconsole-base';
 
 export interface TreeConsoleSSOTEntry {
   pageNodeId: string;
@@ -86,8 +85,8 @@ export function useTreeConsoleSSOT(pageNodeId: string | undefined) {
 
   const api = useMemo(() => {
     if (!key) {
-      const noop = () => { };
-      const noopReplace = (_next: TreeConsoleSSOTEntry) => { };
+      const noop = () => {};
+      const noopReplace = (_next: TreeConsoleSSOTEntry) => {};
       return {
         set: noop,
         replace: noopReplace,

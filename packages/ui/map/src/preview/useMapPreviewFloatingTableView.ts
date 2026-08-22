@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  buildGridStateKey,
   type GridColumn,
   type GridColumnSizingState,
   type GridColumnVisibilityState,
   type GridGroupingState,
   type GridSortingState,
-  buildGridStateKey,
   loadGridStateValue,
   saveGridStateValue,
 } from '@hierarchidb/ui-grid';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type UseMapPreviewFloatingTableViewArgs<Row extends { id: string | number }> = {
   resolvedColumns: GridColumn<Row>[];
@@ -32,12 +32,12 @@ export const useMapPreviewFloatingTableView = <Row extends { id: string | number
   const groupingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'grouping') : null;
   const isGroupingControlled = grouping !== undefined;
 
-  const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityState>(() => (
+  const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityState>(() =>
     visibilityKey ? (loadGridStateValue<GridColumnVisibilityState>(visibilityKey) ?? {}) : {}
-  ));
-  const [columnSizing, setColumnSizing] = useState<GridColumnSizingState>(() => (
+  );
+  const [columnSizing, setColumnSizing] = useState<GridColumnSizingState>(() =>
     columnSizingKey ? (loadGridStateValue<GridColumnSizingState>(columnSizingKey) ?? {}) : {}
-  ));
+  );
   const [sorting, setSorting] = useState<GridSortingState>(() => {
     if (sortingKey) {
       const saved = loadGridStateValue<GridSortingState>(sortingKey);
@@ -56,7 +56,7 @@ export const useMapPreviewFloatingTableView = <Row extends { id: string | number
 
   const resolvedColumnIds = useMemo(
     () => resolvedColumns.map((column) => String(column.id)),
-    [resolvedColumns],
+    [resolvedColumns]
   );
   const prevColumnIdsRef = useRef<string[]>([]);
 

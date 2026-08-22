@@ -12,15 +12,18 @@ export type SelectionResult<Context> = {
 export type SelectionResolver<Row, Context> = (
   row: Row,
   current: Context | null,
-  allRows: Row[],
+  allRows: Row[]
 ) => SelectionResult<Context>;
 
 export type SelectionContextDeriver<Row, Context> = (
   rows: Row[],
-  selectedIds: string[],
+  selectedIds: string[]
 ) => Context | null;
 
-type FeatureIdResolver = (feature: { id?: unknown; properties?: Record<string, unknown> | null }) => string;
+type FeatureIdResolver = (feature: {
+  id?: unknown;
+  properties?: Record<string, unknown> | null;
+}) => string;
 
 type Args<Row, Context> = {
   rows: Row[];
@@ -56,14 +59,15 @@ export const useVectorTilePreviewSelection = <Row, Context>({
     setSelectionContext(deriveSelectionContext(rows, selectedIds));
   }, [deriveSelectionContext, rows, selectedIds, setSelectionContext]);
 
-  const metadataById = useMemo(() => (
-    new Map(rows.map((row) => [getRowId(row), row]))
-  ), [getRowId, rows]);
+  const metadataById = useMemo(
+    () => new Map(rows.map((row) => [getRowId(row), row])),
+    [getRowId, rows]
+  );
 
   const selectedIdSet = useMemo<Set<string>>(() => new Set(selectedIds), [selectedIds]);
   const hoveredIdSet = useMemo<Set<string>>(
     () => (hoveredId ? new Set([hoveredId]) : new Set<string>()),
-    [hoveredId],
+    [hoveredId]
   );
 
   const handleMapIdentify = useCallback(
@@ -90,7 +94,15 @@ export const useVectorTilePreviewSelection = <Row, Context>({
       setSelectedIds(nextIds);
       setSelectionContext(nextContext);
     },
-    [metadataById, resolveFeatureId, resolveSelection, rows, selectionContext, setSelectedIds, setSelectionContext],
+    [
+      metadataById,
+      resolveFeatureId,
+      resolveSelection,
+      rows,
+      selectionContext,
+      setSelectedIds,
+      setSelectionContext,
+    ]
   );
 
   const hoverMessage = useMemo(() => {

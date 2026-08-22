@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { DataSourceStrategyFactory } from '../../DataSourceStrategyFactory';
-import type { FetchOptions } from '../../DataSourceStrategy';
-import { GeoBoundariesStrategy } from '../../GeoBoundariesStrategy';
-import { metadataLoader } from '../../../metadata/MetadataLoader';
 import { NodeId, TreeNodeId } from '@hierarchidb/core-types';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { metadataLoader } from '../../../metadata/MetadataLoader';
+import type { FetchOptions } from '../../DataSourceStrategy';
+import { DataSourceStrategyFactory } from '../../DataSourceStrategyFactory';
+import { GeoBoundariesStrategy } from '../../GeoBoundariesStrategy';
 
 describe('Data Source Integration Tests', () => {
   let factory: DataSourceStrategyFactory;
@@ -28,7 +28,6 @@ describe('Data Source Integration Tests', () => {
           console.log(`GeoBoundaries: Found ${countries.length} countries`);
           console.log('Sample countries:', countries.slice(0, 5));
         }
-
       } catch (error) {
         console.error('GeoBoundaries API test failed:', error);
         console.warn('GeoBoundaries test skipped due to API limitations');
@@ -49,7 +48,9 @@ describe('Data Source Integration Tests', () => {
         expect(rawData.metadata.source).toBe('geoboundaries');
         expect(rawData.metadata.country).toBe('JPN');
 
-        console.log(`GeoBoundaries: Downloaded data for ${rawData.metadata.country} ADM${rawData.metadata.adminLevel}`);
+        console.log(
+          `GeoBoundaries: Downloaded data for ${rawData.metadata.country} ADM${rawData.metadata.adminLevel}`
+        );
 
         const processedData = await strategy.processData(rawData);
         expect(Array.isArray(processedData)).toBe(true);
@@ -63,7 +64,6 @@ describe('Data Source Integration Tests', () => {
           console.log(`GeoBoundaries: Processed ${processedData.length} entities`);
           //console.log(`First entity: ${entity.name} (${entity.id})`);
         }
-
       } catch (error) {
         console.error('GeoBoundaries data fetch failed:', error);
         console.warn('GeoBoundaries data test skipped due to API limitations');
@@ -82,7 +82,7 @@ describe('Data Source Integration Tests', () => {
         expect(typeof isHealthy).toBe('boolean');
       }
 
-      const healthyCount = Array.from(healthResults.values()).filter(h => h).length;
+      const healthyCount = Array.from(healthResults.values()).filter((h) => h).length;
       expect(healthyCount).toBeGreaterThan(0);
     }, 15000);
 
@@ -126,9 +126,9 @@ describe('Data Source Integration Tests', () => {
 
       //  GADMGeoBoundaries
       expect(
-        adminStrategies.some(id =>
-          ['gadm-administrative-areas', 'geoboundaries-admin-areas'].includes(id),
-        ),
+        adminStrategies.some((id) =>
+          ['gadm-administrative-areas', 'geoboundaries-admin-areas'].includes(id)
+        )
       ).toBe(true);
     });
 

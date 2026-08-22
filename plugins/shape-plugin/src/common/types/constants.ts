@@ -2,9 +2,8 @@
  * Shape plugin constants
  */
 
-import type { DataSourceConfig } from './data-source.js';
-
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
+import type { DataSourceConfig } from './data-source.js';
 
 export { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG };
 
@@ -60,5 +59,5 @@ export const SHAPE_DATA_SOURCES = [
 ] as DataSourceConfig[];
 
 export const SHAPE_DATA_SOURCE_BY_NAME = Object.fromEntries(
-  SHAPE_DATA_SOURCES.map((source) => [source.name, source]),
+  SHAPE_DATA_SOURCES.map((source) => [source.name, source])
 ) as Record<DataSourceConfig['name'], DataSourceConfig>;

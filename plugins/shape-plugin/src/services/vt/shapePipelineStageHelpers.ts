@@ -1,6 +1,10 @@
 import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import { listTasksByStageAndStatus, updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import {
+  listTasksByStageAndStatus,
+  updateTask,
+  type VtTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 
 export type StageCounts = {
   queued: number;
@@ -9,13 +13,13 @@ export type StageCounts = {
   failed: number;
 };
 
-export const resolveFailureHandling = (policy: BuildContinuationPolicy): 'continue' | 'stop' => (
-  policy === 'stop_on_first_error' ? 'stop' : 'continue'
-);
+export const resolveFailureHandling = (policy: BuildContinuationPolicy): 'continue' | 'stop' =>
+  policy === 'stop_on_first_error' ? 'stop' : 'continue';
 
-export const shouldStopAfterStage = (policy: BuildContinuationPolicy, failedCount: number): boolean => (
-  failedCount > 0 && policy !== 'finish_all_stages'
-);
+export const shouldStopAfterStage = (
+  policy: BuildContinuationPolicy,
+  failedCount: number
+): boolean => failedCount > 0 && policy !== 'finish_all_stages';
 
 export const createPipelineLinkedAbortController = (
   pipelineSignal?: AbortSignal
@@ -35,7 +39,7 @@ export const createPipelineLinkedAbortController = (
 export const getFailedTaskCount = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
-  stage: TaskQueueRecord['stage'],
+  stage: TaskQueueRecord['stage']
 ): Promise<number> => {
   const failed = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed');
   return failed.length;
@@ -44,7 +48,7 @@ export const getFailedTaskCount = async (
 export const summarizeStageCounts = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
-  stage: TaskQueueRecord['stage'],
+  stage: TaskQueueRecord['stage']
 ): Promise<StageCounts> => {
   const [queued, running, completed, failed, recycled] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
@@ -62,15 +66,17 @@ export const summarizeStageCounts = async (
 };
 
 export const readHeapSnapshot = () => {
-  const performance = (globalThis as {
-    performance?: {
-      memory?: {
-        usedJSHeapSize?: number;
-        totalJSHeapSize?: number;
-        jsHeapSizeLimit?: number;
+  const performance = (
+    globalThis as {
+      performance?: {
+        memory?: {
+          usedJSHeapSize?: number;
+          totalJSHeapSize?: number;
+          jsHeapSizeLimit?: number;
+        };
       };
-    };
-  }).performance;
+    }
+  ).performance;
   const memory = performance?.memory;
   if (!memory) return null;
   return {
@@ -83,29 +89,31 @@ export const readHeapSnapshot = () => {
 export const markStageTasksRecycled = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
-  stage: TaskQueueRecord['stage'],
+  stage: TaskQueueRecord['stage']
 ): Promise<void> => {
   const completedTasks = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed');
   if (completedTasks.length === 0) return;
   const now = Date.now();
   await Promise.all(
-    completedTasks.map((task) => updateTask(
-      taskQueue,
-      task.taskId,
-      {
-        status: 'recycled',
-        progress: 100,
-        completedAt: task.completedAt ?? now,
-      },
-      { allowTerminalStatusTransition: true },
-    )),
+    completedTasks.map((task) =>
+      updateTask(
+        taskQueue,
+        task.taskId,
+        {
+          status: 'recycled',
+          progress: 100,
+          completedAt: task.completedAt ?? now,
+        },
+        { allowTerminalStatusTransition: true }
+      )
+    )
   );
 };
 
 export const resetStageRunningTasks = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
-  stage: TaskQueueRecord['stage'],
+  stage: TaskQueueRecord['stage']
 ): Promise<void> => {
   const runningTasks = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running');
   if (runningTasks.length === 0) return;
@@ -114,14 +122,18 @@ export const resetStageRunningTasks = async (
     stage,
     count: runningTasks.length,
   });
-  await Promise.all(runningTasks.map((task) => updateTask(taskQueue, task.taskId, {
-    status: 'queued',
-    startedAt: undefined,
-    completedAt: undefined,
-    errorMessage: undefined,
-    message: undefined,
-    outputData: undefined,
-  })));
+  await Promise.all(
+    runningTasks.map((task) =>
+      updateTask(taskQueue, task.taskId, {
+        status: 'queued',
+        startedAt: undefined,
+        completedAt: undefined,
+        errorMessage: undefined,
+        message: undefined,
+        outputData: undefined,
+      })
+    )
+  );
 };
 
 export const finalizePendingStageTasks = async (
@@ -133,7 +145,7 @@ export const finalizePendingStageTasks = async (
   pipelineRunId?: string,
   options?: {
     markFailed?: boolean;
-  },
+  }
 ): Promise<{ queued: number; running: number; authPending: number }> => {
   const [queuedTasks, runningTasks] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
@@ -154,24 +166,27 @@ export const finalizePendingStageTasks = async (
   const now = Date.now();
   if (shouldMarkFailed) {
     await Promise.all(
-      finalizeTargets.map((task) => (
+      finalizeTargets.map((task) =>
         updateTask(taskQueue, task.taskId, {
           status: 'failed',
           message: errorMessage,
           errorMessage,
           completedAt: now,
         })
-      )),
+      )
     );
   }
-  console.warn(logLabel, JSON.stringify({
-    nodeId,
-    runId: pipelineRunId ?? null,
-    queued: finalizeTargets.filter((task) => task.status === 'queued').length,
-    running: finalizeTargets.filter((task) => task.status === 'running').length,
-    authPending: authPendingTasks.length,
-    markFailed: shouldMarkFailed,
-  }));
+  console.warn(
+    logLabel,
+    JSON.stringify({
+      nodeId,
+      runId: pipelineRunId ?? null,
+      queued: finalizeTargets.filter((task) => task.status === 'queued').length,
+      running: finalizeTargets.filter((task) => task.status === 'running').length,
+      authPending: authPendingTasks.length,
+      markFailed: shouldMarkFailed,
+    })
+  );
   return {
     queued: finalizeTargets.filter((task) => task.status === 'queued').length,
     running: finalizeTargets.filter((task) => task.status === 'running').length,

@@ -2,14 +2,8 @@
   "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "vite/client"
-    ]
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
   },
   "exclude": [
     "**/*.stories.*",
@@ -22,7 +16,5 @@
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

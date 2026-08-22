@@ -1,5 +1,9 @@
-import type React from 'react';
-import { useId } from 'react';
+import {
+  Add as AddIcon,
+  Close as CloseIcon,
+  Help as HelpIcon,
+  Preview as PreviewIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -19,8 +23,9 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { ResolverUpdaterPayload, SchemaInfo, PropertyInfo } from '~/common/types/index';
+import type React from 'react';
+import { useId } from 'react';
+import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '~/common/types/index';
 import { usePropertyMappingStep } from './hooks/usePropertyMappingStep.js';
 
 interface PropertyMappingStepProps {
@@ -32,10 +37,10 @@ interface PropertyMappingStepProps {
 }
 
 export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
-                                                                          data,
-                                                                          onUpdate,
-                                                                          onValidationChange,
-                                                                          sourceSchema,
+  data,
+  onUpdate,
+  onValidationChange,
+  sourceSchema,
   targetSchema,
 }) => {
   const controlId = useId();
@@ -73,7 +78,8 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         Property Mapping Rules
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Define how properties from the source schema map to the target schema using simple text rules.
+        Define how properties from the source schema map to the target schema using simple text
+        rules.
       </Typography>
 
       <Grid container spacing={3}>
@@ -109,7 +115,11 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
             onChange={(e) => handleMappingTextChange(e.target.value)}
             placeholder="# Define your mapping rules here (one per line)&#10;id -> user_id&#10;name -> full_name&#10;age -> years&#10;email -> email_address | lowercase"
             error={mappingErrors.length > 0}
-            helperText={mappingErrors.length > 0 ? `${mappingErrors.length} error(s) found` : 'One mapping rule per line'}
+            helperText={
+              mappingErrors.length > 0
+                ? `${mappingErrors.length} error(s) found`
+                : 'One mapping rule per line'
+            }
             sx={{ fontFamily: 'monospace' }}
             inputProps={{ id: `${controlId}-mapping-rules`, name: 'mapping-rules' }}
           />
@@ -210,7 +220,9 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
           </Typography>
 
           <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>Basic Syntax</Typography>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Basic Syntax
+            </Typography>
             <Typography variant="body2" component="div" sx={{ fontFamily: 'monospace', mb: 1 }}>
               source_property -&gt; target_property
             </Typography>
@@ -220,7 +232,9 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
           </Paper>
 
           <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>With Transformation</Typography>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              With Transformation
+            </Typography>
             <Typography variant="body2" component="div" sx={{ fontFamily: 'monospace', mb: 1 }}>
               source_property -&gt; target_property | transform_function
             </Typography>
@@ -229,9 +243,15 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
             </Typography>
           </Paper>
 
-          <Typography variant="h6" sx={{ mb: 1 }}>Examples</Typography>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            Examples
+          </Typography>
           <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="body2" component="div" sx={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+            <Typography
+              variant="body2"
+              component="div"
+              sx={{ fontFamily: 'monospace', whiteSpace: 'pre' }}
+            >
               {`# Direct mapping
 id -> user_id
 name -> full_name
@@ -264,11 +284,15 @@ date -> created_at | parse_date
         <DialogContent>
           {previewResult && (
             <Box>
-              <Typography variant="h6" sx={{ mb: 2 }}>Preview Results</Typography>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Preview Results
+              </Typography>
 
               <Grid container spacing={2}>
                 <Grid size={{ xs: 6 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Sample Mapped Data</Typography>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Sample Mapped Data
+                  </Typography>
                   <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                     <Typography variant="body2" component="pre" sx={{ fontSize: '0.8rem' }}>
                       {JSON.stringify(previewResult.mappedData, null, 2)}
@@ -277,19 +301,34 @@ date -> created_at | parse_date
                 </Grid>
 
                 <Grid size={{ xs: 6 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Statistics</Typography>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Statistics
+                  </Typography>
                   <Paper sx={{ p: 2 }}>
-                    <Typography variant="body2">Total Records: {previewResult.statistics?.totalRecords ?? 0}</Typography>
-                    <Typography variant="body2">Successful
-                      Mappings: {previewResult.statistics?.successfulMappings ?? 0}</Typography>
-                    <Typography variant="body2">Failed Mappings: {previewResult.statistics?.failedMappings ?? 0}</Typography>
+                    <Typography variant="body2">
+                      Total Records: {previewResult.statistics?.totalRecords ?? 0}
+                    </Typography>
+                    <Typography variant="body2">
+                      Successful Mappings: {previewResult.statistics?.successfulMappings ?? 0}
+                    </Typography>
+                    <Typography variant="body2">
+                      Failed Mappings: {previewResult.statistics?.failedMappings ?? 0}
+                    </Typography>
 
                     {(previewResult.unmappedProperties?.length ?? 0) > 0 && (
                       <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" sx={{ mb: 1 }}>Unmapped Source Properties:</Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Unmapped Source Properties:
+                        </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {previewResult.unmappedProperties?.map((prop: string) => (
-                            <Chip key={prop} label={prop} size="small" color="warning" variant="outlined" />
+                          {previewResult.unmappedProperties?.map((prop: string) => (
+                            <Chip
+                              key={prop}
+                              label={prop}
+                              size="small"
+                              color="warning"
+                              variant="outlined"
+                            />
                           ))}
                         </Box>
                       </Box>

@@ -25,7 +25,7 @@ export interface BuildSessionControlPort {
   subscribeBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    callback: BuildSessionSubscriptionCallback,
+    callback: BuildSessionSubscriptionCallback
   ): Promise<() => void>;
   startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;

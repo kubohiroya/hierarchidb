@@ -6,7 +6,16 @@ import {
   Save as SaveIcon,
   SnippetFolder as SnippetFolderIcon,
 } from '@mui/icons-material';
-import { Box, Button, ButtonGroup, Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import { useImportExportMenu } from './useImportExportMenu.js';
 
 export interface ImportExportMenuProps {
@@ -63,7 +72,12 @@ export function ImportExportMenu({
           <SaveIcon fontSize="small" />
         </Button>
       </ButtonGroup>
-      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu} container={portalContainer}>
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        container={portalContainer}
+      >
         <MenuItem
           onClick={() => {
             onImport();
@@ -89,25 +103,24 @@ export function ImportExportMenu({
           </ListItemIcon>
           <ListItemText primary={exportLabel} />
         </MenuItem>
-        {hasTemplates &&
-          [
-            <Divider key="template-divider" />,
-            <MenuItem
-              key="template-menu"
-              aria-haspopup="menu"
-              aria-label={importTemplateLabel}
-              onMouseEnter={openTemplateMenuFromMouse}
-              onFocus={openTemplateMenuFromFocus}
-              onClick={openTemplateMenuFromMouse}
-              disabled={!allowImport}
-            >
-              <ListItemIcon>
-                <SnippetFolderIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={importTemplateLabel} />
-              <KeyboardArrowRightIcon fontSize="small" />
-            </MenuItem>,
-          ]}
+        {hasTemplates && [
+          <Divider key="template-divider" />,
+          <MenuItem
+            key="template-menu"
+            aria-haspopup="menu"
+            aria-label={importTemplateLabel}
+            onMouseEnter={openTemplateMenuFromMouse}
+            onFocus={openTemplateMenuFromFocus}
+            onClick={openTemplateMenuFromMouse}
+            disabled={!allowImport}
+          >
+            <ListItemIcon>
+              <SnippetFolderIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={importTemplateLabel} />
+            <KeyboardArrowRightIcon fontSize="small" />
+          </MenuItem>,
+        ]}
       </Menu>
       {hasTemplates && (
         <Menu

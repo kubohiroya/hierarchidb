@@ -49,6 +49,7 @@ export interface TabularDataProfile {
   rowCount?: number;
 }
 
-export interface TabularParseResult<T = Record<string, any>> extends AsyncIterable<TabularChunk<T>> {
+export interface TabularParseResult<T = Record<string, any>>
+  extends AsyncIterable<TabularChunk<T>> {
   preview: TabularPreview<T>;
 }

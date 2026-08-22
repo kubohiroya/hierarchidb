@@ -1,5 +1,5 @@
-import { createDexieFeatureStore } from '@hierarchidb/runtime-worker';
 import type { FeatureStore } from '@hierarchidb/runtime-worker';
+import { createDexieFeatureStore } from '@hierarchidb/runtime-worker';
 import type { FeatureRecord, ShapeDB } from '@hierarchidb/shape-store';
 
 type Item = FeatureRecord;

@@ -1,18 +1,21 @@
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import type { DataSourceName } from '../../common/types/index';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { SourceStageAuthPendingError, runShapeSourceStageSection } from '../../services/vt/shapePipelineSourceStage';
-import * as shapeSourceStageModule from '../../services/vt/runShapeSourceStage';
 import {
   listTasksByStageAndStatus,
   putTasks,
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
+import type { DataSourceName } from '../../common/types/index';
+import * as shapeSourceStageModule from '../../services/vt/runShapeSourceStage';
+import {
+  runShapeSourceStageSection,
+  SourceStageAuthPendingError,
+} from '../../services/vt/shapePipelineSourceStage';
 
 const NODE_ID = 'shape-source-stage-section-node' as NodeId;
 
@@ -100,16 +103,18 @@ describe('runShapeSourceStageSection', () => {
     db = createDb();
     await putTasks(db, [createRunningSourceTask('source-running-1')]);
 
-    await expect(runShapeSourceStageSection({
-      nodeId: NODE_ID,
-      dataSource: '__invalid_source__' as DataSourceName,
-      buildConfig: DEFAULT_BUILD_CONFIG,
-      taskQueue: db,
-      resumeExistingTasks: true,
-      failureHandling: 'continue',
-      buildContinuationPolicy: 'finish_all_stages',
-      pipelineRunId: 'test-run-1',
-    })).rejects.toThrow();
+    await expect(
+      runShapeSourceStageSection({
+        nodeId: NODE_ID,
+        dataSource: '__invalid_source__' as DataSourceName,
+        buildConfig: DEFAULT_BUILD_CONFIG,
+        taskQueue: db,
+        resumeExistingTasks: true,
+        failureHandling: 'continue',
+        buildContinuationPolicy: 'finish_all_stages',
+        pipelineRunId: 'test-run-1',
+      })
+    ).rejects.toThrow();
 
     const [failed, running, queued] = await Promise.all([
       listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed'),
@@ -162,16 +167,18 @@ describe('runShapeSourceStageSection', () => {
       .mockResolvedValue(undefined);
 
     try {
-      await expect(runShapeSourceStageSection({
-        nodeId: NODE_ID,
-        dataSource: 'geoboundaries',
-        buildConfig: DEFAULT_BUILD_CONFIG,
-        taskQueue: db,
-        resumeExistingTasks: true,
-        failureHandling: 'continue',
-        buildContinuationPolicy: 'finish_all_stages',
-        pipelineRunId: 'test-run-auth',
-      })).rejects.toBeInstanceOf(SourceStageAuthPendingError);
+      await expect(
+        runShapeSourceStageSection({
+          nodeId: NODE_ID,
+          dataSource: 'geoboundaries',
+          buildConfig: DEFAULT_BUILD_CONFIG,
+          taskQueue: db,
+          resumeExistingTasks: true,
+          failureHandling: 'continue',
+          buildContinuationPolicy: 'finish_all_stages',
+          pipelineRunId: 'test-run-auth',
+        })
+      ).rejects.toBeInstanceOf(SourceStageAuthPendingError);
     } finally {
       runShapeSourceStageSpy.mockRestore();
     }

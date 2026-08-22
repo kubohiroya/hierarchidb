@@ -24,16 +24,18 @@ export type StageCheckpointLogger = {
 };
 
 export function createMemorySnapshot(): Record<string, NumericValue> | undefined {
-  const memory = (globalThis as {
-    performance?: {
-      memory?: {
-        usedJSHeapSize?: number;
-        totalJSHeapSize?: number;
-        jsHeapSizeLimit?: number;
-        usedJSHeapSizeLimit?: number;
+  const memory = (
+    globalThis as {
+      performance?: {
+        memory?: {
+          usedJSHeapSize?: number;
+          totalJSHeapSize?: number;
+          jsHeapSizeLimit?: number;
+          usedJSHeapSizeLimit?: number;
+        };
       };
-    };
-  }).performance?.memory;
+    }
+  ).performance?.memory;
 
   if (!memory) return undefined;
   if (memory.usedJSHeapSize === undefined && memory.totalJSHeapSize === undefined) return undefined;
@@ -46,24 +48,15 @@ export function createMemorySnapshot(): Record<string, NumericValue> | undefined
   };
 }
 
-export async function runWithStageCheckpoint<T>(
-  options: {
-    nodeId: NodeId;
-    stage: TaskStage;
-    action: () => Promise<T>;
-    writeHeartbeat: StageHeartbeatWriter;
-    runId?: string | null;
-    logger?: StageCheckpointLogger;
-  },
-): Promise<T> {
-  const {
-    nodeId,
-    stage,
-    action,
-    writeHeartbeat,
-    runId,
-    logger,
-  } = options;
+export async function runWithStageCheckpoint<T>(options: {
+  nodeId: NodeId;
+  stage: TaskStage;
+  action: () => Promise<T>;
+  writeHeartbeat: StageHeartbeatWriter;
+  runId?: string | null;
+  logger?: StageCheckpointLogger;
+}): Promise<T> {
+  const { nodeId, stage, action, writeHeartbeat, runId, logger } = options;
   const startedAt = Date.now();
 
   logger?.onStart?.({

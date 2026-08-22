@@ -2,10 +2,10 @@
 // Core vector tile generation from a FeatureCollection.
 // ============================================================
 
-import type { Tile } from 'geojson-vt';
-import type { Feature, Geometry, GeoJsonProperties } from 'geojson';
-import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+import type { Feature, GeoJsonProperties, Geometry } from 'geojson';
+import type { Tile } from 'geojson-vt';
 import { encodeMvtFromGeojsonVt } from '../vectorTileFormats.js';
 import {
   pickAdminCode,
@@ -17,10 +17,10 @@ import {
 import type {
   FeatureCollectionLike,
   GeojsonVtData,
-  VTGenerateConfig,
-  VTGenerateResult,
   VectorTileProgress,
   VectorTileRow,
+  VTGenerateConfig,
+  VTGenerateResult,
 } from './types.js';
 import {
   buildUniqueFeatureId,

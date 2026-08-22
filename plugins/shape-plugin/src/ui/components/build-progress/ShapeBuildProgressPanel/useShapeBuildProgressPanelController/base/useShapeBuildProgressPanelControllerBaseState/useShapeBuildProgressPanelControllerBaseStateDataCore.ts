@@ -1,29 +1,41 @@
-import { createElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { Stack, Typography } from '@mui/material';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { SourceConfig } from '@hierarchidb/gis-sdk';
-import type { ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   type ShapeBuildSessionRecoverableContractError,
 } from '@hierarchidb/shape-api';
-import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
-import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
-import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
-import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStepStageMenu } from '@hierarchidb/ui-build-progress';
+import { Stack, Typography } from '@mui/material';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
-import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
+import {
+  createElement,
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import { normalizeUiStageId, resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
+import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import {
   buildSessionLifecycleAtom,
   completeBuildSessionRecoveryAtom,
   dispatchBuildSessionEventAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
+import {
+  normalizeUiStageId,
+  resolveStageAliasArray,
+} from '~/ui/components/build-progress/stageIdAliases';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
+import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
+import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
+import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 
 type StageMetadataMap<T> = Record<string, T>;
 
@@ -44,7 +56,7 @@ type SourceRetryConfigPatch = {
 const formatDuration = (
   durationMs: number | null | undefined,
   t: TranslateFn,
-  showZeroAsDash = false,
+  showZeroAsDash = false
 ): string => {
   if (durationMs == null || durationMs < 0 || !Number.isFinite(durationMs)) {
     return t('stage.timing.unknown', '-');
@@ -148,24 +160,33 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   );
   const [startPendingHold, setStartPendingHold] = useState(false);
   const [taskSearchText, setTaskSearchText] = useState('');
-  const [stagePreviewWindowPendingMap, setStagePreviewWindowPendingMap] = useState<Record<string, boolean>>({});
-  const [stagePreviewWindowOpenMap, setStagePreviewWindowOpenMap] = useState<Record<string, boolean>>({});
-  const [stagePreviewWindowZIndexMap, setStagePreviewWindowZIndexMap] = useState<Record<string, number>>({
+  const [stagePreviewWindowPendingMap, setStagePreviewWindowPendingMap] = useState<
+    Record<string, boolean>
+  >({});
+  const [stagePreviewWindowOpenMap, setStagePreviewWindowOpenMap] = useState<
+    Record<string, boolean>
+  >({});
+  const [stagePreviewWindowZIndexMap, setStagePreviewWindowZIndexMap] = useState<
+    Record<string, number>
+  >({
     source: 1,
     geometry: 2,
     tileEmit: 3,
   });
   const stagePreviewWindowZCounterRef = useRef(4);
   const [concurrencyEditorAnchor, setConcurrencyEditorAnchor] = useState<HTMLElement | null>(null);
-  const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'source' | 'geometry' | 'tileEmit' | null>(null);
+  const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<
+    'source' | 'geometry' | 'tileEmit' | null
+  >(null);
   const [sourceRetryEditorAnchor, setSourceRetryEditorAnchor] = useState<HTMLElement | null>(null);
   const [startupNoticeDismissed, setStartupNoticeDismissed] = useState(false);
 
   const isBuildSessionStarted = controls.startPending || summary.buildStatus === 'running';
-  const isBuildStartupPending = controls.startPending
-    && summary.buildStatus !== 'running'
-    && summary.buildStatus !== 'completed'
-    && summary.buildStatus !== 'failed';
+  const isBuildStartupPending =
+    controls.startPending &&
+    summary.buildStatus !== 'running' &&
+    summary.buildStatus !== 'completed' &&
+    summary.buildStatus !== 'failed';
 
   const isResetSessionLoading = isResetSessionPending || cacheDeleteLoading.resetSession;
   const isTerminalStatus = summary.buildStatus === 'completed' || summary.buildStatus === 'failed';
@@ -195,15 +216,20 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     }
   }, [controls.startPending]);
 
-  const hasAnyTasks = useMemo(() => (
-    stages.some((stage: { id: string }) => resolveStageAliasArray(tasksByStage, stage.id).length > 0)
-  ), [stages, tasksByStage]);
+  const hasAnyTasks = useMemo(
+    () =>
+      stages.some(
+        (stage: { id: string }) => resolveStageAliasArray(tasksByStage, stage.id).length > 0
+      ),
+    [stages, tasksByStage]
+  );
 
   const hasAnySummaryTasks = useMemo(
-    () => (paneProgress ?? []).some(
-      (entry: { taskCount?: number } | undefined) => (entry?.taskCount ?? 0) > 0,
-    ),
-    [paneProgress],
+    () =>
+      (paneProgress ?? []).some(
+        (entry: { taskCount?: number } | undefined) => (entry?.taskCount ?? 0) > 0
+      ),
+    [paneProgress]
   );
 
   useEffect(() => {
@@ -266,17 +292,19 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     legacySessionRecoveryError,
   ]);
 
-  const isTasksLoadingForDisplay = isTasksLoading
-    || isResetSessionLoading
-    || controls.startPending
-    || startPendingHold
-    || taskListViewPhase === 'ui-initializing';
+  const isTasksLoadingForDisplay =
+    isTasksLoading ||
+    isResetSessionLoading ||
+    controls.startPending ||
+    startPendingHold ||
+    taskListViewPhase === 'ui-initializing';
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
   const isStartupPendingForDisplay = isBuildStartupPending || startPendingHold;
   const isControlMenuDisabled = isResetSessionLoading || summary.buildStatus === 'idle';
   const isStartButtonLoading = isResetSessionLoading
     ? false
-    : (!isTerminalStatus && (summary.buildStatus === 'running' || controls.startPending || startPendingHold));
+    : !isTerminalStatus &&
+      (summary.buildStatus === 'running' || controls.startPending || startPendingHold);
 
   const tasksByStageForDisplay = useMemo(() => {
     if (!isResetSessionLoading) return tasksByStage;
@@ -306,19 +334,23 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     }, {});
   }, [isResetSessionLoading, stageProgress, stages]);
 
-  const stageLoadingState = useMemo<StageMetadataMap<boolean>>(() => (
-    stages.reduce<StageMetadataMap<boolean>>((acc, stage: { id: string }) => {
-      acc[stage.id] = summary.buildStatus === 'running' && summary.timingStageId === stage.id;
-      return acc;
-    }, {})
-  ), [stages, summary.buildStatus, summary.timingStageId]);
+  const stageLoadingState = useMemo<StageMetadataMap<boolean>>(
+    () =>
+      stages.reduce<StageMetadataMap<boolean>>((acc, stage: { id: string }) => {
+        acc[stage.id] = summary.buildStatus === 'running' && summary.timingStageId === stage.id;
+        return acc;
+      }, {}),
+    [stages, summary.buildStatus, summary.timingStageId]
+  );
 
-  const stageConcurrencyIndicatorAriaLabels = useMemo<StageMetadataMap<string>>(() => (
-    stages.reduce<StageMetadataMap<string>>((acc, stage: { id: string; title: string }) => {
-      acc[stage.id] = stage.title;
-      return acc;
-    }, {})
-  ), [stages]);
+  const stageConcurrencyIndicatorAriaLabels = useMemo<StageMetadataMap<string>>(
+    () =>
+      stages.reduce<StageMetadataMap<string>>((acc, stage: { id: string; title: string }) => {
+        acc[stage.id] = stage.title;
+        return acc;
+      }, {}),
+    [stages]
+  );
 
   const stageLeadingControls = useMemo<StageMetadataMap<ReactNode>>(() => {
     const controlsByStage: Record<string, ReactNode> = {};
@@ -335,44 +367,50 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       };
     });
   }, []);
-  const openStagePreviewWindow = useCallback((stageId: string) => {
-    let changedToVisible = false;
-    setStagePreviewWindowOpenMap((prev) => {
-      if ((prev[stageId] ?? true) === false) return prev;
-      changedToVisible = true;
-      return {
-        ...prev,
-        [stageId]: false,
-      };
-    });
-    if (changedToVisible) {
-      setStagePreviewWindowPendingMap((prev) => ({
-        ...prev,
-        [stageId]: true,
-      }));
-      requestAnimationFrame(() => {
-        setStagePreviewWindowPendingMap((prev) => ({
+  const openStagePreviewWindow = useCallback(
+    (stageId: string) => {
+      let changedToVisible = false;
+      setStagePreviewWindowOpenMap((prev) => {
+        if ((prev[stageId] ?? true) === false) return prev;
+        changedToVisible = true;
+        return {
           ...prev,
           [stageId]: false,
-        }));
+        };
       });
-    }
-    bringStagePreviewWindowToFront(stageId);
-  }, [bringStagePreviewWindowToFront]);
-  const toggleStagePreviewWindow = useCallback((stageId: string) => {
-    let shouldBringToFront = false;
-    setStagePreviewWindowOpenMap((prev) => {
-      const isToggleOn = prev[stageId] ?? true;
-      shouldBringToFront = isToggleOn;
-      return {
-        ...prev,
-        [stageId]: !isToggleOn,
-      };
-    });
-    if (shouldBringToFront) {
+      if (changedToVisible) {
+        setStagePreviewWindowPendingMap((prev) => ({
+          ...prev,
+          [stageId]: true,
+        }));
+        requestAnimationFrame(() => {
+          setStagePreviewWindowPendingMap((prev) => ({
+            ...prev,
+            [stageId]: false,
+          }));
+        });
+      }
       bringStagePreviewWindowToFront(stageId);
-    }
-  }, [bringStagePreviewWindowToFront]);
+    },
+    [bringStagePreviewWindowToFront]
+  );
+  const toggleStagePreviewWindow = useCallback(
+    (stageId: string) => {
+      let shouldBringToFront = false;
+      setStagePreviewWindowOpenMap((prev) => {
+        const isToggleOn = prev[stageId] ?? true;
+        shouldBringToFront = isToggleOn;
+        return {
+          ...prev,
+          [stageId]: !isToggleOn,
+        };
+      });
+      if (shouldBringToFront) {
+        bringStagePreviewWindowToFront(stageId);
+      }
+    },
+    [bringStagePreviewWindowToFront]
+  );
   const closeStagePreviewWindow = useCallback((stageId: string) => {
     setStagePreviewWindowOpenMap((prev) => {
       if ((prev[stageId] ?? true) === true) return prev;
@@ -383,7 +421,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     });
   }, []);
 
-
   const stageMenus = useMemo<StageMetadataMap<BuildStepStageMenu>>(() => {
     // Remove all stage menus as requested - Build Session, Source, Geometry, TileEmit dropdown menus
     return {};
@@ -393,44 +430,56 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     const headerMetaByStage: Record<string, ReactNode> = {};
     for (const stage of stages) {
       const elapsedValue = formatDuration(
-        summary.completedStageElapsedMs[stage.id]
-        ?? (summary.timingStageId === stage.id ? summary.stageElapsedMs : undefined),
-        t,
+        summary.completedStageElapsedMs[stage.id] ??
+          (summary.timingStageId === stage.id ? summary.stageElapsedMs : undefined),
+        t
       );
-      const remainingValue = summary.timingStageId === stage.id
-        ? formatDuration(summary.stageRemainingMs, t, true)
-        : t('stage.timing.unknown', '-');
+      const remainingValue =
+        summary.timingStageId === stage.id
+          ? formatDuration(summary.stageRemainingMs, t, true)
+          : t('stage.timing.unknown', '-');
       headerMetaByStage[stage.id] = createElement(
         Stack,
         { spacing: 0.25, alignItems: 'flex-end' },
         createElement(
           Typography,
           { variant: 'caption', color: 'text.secondary' },
-          `${t('stage.timing.stageElapsed', 'Time elapsed')}: ${elapsedValue}`,
+          `${t('stage.timing.stageElapsed', 'Time elapsed')}: ${elapsedValue}`
         ),
         createElement(
           Typography,
           { variant: 'caption', color: 'text.secondary' },
-          `${t('stage.timing.stageRemaining', 'Time left(est)')}: ${remainingValue}`,
-        ),
+          `${t('stage.timing.stageRemaining', 'Time left(est)')}: ${remainingValue}`
+        )
       );
     }
     return headerMetaByStage;
-  }, [stages, summary.completedStageElapsedMs, summary.stageElapsedMs, summary.stageRemainingMs, summary.timingStageId, t]);
+  }, [
+    stages,
+    summary.completedStageElapsedMs,
+    summary.stageElapsedMs,
+    summary.stageRemainingMs,
+    summary.timingStageId,
+    t,
+  ]);
 
-  const startupStatusMessage = controls.statusLabel?.trim()
-    || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
+  const startupStatusMessage =
+    controls.statusLabel?.trim() ||
+    t('stage.progress.startupPending', 'Preparing build session. Please wait...');
   const pauseButtonLabel = isBuildStartupPending
     ? t('stage.controls.cancelBuild', 'Cancel Build')
     : t('stage.controls.pause', 'Pause');
 
   const taskSearchQuery = taskSearchText.trim().toLowerCase();
-  const matchesSearchQuery = useCallback((task: TaskItemWithMetadata) => {
-    if (taskSearchQuery.length === 0) return true;
-    const title = resolveTaskTitle(task).toLowerCase();
-    const message = resolveTaskMetadataMessage(task.metadata)?.toLowerCase() ?? '';
-    return title.includes(taskSearchQuery) || message.includes(taskSearchQuery);
-  }, [resolveTaskTitle, taskSearchQuery]);
+  const matchesSearchQuery = useCallback(
+    (task: TaskItemWithMetadata) => {
+      if (taskSearchQuery.length === 0) return true;
+      const title = resolveTaskTitle(task).toLowerCase();
+      const message = resolveTaskMetadataMessage(task.metadata)?.toLowerCase() ?? '';
+      return title.includes(taskSearchQuery) || message.includes(taskSearchQuery);
+    },
+    [resolveTaskTitle, taskSearchQuery]
+  );
 
   const processingConfigForEdit = useMemo<ShapeProcessingConfig>(() => {
     const draftConfig = data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG;
@@ -439,79 +488,91 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const buildConfigForEdit = useMemo(
     () => applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, data?.buildConfig),
-    [data?.buildConfig],
+    [data?.buildConfig]
   );
 
-  const sourceRetryConfigForEdit = useMemo(() => ({
-    timeoutMs: buildConfigForEdit.sourceConfig.timeoutMs,
-    retryAttempts: processingConfigForEdit.source.retryAttempts,
-    retryDelay: processingConfigForEdit.source.retryDelay,
-    retryLimit: processingConfigForEdit.source.retryLimit,
-    retryBackoff: processingConfigForEdit.source.retryBackoff,
-  }), [
-    buildConfigForEdit.sourceConfig.timeoutMs,
-    processingConfigForEdit.source.retryAttempts,
-    processingConfigForEdit.source.retryDelay,
-    processingConfigForEdit.source.retryLimit,
-    processingConfigForEdit.source.retryBackoff,
-  ]);
+  const sourceRetryConfigForEdit = useMemo(
+    () => ({
+      timeoutMs: buildConfigForEdit.sourceConfig.timeoutMs,
+      retryAttempts: processingConfigForEdit.source.retryAttempts,
+      retryDelay: processingConfigForEdit.source.retryDelay,
+      retryLimit: processingConfigForEdit.source.retryLimit,
+      retryBackoff: processingConfigForEdit.source.retryBackoff,
+    }),
+    [
+      buildConfigForEdit.sourceConfig.timeoutMs,
+      processingConfigForEdit.source.retryAttempts,
+      processingConfigForEdit.source.retryDelay,
+      processingConfigForEdit.source.retryLimit,
+      processingConfigForEdit.source.retryBackoff,
+    ]
+  );
 
-  const applyProcessingConfigUpdate = useCallback((partial: Partial<ShapeProcessingConfig>) => {
-    if (!onChange) return;
-    const merged = mergeProcessingConfig(processingConfigForEdit, partial);
-    onChange({ processingConfig: merged });
-  }, [onChange, processingConfigForEdit]);
+  const applyProcessingConfigUpdate = useCallback(
+    (partial: Partial<ShapeProcessingConfig>) => {
+      if (!onChange) return;
+      const merged = mergeProcessingConfig(processingConfigForEdit, partial);
+      onChange({ processingConfig: merged });
+    },
+    [onChange, processingConfigForEdit]
+  );
 
-  const applySourceRetryConfigUpdate = useCallback((next: SourceRetryConfigPatch) => {
-    if (!onChange) return;
-    const nextBuildConfig = applyBuildConfigPatch(buildConfigForEdit, {
-      sourceConfig: {
-        ...buildConfigForEdit.sourceConfig,
-        timeoutMs: next.timeoutMs,
-      },
-    });
-    const nextProcessingConfig = mergeProcessingConfig(processingConfigForEdit, {
-      source: {
-        ...processingConfigForEdit.source,
-        retryAttempts: next.retryAttempts,
-        retryDelay: next.retryDelay,
-        retryLimit: next.retryLimit,
-        retryBackoff: next.retryBackoff,
-      },
-    });
-    onChange({
-      buildConfig: nextBuildConfig,
-      processingConfig: nextProcessingConfig,
-    });
-  }, [buildConfigForEdit, onChange, processingConfigForEdit]);
+  const applySourceRetryConfigUpdate = useCallback(
+    (next: SourceRetryConfigPatch) => {
+      if (!onChange) return;
+      const nextBuildConfig = applyBuildConfigPatch(buildConfigForEdit, {
+        sourceConfig: {
+          ...buildConfigForEdit.sourceConfig,
+          timeoutMs: next.timeoutMs,
+        },
+      });
+      const nextProcessingConfig = mergeProcessingConfig(processingConfigForEdit, {
+        source: {
+          ...processingConfigForEdit.source,
+          retryAttempts: next.retryAttempts,
+          retryDelay: next.retryDelay,
+          retryLimit: next.retryLimit,
+          retryBackoff: next.retryBackoff,
+        },
+      });
+      onChange({
+        buildConfig: nextBuildConfig,
+        processingConfig: nextProcessingConfig,
+      });
+    },
+    [buildConfigForEdit, onChange, processingConfigForEdit]
+  );
 
   const closeConcurrencyEditor = useCallback(() => {
     setConcurrencyEditorAnchor(null);
     setConcurrencyEditorStageId(null);
   }, []);
 
-  const handleSourceRetryIndicatorClick = useCallback((event: MouseEvent<HTMLElement>) => {
-    if (isBuildSessionStarted) return;
-    setConcurrencyEditorAnchor(null);
-    setConcurrencyEditorStageId(null);
-    setSourceRetryEditorAnchor(event.currentTarget);
-  }, [isBuildSessionStarted]);
+  const handleSourceRetryIndicatorClick = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      if (isBuildSessionStarted) return;
+      setConcurrencyEditorAnchor(null);
+      setConcurrencyEditorStageId(null);
+      setSourceRetryEditorAnchor(event.currentTarget);
+    },
+    [isBuildSessionStarted]
+  );
 
   const closeSourceRetryEditor = useCallback(() => {
     setSourceRetryEditorAnchor(null);
   }, []);
 
-  const handleStageConcurrencyIndicatorClick = useCallback((
-    stageId: string,
-    event: MouseEvent<HTMLElement>,
-  ) => {
-    if (isBuildSessionStarted) return;
-    const canonicalStageId = normalizeUiStageId(stageId);
-    if (!canonicalStageId) return;
-    setSourceRetryEditorAnchor(null);
-    setConcurrencyEditorStageId(canonicalStageId);
-    setConcurrencyEditorAnchor(event.currentTarget);
-  }, [isBuildSessionStarted]);
+  const handleStageConcurrencyIndicatorClick = useCallback(
+    (stageId: string, event: MouseEvent<HTMLElement>) => {
+      if (isBuildSessionStarted) return;
+      const canonicalStageId = normalizeUiStageId(stageId);
+      if (!canonicalStageId) return;
+      setSourceRetryEditorAnchor(null);
+      setConcurrencyEditorStageId(canonicalStageId);
+      setConcurrencyEditorAnchor(event.currentTarget);
+    },
+    [isBuildSessionStarted]
+  );
 
   useEffect(() => {
     if (!isBuildSessionStarted) return;

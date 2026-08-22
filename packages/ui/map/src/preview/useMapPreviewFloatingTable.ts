@@ -19,8 +19,10 @@ export const useMapPreviewFloatingTable = <Row extends { id: string | number }>(
   };
   const resolvedErrorLabels: MapPreviewErrorColumnLabels | null = errorColumnLabels ?? null;
   const resolvedFormatMessage = useMemo(
-    () => formatErrorMessage ?? ((summary: { messages: string[] }) => summary.messages.slice(0, 2).join(' / ')),
-    [formatErrorMessage],
+    () =>
+      formatErrorMessage ??
+      ((summary: { messages: string[] }) => summary.messages.slice(0, 2).join(' / ')),
+    [formatErrorMessage]
   );
 
   return {

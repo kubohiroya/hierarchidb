@@ -1,10 +1,10 @@
-import type { StageHandlerResult, VtTaskInput } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
-import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
-import { logFeatureCollectionReady } from './logFeatureCollectionReady.js';
-import { executeLayerBuild } from './executeLayerBuild.js';
-import { writeVtTaskOutput } from './writeVtTaskOutput.js';
+import type { StageHandlerResult, VtTaskInput } from '~/types/types';
 import { buildLayerRunInput } from './buildLayerRunInput.js';
+import { executeLayerBuild } from './executeLayerBuild.js';
+import { logFeatureCollectionReady } from './logFeatureCollectionReady.js';
+import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
+import { writeVtTaskOutput } from './writeVtTaskOutput.js';
 
 export const buildAndWriteVtTiles = async (
   context: VTStageContext,
@@ -14,7 +14,7 @@ export const buildAndWriteVtTiles = async (
   },
   input: VtTaskInput,
   runInput: VtTaskRunInput,
-  collection: VtCollectionResult,
+  collection: VtCollectionResult
 ): Promise<StageHandlerResult> => {
   const { taskContext } = runInput;
 

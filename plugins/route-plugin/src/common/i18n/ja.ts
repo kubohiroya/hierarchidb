@@ -1,6 +1,6 @@
 /**
-  * Japanese translations for Route Plugin
-   */
+ * Japanese translations for Route Plugin
+ */
 
 import type { RoutePluginTranslations } from './types.js';
 
@@ -36,7 +36,8 @@ export const ja: RoutePluginTranslations = {
 
   basicInfo: {
     title: 'ルート基本情報',
-    subtitle: 'ルート情報の基本的な設定を行います。ルートタイプや交通手段を指定してルートを分類できます。',
+    subtitle:
+      'ルート情報の基本的な設定を行います。ルートタイプや交通手段を指定してルートを分類できます。',
     nameLabel: 'ルート名',
     nameHelperText: 'わかりやすいルート名を入力してください',
     nameRequired: 'ルート名は必須です',
@@ -56,8 +57,10 @@ export const ja: RoutePluginTranslations = {
 
   routeSelection: {
     title: 'ルート選択・設定',
-    subtitle: '取得・生成するルートの条件を設定してください。地域やルートタイプ、交通手段の組み合わせでルートを指定できます。',
-    alertMessage: '取得・生成するルートの条件を設定してください。地域やルートタイプ、交通手段の組み合わせでルートを指定できます。',
+    subtitle:
+      '取得・生成するルートの条件を設定してください。地域やルートタイプ、交通手段の組み合わせでルートを指定できます。',
+    alertMessage:
+      '取得・生成するルートの条件を設定してください。地域やルートタイプ、交通手段の組み合わせでルートを指定できます。',
     routeTypeSettings: 'ルートタイプ別設定',
     transportModeSettings: '交通手段別設定',
     parametersTitle: 'ルートパラメータ',

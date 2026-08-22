@@ -2,18 +2,13 @@
  * Default built-in plugins collection
  */
 
+import type { TreeTablePlugin } from '~/plugin/types';
 import { inlineEditPlugin } from './InlineEditPlugin.js';
 import { keyboardNavigationPlugin } from './KeyboardNavigationPlugin.js';
-import type { TreeTablePlugin } from '~/plugin/types';
 
-export const defaultPlugins: TreeTablePlugin[] = [
-  keyboardNavigationPlugin,
-  inlineEditPlugin,
-];
+export const defaultPlugins: TreeTablePlugin[] = [keyboardNavigationPlugin, inlineEditPlugin];
 
-export const minimalPlugins: TreeTablePlugin[] = [
-  keyboardNavigationPlugin,
-];
+export const minimalPlugins: TreeTablePlugin[] = [keyboardNavigationPlugin];
 
 export const fullFeaturedPlugins: TreeTablePlugin[] = [
   keyboardNavigationPlugin,
@@ -26,4 +21,3 @@ export const fullFeaturedPlugins: TreeTablePlugin[] = [
   // - filterPlugin
   // - sortPlugin
 ];
-

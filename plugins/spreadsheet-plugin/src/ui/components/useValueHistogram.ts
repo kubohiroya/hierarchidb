@@ -63,8 +63,7 @@ export function useValueHistogram({
   }, [clampedBinCount, max, min, values]);
 
   const barWidth = chartWidth / clampedBinCount;
-  const scaleY = (count: number) =>
-    modeCount === 0 ? 0 : (count / modeCount) * chartHeight;
+  const scaleY = (count: number) => (modeCount === 0 ? 0 : (count / modeCount) * chartHeight);
 
   const lineXForValue = (value: number) => {
     if (max === min) return chartPadding.left;

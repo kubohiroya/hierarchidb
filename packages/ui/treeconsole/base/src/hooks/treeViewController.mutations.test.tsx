@@ -3,11 +3,11 @@
  * @description TDD tests for TreeViewController mutations and expand/collapse
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type NodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import { type NodeId } from '@hierarchidb/core-types';
 
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,
@@ -91,7 +91,7 @@ describe('useTreeViewController', () => {
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       await act(async () => {
         await result.current.moveNode('$1' as NodeId, '$2' as NodeId, 0);

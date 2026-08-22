@@ -1,5 +1,5 @@
-import type { ChangeEvent, ReactElement } from 'react';
 import { Checkbox, type SxProps, type Theme } from '@mui/material';
+import type { ChangeEvent, ReactElement } from 'react';
 
 interface IndeterminateCheckboxProps {
   id: string;
@@ -12,14 +12,14 @@ interface IndeterminateCheckboxProps {
 }
 
 export function IndeterminateCheckbox({
-                                        id,
-                                        checked,
-                                        indeterminate,
-                                        cascadingSelected,
-                                        onChange,
-                                        size,
-                                        sx,
-                                      }: IndeterminateCheckboxProps): ReactElement {
+  id,
+  checked,
+  indeterminate,
+  cascadingSelected,
+  onChange,
+  size,
+  sx,
+}: IndeterminateCheckboxProps): ReactElement {
   return (
     <Checkbox
       id={id}

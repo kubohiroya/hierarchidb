@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { applyBuildConfigPatch } from '~/common/types/index';
 import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
+import { applyBuildConfigPatch } from '~/common/types/index';
 
 type Args = {
   config: ShapeBuildConfig;
@@ -19,9 +19,12 @@ export const useGeometryConfigSection = ({ config, onChange }: Args) => {
     throw new Error('GeometryConfigSection: omitDetailsConfig is not defined');
   }
 
-  const update = useCallback((partial: ShapeBuildConfigPatch) => {
-    onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
-  }, [onChange]);
+  const update = useCallback(
+    (partial: ShapeBuildConfigPatch) => {
+      onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
+    },
+    [onChange]
+  );
 
   return {
     baseGeometryConfig,

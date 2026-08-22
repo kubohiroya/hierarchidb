@@ -1,8 +1,7 @@
-import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
 import { createVtTileOutputSession } from './createVtTileOutputSession.js';
-import { writeVtTileOutputs } from './writeVtTileOutputs.js';
 import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
-import type { VtTileProgressReporter } from './vtStageTaskOutputTypes.js';
+import type { VtTileOutputContext, VtTileProgressReporter } from './vtStageTaskOutputTypes.js';
+import { writeVtTileOutputs } from './writeVtTileOutputs.js';
 
 type VtTileOutputSessionResult = {
   totals: VtTileOutputAggregates;
@@ -11,11 +10,13 @@ type VtTileOutputSessionResult = {
 };
 
 export const runVtTileOutputWriter = async (
-  context: VtTileOutputContext,
-): Promise<{
-  processedTiles: number;
-  generatedTiles: number;
-} & VtTileOutputSessionResult> => {
+  context: VtTileOutputContext
+): Promise<
+  {
+    processedTiles: number;
+    generatedTiles: number;
+  } & VtTileOutputSessionResult
+> => {
   const {
     context: vtContext,
     taskContext,
@@ -32,12 +33,7 @@ export const runVtTileOutputWriter = async (
     parentInputMetadata,
   } = context;
 
-  const {
-    totals,
-    startedAt,
-    bufferSetHash,
-    reportTileProgress,
-  } = await createVtTileOutputSession({
+  const { totals, startedAt, bufferSetHash, reportTileProgress } = await createVtTileOutputSession({
     taskId: String(context.task.taskId),
     nodeId: context.task.nodeId,
     totalTiles,

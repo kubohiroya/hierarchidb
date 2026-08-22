@@ -1,16 +1,18 @@
 import path from 'node:path';
-
-import type { ManifestSummary, PluginSpecifierMode } from './types.js';
-import { repoRoot, registryOutputDir } from './paths.js';
 import { fileExists } from './fs-utils.js';
+import { registryOutputDir, repoRoot } from './paths.js';
+import type { ManifestSummary, PluginSpecifierMode } from './types.js';
 
 export function hasExportPath(paths: string[], target: string): boolean {
-  return paths.some((entry) =>
-    entry === target || entry === `${target}/index` || entry.startsWith(`${target}/`)
+  return paths.some(
+    (entry) => entry === target || entry === `${target}/index` || entry.startsWith(`${target}/`)
   );
 }
 
-export async function findEntryFile(packageDir: string, candidates: readonly string[]): Promise<string | null> {
+export async function findEntryFile(
+  packageDir: string,
+  candidates: readonly string[]
+): Promise<string | null> {
   for (const candidate of candidates) {
     const absolute = path.join(packageDir, candidate);
     if (await fileExists(absolute)) {
@@ -29,7 +31,10 @@ function toRelativeImportPath(entry: string): string {
   return relative;
 }
 
-function createDistSpecifierExpression(distEntry: string | null | undefined, fallbackSpecifier: string): string {
+function createDistSpecifierExpression(
+  distEntry: string | null | undefined,
+  fallbackSpecifier: string
+): string {
   if (!distEntry) {
     return JSON.stringify(fallbackSpecifier);
   }
@@ -37,7 +42,10 @@ function createDistSpecifierExpression(distEntry: string | null | undefined, fal
   return `new URL(${JSON.stringify(relativePath)}, import.meta.url).href`;
 }
 
-export function inferDistEntryForSpecifier(summary: ManifestSummary, specifier: string): string | null {
+export function inferDistEntryForSpecifier(
+  summary: ManifestSummary,
+  specifier: string
+): string | null {
   if (!specifier || !specifier.startsWith(summary.packageName)) {
     return null;
   }
@@ -64,7 +72,7 @@ export function inferDistEntryForSpecifier(summary: ManifestSummary, specifier: 
 export function resolveSpecifierExpression(
   fallbackSpecifier: string,
   distEntry: string | null | undefined,
-  mode: PluginSpecifierMode,
+  mode: PluginSpecifierMode
 ): string {
   if (mode === 'dist-url') {
     return createDistSpecifierExpression(distEntry ?? null, fallbackSpecifier);
@@ -75,7 +83,7 @@ export function resolveSpecifierExpression(
 export function resolveTargetSpecifier(
   specifier: string,
   summary: ManifestSummary,
-  mode: PluginSpecifierMode,
+  mode: PluginSpecifierMode
 ): string {
   if (mode === 'dist-url') {
     const distEntry = inferDistEntryForSpecifier(summary, specifier);

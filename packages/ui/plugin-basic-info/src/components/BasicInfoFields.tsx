@@ -31,21 +31,21 @@ export interface BasicInfoFieldsProps {
 }
 
 export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
-                                                                  value,
-                                                                  onChange,
-                                                                  disabled = false,
-                                                                  nameMaxLength = 100,
-                                                                  descriptionMaxLength = 500,
-                                                                  // text overrides (fallback to _obsolate_common i18n > English literals)
-                                                                  nameLabel,
-                                                                  nameHelperText,
-                                                                  nameRequiredText,
-                                                                  namePlaceholder,
-                                                                  descriptionLabel,
-                                                                  descriptionHelperText,
-                                                                  descriptionPlaceholder,
-                                                                  title,
-                                                                  subtitle,
+  value,
+  onChange,
+  disabled = false,
+  nameMaxLength = 100,
+  descriptionMaxLength = 500,
+  // text overrides (fallback to _obsolate_common i18n > English literals)
+  nameLabel,
+  nameHelperText,
+  nameRequiredText,
+  namePlaceholder,
+  descriptionLabel,
+  descriptionHelperText,
+  descriptionPlaceholder,
+  title,
+  subtitle,
 }) => {
   const {
     nameInputId,
@@ -116,7 +116,11 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
           fullWidth
           disabled={disabled}
           helperText={texts.descriptionHelperText}
-          inputProps={{ maxLength: descriptionMaxLength, id: descriptionInputId, name: 'description' }}
+          inputProps={{
+            maxLength: descriptionMaxLength,
+            id: descriptionInputId,
+            name: 'description',
+          }}
           placeholder={texts.descriptionPlaceholder}
         />
       </FormControl>

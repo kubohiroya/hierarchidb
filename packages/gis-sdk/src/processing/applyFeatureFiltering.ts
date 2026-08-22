@@ -33,7 +33,7 @@ const countVertices = (geometry: Geometry | null | undefined): number => {
     case 'MultiPolygon':
       return (geometry.coordinates as number[][][][]).reduce(
         (sum, poly) => sum + poly.reduce((inner, ring) => inner + ring.length, 0),
-        0,
+        0
       );
     case 'GeometryCollection':
       return (geometry.geometries ?? []).reduce((sum, geom) => sum + countVertices(geom), 0);
@@ -49,9 +49,8 @@ const computeBboxAreaSqKm = (geometry: Geometry, engine: GeometryEngine): number
   return geometryArea(polygon, engine) / 1_000_000;
 };
 
-const computePolygonAreaSqKm = (geometry: Geometry, engine: GeometryEngine): number => (
-  geometryArea(geometry, engine) / 1_000_000
-);
+const computePolygonAreaSqKm = (geometry: Geometry, engine: GeometryEngine): number =>
+  geometryArea(geometry, engine) / 1_000_000;
 
 const computeAspectRatio = (geometry: Geometry, engine: GeometryEngine): number => {
   const bounds = geometryBbox(geometry, engine);
@@ -63,7 +62,11 @@ const computeAspectRatio = (geometry: Geometry, engine: GeometryEngine): number 
   return width > height ? width / height : height / width;
 };
 
-const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings, engine: GeometryEngine): boolean => {
+const passesAreaThreshold = (
+  geometry: Geometry,
+  settings: FeatureFilterSettings,
+  engine: GeometryEngine
+): boolean => {
   const threshold = settings.minArea;
   if (!Number.isFinite(threshold) || threshold <= 0) return true;
 
@@ -81,7 +84,10 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   }
 
   const bboxArea = computeBboxAreaSqKm(geometry, engine);
-  if (hybridConfig.quickRejectThreshold && bboxArea < threshold * hybridConfig.quickRejectThreshold) {
+  if (
+    hybridConfig.quickRejectThreshold &&
+    bboxArea < threshold * hybridConfig.quickRejectThreshold
+  ) {
     return false;
   }
 
@@ -111,7 +117,7 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
 export const applyFeatureFiltering = (
   geojson: unknown,
   settings: FeatureFilterSettings,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): unknown => {
   if (!geojson || typeof geojson !== 'object') return geojson;
   const collection = geojson as FeatureCollection;

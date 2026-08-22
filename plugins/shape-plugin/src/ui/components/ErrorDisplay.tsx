@@ -1,6 +1,6 @@
 import { Alert } from '@mui/material';
-import { useErrorDisplay } from '~/ui/hooks/useErrorDisplay';
 import type { ReactElement } from 'react';
+import { useErrorDisplay } from '~/ui/hooks/useErrorDisplay';
 
 export interface ErrorDisplayProps {
   error?: Error | null;

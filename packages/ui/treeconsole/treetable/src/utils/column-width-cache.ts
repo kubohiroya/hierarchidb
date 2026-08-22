@@ -56,7 +56,9 @@ function safeRemoveItem(storage: Storage, key: string): void {
   }
 }
 
-export function mergeWithDefaults(overrides: Record<string, unknown> | null | undefined): ColumnWidthMap {
+export function mergeWithDefaults(
+  overrides: Record<string, unknown> | null | undefined
+): ColumnWidthMap {
   const sanitized = sanitizeColumnWidths(overrides);
   return sanitized ? { ...DEFAULT_COLUMN_WIDTHS, ...sanitized } : { ...DEFAULT_COLUMN_WIDTHS };
 }
@@ -92,7 +94,10 @@ export function loadCachedColumnWidths(pageNodeId: string | undefined): ColumnWi
   }
 }
 
-export function cacheColumnWidths(pageNodeId: string | undefined, widths: Record<string, unknown>): void {
+export function cacheColumnWidths(
+  pageNodeId: string | undefined,
+  widths: Record<string, unknown>
+): void {
   if (!pageNodeId) return;
   const sanitized = sanitizeColumnWidths(widths);
   if (!sanitized) return;

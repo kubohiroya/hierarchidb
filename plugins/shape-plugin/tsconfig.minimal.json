@@ -9,16 +9,6 @@
     "jsx": "react-jsx",
     "module": "ESNext"
   },
-  "include": [
-    "src/shared*",
-    "src/worker/api.ts",
-    "src/worker/handlers*",
-    "src/worker/plugin.ts"
-  ],
-  "exclude": [
-    "src/services*",
-    "src/types*",
-    "src/ui*",
-    "**__tests__/**"
-  ]
+  "include": ["src/shared*", "src/worker/api.ts", "src/worker/handlers*", "src/worker/plugin.ts"],
+  "exclude": ["src/services*", "src/types*", "src/ui*", "**__tests__/**"]
 }

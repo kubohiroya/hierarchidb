@@ -1,7 +1,7 @@
-import type React from 'react';
 import { Card, CardContent, Typography } from '@mui/material';
-import { DataSourceSelector } from './DataSourceSelector.js';
+import type React from 'react';
 import type { DataSourceSelectorProps } from './DataSourceSelector.js';
+import { DataSourceSelector } from './DataSourceSelector.js';
 
 export interface DataSourceSelectionCardProps extends DataSourceSelectorProps {
   title?: React.ReactNode;

@@ -1,4 +1,4 @@
-import React from 'react';
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   Box,
   Checkbox,
@@ -12,8 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import React from 'react';
 import type { SearchResult } from '~/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
 import { useSearchResultTable } from './useSearchResultTable.js';
 import { useSearchResultTableView } from './useSearchResultTableView.js';
 
@@ -71,11 +71,11 @@ interface SearchResultTableProps {
 }
 
 export const SearchResultTable: React.FC<SearchResultTableProps> = ({
-                                                                      results,
-                                                                      selectedResults: propsSelectedResults, //  props
-                                                                      onResultSelect,
-                                                                      onMapFocus,
-                                                                    }) => {
+  results,
+  selectedResults: propsSelectedResults, //  props
+  onResultSelect,
+  onMapFocus,
+}) => {
   const {
     selectedResults,
     allSelected,
@@ -188,10 +188,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                 </RowDataCell>
 
                 <TableCell align="center">
-                  <Typography
-                    variant="caption"
-                    color={getConfidenceColor(result.confidence)}
-                  >
+                  <Typography variant="caption" color={getConfidenceColor(result.confidence)}>
                     {Math.round(result.confidence * 100)}%
                   </Typography>
                 </TableCell>

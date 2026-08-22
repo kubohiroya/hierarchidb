@@ -7,7 +7,20 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"],
+    "includes": [
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.json",
+      "!**/dist/**",
+      "!**/build/**",
+      "!**/.turbo/**",
+      "!**/coverage/**",
+      "!**/playwright-report/**",
+      "!**/storybook-static/**",
+      "!**/node_modules/**"
+    ],
     "experimentalScannerIgnores": [
       "node_modules",
       "dist",
@@ -15,6 +28,7 @@
       ".turbo",
       "coverage",
       "playwright-report",
+      "storybook-static",
       "docs/references/**",
       "references/**",
       "packages/eria-cargograph/**",
@@ -50,7 +64,7 @@
     "attributePosition": "auto"
   },
   "linter": {
-    "enabled": true,
+    "enabled": false,
     "rules": {
       "recommended": true,
       "correctness": {

@@ -1,7 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import type { TreeNode, TreeQueryAPI } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TreeTableExpandedService } from '../../TreeTableExpandedService';
 import { UIStateDB } from '../../UIStateDB';

@@ -1,47 +1,41 @@
 export {
-  BaseBuildSessionManager,
   AbstractBuildSession,
-  UnifiedBuildManagerBase,
-  LaneSemaphoreRegistry,
-  useBuildSessionTiming,
-  reconcileByMetadata,
-  type MetadataDescriptor,
+  BaseBuildSessionManager,
   type BuildSessionTimingRecord,
   type BuildSessionTimingSnapshot,
+  LaneSemaphoreRegistry,
+  type MetadataDescriptor,
+  reconcileByMetadata,
+  UnifiedBuildManagerBase,
   type UseBuildSessionTimingArgs,
+  useBuildSessionTiming,
 } from '@hierarchidb/build';
-
+export type { CanonicalBuildSessionEventSource } from './CanonicalBuildSessionManager.js';
+export { CanonicalBuildSessionManager } from './CanonicalBuildSessionManager.js';
+export { createLiveCanonicalPluginBuildSubscriptions } from './createLiveCanonicalPluginBuildSubscriptions.js';
+export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
+export { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';
+export { emitStageSnapshotUpdated } from './emitStageSnapshotUpdated.js';
 export {
-  runWithStageCheckpoint,
-  createMemorySnapshot,
-} from './progressHelpers.js';
+  emitHeartbeat,
+  emitTaskProgressUpdated,
+} from './eventEmissionUtils.js';
 export type {
-  StageCheckpointPhase,
-  StageCheckpointContext,
-  StageCheckpointLogger,
-  StageHeartbeatWriter,
-} from './progressHelpers.js';
-
+  EventPayload,
+  NotificationType,
+} from './eventStreamer.js';
 export {
   UnconditionalEventStreamer,
   unconditionalEventStreamer,
 } from './eventStreamer.js';
 export type {
-  NotificationType,
-  EventPayload,
-} from './eventStreamer.js';
-
+  StageCheckpointContext,
+  StageCheckpointLogger,
+  StageCheckpointPhase,
+  StageHeartbeatWriter,
+} from './progressHelpers.js';
 export {
-  emitTaskProgressUpdated,
-  emitHeartbeat,
-} from './eventEmissionUtils.js';
-
-export { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';
-export { emitStageSnapshotUpdated } from './emitStageSnapshotUpdated.js';
-export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
-export {
-  createLiveCanonicalPluginBuildSubscriptions,
-} from './createLiveCanonicalPluginBuildSubscriptions.js';
+  createMemorySnapshot,
+  runWithStageCheckpoint,
+} from './progressHelpers.js';
 export { requireCanonicalStageBuildConfig } from './requireCanonicalStageBuildConfig.js';
-export { CanonicalBuildSessionManager } from './CanonicalBuildSessionManager.js';
-export type { CanonicalBuildSessionEventSource } from './CanonicalBuildSessionManager.js';

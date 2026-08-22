@@ -1,11 +1,24 @@
-import { Button, Card, CardContent, Divider, LinearProgress, ListItemIcon, ListItemText, Menu, MenuItem, Stack, Tooltip, Typography } from '@mui/material';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
+import { useIconRegistry } from '@hierarchidb/components';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import { useIconRegistry } from '@hierarchidb/components';
-import { Box } from '@mui/material';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Divider,
+  LinearProgress,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useOptionalBuildSessionRuntimeContext } from '~/contexts/TreeBuildSessionContexts';
+import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
 import { useBuildSessionSnapshots } from '~/hooks/useBuildSessionSnapshots';
 import {
   type BuildSessionLauncherEntry,
@@ -19,7 +32,10 @@ type BuildSessionLauncherPanelProps = {
   pageNodeId?: NodeId;
   nodeType: NodeType;
   excludeNodeId?: NodeId;
-  onNavigateToBuild?: (entry: BuildSessionLauncherEntry, options?: { openInNewTab?: boolean }) => void;
+  onNavigateToBuild?: (
+    entry: BuildSessionLauncherEntry,
+    options?: { openInNewTab?: boolean }
+  ) => void;
 };
 
 type BuildSessionLauncherPanelInnerProps = Omit<BuildSessionLauncherPanelProps, 'nodeType'> & {
@@ -111,7 +127,7 @@ function BuildSessionLauncherPanelInner({
           const color = isActive ? 'primary' : 'inherit';
           const countsText = t(
             'stage.progress.countsWithUnit',
-            '{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}',
+            '{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}'
           );
           return (
             <Tooltip
@@ -130,7 +146,12 @@ function BuildSessionLauncherPanelInner({
                     <Divider />
                     <Card variant="outlined">
                       <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          alignItems="center"
+                          justifyContent="space-between"
+                        >
                           <Stack spacing={0.25} flex={1}>
                             <Typography variant="caption" color="text.secondary">
                               {t('stage.progress.stage', 'Stage')}
@@ -164,7 +185,10 @@ function BuildSessionLauncherPanelInner({
                               .replace('{{percentage}}', String(Math.round(entry.percentage)))
                               .replace('{{completed}}', String(entry.counts.completed))
                               .replace('{{total}}', String(entry.counts.total))
-                              .replace('{{unit}}', entry.taskUnitLabel || t('stage.progress.task', 'Tasks'))
+                              .replace(
+                                '{{unit}}',
+                                entry.taskUnitLabel || t('stage.progress.task', 'Tasks')
+                              )
                               .replace('{{failed}}', String(entry.counts.failed))
                               .replace('{{skipped}}', String(entry.counts.skipped))}
                           </Typography>

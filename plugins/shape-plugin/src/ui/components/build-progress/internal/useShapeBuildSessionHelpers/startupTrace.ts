@@ -1,5 +1,5 @@
-import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 
 export type BuildSessionTransitionPhase =
   | 'acquiring-lock'
@@ -41,9 +41,8 @@ export type ShapeProgressStepTracePayload = {
   message: string | null;
 };
 
-const toMemoryValue = (value: number | undefined): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
+const toMemoryValue = (value: number | undefined): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 export const captureStartupStepMemorySnapshot = (): StartupStepMemorySnapshot => {
   const snapshot = getMemorySnapshot();
@@ -56,7 +55,7 @@ export const captureStartupStepMemorySnapshot = (): StartupStepMemorySnapshot =>
 
 const subtractMemoryValues = (
   started: number | null | undefined,
-  finished: number | null,
+  finished: number | null
 ): number | null => {
   if (started === null || started === undefined || finished === null) {
     return null;
@@ -66,7 +65,7 @@ const subtractMemoryValues = (
 
 export const calculateMemoryDelta = (
   started: StartupStepMemorySnapshot | null,
-  finished: StartupStepMemorySnapshot,
+  finished: StartupStepMemorySnapshot
 ): StartupStepMemorySnapshot => ({
   usedJSHeapSize: subtractMemoryValues(started?.usedJSHeapSize, finished.usedJSHeapSize),
   totalJSHeapSize: subtractMemoryValues(started?.totalJSHeapSize, finished.totalJSHeapSize),
@@ -76,14 +75,18 @@ export const calculateMemoryDelta = (
 export const getBuildSessionTransitionStatusLabel = (
   t: (key: string, fallback?: string, options?: Record<string, unknown>) => string,
   phase: BuildSessionTransitionPhase | 'idle',
-  durationMs: number,
+  durationMs: number
 ): string => {
   const elapsedSeconds = Math.max(0, Math.floor(durationMs / 1000));
   switch (phase) {
     case 'acquiring-lock':
       return t('build.status.startingLock', 'Starting build (acquiring lock)...');
     case 'waiting-lock':
-      return t('build.status.startingQueueElapsed', 'Starting build (waiting for lock, {{elapsedSeconds}}s)...', { elapsedSeconds });
+      return t(
+        'build.status.startingQueueElapsed',
+        'Starting build (waiting for lock, {{elapsedSeconds}}s)...',
+        { elapsedSeconds }
+      );
     case 'saving-draft':
       return t('build.status.startingSave', 'Starting build (saving draft)...');
     case 'initializing-worker':

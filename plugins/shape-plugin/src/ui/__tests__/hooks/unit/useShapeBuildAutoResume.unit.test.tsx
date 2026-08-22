@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useShapeBuildAutoResume } from '../../../components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 
 const createLocalStorage = () => {
@@ -81,14 +81,16 @@ describe('useShapeBuildAutoResume', () => {
   it('keeps start pending while waiting for runtime transition', async () => {
     const handleStart = vi.fn(async () => true);
     const baseArgs = createArgs({ handleStart });
-    const { result, rerender } = renderHook(({ buildStatus }: { buildStatus: BuildStatus }) => (
-      useShapeBuildAutoResume({
-        ...baseArgs,
-        buildStatus,
-      })
-    ), {
-      initialProps: { buildStatus: 'idle' as BuildStatus },
-    });
+    const { result, rerender } = renderHook(
+      ({ buildStatus }: { buildStatus: BuildStatus }) =>
+        useShapeBuildAutoResume({
+          ...baseArgs,
+          buildStatus,
+        }),
+      {
+        initialProps: { buildStatus: 'idle' as BuildStatus },
+      }
+    );
 
     await act(async () => {
       await result.current.start();

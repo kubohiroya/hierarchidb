@@ -1,3 +1,4 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Box,
   FormControlLabel,
@@ -9,7 +10,6 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type ValueTransform = {
   toSlider: (value: number) => number;
@@ -78,7 +78,7 @@ export const ExtractionPanel: React.FC<Props> = ({
         <Typography gutterBottom>
           {t(toleranceLabelKey, 'Extraction Tolerance (degrees)')}
         </Typography>
-        <Box sx={{ px: 2, pt: 2, pb: 2  }}>
+        <Box sx={{ px: 2, pt: 2, pb: 2 }}>
           <Stack direction="row" spacing={2} alignItems="center">
             {startIcon ? (
               <Box sx={{ color: 'text.secondary', display: 'flex' }}>{startIcon}</Box>
@@ -120,10 +120,16 @@ export const ExtractionPanel: React.FC<Props> = ({
                 disabled={disabled}
               />
             }
-            label={t('processing.filter.enablePerFeatureExtraction', 'Enable per-feature extraction')}
+            label={t(
+              'processing.filter.enablePerFeatureExtraction',
+              'Enable per-feature extraction'
+            )}
           />
           <FormHelperText>
-            {t('processing.filter.enablePerFeatureExtractionHelp', 'Apply tolerance per feature instead of globally.')}
+            {t(
+              'processing.filter.enablePerFeatureExtractionHelp',
+              'Apply tolerance per feature instead of globally.'
+            )}
           </FormHelperText>
         </FormGroup>
       )}

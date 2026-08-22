@@ -1,4 +1,4 @@
-import { databaseStoreLoaders, APP_DATABASE_NODE_TYPES_SET } from './database-store-loaders.ts';
+import { APP_DATABASE_NODE_TYPES_SET, databaseStoreLoaders } from './database-store-loaders.ts';
 
 type DatabaseLoaderEntry = (typeof databaseStoreLoaders)[string];
 type PrewarmDescriptor = NonNullable<DatabaseLoaderEntry['prewarm']>[number];

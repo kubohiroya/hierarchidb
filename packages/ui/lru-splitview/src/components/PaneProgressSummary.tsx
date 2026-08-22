@@ -12,7 +12,9 @@ const buildCompletedLabel = (summary: NonNullable<PaneProgress['summary']>): str
   return `Completed ${numerator}/${total}`;
 };
 
-const resolveColor = (summary: NonNullable<PaneProgress['summary']>): 'default' | 'success' | 'warning' | 'error' => {
+const resolveColor = (
+  summary: NonNullable<PaneProgress['summary']>
+): 'default' | 'success' | 'warning' | 'error' => {
   const { total, success, error, skip } = summary;
   if (total === 0) return 'default';
   if (error > 0) return 'error';
@@ -27,12 +29,7 @@ export const PaneProgressSummary: React.FC<Props> = ({ summary }) => {
   return (
     <Stack direction="row" spacing={0.5} alignItems="center">
       {failedCount > 0 ? (
-        <Chip
-          label={`Failed ${failedCount}`}
-          size="small"
-          color="error"
-          variant="filled"
-        />
+        <Chip label={`Failed ${failedCount}`} size="small" color="error" variant="filled" />
       ) : null}
       <Chip
         label={buildCompletedLabel(summary)}

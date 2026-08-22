@@ -28,16 +28,16 @@ import {
 } from '@mui/material';
 
 export const SelectField = ({
-                              id,
-                              label,
-                              value,
-                              handleChange,
-                              helperText,
-                              items,
-                              formLabelProps,
-                              disabled,
-                              ...props
-                            }: {
+  id,
+  label,
+  value,
+  handleChange,
+  helperText,
+  items,
+  formLabelProps,
+  disabled,
+  ...props
+}: {
   id: string;
   value: string;
   handleChange: (value: string) => void;

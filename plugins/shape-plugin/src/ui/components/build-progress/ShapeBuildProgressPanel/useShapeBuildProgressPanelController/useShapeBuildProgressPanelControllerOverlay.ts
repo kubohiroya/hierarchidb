@@ -2,8 +2,11 @@ import type { ShapeBuildProgressPanelControllerBaseResult } from './base/useShap
 import { useShapeBuildProgressPanelControllerOverlayDialogs } from './useShapeBuildProgressPanelControllerOverlay/useShapeBuildProgressPanelControllerOverlayDialogs.js';
 import { useShapeBuildProgressPanelControllerOverlaySections } from './useShapeBuildProgressPanelControllerOverlay/useShapeBuildProgressPanelControllerOverlaySections.js';
 
-export const useShapeBuildProgressPanelControllerOverlay = (args: ShapeBuildProgressPanelControllerBaseResult) => {
-  const { stageProgressContent, stageContents } = useShapeBuildProgressPanelControllerOverlaySections(args);
+export const useShapeBuildProgressPanelControllerOverlay = (
+  args: ShapeBuildProgressPanelControllerBaseResult
+) => {
+  const { stageProgressContent, stageContents } =
+    useShapeBuildProgressPanelControllerOverlaySections(args);
   const {
     footer,
     completionDialog,

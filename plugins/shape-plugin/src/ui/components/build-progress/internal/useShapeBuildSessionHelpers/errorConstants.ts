@@ -1,8 +1,7 @@
 import type { ShapeEntity } from '~/common/types/index';
 
-export const getErrorMessage = (error: unknown): string => (
-  error instanceof Error ? error.message : String(error))
-
+export const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 export const toTransitionErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === 'string' && error.length > 0) {
@@ -19,9 +18,13 @@ export const toTransitionErrorMessage = (error: unknown, fallback: string): stri
 };
 
 export const summarizeSelectedEntries = (
-  selectedArrayByCountries: ShapeEntity['selectedArrayByCountries'] | null | undefined,
+  selectedArrayByCountries: ShapeEntity['selectedArrayByCountries'] | null | undefined
 ): { selectedCountryCount: number; selectedAdminPairCount: number } => {
-  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+  if (
+    !selectedArrayByCountries ||
+    typeof selectedArrayByCountries !== 'object' ||
+    Array.isArray(selectedArrayByCountries)
+  ) {
     return { selectedCountryCount: 0, selectedAdminPairCount: 0 };
   }
   let selectedCountryCount = 0;

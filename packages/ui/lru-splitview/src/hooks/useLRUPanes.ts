@@ -3,8 +3,8 @@
  * @module @hierarchidb/ui-lru-splitview/hooks
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LRUSplitViewConfig, PaneState, UseLRUPanesResult } from '~/types/LRUSplitView';
 
 const DEFAULT_MAX_EXPANDED = 2;
@@ -14,38 +14,45 @@ const DEFAULT_COLLAPSED_SIZE = 60;
  * Hook for managing LRU pane expansion with intelligent auto-expand behavior
  */
 export function useLRUPanes({
-                              panes,
-                              maxExpandedPanes = DEFAULT_MAX_EXPANDED,
-                              initialSizes,
-                              equalizeOnAllExpanded = false,
-                              defaultCollapsedSize = DEFAULT_COLLAPSED_SIZE,
-                              autoExpand,
-                              progress = [],
-                              onPaneToggle,
-                            }: Pick<LRUSplitViewConfig, 'panes' | 'maxExpandedPanes' | 'defaultCollapsedSize' | 'autoExpand' | 'progress' | 'onPaneToggle'> & { initialSizes?: number[]; equalizeOnAllExpanded?: boolean }): UseLRUPanesResult {
+  panes,
+  maxExpandedPanes = DEFAULT_MAX_EXPANDED,
+  initialSizes,
+  equalizeOnAllExpanded = false,
+  defaultCollapsedSize = DEFAULT_COLLAPSED_SIZE,
+  autoExpand,
+  progress = [],
+  onPaneToggle,
+}: Pick<
+  LRUSplitViewConfig,
+  'panes' | 'maxExpandedPanes' | 'defaultCollapsedSize' | 'autoExpand' | 'progress' | 'onPaneToggle'
+> & { initialSizes?: number[]; equalizeOnAllExpanded?: boolean }): UseLRUPanesResult {
   const theme = useTheme();
 
   // Generate default colors based on theme
-  const generateDefaultColor = useCallback((index: number) => {
-    const colors = theme.palette.mode === 'dark'
-      ? [
-        'rgba(245, 245, 245, 0.08)', // Light gray
-        'rgba(63, 81, 181, 0.08)',   // Indigo
-        'rgba(156, 39, 176, 0.08)',  // Purple
-        'rgba(76, 175, 80, 0.08)',   // Green
-        'rgba(255, 152, 0, 0.08)',   // Orange
-        'rgba(244, 67, 54, 0.08)',   // Red
-      ]
-      : [
-        '#f5f5f5', // Light gray
-        '#efefff', // Light indigo
-        '#fff0ff', // Light purple
-        '#efffef', // Light green
-        '#fff8e1', // Light orange
-        '#ffebee', // Light red
-      ];
-    return colors[index % colors.length];
-  }, [theme.palette.mode]);
+  const generateDefaultColor = useCallback(
+    (index: number) => {
+      const colors =
+        theme.palette.mode === 'dark'
+          ? [
+              'rgba(245, 245, 245, 0.08)', // Light gray
+              'rgba(63, 81, 181, 0.08)', // Indigo
+              'rgba(156, 39, 176, 0.08)', // Purple
+              'rgba(76, 175, 80, 0.08)', // Green
+              'rgba(255, 152, 0, 0.08)', // Orange
+              'rgba(244, 67, 54, 0.08)', // Red
+            ]
+          : [
+              '#f5f5f5', // Light gray
+              '#efefff', // Light indigo
+              '#fff0ff', // Light purple
+              '#efffef', // Light green
+              '#fff8e1', // Light orange
+              '#ffebee', // Light red
+            ];
+      return colors[index % colors.length];
+    },
+    [theme.palette.mode]
+  );
 
   const applyMaxExpanded = useCallback((states: PaneState[], limit: number) => {
     const expandedPanes = states.filter((p) => p.isExpanded);
@@ -53,7 +60,7 @@ export function useLRUPanes({
 
     const sortedByAccess = [...expandedPanes].sort((a, b) => a.lastAccessTime - b.lastAccessTime);
     const toCollapse = new Set(
-      sortedByAccess.slice(0, expandedPanes.length - limit).map((pane) => pane.id),
+      sortedByAccess.slice(0, expandedPanes.length - limit).map((pane) => pane.id)
     );
 
     return states.map((pane) => ({
@@ -81,117 +88,128 @@ export function useLRUPanes({
   const panesRef = useRef(panes);
 
   const paneKey = useMemo(
-    () => panes.map((pane) => `${pane.id}:${pane.defaultExpanded ? 1 : 0}:${pane.collapsedSize ?? ''}`).join('|'),
-    [panes],
+    () =>
+      panes
+        .map((pane) => `${pane.id}:${pane.defaultExpanded ? 1 : 0}:${pane.collapsedSize ?? ''}`)
+        .join('|'),
+    [panes]
   );
 
   // Track previous progress for auto-expand detection
   const prevProgressRef = useRef<Record<string, number>>({});
 
   // LRU management function
-  const expandPaneLRU = useCallback((
-    currentStates: PaneState[],
-    paneId: string,
-  ): PaneState[] => {
-    const now = Date.now();
-    const expandedPanes = currentStates.filter((p) => p.isExpanded);
+  const expandPaneLRU = useCallback(
+    (currentStates: PaneState[], paneId: string): PaneState[] => {
+      const now = Date.now();
+      const expandedPanes = currentStates.filter((p) => p.isExpanded);
 
-    // If already at max capacity, close the oldest one
-    if (expandedPanes.length >= maxExpandedPanes) {
-      const oldestPane = expandedPanes.reduce((oldest, current) =>
-        current.lastAccessTime < oldest.lastAccessTime ? current : oldest,
-      );
+      // If already at max capacity, close the oldest one
+      if (expandedPanes.length >= maxExpandedPanes) {
+        const oldestPane = expandedPanes.reduce((oldest, current) =>
+          current.lastAccessTime < oldest.lastAccessTime ? current : oldest
+        );
 
+        return currentStates.map((pane) => ({
+          ...pane,
+          isExpanded:
+            pane.id === paneId ? true : pane.id === oldestPane.id ? false : pane.isExpanded,
+          lastAccessTime: pane.id === paneId ? now : pane.lastAccessTime,
+        }));
+      }
+
+      // Otherwise just expand the requested pane
       return currentStates.map((pane) => ({
         ...pane,
-        isExpanded:
-          pane.id === paneId
-            ? true
-            : pane.id === oldestPane.id
-              ? false
-              : pane.isExpanded,
+        isExpanded: pane.id === paneId ? true : pane.isExpanded,
         lastAccessTime: pane.id === paneId ? now : pane.lastAccessTime,
       }));
-    }
-
-    // Otherwise just expand the requested pane
-    return currentStates.map((pane) => ({
-      ...pane,
-      isExpanded: pane.id === paneId ? true : pane.isExpanded,
-      lastAccessTime: pane.id === paneId ? now : pane.lastAccessTime,
-    }));
-  }, [maxExpandedPanes]);
+    },
+    [maxExpandedPanes]
+  );
 
   // Toggle pane expansion
-  const togglePane = useCallback((paneId: string) => {
-    setPaneStates((prev) => {
-      const pane = prev.find((p) => p.id === paneId);
-      if (!pane) return prev;
+  const togglePane = useCallback(
+    (paneId: string) => {
+      setPaneStates((prev) => {
+        const pane = prev.find((p) => p.id === paneId);
+        if (!pane) return prev;
 
-      const newIsExpanded = !pane.isExpanded;
-      let newStates: PaneState[];
+        const newIsExpanded = !pane.isExpanded;
+        let newStates: PaneState[];
 
-      if (pane.isExpanded) {
-        // Simply collapse the pane
-        newStates = prev.map((p) => ({
+        if (pane.isExpanded) {
+          // Simply collapse the pane
+          newStates = prev.map((p) => ({
+            ...p,
+            isExpanded: p.id === paneId ? false : p.isExpanded,
+          }));
+        } else {
+          // Expand using LRU logic
+          newStates = expandPaneLRU(prev, paneId);
+        }
+
+        // Notify callback
+        onPaneToggle?.(paneId, newIsExpanded);
+
+        return newStates;
+      });
+    },
+    [expandPaneLRU, onPaneToggle]
+  );
+
+  // Expand specific pane
+  const expandPane = useCallback(
+    (paneId: string) => {
+      setPaneStates((prev) => {
+        const pane = prev.find((p) => p.id === paneId);
+        if (!pane || pane.isExpanded) return prev;
+
+        const newStates = expandPaneLRU(prev, paneId);
+        onPaneToggle?.(paneId, true);
+        return newStates;
+      });
+    },
+    [expandPaneLRU, onPaneToggle]
+  );
+
+  // Collapse specific pane
+  const collapsePane = useCallback(
+    (paneId: string) => {
+      setPaneStates((prev) => {
+        const pane = prev.find((p) => p.id === paneId);
+        if (!pane || !pane.isExpanded) return prev;
+
+        const newStates = prev.map((p) => ({
           ...p,
           isExpanded: p.id === paneId ? false : p.isExpanded,
         }));
-      } else {
-        // Expand using LRU logic
-        newStates = expandPaneLRU(prev, paneId);
-      }
 
-      // Notify callback
-      onPaneToggle?.(paneId, newIsExpanded);
-
-      return newStates;
-    });
-  }, [expandPaneLRU, onPaneToggle]);
-
-  // Expand specific pane
-  const expandPane = useCallback((paneId: string) => {
-    setPaneStates((prev) => {
-      const pane = prev.find((p) => p.id === paneId);
-      if (!pane || pane.isExpanded) return prev;
-
-      const newStates = expandPaneLRU(prev, paneId);
-      onPaneToggle?.(paneId, true);
-      return newStates;
-    });
-  }, [expandPaneLRU, onPaneToggle]);
-
-  // Collapse specific pane
-  const collapsePane = useCallback((paneId: string) => {
-    setPaneStates((prev) => {
-      const pane = prev.find((p) => p.id === paneId);
-      if (!pane || !pane.isExpanded) return prev;
-
-      const newStates = prev.map((p) => ({
-        ...p,
-        isExpanded: p.id === paneId ? false : p.isExpanded,
-      }));
-
-      onPaneToggle?.(paneId, false);
-      return newStates;
-    });
-  }, [onPaneToggle]);
+        onPaneToggle?.(paneId, false);
+        return newStates;
+      });
+    },
+    [onPaneToggle]
+  );
 
   // Expand multiple panes
-  const expandPanes = useCallback((paneIds: string[]) => {
-    setPaneStates((prev) => {
-      let newStates = [...prev];
+  const expandPanes = useCallback(
+    (paneIds: string[]) => {
+      setPaneStates((prev) => {
+        let newStates = [...prev];
 
-      paneIds.forEach(paneId => {
-        const pane = newStates.find(p => p.id === paneId);
-        if (pane && !pane.isExpanded) {
-          newStates = expandPaneLRU(newStates, paneId);
-        }
+        paneIds.forEach((paneId) => {
+          const pane = newStates.find((p) => p.id === paneId);
+          if (pane && !pane.isExpanded) {
+            newStates = expandPaneLRU(newStates, paneId);
+          }
+        });
+
+        return newStates;
       });
-
-      return newStates;
-    });
-  }, [expandPaneLRU]);
+    },
+    [expandPaneLRU]
+  );
 
   // Collapse all panes
   const collapseAll = useCallback(() => {
@@ -199,57 +217,58 @@ export function useLRUPanes({
       prev.map((pane) => ({
         ...pane,
         isExpanded: false,
-      })),
+      }))
     );
   }, []);
 
   // Get expanded pane IDs
   const getExpandedPanes = useCallback(() => {
-    return paneStates.filter(p => p.isExpanded).map(p => p.id);
+    return paneStates.filter((p) => p.isExpanded).map((p) => p.id);
   }, [paneStates]);
 
   const expandedCount = paneStates.filter((pane) => pane.isExpanded).length;
 
   // Calculate sizes for Allotment
-  const getSizes = useCallback((availableSpace?: number) => {
-    if (equalizeOnAllExpanded) {
-      const totalSpace = availableSpace ?? 1000;
-      const sizePerPane = totalSpace / paneStates.length;
-      return paneStates.map(() => sizePerPane);
-    }
+  const getSizes = useCallback(
+    (availableSpace?: number) => {
+      if (equalizeOnAllExpanded) {
+        const totalSpace = availableSpace ?? 1000;
+        const sizePerPane = totalSpace / paneStates.length;
+        return paneStates.map(() => sizePerPane);
+      }
 
-    const hasInitialSizes = initialSizes && initialSizes.length === paneStates.length;
-    if (hasInitialSizes) {
-      return paneStates.map((pane, index) =>
-        pane.isExpanded
-          ? (initialSizes[index] ?? pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
-          : pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE,
-      );
-    }
+      const hasInitialSizes = initialSizes && initialSizes.length === paneStates.length;
+      if (hasInitialSizes) {
+        return paneStates.map((pane, index) =>
+          pane.isExpanded
+            ? (initialSizes[index] ?? pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
+            : (pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
+        );
+      }
 
-    if (expandedCount === 0) {
-      // All collapsed - equal distribution of available space
-      const availableSpace = 1000;
-      const sizePerPane = availableSpace / paneStates.length;
-      return paneStates.map(() => sizePerPane);
-    }
+      if (expandedCount === 0) {
+        // All collapsed - equal distribution of available space
+        const availableSpace = 1000;
+        const sizePerPane = availableSpace / paneStates.length;
+        return paneStates.map(() => sizePerPane);
+      }
 
-    // Calculate sizes based on expansion atoms
-    if (expandedCount === 1) {
-      // Single expanded pane gets most space
-      return paneStates.map((pane) =>
-        pane.isExpanded ? 1000 : pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE,
-      );
-    } else {
-      // Multiple expanded panes share space equally
-      const spacePerExpanded = 1000 / expandedCount;
-      return paneStates.map((pane) =>
-        pane.isExpanded
-          ? spacePerExpanded
-          : pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE,
-      );
-    }
-  }, [paneStates, initialSizes, equalizeOnAllExpanded, expandedCount]);
+      // Calculate sizes based on expansion atoms
+      if (expandedCount === 1) {
+        // Single expanded pane gets most space
+        return paneStates.map((pane) =>
+          pane.isExpanded ? 1000 : (pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
+        );
+      } else {
+        // Multiple expanded panes share space equally
+        const spacePerExpanded = 1000 / expandedCount;
+        return paneStates.map((pane) =>
+          pane.isExpanded ? spacePerExpanded : (pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
+        );
+      }
+    },
+    [paneStates, initialSizes, equalizeOnAllExpanded, expandedCount]
+  );
 
   useEffect(() => {
     paneStatesRef.current = paneStates;
@@ -266,7 +285,7 @@ export function useLRUPanes({
     const nextStates = currentPanes.map((pane, index) => {
       const existing = byId.get(pane.id);
       const isExpanded = existing ? existing.isExpanded : (pane.defaultExpanded ?? false);
-      const lastAccessTime = existing ? existing.lastAccessTime : (isExpanded ? Date.now() : 0);
+      const lastAccessTime = existing ? existing.lastAccessTime : isExpanded ? Date.now() : 0;
       const color = existing?.color ?? (pane.color || generateDefaultColor(index));
       return {
         id: pane.id,
@@ -293,7 +312,7 @@ export function useLRUPanes({
         ...pane,
         isExpanded: true,
         lastAccessTime: pane.isExpanded ? pane.lastAccessTime : Date.now(),
-      })),
+      }))
     );
   }, [equalizeOnAllExpanded]);
 
@@ -313,12 +332,12 @@ export function useLRUPanes({
 
     // Check for completion-based auto-expand
     if (autoExpand.onComplete) {
-      progress.forEach(progressInfo => {
+      progress.forEach((progressInfo) => {
         const prevProgressValue = prevProgressRef.current[progressInfo.paneId] || 0;
         if (prevProgressValue < 100 && progressInfo.progress === 100) {
           // Find next pane to expand (simple sequential logic)
           const currentPanes = panesRef.current;
-          const currentIndex = currentPanes.findIndex(p => p.id === progressInfo.paneId);
+          const currentIndex = currentPanes.findIndex((p) => p.id === progressInfo.paneId);
           if (currentIndex >= 0 && currentIndex < currentPanes.length - 1) {
             const nextPane = currentPanes[currentIndex + 1];
             if (nextPane) {
@@ -331,7 +350,7 @@ export function useLRUPanes({
 
     // Check for start-based auto-expand
     if (autoExpand.onStart) {
-      progress.forEach(progressInfo => {
+      progress.forEach((progressInfo) => {
         if (progressInfo.progress > 0 && progressInfo.progress < 100) {
           autoExpandPane(progressInfo.paneId);
         }
@@ -347,10 +366,13 @@ export function useLRUPanes({
     }
 
     // Update previous progress
-    const newPrevProgress = progress.reduce((acc, p) => {
-      acc[p.paneId] = p.progress;
-      return acc;
-    }, {} as Record<string, number>);
+    const newPrevProgress = progress.reduce(
+      (acc, p) => {
+        acc[p.paneId] = p.progress;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
     prevProgressRef.current = newPrevProgress;
   }, [progress, autoExpand, expandPaneLRU]);
 

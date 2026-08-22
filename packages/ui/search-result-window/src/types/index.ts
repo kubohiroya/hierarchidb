@@ -1,5 +1,5 @@
-import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { WindowState } from '@hierarchidb/components';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type React from 'react';
 
 export interface SearchResult {

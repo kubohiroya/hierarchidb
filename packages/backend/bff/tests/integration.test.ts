@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
 // Skip network-dependent tests unless explicitly enabled via env
 // Run with: NETWORK_TESTS=1 pnpm -C packages/backend/bff test:run
 const describeIf = process.env.NETWORK_TESTS === '1' ? describe : describe.skip;
@@ -72,11 +73,11 @@ describeIf('BFF Service Integration Tests', () => {
       it('should initiate Google OAuth2 flow', async () => {
         const response = await fetch(
           `${config.bffUrl}/auth/authorize/google?` +
-          'scope=openid%20profile%20email&' +
-          'state=test-atoms',
+            'scope=openid%20profile%20email&' +
+            'state=test-atoms',
           {
             redirect: 'manual',
-          },
+          }
         );
 
         expect(response.status).toBe(302);
@@ -95,11 +96,11 @@ describeIf('BFF Service Integration Tests', () => {
         const codeChallenge = 'test-challenge-123';
         const response = await fetch(
           `${config.bffUrl}/auth/authorize/google?` +
-          `code_challenge=${codeChallenge}&` +
-          'code_challenge_method=S256',
+            `code_challenge=${codeChallenge}&` +
+            'code_challenge_method=S256',
           {
             redirect: 'manual',
-          },
+          }
         );
 
         expect(response.status).toBe(302);
@@ -152,11 +153,11 @@ describeIf('BFF Service Integration Tests', () => {
         const codeChallenge = 'test-challenge-456';
         const response = await fetch(
           `${config.bffUrl}/auth/authorize/microsoft?` +
-          `code_challenge=${codeChallenge}&` +
-          'code_challenge_method=S256',
+            `code_challenge=${codeChallenge}&` +
+            'code_challenge_method=S256',
           {
             redirect: 'manual',
-          },
+          }
         );
 
         if (response.status === 302) {
@@ -291,7 +292,7 @@ describeIf('BFF Service Integration Tests', () => {
         `${config.bffUrl}/auth/callback?state=test&error=access_denied`,
         {
           redirect: 'manual',
-        },
+        }
       );
 
       expect(response.status).toBe(302);

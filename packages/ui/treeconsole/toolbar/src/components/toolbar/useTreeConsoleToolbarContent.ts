@@ -1,6 +1,10 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useCallback, useMemo, useState } from 'react';
-import type { TreeConsoleSearchMode, TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '~/types';
+import type {
+  TreeConsoleSearchMode,
+  TreeConsoleToolbarActionParams,
+  TreeConsoleToolbarProps,
+} from '~/types';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
 
 interface UseTreeConsoleToolbarContentParams {
@@ -32,7 +36,7 @@ export function useTreeConsoleToolbarContent({
         console.log(`Action: ${action}`, params ?? '- TODO: Connect to controller');
       }
     },
-    [onAction],
+    [onAction]
   );
 
   const handleSearch = useCallback(
@@ -43,19 +47,20 @@ export function useTreeConsoleToolbarContent({
         console.warn('Search not implemented:', error);
       }
     },
-    [controller],
+    [controller]
   );
 
   const currentSearchMode: TreeConsoleSearchMode = 'local';
 
-  const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
+  const allowArchive =
+    (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
 
   const archiveMenuHandlers = useMemo(
     () => ({
       onRestore: () => handleAction('restore', archiveNodeId ? { archiveNodeId } : undefined),
       onEmpty: () => handleAction('empty', archiveNodeId ? { archiveNodeId } : undefined),
     }),
-    [archiveNodeId, handleAction],
+    [archiveNodeId, handleAction]
   );
 
   const tooltips = useMemo(
@@ -68,7 +73,7 @@ export function useTreeConsoleToolbarContent({
       duplicate: tCommon('treeConsole.toolbar.tooltips.duplicate', { shortcut: '⌘+D' }),
       moveToArchive: tCommon('treeConsole.toolbar.tooltips.moveToArchive', { shortcut: '⌘+X' }),
     }),
-    [tCommon],
+    [tCommon]
   );
 
   const archiveButtonLabel = tCommon('treeConsole.toolbar.aria.archiveMenuButton');
@@ -97,29 +102,35 @@ export function useTreeConsoleToolbarContent({
       autosaveTitle: tCommon('treeConsole.toolbar.settings.autosave.title', 'Autosave'),
       dialogBackdropDismissTitle: tCommon(
         'treeConsole.toolbar.settings.dialogBackdropDismiss.title',
-        'Close dialogs on outside click',
+        'Close dialogs on outside click'
       ),
       zoomBandsTitle: tCommon('treeConsole.toolbar.settings.zoomBands.title', 'Zoom bands'),
       zoomBandsHelper: tCommon(
         'treeConsole.toolbar.settings.zoomBands.helper',
-        'Default zoom band settings for new Shape/Route builds.',
+        'Default zoom band settings for new Shape/Route builds.'
       ),
       zoomBandsSummary: tCommon(
         'treeConsole.toolbar.settings.zoomBands.summary',
-        'Used as the default Geometry zoom bands when creating new Shape/Route nodes.',
+        'Used as the default Geometry zoom bands when creating new Shape/Route nodes.'
       ),
-      zoomBandsRangeCount: tCommon('treeConsole.toolbar.settings.zoomBands.rangeCount', 'Number of ranges'),
+      zoomBandsRangeCount: tCommon(
+        'treeConsole.toolbar.settings.zoomBands.rangeCount',
+        'Number of ranges'
+      ),
       zoomBandsRangeCountHelp: tCommon(
         'treeConsole.toolbar.settings.zoomBands.rangeCountHelp',
-        'Set how many zoom ranges to use for transforms.',
+        'Set how many zoom ranges to use for transforms.'
       ),
-      zoomBandsBoundaries: tCommon('treeConsole.toolbar.settings.zoomBands.boundaries', 'Range boundaries'),
+      zoomBandsBoundaries: tCommon(
+        'treeConsole.toolbar.settings.zoomBands.boundaries',
+        'Range boundaries'
+      ),
       zoomBandsBoundariesHelp: tCommon(
         'treeConsole.toolbar.settings.zoomBands.boundariesHelp',
-        'Adjust the zoom levels that split each range.',
+        'Adjust the zoom levels that split each range.'
       ),
     }),
-    [tCommon],
+    [tCommon]
   );
 
   return {

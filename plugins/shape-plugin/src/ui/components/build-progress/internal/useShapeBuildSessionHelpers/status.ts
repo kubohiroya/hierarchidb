@@ -40,17 +40,14 @@ export const shouldRefreshTasksSnapshot = (params: {
   if (params.isTaskSnapshotProgressConnected) {
     return false;
   }
-  const hasProcessingSignal = (
-    params.buildStatus === 'running'
-    || params.runtimeStatus === 'running'
-    || params.processingStatus === 'running'
-    || params.buildSessionTransitionActive
-  );
+  const hasProcessingSignal =
+    params.buildStatus === 'running' ||
+    params.runtimeStatus === 'running' ||
+    params.processingStatus === 'running' ||
+    params.buildSessionTransitionActive;
   if (params.displayTaskCount === 0) {
     return (
-      params.hasProgressTaskSignal
-      || hasProcessingSignal
-      || params.buildStatus === 'completed'
+      params.hasProgressTaskSignal || hasProcessingSignal || params.buildStatus === 'completed'
     );
   }
   if (params.hasInFlightTasks) {
@@ -59,7 +56,9 @@ export const shouldRefreshTasksSnapshot = (params: {
   return hasProcessingSignal;
 };
 
-export const summarizeSelectionStateFromConfig = (data?: Partial<ShapeEntity>): { hasSelection: boolean } => {
+export const summarizeSelectionStateFromConfig = (
+  data?: Partial<ShapeEntity>
+): { hasSelection: boolean } => {
   return summarizeCheckboxState(data?.selectedArrayByCountries).hasSelection
     ? { hasSelection: true }
     : { hasSelection: false };
@@ -80,7 +79,9 @@ export const toBuildStatus = (status?: string | null): BuildStatus => {
   }
 };
 
-export const toProcessingStatus = (status?: string | null): 'idle' | 'running' | 'paused' | 'completed' | 'failed' => {
+export const toProcessingStatus = (
+  status?: string | null
+): 'idle' | 'running' | 'paused' | 'completed' | 'failed' => {
   switch (status) {
     case 'running':
       return 'running';

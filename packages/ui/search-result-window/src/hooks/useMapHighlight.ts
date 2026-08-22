@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapHighlightService } from '~/services/MapHighlightService';
+import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
 
 interface UseMapHighlightProps {
   mapInstance?: any; //  MapLibre GL JS
@@ -25,10 +25,10 @@ interface UseMapHighlightReturn {
 }
 
 export const useMapHighlight = ({
-                                  mapInstance,
-                                  initialStyles,
-                                  onStateChange,
-                                }: UseMapHighlightProps): UseMapHighlightReturn => {
+  mapInstance,
+  initialStyles,
+  onStateChange,
+}: UseMapHighlightProps): UseMapHighlightReturn => {
   const serviceRef = useRef<MapHighlightService | undefined>(undefined);
   const [highlightState, setHighlightState] = useState<MapHighlightState>({
     searchMatched: new Set(),

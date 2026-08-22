@@ -1,6 +1,6 @@
+import { Box } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { Box } from '@mui/material';
 import { BasicInfoFields } from './BasicInfoFields.js';
 
 const meta: Meta<typeof BasicInfoFields> = {

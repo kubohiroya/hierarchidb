@@ -4,16 +4,13 @@
  * @why Provides a repeatable, scope-controlled workflow for enforcing the naming guideline via ts-morph.
  */
 
-import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import process from 'node:process';
+import path from 'node:path';
 import { performance } from 'node:perf_hooks';
-import minimist from 'minimist';
+import process from 'node:process';
 import { globby } from 'globby';
-import {
-  Project,
-  SourceFile,
-} from 'ts-morph';
+import minimist from 'minimist';
+import { Project, SourceFile } from 'ts-morph';
 
 const DEFAULT_INCLUDE = [
   'app/**/*.{ts,tsx,mts}',
@@ -98,7 +95,7 @@ function splitSpecifier(original: string): { bare: string; suffix: string } {
 function computeUpdatedSpecifier(
   sourceFilePath: string,
   targetFilePath: string,
-  originalSpecifier: string,
+  originalSpecifier: string
 ): string {
   const sourceDir = path.dirname(sourceFilePath);
   const relativePath = path.relative(sourceDir, targetFilePath);
@@ -122,7 +119,12 @@ function computeUpdatedSpecifier(
   return ensureRelativeSpecifier(nextBare) + suffix;
 }
 
-async function prepareSourceFiles(project: Project, include: string[], ignore: string[], root: string): Promise<SourceFile[]> {
+async function prepareSourceFiles(
+  project: Project,
+  include: string[],
+  ignore: string[],
+  root: string
+): Promise<SourceFile[]> {
   const filePaths = await globby(include, {
     cwd: root,
     ignore,
@@ -144,7 +146,7 @@ function collectSpecifierUpdates(
   project: Project,
   root: string,
   fromPath: string,
-  toPath: string,
+  toPath: string
 ): SpecifierUpdate[] {
   const updates: SpecifierUpdate[] = [];
   const targetFile = project.getSourceFile(fromPath);
@@ -230,7 +232,10 @@ function parseCliOptions(argv: string[], root: string): CliOptions {
   });
 
   const planPath = path.resolve(root, String(args.plan));
-  const filterValues = ([] as string[]).concat(args.filter ?? []).map(String).filter((value) => value.length > 0);
+  const filterValues = ([] as string[])
+    .concat(args.filter ?? [])
+    .map(String)
+    .filter((value) => value.length > 0);
   const filters = filterValues.map((pattern) => new RegExp(pattern));
 
   return {
@@ -261,7 +266,9 @@ function describeResult(result: OperationResult, root: string): void {
   if (result.specifierUpdates.length > 0) {
     console.log(`  specifier updates: ${result.specifierUpdates.length}`);
     for (const update of result.specifierUpdates) {
-      console.log(`    - (${update.kind}) ${update.sourceFile}: '${update.oldValue}' -> '${update.newValue}'`);
+      console.log(
+        `    - (${update.kind}) ${update.sourceFile}: '${update.oldValue}' -> '${update.newValue}'`
+      );
     }
   } else {
     console.log('  specifier updates: 0');
@@ -313,7 +320,8 @@ async function applyRenames(options: CliOptions): Promise<OperationResult[]> {
     }
 
     const toExists = project.getFileSystem().fileExistsSync(toPath);
-    const caseInsensitiveMatch = fromPath.localeCompare(toPath, undefined, { sensitivity: 'accent' }) === 0;
+    const caseInsensitiveMatch =
+      fromPath.localeCompare(toPath, undefined, { sensitivity: 'accent' }) === 0;
     if (toExists && !caseInsensitiveMatch) {
       results.push({
         entry,
@@ -335,7 +343,9 @@ async function applyRenames(options: CliOptions): Promise<OperationResult[]> {
     for (const update of specifierUpdates) {
       const sourceFile = project.getSourceFile(path.resolve(options.root, update.sourceFile));
       if (!sourceFile) continue;
-      const importDecls = sourceFile.getImportDeclarations().filter((decl) => decl.getModuleSpecifier().getLiteralText() === update.oldValue);
+      const importDecls = sourceFile
+        .getImportDeclarations()
+        .filter((decl) => decl.getModuleSpecifier().getLiteralText() === update.oldValue);
       const exportDecls = sourceFile.getExportDeclarations().filter((decl) => {
         const moduleSpecifier = decl.getModuleSpecifier();
         return moduleSpecifier ? moduleSpecifier.getLiteralText() === update.oldValue : false;
@@ -355,7 +365,7 @@ async function applyRenames(options: CliOptions): Promise<OperationResult[]> {
       if (!caseInsensitiveMatch) {
         fromFile.move(toPath);
       } else {
-        const tempPath = `${toPath}.rename-temp`; 
+        const tempPath = `${toPath}.rename-temp`;
         fromFile.move(tempPath);
         const tempFile = project.getSourceFileOrThrow(tempPath);
         tempFile.move(toPath);
@@ -394,7 +404,9 @@ async function main(): Promise<void> {
   const skipped = results.filter((result) => result.skipped).length;
 
   /* eslint-disable no-console */
-  console.log(`\nSummary: applied=${applied}, skipped=${skipped}, dry=${results.length - applied - skipped}`);
+  console.log(
+    `\nSummary: applied=${applied}, skipped=${skipped}, dry=${results.length - applied - skipped}`
+  );
   for (const result of results) {
     describeResult(result, options.root);
   }

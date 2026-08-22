@@ -69,9 +69,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
                   <AppIconRegistryProvider>
                     <WorkerProvider renderOverlay={false} fallback={workerFallback}>
                       <WorkerProgressReporter />
-                      <FloatingWindowPortalProvider>
-                        {children}
-                      </FloatingWindowPortalProvider>
+                      <FloatingWindowPortalProvider>{children}</FloatingWindowPortalProvider>
                     </WorkerProvider>
                   </AppIconRegistryProvider>
                 </AppThemeProvider>

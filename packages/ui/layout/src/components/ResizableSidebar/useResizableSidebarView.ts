@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 export interface UseResizableSidebarViewParams {
   setSidebarOpen: (value: boolean) => void;
@@ -33,7 +33,7 @@ export function useResizableSidebarView({
         setDrawerWidth(newWidth);
       }
     },
-    [maxDrawerWidth, minDrawerWidth],
+    [maxDrawerWidth, minDrawerWidth]
   );
 
   const handleMouseUp = useCallback(() => {

@@ -1,6 +1,6 @@
+import { Box, Typography } from '@mui/material';
 import type React from 'react';
 import { memo } from 'react';
-import { Box, Typography } from '@mui/material';
 
 export interface DataSourceOption {
   id: string;

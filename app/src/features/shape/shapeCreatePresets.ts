@@ -270,11 +270,11 @@ const createWorldSelection = (
   return selection;
 };
 
-const createSelectionRow = (
-  level0: boolean,
-  level1: boolean,
-  level2 = false
-): boolean[] => [level0, level1, level2];
+const createSelectionRow = (level0: boolean, level1: boolean, level2 = false): boolean[] => [
+  level0,
+  level1,
+  level2,
+];
 
 const createSimplifyToleranceByAdminLevelPatch = (toleranceByBand: number[]) => ({
   admin0: {
@@ -316,8 +316,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
     labelKey: 'treeConsole.shapePresets.japanLevel01.name',
     labelFallback: 'Japan ADM0+1',
     descriptionKey: 'treeConsole.shapePresets.japanLevel01.description',
-    descriptionFallback:
-      'Select Japan admin level 0+1 boundaries.',
+    descriptionFallback: 'Select Japan admin level 0+1 boundaries.',
     nodeNameTemplateKey: 'treeConsole.shapePresets.japanLevel01.nodeNameTemplate',
     nodeNameTemplateFallback: 'Japan ADM0+1',
     nodeDescriptionKey: 'treeConsole.shapePresets.japanLevel01.nodeDescriptionTemplate',
@@ -347,8 +346,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
     labelKey: 'treeConsole.shapePresets.worldLevel0.name',
     labelFallback: 'World countries ADM0',
     descriptionKey: 'treeConsole.shapePresets.worldLevel0.description',
-    descriptionFallback:
-      'Select all countries at admin level 0 for compact global coverage.',
+    descriptionFallback: 'Select all countries at admin level 0 for compact global coverage.',
     nodeNameTemplateKey: 'treeConsole.shapePresets.worldLevel0.nodeNameTemplate',
     nodeNameTemplateFallback: 'World ADM0',
     nodeDescriptionKey: 'treeConsole.shapePresets.worldLevel0.nodeDescriptionTemplate',
@@ -378,8 +376,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
     labelKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.name',
     labelFallback: 'World countries ADM1, China/India ADM1+2',
     descriptionKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.description',
-    descriptionFallback:
-      'Select ADM1 globally; extend China and India to ADM2.',
+    descriptionFallback: 'Select ADM1 globally; extend China and India to ADM2.',
     nodeNameTemplateKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.nodeNameTemplate',
     nodeNameTemplateFallback: 'World countries ADM1, CN/IN ADM1+2',
     nodeDescriptionKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.nodeDescriptionTemplate',
@@ -466,15 +463,17 @@ export function getShapePresetMenuEntries(): readonly ShapePresetMenuEntry[] {
 
   return [
     defaultEntry,
-    ...SHAPE_CREATE_PRESET_DEFINITIONS.map((preset): ShapePresetMenuEntry => ({
-      key: `shape-preset-${preset.id}`,
-      nodeType: 'shape',
-      createType: buildCreateType('shape', preset.id),
-      labelKey: preset.labelKey,
-      label: preset.labelFallback,
-      descriptionKey: preset.descriptionKey,
-      description: preset.descriptionFallback,
-    })),
+    ...SHAPE_CREATE_PRESET_DEFINITIONS.map(
+      (preset): ShapePresetMenuEntry => ({
+        key: `shape-preset-${preset.id}`,
+        nodeType: 'shape',
+        createType: buildCreateType('shape', preset.id),
+        labelKey: preset.labelKey,
+        label: preset.labelFallback,
+        descriptionKey: preset.descriptionKey,
+        description: preset.descriptionFallback,
+      })
+    ),
   ];
 }
 

@@ -1,5 +1,5 @@
-import type { TreeConsoleToolbarController } from '~/types';
 import { TreeTableSearchInput } from '@hierarchidb/components';
+import type { TreeConsoleToolbarController } from '~/types';
 
 export interface SearchStrings {
   placeholder: string;
@@ -11,10 +11,7 @@ interface SearchOnlyToolbarProps {
   searchStrings: SearchStrings;
 }
 
-export function SearchOnlyToolbar({
-  controller,
-  searchStrings,
-}: SearchOnlyToolbarProps) {
+export function SearchOnlyToolbar({ controller, searchStrings }: SearchOnlyToolbarProps) {
   return (
     <TreeTableSearchInput
       fullWidth

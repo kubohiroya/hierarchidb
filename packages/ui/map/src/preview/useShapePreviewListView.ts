@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useRef } from 'react';
-import type { GridGroupingState } from '@hierarchidb/ui-grid';
 import { useFloatingWindow } from '@hierarchidb/components';
-import type {
-  MapPreviewStatusLabels,
-} from './MapPreviewFloatingTable.js';
-import type { ShapePreviewListProps } from './ShapePreviewList.js';
+import type { GridGroupingState } from '@hierarchidb/ui-grid';
+import { useEffect, useMemo, useRef } from 'react';
 import { formatAdminLevelLabel } from './layerSetDefinitions.js';
+import type { MapPreviewStatusLabels } from './MapPreviewFloatingTable.js';
+import type { ShapePreviewListProps } from './ShapePreviewList.js';
 
 const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:shape:features';
 
 const formatBBox = (bbox?: [number, number, number, number]) => {
   if (!bbox || bbox.length !== 4) return '';
   const [minX, minY, maxX, maxY] = bbox;
-  if ([minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+  if (
+    [minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))
+  ) {
     return '';
   }
   return `${minX.toFixed(4)}, ${minY.toFixed(4)}, ${maxX.toFixed(4)}, ${maxY.toFixed(4)}`;
@@ -83,19 +83,20 @@ export const useShapePreviewListView = ({
     const height = window.innerHeight || 0;
     if (width === 0 || height === 0) return;
 
-    const hasValidSize = Number.isFinite(windowState.size.width)
-      && Number.isFinite(windowState.size.height)
-      && windowState.size.width >= 200
-      && windowState.size.height >= 140;
+    const hasValidSize =
+      Number.isFinite(windowState.size.width) &&
+      Number.isFinite(windowState.size.height) &&
+      windowState.size.width >= 200 &&
+      windowState.size.height >= 140;
     if (!hasValidSize) {
       handlers.setSize(initialSize);
     }
 
     const offscreen =
-      windowState.position.x > width - 48
-      || windowState.position.y > height - 48
-      || windowState.position.x + windowState.size.width < 48
-      || windowState.position.y + windowState.size.height < 48;
+      windowState.position.x > width - 48 ||
+      windowState.position.y > height - 48 ||
+      windowState.position.x + windowState.size.width < 48 ||
+      windowState.position.y + windowState.size.height < 48;
 
     if (offscreen) {
       handlers.setPosition(initialPosition);
@@ -114,9 +115,10 @@ export const useShapePreviewListView = ({
   const tableRows = useMemo(() => {
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
     const keyword = search?.value.trim().toLowerCase();
-    const filtered = keyword && searchOnly
-      ? rows.filter((row) => matchedRows?.has(String(row.featureId ?? row.id)))
-      : rows;
+    const filtered =
+      keyword && searchOnly
+        ? rows.filter((row) => matchedRows?.has(String(row.featureId ?? row.id)))
+        : rows;
 
     return filtered.map((row) => {
       const rowKey = String(row.featureId ?? row.id);
@@ -141,7 +143,15 @@ export const useShapePreviewListView = ({
         recycling: row.recycling ?? false,
       };
     });
-  }, [errorSummaryById, matchedRows, resolvedStatusLabels.completed, resolvedStatusLabels.failed, rows, search?.value, searchOnly]);
+  }, [
+    errorSummaryById,
+    matchedRows,
+    resolvedStatusLabels.completed,
+    resolvedStatusLabels.failed,
+    rows,
+    search?.value,
+    searchOnly,
+  ]);
 
   const resolvedMatchedRows = useMemo(() => {
     if (!matchedRows) return undefined;

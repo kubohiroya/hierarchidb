@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type {
+  MapEvent,
+  MapLayerMouseEvent,
+  ViewState as ReactMapViewState,
+} from '@vis.gl/react-maplibre';
 import type React from 'react';
-import type { MapLayerMouseEvent, MapEvent, ViewState as ReactMapViewState } from '@vis.gl/react-maplibre';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_IDENTIFY_RADIUS, resolveIdentifyCandidates } from '~/lib/feature-identification';
 import type { MapAttributionControlOptions } from '~/types/attribution';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
@@ -21,10 +25,12 @@ export type MapLibreMapProps = BaseMapProps & {
     navigation?: boolean | { position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
     scale?: boolean | { position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
     fullscreen?: boolean | { position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
-    geolocate?: boolean | {
-      position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-      options?: Record<string, unknown>;
-    };
+    geolocate?:
+      | boolean
+      | {
+          position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+          options?: Record<string, unknown>;
+        };
     attribution?: boolean | MapAttributionControlOptions;
   };
 };
@@ -43,7 +49,8 @@ type MapContainerSize = {
 
 const ZERO_PADDING = { top: 0, right: 0, bottom: 0, left: 0 } as const;
 
-const { mapStyleUrl: defaultMapStyleUrl, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
+const { mapStyleUrl: defaultMapStyleUrl, interactionOptions: defaultMapOptions } =
+  DEFAULT_MAP_CONFIG;
 
 const parsePxToNumber = (value: string | number | undefined): number | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -58,7 +65,7 @@ const parsePxToNumber = (value: string | number | undefined): number | undefined
 
 const toControlledViewState = (
   viewState: MapViewState | undefined,
-  size: MapContainerSize,
+  size: MapContainerSize
 ): ControlledViewState | undefined => {
   if (!viewState || size.width <= 0 || size.height <= 0) {
     return undefined;
@@ -80,7 +87,9 @@ const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
   if (!style) return undefined;
   const { background, ...rest } = style;
   const safeBackground = typeof background === 'string' ? background : undefined;
-  return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
+  return (
+    safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }
+  ) as SafeStyle;
 };
 
 const parseQueryBoolean = (value: string | null): boolean | undefined => {
@@ -114,11 +123,17 @@ export function useMapLibreMap({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const loggedPaintArraysRef = useRef(new Set<string>());
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapContainerSize, setMapContainerSize] = useState<MapContainerSize>({ width: 0, height: 0 });
+  const [mapContainerSize, setMapContainerSize] = useState<MapContainerSize>({
+    width: 0,
+    height: 0,
+  });
 
-  const defaultIdentifyConfig = useMemo<MapFeatureIdentifyConfig>(() => ({
-    radius: DEFAULT_IDENTIFY_RADIUS,
-  }), []);
+  const defaultIdentifyConfig = useMemo<MapFeatureIdentifyConfig>(
+    () => ({
+      radius: DEFAULT_IDENTIFY_RADIUS,
+    }),
+    []
+  );
   const locationSearch = typeof window !== 'undefined' ? window.location.search : '';
   const queryOverrides = useMemo(() => {
     if (!locationSearch) {
@@ -166,53 +181,78 @@ export function useMapLibreMap({
     queryOverrides.showTileBoundaries ?? showTileBoundaries ?? import.meta.env.DEV;
   const resolvedShowTileCoordinates =
     queryOverrides.showTileCoordinates ?? showTileCoordinates ?? import.meta.env.DEV;
-  const applyDebugTileSettings = useCallback((map: MapLibreMapInstance | null) => {
-    if (!map) return;
-    map.showTileBoundaries = resolvedShowTileBoundaries;
-    map.showTileCoordinates = resolvedShowTileCoordinates;
-    map.triggerRepaint?.();
-  }, [resolvedShowTileBoundaries, resolvedShowTileCoordinates]);
+  const applyDebugTileSettings = useCallback(
+    (map: MapLibreMapInstance | null) => {
+      if (!map) return;
+      map.showTileBoundaries = resolvedShowTileBoundaries;
+      map.showTileCoordinates = resolvedShowTileCoordinates;
+      map.triggerRepaint?.();
+    },
+    [resolvedShowTileBoundaries, resolvedShowTileCoordinates]
+  );
 
-  const handleMapLoad = useCallback((event: MapEvent<unknown>) => {
-    const map = event.target as MapLibreMapInstance;
-    mapRef.current = map;
-    normalizePaintArrays(map);
-    map.on('styledata', () => normalizePaintArrays(map));
-    applyDebugTileSettings(map);
-    if (controls) {
-      void loadMapLibreModule().then((mlib) => {
-        if (!mlib) return;
-        if (controls.navigation) {
-          const pos = typeof controls.navigation === 'object' && controls.navigation.position ? controls.navigation.position : 'top-right';
-          map.addControl(new mlib.NavigationControl(), pos);
-        }
-        if (controls.scale) {
-          const pos = typeof controls.scale === 'object' && controls.scale.position ? controls.scale.position : 'bottom-left';
-          map.addControl(new mlib.ScaleControl(), pos);
-        }
-        if (controls.fullscreen) {
-          const pos = typeof controls.fullscreen === 'object' && controls.fullscreen.position ? controls.fullscreen.position : 'top-right';
-          if (mlib.FullscreenControl) map.addControl(new mlib.FullscreenControl(), pos);
-        }
-        if (controls.geolocate) {
-          const pos = typeof controls.geolocate === 'object' && controls.geolocate.position ? controls.geolocate.position : 'top-right';
-          const opts = typeof controls.geolocate === 'object' && controls.geolocate.options ? controls.geolocate.options : { trackUserLocation: true };
-          if (mlib.GeolocateControl) map.addControl(new mlib.GeolocateControl(opts), pos);
-        }
-        const attributionControl = controls.attribution;
-        if (attributionControl) {
-          const options = typeof attributionControl === 'object' ? attributionControl : {};
-          const pos = options.position ?? 'bottom-right';
-          const customAttribution = options.items && options.items.length > 0
-            ? formatAttributionItems(options.items)
-            : undefined;
-          map.addControl(new mlib.AttributionControl({ compact: options.compact ?? true, customAttribution }), pos);
-        }
-      });
-    }
-    setMapLoaded(true);
-    onLoad?.(map);
-  }, [onLoad, controls, normalizePaintArrays, applyDebugTileSettings]);
+  const handleMapLoad = useCallback(
+    (event: MapEvent<unknown>) => {
+      const map = event.target as MapLibreMapInstance;
+      mapRef.current = map;
+      normalizePaintArrays(map);
+      map.on('styledata', () => normalizePaintArrays(map));
+      applyDebugTileSettings(map);
+      if (controls) {
+        void loadMapLibreModule().then((mlib) => {
+          if (!mlib) return;
+          if (controls.navigation) {
+            const pos =
+              typeof controls.navigation === 'object' && controls.navigation.position
+                ? controls.navigation.position
+                : 'top-right';
+            map.addControl(new mlib.NavigationControl(), pos);
+          }
+          if (controls.scale) {
+            const pos =
+              typeof controls.scale === 'object' && controls.scale.position
+                ? controls.scale.position
+                : 'bottom-left';
+            map.addControl(new mlib.ScaleControl(), pos);
+          }
+          if (controls.fullscreen) {
+            const pos =
+              typeof controls.fullscreen === 'object' && controls.fullscreen.position
+                ? controls.fullscreen.position
+                : 'top-right';
+            if (mlib.FullscreenControl) map.addControl(new mlib.FullscreenControl(), pos);
+          }
+          if (controls.geolocate) {
+            const pos =
+              typeof controls.geolocate === 'object' && controls.geolocate.position
+                ? controls.geolocate.position
+                : 'top-right';
+            const opts =
+              typeof controls.geolocate === 'object' && controls.geolocate.options
+                ? controls.geolocate.options
+                : { trackUserLocation: true };
+            if (mlib.GeolocateControl) map.addControl(new mlib.GeolocateControl(opts), pos);
+          }
+          const attributionControl = controls.attribution;
+          if (attributionControl) {
+            const options = typeof attributionControl === 'object' ? attributionControl : {};
+            const pos = options.position ?? 'bottom-right';
+            const customAttribution =
+              options.items && options.items.length > 0
+                ? formatAttributionItems(options.items)
+                : undefined;
+            map.addControl(
+              new mlib.AttributionControl({ compact: options.compact ?? true, customAttribution }),
+              pos
+            );
+          }
+        });
+      }
+      setMapLoaded(true);
+      onLoad?.(map);
+    },
+    [onLoad, controls, normalizePaintArrays, applyDebugTileSettings]
+  );
 
   const resolveZoomBounds = useCallback(() => {
     const fallbackMin = DEFAULT_MAP_CONFIG.interactionOptions.minZoom ?? 0;
@@ -222,12 +262,15 @@ export function useMapLibreMap({
     return { minZoom, maxZoom };
   }, [mapOptions.maxZoom, mapOptions.minZoom]);
 
-  const clampViewStateZoom = useCallback((state: MapViewState): MapViewState => {
-    const { minZoom, maxZoom } = resolveZoomBounds();
-    const clampedZoom = Math.min(maxZoom, Math.max(minZoom, state.zoom));
-    if (clampedZoom === state.zoom) return state;
-    return { ...state, zoom: clampedZoom };
-  }, [resolveZoomBounds]);
+  const clampViewStateZoom = useCallback(
+    (state: MapViewState): MapViewState => {
+      const { minZoom, maxZoom } = resolveZoomBounds();
+      const clampedZoom = Math.min(maxZoom, Math.max(minZoom, state.zoom));
+      if (clampedZoom === state.zoom) return state;
+      return { ...state, zoom: clampedZoom };
+    },
+    [resolveZoomBounds]
+  );
 
   const handleMoveEnd = useCallback(
     (event: { viewState: MapViewState }) => {
@@ -236,28 +279,36 @@ export function useMapLibreMap({
       const clampedState = clampViewStateZoom(nextState);
       onMoveEnd?.(clampedState);
     },
-    [clampViewStateZoom, onMoveEnd],
+    [clampViewStateZoom, onMoveEnd]
   );
 
-  const handleMapClick = useCallback((event: MapLayerMouseEvent) => {
-    const mapEvent = event as MapClickEvent;
-    const effectiveIdentifyConfig: MapFeatureIdentifyConfig = identifyFeatureOnClick ?? defaultIdentifyConfig;
+  const handleMapClick = useCallback(
+    (event: MapLayerMouseEvent) => {
+      const mapEvent = event as MapClickEvent;
+      const effectiveIdentifyConfig: MapFeatureIdentifyConfig =
+        identifyFeatureOnClick ?? defaultIdentifyConfig;
 
-    const baseResult = resolveIdentifyCandidates(mapRef.current, mapEvent, effectiveIdentifyConfig);
-    const enrichedEvent: MapClickEvent = {
-      ...mapEvent,
-      identifiedFeatureIds: baseResult.featureIds,
-      identifiedFeatures: baseResult.features,
-    };
+      const baseResult = resolveIdentifyCandidates(
+        mapRef.current,
+        mapEvent,
+        effectiveIdentifyConfig
+      );
+      const enrichedEvent: MapClickEvent = {
+        ...mapEvent,
+        identifiedFeatureIds: baseResult.featureIds,
+        identifiedFeatures: baseResult.features,
+      };
 
-    const identifyResult: MapFeatureIdentifyResult = {
-      ...baseResult,
-      originalEvent: enrichedEvent,
-    };
+      const identifyResult: MapFeatureIdentifyResult = {
+        ...baseResult,
+        originalEvent: enrichedEvent,
+      };
 
-    effectiveIdentifyConfig.onIdentify?.(identifyResult);
-    onClick?.(enrichedEvent);
-  }, [defaultIdentifyConfig, identifyFeatureOnClick, onClick]);
+      effectiveIdentifyConfig.onIdentify?.(identifyResult);
+      onClick?.(enrichedEvent);
+    },
+    [defaultIdentifyConfig, identifyFeatureOnClick, onClick]
+  );
 
   useEffect(() => {
     applyDebugTileSettings(mapRef.current);
@@ -306,10 +357,12 @@ export function useMapLibreMap({
       onMove?.(clampedState);
       onViewStateChange?.(clampedState);
     },
-    [clampViewStateZoom, onMove, onViewStateChange],
+    [clampViewStateZoom, onMove, onViewStateChange]
   );
 
-  const resolvedMapStyle = (mapStyleObject ?? mapStyleUrl ?? defaultMapStyleUrl) as React.ComponentProps<
+  const resolvedMapStyle = (mapStyleObject ??
+    mapStyleUrl ??
+    defaultMapStyleUrl) as React.ComponentProps<
     typeof import('@vis.gl/react-maplibre').Map
   >['mapStyle'];
   const clampedInitialViewState = useMemo(() => {
@@ -330,9 +383,10 @@ export function useMapLibreMap({
   }, [height, mapContainerSize.height, mapContainerSize.width, width]);
   const resolvedViewState = useMemo(
     () => toControlledViewState(clampedViewState, resolvedMapSize),
-    [clampedViewState, resolvedMapSize],
+    [clampedViewState, resolvedMapSize]
   );
-  const disableDefaultAttribution = controls?.attribution === true || typeof controls?.attribution === 'object';
+  const disableDefaultAttribution =
+    controls?.attribution === true || typeof controls?.attribution === 'object';
   const resolvedZoomBounds = useMemo(() => resolveZoomBounds(), [resolveZoomBounds]);
 
   return {

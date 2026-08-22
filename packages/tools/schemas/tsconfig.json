@@ -5,7 +5,5 @@
     "resolveJsonModule": true,
     "allowJs": true
   },
-  "include": [
-    "plugin-manifest.schema.json"
-  ]
+  "include": ["plugin-manifest.schema.json"]
 }

@@ -20,8 +20,9 @@ export const useAuthMethodSettingsView = () => {
   }, []);
 
   const noteText = useMemo(
-    () => 'Note: Page redirect option will be available in a future update with full state persistence support.',
-    [],
+    () =>
+      'Note: Page redirect option will be available in a future update with full state persistence support.',
+    []
   );
 
   return {

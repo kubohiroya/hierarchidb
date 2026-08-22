@@ -1,8 +1,8 @@
 export type {
-  PaneConfig,
-  PaneState,
-  PaneProgress,
   LRUSplitViewConfig,
+  PaneConfig,
   PaneHeaderProps,
+  PaneProgress,
+  PaneState,
   UseLRUPanesResult,
 } from './LRUSplitView.js';

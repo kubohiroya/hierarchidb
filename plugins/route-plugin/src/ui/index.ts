@@ -1,4 +1,3 @@
-
 import './i18n.js';
 import './components/steps-provider.js';
 import type { ReactElement } from 'react';
@@ -18,7 +17,9 @@ interface HostPluginDialogProps {
 export async function getDialogComponent(): Promise<PluginDialogComponent> {
   const Adapter: PluginDialogComponent = () => {
     if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-      console.warn('[route-plugin] getDialogComponent() is deprecated. Dialogs are provided via PluginDialogHost.');
+      console.warn(
+        '[route-plugin] getDialogComponent() is deprecated. Dialogs are provided via PluginDialogHost.'
+      );
     }
     return null;
   };

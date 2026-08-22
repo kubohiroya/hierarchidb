@@ -2,19 +2,16 @@ import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
-import type { VtDebugFocusConfig } from './vtStageDebug.js';
-import type { GeojsonVtEmptyTileDetail } from './vtStageSummary.js';
 import { iterateChildTiles } from './iterateChildTiles.js';
-import type {
-  BuildLayerIndexForTile,
-  TaskLayerContext,
-} from './vtStageTaskLayerBuilderTypes.js';
+import type { VtDebugFocusConfig } from './vtStageDebug.js';
+import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
+import type { GeojsonVtEmptyTileDetail } from './vtStageSummary.js';
 import type { PerTileLayerFeatureMap } from './vtStageTaskLayerBuilderStrategyPerTileLoopLayerUtils.js';
 import {
   buildFeaturesWithBBoxByLayer,
   resolvePerTileLayerContribution,
 } from './vtStageTaskLayerBuilderStrategyPerTileLoopLayerUtils.js';
-import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
+import type { BuildLayerIndexForTile, TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 
 type PerTileLayerExecutionInput = {
   context: VTStageContext;
@@ -40,7 +37,7 @@ export type PerTileLayerExecutionResult = {
 };
 
 export const executePerTileLayerBuild = async (
-  input: PerTileLayerExecutionInput,
+  input: PerTileLayerExecutionInput
 ): Promise<PerTileLayerExecutionResult> => {
   const {
     context,

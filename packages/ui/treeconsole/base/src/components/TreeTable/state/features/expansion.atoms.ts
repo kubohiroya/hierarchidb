@@ -1,5 +1,5 @@
-import { atom } from 'jotai';
 import type { ExpandedState } from '@tanstack/react-table';
+import { atom } from 'jotai';
 import { tableDataAtom } from '~/components/TreeTable/state/core/data.atoms';
 
 export const expandedAtom = atom<ExpandedState>({});

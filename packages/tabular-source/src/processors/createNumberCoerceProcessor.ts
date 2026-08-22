@@ -6,9 +6,12 @@ export interface NumberCoerceRule {
   default?: number;
 }
 
-export function createNumberCoerceProcessor(id: string, rules: NumberCoerceRule[]): TabularProcessor {
-  const set = new Set(rules.map(r => r.column));
-  const ruleFor = (c: string) => rules.find(r => r.column === c);
+export function createNumberCoerceProcessor(
+  id: string,
+  rules: NumberCoerceRule[]
+): TabularProcessor {
+  const set = new Set(rules.map((r) => r.column));
+  const ruleFor = (c: string) => rules.find((r) => r.column === c);
   return {
     id,
     transformRow(row: Record<string, any>) {

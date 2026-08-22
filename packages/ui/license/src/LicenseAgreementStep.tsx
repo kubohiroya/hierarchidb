@@ -1,5 +1,5 @@
-import type React from 'react';
 import { Alert, AlertTitle, Box, Button, Stack, Typography } from '@mui/material';
+import type React from 'react';
 
 export interface LicenseDetails {
   licenseName: string;
@@ -46,7 +46,8 @@ export const LicenseAgreementStep: React.FC<LicenseAgreementStepProps> = ({
           </Typography>
         )}
         <Typography variant="body2" color="text.secondary">
-          By clicking the button below, you acknowledge that you have read and agree to comply with the licensing requirements.
+          By clicking the button below, you acknowledge that you have read and agree to comply with
+          the licensing requirements.
         </Typography>
         <Button
           variant={state.agreed ? 'outlined' : 'contained'}
@@ -63,7 +64,9 @@ export const LicenseAgreementStep: React.FC<LicenseAgreementStepProps> = ({
     {state.agreed && (
       <Alert severity="success">
         <Stack spacing={0.5}>
-          <Typography variant="body2">✓ You have agreed to the {details.licenseName} terms.</Typography>
+          <Typography variant="body2">
+            ✓ You have agreed to the {details.licenseName} terms.
+          </Typography>
           {state.agreedAt && (
             <Typography variant="caption" color="text.secondary">
               Agreed on: {new Date(state.agreedAt).toLocaleString()}

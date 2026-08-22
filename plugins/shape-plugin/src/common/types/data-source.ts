@@ -42,10 +42,12 @@ export interface SourceTaskPayload {
 
 export function isDataSourceName(value: unknown): value is DataSourceName {
   if (typeof value !== 'string') return false;
-  return value === 'naturalearth'
-    || value === 'geoboundaries'
-    || value === 'geoboundaries-topojson'
-    || value === 'gadm';
+  return (
+    value === 'naturalearth' ||
+    value === 'geoboundaries' ||
+    value === 'geoboundaries-topojson' ||
+    value === 'gadm'
+  );
 }
 
 export function requireDataSourceName(value: unknown, context: string): DataSourceName {

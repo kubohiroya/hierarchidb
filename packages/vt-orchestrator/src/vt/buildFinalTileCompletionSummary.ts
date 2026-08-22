@@ -1,5 +1,5 @@
-import { buildCompletedMessage } from './vtStageTaskOutputLogging.js';
 import { buildTileSummary } from './vtStageSummary.js';
+import { buildCompletedMessage } from './vtStageTaskOutputLogging.js';
 
 type VtTileCompletionSummary = {
   finalTileSummary: string;
@@ -16,11 +16,7 @@ export const buildFinalTileCompletionSummary = ({
   generatedTiles: number;
 }): VtTileCompletionSummary => {
   const finalTileSummary = buildTileSummary(tilesByZoom);
-  const message = buildCompletedMessage(
-    adminFeatureSummary,
-    finalTileSummary,
-    generatedTiles,
-  );
+  const message = buildCompletedMessage(adminFeatureSummary, finalTileSummary, generatedTiles);
 
   return { finalTileSummary, message };
 };

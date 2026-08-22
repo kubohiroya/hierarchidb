@@ -2,14 +2,14 @@
  * Shared helpers for TreeConsole action factory.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
+import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
 import { syncNodeIndex } from '~/state/treeconsole.deriveUtils';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 
 export type ClipboardPayload = { nodeIds: NodeId[]; cut?: boolean };
 export type GlobalWithClipboard = typeof globalThis & { __HDB_CLIPBOARD__?: ClipboardPayload };

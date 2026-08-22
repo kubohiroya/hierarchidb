@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
 import { useState } from 'react';
+import { describe, expect, it } from 'vitest';
 import { ShapeBuildProgressPanelControlRightContent } from '../../../components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/useShapeBuildProgressPanelControllerOverlay/ShapeBuildProgressPanelControllerOverlayDialogsView';
 
 describe('ShapeBuildProgressPanelControlRightContent', () => {

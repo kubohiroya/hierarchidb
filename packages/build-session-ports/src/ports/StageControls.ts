@@ -9,4 +9,3 @@ export interface StageControls {
   maxConcurrent?: number;
   requestPause?: (message: string) => void | Promise<void>;
 }
-

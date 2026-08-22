@@ -1,27 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { buildSelectionRecord } from '../../LocationSelectionStep';
 import type { LocationType } from '../../../../common/types/index';
+import { buildSelectionRecord } from '../../LocationSelectionStep';
 
 const mockCountries = [
   { code: 'AAA', name: 'Alpha', continent: 'Test' },
   { code: 'BBB', name: 'Beta', continent: 'Test' },
 ] as const;
 
-const mockTypes = [
-  { id: 'airport' as LocationType },
-  { id: 'port' as LocationType },
-];
+const mockTypes = [{ id: 'airport' as LocationType }, { id: 'port' as LocationType }];
 
 describe('buildSelectionRecord', () => {
   it('fills missing rows and columns with false', () => {
-    const selections = [
-      { countryCode: 'AAA', selections: { airport: true } },
-    ];
+    const selections = [{ countryCode: 'AAA', selections: { airport: true } }];
     const normalized = buildSelectionRecord(
       mockCountries.map((country) => country.code),
       mockTypes,
       selections,
-      new Set(mockTypes.map((type) => type.id)),
+      new Set(mockTypes.map((type) => type.id))
     );
     expect(normalized).toEqual({
       AAA: [true, false],
@@ -38,7 +33,7 @@ describe('buildSelectionRecord', () => {
       mockCountries.map((country) => country.code),
       [{ id: 'airport' as LocationType }],
       selections,
-      new Set<LocationType>(['airport']),
+      new Set<LocationType>(['airport'])
     );
     expect(normalized).toEqual({
       AAA: [false],

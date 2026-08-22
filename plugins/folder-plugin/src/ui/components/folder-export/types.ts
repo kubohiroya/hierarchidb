@@ -25,14 +25,15 @@ export const createDefaultFolderExportDraft = (): FolderExportDraftData => ({
 });
 
 export const normalizeFolderExportDraft = (
-  data: FolderExportDraftData | undefined,
+  data: FolderExportDraftData | undefined
 ): FolderExportDraftData => {
   const defaults = createDefaultFolderExportDraft();
   const draft: FolderExportDraftData = {
     ...defaults,
     ...(data ?? {}),
   };
-  const exportMode: FolderExportMode = draft.exportMode === 'distribution' ? 'distribution' : 'continuity';
+  const exportMode: FolderExportMode =
+    draft.exportMode === 'distribution' ? 'distribution' : 'continuity';
   const targetScope: FolderExportScope = draft.targetScope === 'shapeOnly' ? 'shapeOnly' : 'all';
   const format =
     draft.format === 'pbf.zip' || draft.format === 'mvf' || draft.format === 'json'

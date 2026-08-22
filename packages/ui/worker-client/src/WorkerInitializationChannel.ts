@@ -9,8 +9,8 @@ import type {
   InitializationResult,
   WorkerInitConfig,
   WorkerInitMessage,
-  WorkerInitRequest,
   WorkerInitMessageTarget,
+  WorkerInitRequest,
 } from './types.js';
 
 const INIT_EVENT_START = 'hierarchidb-worker-init-start';

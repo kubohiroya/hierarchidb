@@ -32,4 +32,3 @@ export interface MapSourcePort {
   // Layer metadata (e.g., bounds, count)
   getMetadata(): Promise<{ bounds?: BBox; featureCount?: number; updatedAt?: number }>;
 }
-

@@ -1,9 +1,9 @@
+import { isIssuedYamlStorageActivationState } from './yamlStorageActivationProvenanceUtils.js';
 import type {
   YamlStorageAccessDecision,
   YamlStorageAccessRequest,
   YamlStorageActivationState,
 } from './yamlStorageActivationTypes.js';
-import { isIssuedYamlStorageActivationState } from './yamlStorageActivationProvenanceUtils.js';
 
 type OwnDataProperty =
   | Readonly<{ readonly found: false }>

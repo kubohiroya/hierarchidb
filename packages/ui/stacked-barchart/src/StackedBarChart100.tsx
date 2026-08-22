@@ -18,7 +18,8 @@ export type StackedBarChart100Props = {
   endAdornment?: ReactNode;
 };
 
-const clampNonNegative = (value: number): number => (Number.isFinite(value) && value > 0 ? value : 0);
+const clampNonNegative = (value: number): number =>
+  Number.isFinite(value) && value > 0 ? value : 0;
 
 export const StackedBarChart100 = ({
   segments,
@@ -37,7 +38,10 @@ export const StackedBarChart100 = ({
     }))
     .filter((segment) => segment.value > 0);
 
-  const remainder = Math.max(0, safeTotal - resolvedSegments.reduce((sum, segment) => sum + segment.value, 0));
+  const remainder = Math.max(
+    0,
+    safeTotal - resolvedSegments.reduce((sum, segment) => sum + segment.value, 0)
+  );
   if (remainder > 0) {
     resolvedSegments.push({
       id: '__remainder__',

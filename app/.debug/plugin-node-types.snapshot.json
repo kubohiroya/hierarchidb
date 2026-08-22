@@ -82,10 +82,7 @@
           "menuGroup": "document",
           "createOrder": 40
         },
-        "tags": [
-          "geographic",
-          "location"
-        ],
+        "tags": ["geographic", "location"],
         "capabilities": {
           "workingCopy": true,
           "batch": true,
@@ -108,9 +105,7 @@
         "version": "1.0.0",
         "description": "Route management plugin extending Shape plugin for HierarchiDB",
         "extends": "shape",
-        "dependencies": [
-          "shape"
-        ],
+        "dependencies": ["shape"],
         "icon": {
           "mui": "Route",
           "emoji": "〰️",
@@ -134,9 +129,7 @@
         "description": "Geographic shape data management plugin for HierarchiDB",
         "extends": "folder",
         "priority": 800,
-        "dependencies": [
-          "folder"
-        ],
+        "dependencies": ["folder"],
         "icon": {
           "mui": "Hexagon",
           "emoji": "♦️",
@@ -195,9 +188,7 @@
         "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
         "extends": "folder",
         "priority": 600,
-        "dependencies": [
-          "folder"
-        ],
+        "dependencies": ["folder"],
         "icon": {
           "mui": "Assessment",
           "emoji": "📈",
@@ -245,9 +236,7 @@
         "description": "Styler Plugin for HierarchiDB - Dynamic styling for map visualizations",
         "extends": "spreadsheet",
         "priority": 700,
-        "dependencies": [
-          "@hierarchidb/spreadsheet-plugin"
-        ],
+        "dependencies": ["@hierarchidb/spreadsheet-plugin"],
         "icon": {
           "mui": "Palette",
           "emoji": "🎨",

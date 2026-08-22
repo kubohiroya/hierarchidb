@@ -1,11 +1,9 @@
+import { type NodeId, toNodeId, toNodeType } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import { toNodeId, toNodeType, type NodeId } from '@hierarchidb/core-types';
-import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
-import { coalesceBatches } from './mergeUtils.js';
-import { sanitizeForComlink } from '../../../adapters/subscriptions/comlinkSanitizer.js';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import {
   lastUpdateTimestampAtom,
   pendingUpdatesAtom,
@@ -14,6 +12,8 @@ import {
   subscriptionIdAtom,
   tableDataAtom,
 } from '~/components/TreeTable/state/index';
+import { sanitizeForComlink } from '../../../adapters/subscriptions/comlinkSanitizer.js';
+import { coalesceBatches } from './mergeUtils.js';
 
 const BATCH_DELAY_MS = 100;
 
@@ -38,10 +38,19 @@ const toMetadata = (value: unknown): { name: string; description: string; tags: 
   return { name: '', description: '', tags: [] };
 };
 
-const toTreeNodeFromRecord = (raw: { [key: string]: unknown; id: string }, fallback: TreeNode | undefined): TreeNode => ({
+const toTreeNodeFromRecord = (
+  raw: { [key: string]: unknown; id: string },
+  fallback: TreeNode | undefined
+): TreeNode => ({
   id: String(raw.id) as NodeId,
-  parentId: typeof raw.parentId === 'string' ? toNodeId(raw.parentId) : fallback?.parentId ?? toNodeId(''),
-  nodeType: typeof raw.nodeType === 'string' ? toNodeType(raw.nodeType) : fallback?.nodeType ?? toNodeType('folder'),
+  parentId:
+    typeof raw.parentId === 'string'
+      ? toNodeId(raw.parentId)
+      : (fallback?.parentId ?? toNodeId('')),
+  nodeType:
+    typeof raw.nodeType === 'string'
+      ? toNodeType(raw.nodeType)
+      : (fallback?.nodeType ?? toNodeType('folder')),
   depth: toNumber(raw.depth, fallback?.depth ?? 1),
   createdAt: toNumber(raw.createdAt, fallback?.createdAt ?? Date.now()),
   updatedAt: toNumber(raw.updatedAt, fallback?.updatedAt ?? Date.now()),
@@ -52,22 +61,34 @@ const toTreeNodeFromRecord = (raw: { [key: string]: unknown; id: string }, fallb
   },
   draftMetadata: fallback?.draftMetadata ?? null,
   data: fallback?.data ?? null,
-  visible: typeof raw.visible === 'boolean' ? raw.visible : fallback?.visible ?? true,
+  visible: typeof raw.visible === 'boolean' ? raw.visible : (fallback?.visible ?? true),
   ...(raw.hasChildren === undefined ? {} : { hasChildren: Boolean(raw.hasChildren) }),
-  ...(typeof raw.children === 'object' && Array.isArray(raw.children) ? { children: raw.children as NodeId[] } : {}),
+  ...(typeof raw.children === 'object' && Array.isArray(raw.children)
+    ? { children: raw.children as NodeId[] }
+    : {}),
   ...(raw.originalName === undefined ? {} : { originalName: String(raw.originalName) }),
-  ...(raw.originalParentId === undefined ? {} : { originalParentId: String(raw.originalParentId) as NodeId }),
-  ...(raw.removedAt === undefined ? {} : { removedAt: toNumber(raw.removedAt, fallback?.removedAt ?? Date.now()) }),
-  ...(raw.lastTouchedAt === undefined ? {} : { lastTouchedAt: toNumber(raw.lastTouchedAt, fallback?.lastTouchedAt ?? Date.now()) }),
+  ...(raw.originalParentId === undefined
+    ? {}
+    : { originalParentId: String(raw.originalParentId) as NodeId }),
+  ...(raw.removedAt === undefined
+    ? {}
+    : { removedAt: toNumber(raw.removedAt, fallback?.removedAt ?? Date.now()) }),
+  ...(raw.lastTouchedAt === undefined
+    ? {}
+    : { lastTouchedAt: toNumber(raw.lastTouchedAt, fallback?.lastTouchedAt ?? Date.now()) }),
   ...(typeof raw.map === 'object' && raw.map !== null ? { map: raw.map as TreeNode['map'] } : {}),
-  ...(typeof raw.references === 'object' && raw.references !== null ? { references: raw.references as NodeId[] } : {}),
-  ...(raw.descendantCount === undefined ? {} : { descendantCount: toNumber(raw.descendantCount, fallback?.descendantCount ?? 0) }),
+  ...(typeof raw.references === 'object' && raw.references !== null
+    ? { references: raw.references as NodeId[] }
+    : {}),
+  ...(raw.descendantCount === undefined
+    ? {}
+    : { descendantCount: toNumber(raw.descendantCount, fallback?.descendantCount ?? 0) }),
   ...(raw.isEstimated === undefined ? {} : { isEstimated: Boolean(raw.isEstimated) }),
 });
 
 /**
-  * SubTree
-  */
+ * SubTree
+ */
 // SubTreeChanges type is provided by atoms/features to avoid duplication
 
 export interface SubscriptionOrchestratorResult {
@@ -84,9 +105,11 @@ export interface SubscriptionOrchestratorResult {
 }
 
 /**
-  * SubTree
-  */
-export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): SubscriptionOrchestratorResult {
+ * SubTree
+ */
+export function useSubscriptionOrchestrator<T>(
+  workerAPI: WorkerAPI<T>
+): SubscriptionOrchestratorResult {
   // State atoms
   const [subscribedRootNodeId, setSubscribedRootNodeId] = useAtom(subscribedRootNodeIdAtom);
   const [subscriptionId, setSubscriptionId] = useAtom(subscriptionIdAtom);
@@ -101,7 +124,7 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
   const subscriptionRef = useRef<(() => void) | null>(null);
 
   /**
-            */
+   */
   const mergeUpdates = useCallback(
     (updates: SubTreeChanges[]): TreeNode[] => {
       let mergedData = [...tableData];
@@ -127,14 +150,18 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
             const i = idxMap.get(id);
             const flat = toTreeNodeFromRecord(n, i != null ? tableData[i] : undefined);
             if (i != null) mergedData[i] = { ...mergedData[i], ...flat } as TreeNode;
-            else { mergedData.push(flat); idxMap.set(id, mergedData.length - 1); }
+            else {
+              mergedData.push(flat);
+              idxMap.set(id, mergedData.length - 1);
+            }
           }
         }
 
         if (update.updated?.length) {
           for (const { nodeId, changes } of update.updated) {
             const i = idxMap.get(nodeId as NodeId);
-            if (i != null) mergedData[i] = { ...mergedData[i], ...(changes as Partial<TreeNode>) } as TreeNode;
+            if (i != null)
+              mergedData[i] = { ...mergedData[i], ...(changes as Partial<TreeNode>) } as TreeNode;
           }
         }
 
@@ -142,7 +169,10 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
           for (const move of update.moved) {
             const i = idxMap.get(move.nodeId as NodeId);
             if (i != null) {
-              mergedData[i] = { ...mergedData[i], parentId: move.newParentId as NodeId } as TreeNode;
+              mergedData[i] = {
+                ...mergedData[i],
+                parentId: move.newParentId as NodeId,
+              } as TreeNode;
             }
           }
         }
@@ -150,12 +180,12 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
 
       return mergedData;
     },
-    [tableData],
+    [tableData]
   );
 
   /**
-      * SubTree
-      */
+   * SubTree
+   */
   const processPendingUpdates = useCallback(() => {
     const t0 = performance.now?.() ?? Date.now();
     setPendingUpdates((pending) => {
@@ -183,8 +213,8 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
   }, [setPendingUpdates, mergeUpdates, setTableData]);
 
   /**
-      * SubTree
-      */
+   * SubTree
+   */
   // Forward declaration binding with function expression below
   let scheduleProcess: () => void;
 
@@ -209,15 +239,15 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
       setPendingUpdates((prev) => [...prev, changes]);
       scheduleProcess();
     },
-    [setLastUpdateTimestamp, setPendingUpdates, scheduleProcess],
+    [setLastUpdateTimestamp, setPendingUpdates, scheduleProcess]
   );
 
   /**
-            */
+   */
 
   /**
-      * SubTree
-      */
+   * SubTree
+   */
   const subscribe = useCallback(
     async (rootNodeId: string, depth: number = 2) => {
       if (subscriptionRef.current) {
@@ -252,9 +282,10 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
                 const base = { nodeId: safeEvent.nodeId as string, changes: payload };
                 // Treat prefetch snapshot events (delivered as "updated" with node payload)
                 // as additions when we have no existing row.
-                const added = Object.keys(payload).length > 0
-                  ? [Object.assign({ id: safeEvent.nodeId }, payload)]
-                  : undefined;
+                const added =
+                  Object.keys(payload).length > 0
+                    ? [Object.assign({ id: safeEvent.nodeId }, payload)]
+                    : undefined;
                 return {
                   updated: [base],
                   ...(added ? { added } : {}),
@@ -264,19 +295,27 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
                 return { removed: [safeEvent.nodeId as string] };
               case 'moved':
                 return {
-                  moved: [{
-                    nodeId: safeEvent.nodeId as string,
-                    oldParentId: safeEvent.previousParentNodeId as string | undefined,
-                    newParentId: safeEvent.parentId as string,
-                    oldIndex: -1,
-                    newIndex: -1,
-                  }],
+                  moved: [
+                    {
+                      nodeId: safeEvent.nodeId as string,
+                      oldParentId: safeEvent.previousParentNodeId as string | undefined,
+                      newParentId: safeEvent.parentId as string,
+                      oldIndex: -1,
+                      newIndex: -1,
+                    },
+                  ],
                 };
               default:
                 return {};
             }
           })();
-          if (batch && (batch.added?.length || batch.updated?.length || batch.removed?.length || batch.moved?.length)) {
+          if (
+            batch &&
+            (batch.added?.length ||
+              batch.updated?.length ||
+              batch.removed?.length ||
+              batch.moved?.length)
+          ) {
             handleSubTreeUpdate(batch);
           }
         });
@@ -287,22 +326,35 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
             ? {
                 prefetch: { depth },
               }
-            : undefined,
+            : undefined
         );
-        console.log('[TreeConsole][Subscription] subscribed', { rootNodeId, subscriptionId, depth });
-        subscriptionRef.current = () => { void subscriptionAPI.unsubscribe(subscriptionId); };
+        console.log('[TreeConsole][Subscription] subscribed', {
+          rootNodeId,
+          subscriptionId,
+          depth,
+        });
+        subscriptionRef.current = () => {
+          void subscriptionAPI.unsubscribe(subscriptionId);
+        };
         setSubscriptionId(rootNodeId); //  rootNodeId
         setSubscribedRootNodeId(rootNodeId);
       } catch (error) {
         console.error('Failed to subscribe to subtree:', error);
       }
     },
-    [workerAPI, handleSubTreeUpdate, setSubscriptionId, setSubscribedRootNodeId, setTableData, setPendingUpdates],
+    [
+      workerAPI,
+      handleSubTreeUpdate,
+      setSubscriptionId,
+      setSubscribedRootNodeId,
+      setTableData,
+      setPendingUpdates,
+    ]
   );
 
   /**
-      * SubTree
-      */
+   * SubTree
+   */
   const unsubscribe = useCallback(async () => {
     if (subscriptionRef.current) {
       try {

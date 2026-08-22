@@ -3,14 +3,22 @@
  * @module @hierarchidb/ui-country-select/components
  */
 
-import type React from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
-
-import { CountryMatrixSelector } from './CountryMatrixSelector.js';
-import { useCountryMatrixStepView } from './useCountryMatrixStepView.js';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
+  Box,
+  Chip,
+  Stack,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
 import type { Country } from '~/types/Country';
 import type { ColumnSet, MatrixConfig, MatrixSelection } from '~/types/MatrixColumn';
+import { CountryMatrixSelector } from './CountryMatrixSelector.js';
+import { useCountryMatrixStepView } from './useCountryMatrixStepView.js';
 
 export interface CountryMatrixStepProps {
   /** Step title */
@@ -42,17 +50,17 @@ export interface CountryMatrixStepProps {
  * suitable for use in multi-step workflows like StepperDialog.
  */
 export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
-                                                                      title = 'Select Countries and Options',
-                                                                      description,
-                                                                      countries,
-                                                                      matrixConfig: rawMatrixConfig,
-                                                                      selections,
-                                                                      onSelectionsChange,
-                                                                      height = 500,
-                                                                      showValidationInfo = true,
-                                                                      minSelections = 1,
-                                                                      showConfiguration = false,
-                                                                    }) => {
+  title = 'Select Countries and Options',
+  description,
+  countries,
+  matrixConfig: rawMatrixConfig,
+  selections,
+  onSelectionsChange,
+  height = 500,
+  showValidationInfo = true,
+  minSelections = 1,
+  showConfiguration = false,
+}) => {
   const { matrixConfig, stats, columnSetInfo, validationMessage } = useCountryMatrixStepView({
     countries,
     matrixConfig: rawMatrixConfig,
@@ -99,7 +107,7 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
                 <strong>Available Columns:</strong>
               </Typography>
               <Stack direction="row" flexWrap="wrap" gap={1}>
-                {matrixConfig.columns.map(column => (
+                {matrixConfig.columns.map((column) => (
                   <Chip
                     key={column.id}
                     label={column.label}
@@ -140,11 +148,7 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
               size="small"
             />
             {!stats.isValid && (
-              <Chip
-                label={`Minimum ${minSelections} required`}
-                color="warning"
-                size="small"
-              />
+              <Chip label={`Minimum ${minSelections} required`} color="warning" size="small" />
             )}
           </Stack>
         </Box>

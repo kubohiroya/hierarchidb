@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { executePauseBuildFlow } from '@hierarchidb/ui-build-progress/build-session';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('executePauseBuildFlow', () => {
   it('keeps pending true until pause and persist both complete', async () => {
@@ -46,12 +46,7 @@ describe('executePauseBuildFlow', () => {
 
     resolvePersist?.();
     await run;
-    expect(events).toEqual([
-      'pending:true',
-      'pause:user-pause',
-      'persist:user-pause',
-      'accepted',
-    ]);
+    expect(events).toEqual(['pending:true', 'pause:user-pause', 'persist:user-pause', 'accepted']);
     expect(acceptCalled).toBe(true);
   });
 

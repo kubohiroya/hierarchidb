@@ -48,26 +48,25 @@ const defaultPhaseColorsDark: Record<number, string> = {
 };
 
 export const PhaseConfigAccordion: React.FC<PhaseConfigAccordionProps> = ({
-                                                                            phase,
-                                                                            title,
-                                                                            description,
-                                                                            icon,
-                                                                            theme: themeOverride,
-                                                                            phaseColorsLight = defaultPhaseColorsLight,
-                                                                            phaseColorsDark = defaultPhaseColorsDark,
-                                                                            showPhaseNumber = true,
-                                                                            phaseLabel = 'Phase',
-                                                                            ...accordionProps
-                                                                          }) => {
+  phase,
+  title,
+  description,
+  icon,
+  theme: themeOverride,
+  phaseColorsLight = defaultPhaseColorsLight,
+  phaseColorsDark = defaultPhaseColorsDark,
+  showPhaseNumber = true,
+  phaseLabel = 'Phase',
+  ...accordionProps
+}) => {
   const muiTheme = useTheme();
-  const isDark = themeOverride === 'dark' || (themeOverride !== 'light' && muiTheme.palette.mode === 'dark');
+  const isDark =
+    themeOverride === 'dark' || (themeOverride !== 'light' && muiTheme.palette.mode === 'dark');
 
   const phaseColors = isDark ? phaseColorsDark : phaseColorsLight;
   const headerColor = phaseColors[phase] || phaseColors[1];
 
-  const displayTitle = showPhaseNumber
-    ? `[${phaseLabel} ${phase}] ${title}`
-    : title;
+  const displayTitle = showPhaseNumber ? `[${phaseLabel} ${phase}] ${title}` : title;
 
   return (
     <ConfigAccordion

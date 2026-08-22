@@ -4,13 +4,7 @@
   "description": "World population data by country for 2023, including demographic statistics and geographic boundaries",
   "icon": "Public",
   "category": "demographic",
-  "tags": [
-    "population",
-    "demographics",
-    "countries",
-    "2023",
-    "world data"
-  ],
+  "tags": ["population", "demographics", "countries", "2023", "world data"],
   "dataSource": "UN Population Division",
   "lastUpdated": "2023-07-01",
   "nodeCount": 4,
@@ -19,7 +13,5 @@
     "stylers": 1,
     "tables": 1
   },
-  "rootNodes": [
-    "population-folder-2023"
-  ]
+  "rootNodes": ["population-folder-2023"]
 }

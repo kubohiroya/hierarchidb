@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { useCallback, useMemo, useState } from 'react';
 import type { WorkerAPIAdapter } from '~/adapters/index';
 
 //  : Copy/Paste
@@ -52,11 +52,15 @@ export interface UseCopyPasteOperationsReturn {
 }
 
 /**
-  * Copy/Pastehook
-  */
+ * Copy/Pastehook
+ */
 type StateManagerCopyPasteLike = Partial<{
-  copyNodes: (nodeIds: NodeId[]) => Promise<{ success: boolean; copiedNodes?: NodeId[]; clipboard?: ClipboardData }>;
-  cutNodes: (nodeIds: NodeId[]) => Promise<{ success: boolean; cutNodes?: NodeId[]; clipboard?: ClipboardData }>;
+  copyNodes: (
+    nodeIds: NodeId[]
+  ) => Promise<{ success: boolean; copiedNodes?: NodeId[]; clipboard?: ClipboardData }>;
+  cutNodes: (
+    nodeIds: NodeId[]
+  ) => Promise<{ success: boolean; cutNodes?: NodeId[]; clipboard?: ClipboardData }>;
   pasteNodes: (targetParentId: NodeId) => Promise<{ success: boolean; pastedNodes?: TreeNode[] }>;
   clearClipboard: () => Promise<{ success: boolean }>;
   canPaste: (targetParentId?: NodeId) => boolean;
@@ -64,7 +68,7 @@ type StateManagerCopyPasteLike = Partial<{
 }>;
 
 export function useCopyPasteOperations<T>(
-  options: UseCopyPasteOperationsOptions<T> = {},
+  options: UseCopyPasteOperationsOptions<T> = {}
 ): UseCopyPasteOperationsReturn {
   const { stateManager, workerAdapter, setIsLoading } = options;
   const sm = stateManager as StateManagerCopyPasteLike | undefined;
@@ -116,7 +120,7 @@ export function useCopyPasteOperations<T>(
         clipboard,
       };
     },
-    [sm, setIsLoading],
+    [sm, setIsLoading]
   );
 
   const cutNodes = useCallback(
@@ -157,7 +161,7 @@ export function useCopyPasteOperations<T>(
         clipboard,
       };
     },
-    [sm, setIsLoading],
+    [sm, setIsLoading]
   );
 
   const pasteNodes = useCallback(
@@ -167,9 +171,10 @@ export function useCopyPasteOperations<T>(
         // allow/block by canPaste if provided
         if (sm.canPaste) {
           try {
-            const canPasteForTarget = sm.canPaste.length >= 1
-              ? (sm.canPaste as (targetParentId: NodeId) => boolean)(targetParentId)
-              : sm.canPaste();
+            const canPasteForTarget =
+              sm.canPaste.length >= 1
+                ? (sm.canPaste as (targetParentId: NodeId) => boolean)(targetParentId)
+                : sm.canPaste();
             if (!canPasteForTarget) {
               return { success: false, pastedNodes: [] };
             }
@@ -201,7 +206,9 @@ export function useCopyPasteOperations<T>(
           setClipboardData(null);
           setCutNodeIds([]);
           // Normalize parentId to the target for test determinism
-          const mapped = (result.pastedNodes || []).map((n) => ({ ...n, parentId: targetParentId } as TreeNode));
+          const mapped = (result.pastedNodes || []).map(
+            (n) => ({ ...n, parentId: targetParentId }) as TreeNode
+          );
           return { success: true, pastedNodes: mapped };
         } finally {
           setIsLoading?.(false);
@@ -232,7 +239,7 @@ export function useCopyPasteOperations<T>(
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                     version: 1,
-                  }) as TreeNode,
+                  }) as TreeNode
               ) || [],
           };
         } catch {
@@ -256,15 +263,15 @@ export function useCopyPasteOperations<T>(
         (nodeId) =>
           ({
             id: (nodeId + (clipboardData.operation === 'copy' ? '-copy' : '')) as NodeId,
-      metadata: {
-        name: `Node ${nodeId} (${clipboardData.operation === 'copy' ? 'Copy' : 'Moved'})`,
-      },
+            metadata: {
+              name: `Node ${nodeId} (${clipboardData.operation === 'copy' ? 'Copy' : 'Moved'})`,
+            },
             parentId: targetParentId,
             nodeType: 'default',
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
-          }) as TreeNode,
+          }) as TreeNode
       );
 
       if (clipboardData.operation === 'cut') {
@@ -277,7 +284,7 @@ export function useCopyPasteOperations<T>(
         pastedNodes,
       };
     },
-    [clipboardData, sm, workerAdapter, setIsLoading],
+    [clipboardData, sm, workerAdapter, setIsLoading]
   );
 
   const canPaste = useMemo(() => {
@@ -315,7 +322,7 @@ export function useCopyPasteOperations<T>(
 
       return canPaste;
     },
-    [canPaste, sm],
+    [canPaste, sm]
   );
 
   return {

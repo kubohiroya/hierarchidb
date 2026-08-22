@@ -4,11 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession';
-import { treeRouteIds } from '~/router/routes/tree/treeRouteIds';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
-import { MemoizedTreeConsoleIntegration } from './TreeConsoleIntegrationLoader';
+import { treeRouteIds } from '~/router/routes/tree/treeRouteIds';
 import { useTreeConsoleDocumentTitle } from './hooks/useTreeConsoleDocumentTitle';
 import { useTreeTargetContextState } from './hooks/useTreeTargetContextState';
+import { MemoizedTreeConsoleIntegration } from './TreeConsoleIntegrationLoader';
 import { TreeConsoleRoutePageLayout } from './TreeConsoleRoutePageLayout';
 import { TreeConsoleRoutePageProviders } from './TreeConsoleRoutePageProviders';
 
@@ -19,9 +19,18 @@ type TreeConsoleRoutePageProps = {
   columnTargetNodeId?: string;
 };
 
-export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: propSortMode, columnTargetNodeId }: TreeConsoleRoutePageProps) {
+export function TreeConsoleRoutePage({
+  data,
+  viewMode: propViewMode,
+  sortMode: propSortMode,
+  columnTargetNodeId,
+}: TreeConsoleRoutePageProps) {
   const navigate = useNavigate();
-  const searchParams = useSearch({ strict: false }) as { view?: string; sort?: string; zoom?: number };
+  const searchParams = useSearch({ strict: false }) as {
+    view?: string;
+    sort?: string;
+    zoom?: number;
+  };
   // Path params take priority over query params
   const resolvedViewMode = propViewMode ?? searchParams.view;
   const resolvedSortMode = propSortMode ?? searchParams.sort;
@@ -32,7 +41,10 @@ export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: p
     () => [treeRouteIds.dialog, treeRouteIds.dialogMode, treeRouteIds.dialogModeStep],
     []
   );
-  const targetMatch = useMemo(() => matches.find((match) => match.routeId === treeRouteIds.target), [matches]);
+  const targetMatch = useMemo(
+    () => matches.find((match) => match.routeId === treeRouteIds.target),
+    [matches]
+  );
   const dialogMatch = useMemo(
     () => matches.find((match) => dialogRouteIds.includes(match.routeId)),
     [dialogRouteIds, matches]
@@ -99,8 +111,12 @@ export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: p
           treeId={data.tree?.id}
           pageNodeId={data.pageNodeId}
           pageTreeNode={data.pageNode}
-          initialViewMode={resolvedViewMode as import('@hierarchidb/ui-treeconsole-base').ViewMode | undefined}
-          initialSortMode={resolvedSortMode as import('@hierarchidb/ui-treeconsole-base').SortMode | undefined}
+          initialViewMode={
+            resolvedViewMode as import('@hierarchidb/ui-treeconsole-base').ViewMode | undefined
+          }
+          initialSortMode={
+            resolvedSortMode as import('@hierarchidb/ui-treeconsole-base').SortMode | undefined
+          }
           initialZoomLevel={searchParams.zoom}
           columnTargetNodeId={columnTargetNodeId}
         />

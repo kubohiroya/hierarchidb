@@ -1,9 +1,9 @@
 // Placeholder implementation for @hierarchidb/route-resolver
 // Spec-only package for now; this file exists to satisfy stage tooling.
 
-export type GraphPort = {}
+export type GraphPort = {};
 
-export type StorePort = {}
+export type StorePort = {};
 
 export class ResolverService {
   // Placeholder APSP runner

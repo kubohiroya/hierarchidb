@@ -1,5 +1,5 @@
-import type { DialogUIState } from './dialogStateTypes.js';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { DialogUIState } from './dialogStateTypes.js';
 import type { ViewProperties } from './view-properties-types.js';
 
 /**
@@ -18,7 +18,7 @@ export interface TreeNodeMetadata {
 }
 
 export interface NodeBuildMetadata {
-  buildState?: "ready" | "pending" | "building" | "failed";
+  buildState?: 'ready' | 'pending' | 'building' | 'failed';
   buildRequired?: boolean;
   buildProfile?: string;
   buildMode?: string;
@@ -111,7 +111,7 @@ export type TreeNode<TData extends NodePayload | null = NodePayload | null> = No
 
 export interface TreeNodeWithChildren<TData extends NodePayload | null = NodePayload | null>
   extends TreeNode<TData>,
-  DescendantProperties {
+    DescendantProperties {
   children?: NodeId[];
 }
 

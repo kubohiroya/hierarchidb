@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef } from 'react';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type {
   CommitDraftMode,
   DialogProgressState,
   DialogUIState,
   TreeNodeData,
 } from '@hierarchidb/tree-api';
-import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { StepNavigationEvent } from '@hierarchidb/ui-dialog';
+import { useCallback, useEffect, useRef } from 'react';
 import type { DialogActionInFlight } from '~/headless/types';
 
 type UseStepNavigationArgs<TData extends PeerEntity<TreeNodeData>> = {

@@ -2,9 +2,14 @@
 // Internal utility functions for vector tile generation.
 // ============================================================
 
-import type { Feature, Geometry, GeoJsonProperties } from 'geojson';
+import type { Feature, GeoJsonProperties, Geometry } from 'geojson';
 import type { GeometryEngine } from '../configTypes.js';
 import { geometryArea } from '../geometryEngineUtils.js';
+import {
+  buildShapeSourceLayerName,
+  type LayerNameBoundaryMode,
+  parseShapeSourceLayerName,
+} from '../shapeLayerNames';
 import {
   latToTileY,
   lonToTileX,
@@ -12,11 +17,6 @@ import {
   pickAdminLevel,
   pickCountryCode,
 } from '../vectorTileUtils.js';
-import {
-  buildShapeSourceLayerName,
-  parseShapeSourceLayerName,
-  type LayerNameBoundaryMode,
-} from '../shapeLayerNames';
 import type { FeatureCollectionLike, GeojsonVtModule, VTMetadataContext } from './types.js';
 
 type FeatureGeometry = Geometry | null;

@@ -1,12 +1,12 @@
-import { Button, Grid, Stack, Typography } from '@mui/material';
+import { LoadingButton } from '@hierarchidb/components';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   CloudDownload as CloudDownloadIcon,
   Description as DescriptionIcon,
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { LoadingButton } from '@hierarchidb/components';
+import { Button, Grid, Stack, Typography } from '@mui/material';
 
 type Props = {
   deleteSourceApiLabel: string;
@@ -61,7 +61,8 @@ export const SourceConfigFormControls: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation('shape-plugin');
   const apiDisabled = countsLoading || deleteSourceApiLoading || !canDeleteSourceApiCache;
-  const filteredDisabled = countsLoading || deleteSourceFilteredLoading || !canDeleteSourceFilteredCache;
+  const filteredDisabled =
+    countsLoading || deleteSourceFilteredLoading || !canDeleteSourceFilteredCache;
   const geometryDisabled = deleteGeometryLoading || !canDeleteGeometryCache;
   const tileEmitDisabled = deleteTileEmitLoading || !canDeleteTileEmitCache;
   const metadataDisabled = deleteMetadataLoading || !canDeleteMetadata;
@@ -162,34 +163,33 @@ export const SourceConfigFormControls: React.FC<Props> = ({
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteApiCacheHelp',
-            'API cache: downloaded raw data for this node (before filtering).',
+            'API cache: downloaded raw data for this node (before filtering).'
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteFilteredCacheHelp',
-            'Filtered cache: source-stage filtered feature collections per zoom band.',
+            'Filtered cache: source-stage filtered feature collections per zoom band.'
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteGeometryHelp',
-            'Simplified cache: simplified geometries by zoom band plus geometry error records.',
+            'Simplified cache: simplified geometries by zoom band plus geometry error records.'
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteTileEmitHelp',
-            'TileEmit data: generated vector tiles (tile index is also cleared).',
+            'TileEmit data: generated vector tiles (tile index is also cleared).'
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteMetadataHelp',
-            'Feature metadata for search/preview (does not remove tiles).',
+            'Feature metadata for search/preview (does not remove tiles).'
           )}
         </Typography>
-
       </Stack>
     </>
   );

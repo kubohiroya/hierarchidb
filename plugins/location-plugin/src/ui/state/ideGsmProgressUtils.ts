@@ -6,7 +6,10 @@ type Listener = (progress: IdeGsmImportProgress | null) => void;
 const progressByNode = new Map<NodeId, IdeGsmImportProgress | null>();
 const listeners = new Map<NodeId, Set<Listener>>();
 
-export const updateIdeGsmProgress = (nodeId: NodeId, progress: IdeGsmImportProgress | null): void => {
+export const updateIdeGsmProgress = (
+  nodeId: NodeId,
+  progress: IdeGsmImportProgress | null
+): void => {
   progressByNode.set(nodeId, progress);
   const subs = listeners.get(nodeId);
   if (!subs) return;

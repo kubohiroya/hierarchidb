@@ -9,12 +9,14 @@ const formatInt = (value: number): string => numberFormatter.format(Math.round(v
 const toCamelCase = (value: string): string => {
   const tokens = value.split(/[^A-Za-z0-9]+/).filter(Boolean);
   if (tokens.length === 0) return '';
-  return tokens.map((token, index) => {
-    if (index === 0) {
-      return token.charAt(0).toLowerCase() + token.slice(1);
-    }
-    return token.charAt(0).toUpperCase() + token.slice(1);
-  }).join('');
+  return tokens
+    .map((token, index) => {
+      if (index === 0) {
+        return token.charAt(0).toLowerCase() + token.slice(1);
+      }
+      return token.charAt(0).toUpperCase() + token.slice(1);
+    })
+    .join('');
 };
 
 const toPhaseKey = (display: TaskDisplayPayload): string | null => {
@@ -35,11 +37,12 @@ const toPhaseFallback = (display: TaskDisplayPayload): string => {
   const base = `${phaseCode} ${phaseState}`.trim();
   if (display.phaseCode === 'retry-simplify-feature') {
     const attemptRaw = (display.params as Record<string, unknown> | undefined)?.attempt;
-    const attempt = typeof attemptRaw === 'number'
-      ? attemptRaw
-      : typeof attemptRaw === 'string'
-        ? Number.parseInt(attemptRaw, 10)
-        : Number.NaN;
+    const attempt =
+      typeof attemptRaw === 'number'
+        ? attemptRaw
+        : typeof attemptRaw === 'string'
+          ? Number.parseInt(attemptRaw, 10)
+          : Number.NaN;
     if (Number.isFinite(attempt) && attempt > 0) {
       return `${base}: ${attempt}`;
     }
@@ -57,17 +60,17 @@ const formatRate = (metric: TaskDisplayMetric): string => {
   return ` (${sign}${ratio}%)`;
 };
 
-const formatMetric = (label: string, metric: TaskDisplayMetric): string => (
-  `${label}: ${formatInt(metric.input)} -> ${formatInt(metric.output)}${formatRate(metric)}`
-);
+const formatMetric = (label: string, metric: TaskDisplayMetric): string =>
+  `${label}: ${formatInt(metric.input)} -> ${formatInt(metric.output)}${formatRate(metric)}`;
 
-const formatSummary = (
-  metrics: TaskDisplayPayload['metrics'],
-  t: Translate,
-): string | null => {
+const formatSummary = (metrics: TaskDisplayPayload['metrics'], t: Translate): string | null => {
   if (!metrics) return null;
   const entries: string[] = [];
-  const ordered: Array<keyof NonNullable<TaskDisplayPayload['metrics']>> = ['features', 'polygons', 'vertices'];
+  const ordered: Array<keyof NonNullable<TaskDisplayPayload['metrics']>> = [
+    'features',
+    'polygons',
+    'vertices',
+  ];
   ordered.forEach((metricKey) => {
     const metric = metrics[metricKey];
     if (!metric) return;
@@ -79,7 +82,7 @@ const formatSummary = (
 
 export const formatTaskDisplayMessage = (
   display: TaskDisplayPayload | undefined,
-  t: Translate,
+  t: Translate
 ): string | null => {
   if (!display) return null;
   if (display.kind === 'phase') {

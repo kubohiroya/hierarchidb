@@ -12,10 +12,13 @@ export const useAuthProviderDialogView = ({
 }: UseAuthProviderDialogViewArgs) => {
   const titleId = useId();
 
-  const handleProviderSelect = useCallback((provider: AuthProviderType) => {
-    onSelectProvider(provider);
-    onClose();
-  }, [onClose, onSelectProvider]);
+  const handleProviderSelect = useCallback(
+    (provider: AuthProviderType) => {
+      onSelectProvider(provider);
+      onClose();
+    },
+    [onClose, onSelectProvider]
+  );
 
   return {
     titleId,

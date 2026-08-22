@@ -1,6 +1,6 @@
 /**
-  * Shape processing status types used by UI and worker helpers.
-  */
+ * Shape processing status types used by UI and worker helpers.
+ */
 
 /**
  * Processing status types

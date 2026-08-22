@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { buildAppUrl } from './utils/test-helpers';
 
 test.describe('Location auth-required visualization (mock 401)', () => {
@@ -6,7 +6,11 @@ test.describe('Location auth-required visualization (mock 401)', () => {
 
   test('shows auth-required banner when 401 occurs', async ({ page }) => {
     await page.route('**/nominatim.openstreetmap.org/**', (route) => {
-      route.fulfill({ status: 401, body: JSON.stringify({ error: 'Unauthorized' }), contentType: 'application/json' });
+      route.fulfill({
+        status: 401,
+        body: JSON.stringify({ error: 'Unauthorized' }),
+        contentType: 'application/json',
+      });
     });
     await page.goto(buildAppUrl());
     // TODO: Navigate to Location wizard and start a search that hits Nominatim

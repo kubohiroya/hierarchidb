@@ -24,26 +24,33 @@ export type MapInteractionInitialState = {
   selectedMatches?: MapHighlightEntry[];
 };
 
-export const buildHighlightKey = (entry: MapHighlightEntry): string => `${entry.source}:${entry.id}`;
+export const buildHighlightKey = (entry: MapHighlightEntry): string =>
+  `${entry.source}:${entry.id}`;
 
 export const mapSearchTextAtom = atom('');
 export const mapSearchTargetsAtom = atom<Record<string, boolean>>({});
 export const mapSearchMatchesAtom = atom<MapHighlightEntry[]>([]);
-export const mapSearchMatchKeysAtom = atom((get) => new Set(get(mapSearchMatchesAtom).map(buildHighlightKey)));
+export const mapSearchMatchKeysAtom = atom(
+  (get) => new Set(get(mapSearchMatchesAtom).map(buildHighlightKey))
+);
 
 export const mapHoverCandidatesAtom = atom<MapHoverCandidate[]>([]);
 export const mapHoverMatchesAtom = atom<MapHighlightEntry[]>([]);
-export const mapHoverMatchKeysAtom = atom((get) => new Set(get(mapHoverMatchesAtom).map(buildHighlightKey)));
-export const mapHoveredFeaturesAtom = atom((get) => get(mapHoverCandidatesAtom).map((candidate) => candidate.feature));
+export const mapHoverMatchKeysAtom = atom(
+  (get) => new Set(get(mapHoverMatchesAtom).map(buildHighlightKey))
+);
+export const mapHoveredFeaturesAtom = atom((get) =>
+  get(mapHoverCandidatesAtom).map((candidate) => candidate.feature)
+);
 
 export const mapSelectedMatchesAtom = atom<MapHighlightEntry[]>([]);
-export const mapSelectedMatchKeysAtom = atom((get) => new Set(get(mapSelectedMatchesAtom).map(buildHighlightKey)));
+export const mapSelectedMatchKeysAtom = atom(
+  (get) => new Set(get(mapSelectedMatchesAtom).map(buildHighlightKey))
+);
 
 export const mapViewportFeatureIdsAtom = atom<Map<string, Set<string | number>> | null>(null);
 
-export const createMapInteractionStore = (
-  initialState?: MapInteractionInitialState,
-): Store => {
+export const createMapInteractionStore = (initialState?: MapInteractionInitialState): Store => {
   const store = createStore();
   if (initialState?.searchText !== undefined) {
     store.set(mapSearchTextAtom, initialState.searchText);

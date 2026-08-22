@@ -1,5 +1,5 @@
-import type { ProgressInfo, VectorTileTask } from './sharedTypes.js';
 import type { StageControls } from './StageControls.js';
+import type { ProgressInfo, VectorTileTask } from './sharedTypes.js';
 
 export interface VectorTileStageAdapterResult {
   processed: number;
@@ -15,7 +15,7 @@ export interface VectorTileStageAdapter<TTask = VectorTileTask, TProgress = Prog
   process(
     tasks: TTask[],
     onProgress: (p: TProgress) => void,
-    controls?: StageControls,
+    controls?: StageControls
   ): Promise<VectorTileStageAdapterResult>;
 
   clearFeatureCache?(nodeId: string): void;

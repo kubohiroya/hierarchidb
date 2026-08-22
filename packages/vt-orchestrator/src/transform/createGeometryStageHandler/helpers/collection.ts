@@ -1,8 +1,15 @@
-import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
-import type { GeometryOps } from './core.js';
-import { latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
-import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
+import { latToTileY, lonToTileX, parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
+import type {
+  Feature,
+  FeatureCollection,
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPolygon,
+  Polygon,
+} from 'geojson';
 import { packTileId } from '~/tiles/tileId';
+import type { GeometryOps } from './core.js';
 import type { GeojsonValidationIssue } from './validation.js';
 import { countVerticesFromGeometry, validateGeometryForVt } from './validation.js';
 
@@ -25,7 +32,9 @@ const isBoundaryLayerName = (value: string): boolean => {
   return parsed?.boundary === 'b';
 };
 
-export const buildBoundaryDiagnostics = (collection: FeatureCollection): BoundaryDiagnostics | null => {
+export const buildBoundaryDiagnostics = (
+  collection: FeatureCollection
+): BoundaryDiagnostics | null => {
   const layers: Record<string, BoundaryLayerSummary> = {};
   let totalFeatures = 0;
   let totalVertices = 0;
@@ -68,7 +77,9 @@ export const validateOutputForVt = (collection: FeatureCollection): GeojsonValid
     if (!feature) continue;
     const props = feature.properties as Record<string, unknown> | undefined;
     const layer = typeof props?.layer === 'string' ? props.layer : 'unknown';
-    const featureId = String(feature.id ?? props?.id ?? props?.boundaryID ?? props?.boundaryISO ?? `${layer}:${index}`);
+    const featureId = String(
+      feature.id ?? props?.id ?? props?.boundaryID ?? props?.boundaryISO ?? `${layer}:${index}`
+    );
     const reason = validateGeometryForVt(feature.geometry ?? null);
     if (!reason) continue;
     const geometryType = feature.geometry?.type ?? 'unknown';
@@ -93,26 +104,34 @@ export const validateOutputForVt = (collection: FeatureCollection): GeojsonValid
   return issues;
 };
 
-export const clampTileIndex = (value: number, maxIndex: number): number => (
-  Math.min(maxIndex, Math.max(0, value))
-);
+export const clampTileIndex = (value: number, maxIndex: number): number =>
+  Math.min(maxIndex, Math.max(0, value));
 
-export const toDeg = (radians: number): number => radians * 180 / Math.PI;
+export const toDeg = (radians: number): number => (radians * 180) / Math.PI;
 
-export const tileToBBox = (z: number, x: number, y: number): { minX: number; minY: number; maxX: number; maxY: number } => {
+export const tileToBBox = (
+  z: number,
+  x: number,
+  y: number
+): { minX: number; minY: number; maxX: number; maxY: number } => {
   const n = 2 ** z;
-  const lon1 = x / n * 360 - 180;
-  const lon2 = (x + 1) / n * 360 - 180;
-  const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))));
-  const lat2 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))));
+  const lon1 = (x / n) * 360 - 180;
+  const lon2 = ((x + 1) / n) * 360 - 180;
+  const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))));
+  const lat2 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))));
   return { minX: lon1, minY: lat2, maxX: lon2, maxY: lat1 };
 };
 
-export const isPointInBBox = (x: number, y: number, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => (
-  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY
-);
+export const isPointInBBox = (
+  x: number,
+  y: number,
+  bbox: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean => x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY;
 
-export const isAnyPointInBBox = (geometry: Feature['geometry'], bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+export const isAnyPointInBBox = (
+  geometry: Feature['geometry'],
+  bbox: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean => {
   if (!geometry) return false;
   if (geometry.type === 'Point') {
     const [x, y] = geometry.coordinates ?? [];
@@ -146,19 +165,21 @@ export const hasCoordinatesFromGeometry = (geometry: Geometry): boolean => {
 };
 
 export const isLineOrPolygonFeature = (
-  feature: Feature<Geometry>,
+  feature: Feature<Geometry>
 ): feature is Feature<LineString | MultiLineString | Polygon | MultiPolygon> => {
   const type = feature.geometry?.type;
-  return type === 'LineString'
-    || type === 'MultiLineString'
-    || type === 'Polygon'
-    || type === 'MultiPolygon';
+  return (
+    type === 'LineString' ||
+    type === 'MultiLineString' ||
+    type === 'Polygon' ||
+    type === 'MultiPolygon'
+  );
 };
 
 export const featureIntersectsTileBBox = (
   feature: Feature<Geometry>,
   bbox: { minX: number; minY: number; maxX: number; maxY: number },
-  geometryOps: GeometryOps,
+  geometryOps: GeometryOps
 ): boolean => {
   if (isAnyPointInBBox(feature.geometry ?? null, bbox)) return true;
   if (!isLineOrPolygonFeature(feature)) return false;
@@ -168,7 +189,7 @@ export const featureIntersectsTileBBox = (
 export const collectTileIdsForCollection = (
   collection: FeatureCollection,
   zBase: number,
-  geometryOps: GeometryOps,
+  geometryOps: GeometryOps
 ): number[] => {
   if (!Number.isFinite(zBase) || zBase < 0) return [];
   const maxIndex = (1 << zBase) - 1;
@@ -191,7 +212,8 @@ export const collectTileIdsForCollection = (
     for (let x = x1; x <= x2; x += 1) {
       for (let y = y1; y <= y2; y += 1) {
         const tileBBox = tileToBBox(zBase, x, y);
-        if (!featureIntersectsTileBBox(feature as Feature<Geometry>, tileBBox, geometryOps)) continue;
+        if (!featureIntersectsTileBBox(feature as Feature<Geometry>, tileBBox, geometryOps))
+          continue;
         tileIds.add(packTileId(x, y, zBase));
       }
     }

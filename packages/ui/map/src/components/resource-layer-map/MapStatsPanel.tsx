@@ -1,9 +1,9 @@
-import { Box as MuiBox, Typography } from '@mui/material';
-import type { BoxProps } from '@mui/material';
-import type React from 'react';
 import type { WindowState } from '@hierarchidb/components';
-import { normalizeChildren, formatBytes } from './resourceLayerMapHelpers.js';
+import type { BoxProps } from '@mui/material';
+import { Box as MuiBox, Typography } from '@mui/material';
+import type React from 'react';
 import type { MapStatsStore } from '../useResourceLayerMapStats.js';
+import { formatBytes, normalizeChildren } from './resourceLayerMapHelpers.js';
 import { useMapStatsPanel } from './useMapStatsPanel.js';
 
 const Box: React.FC<BoxProps> = ({ children, ...props }) => (
@@ -54,11 +54,7 @@ const MapStatsPanel: React.FC<{
           ))
         )}
       </Box>
-      {extraNode ? (
-        <Box sx={{ px: 1.5, py: 1, color: 'text.primary' }}>
-          {extraNode}
-        </Box>
-      ) : null}
+      {extraNode ? <Box sx={{ px: 1.5, py: 1, color: 'text.primary' }}>{extraNode}</Box> : null}
     </Box>
   );
 };

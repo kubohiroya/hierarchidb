@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import type { TreeConsoleContentProps } from '~/types/index';
-import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { DualKeyMap } from '@hierarchidb/util';
+import { useEffect, useMemo, useState } from 'react';
+import type { TreeConsoleContentProps } from '~/types/index';
 
 interface UseTreeConsoleContentResult {
   contentState: 'loading' | 'empty' | 'table';
@@ -34,13 +33,7 @@ const buildTranslator = (t: (key: string, fallback: string) => string) => {
 export const useTreeConsoleContent = (
   props: TreeConsoleContentProps
 ): UseTreeConsoleContentResult => {
-  const {
-    controller,
-    isProjectsPage,
-    isResourcesPage,
-    onDragStateChange,
-    mode,
-  } = props;
+  const { controller, isProjectsPage, isResourcesPage, onDragStateChange, mode } = props;
 
   const [isWebKit, setIsWebKit] = useState(false);
   const [webKitInitialized, setWebKitInitialized] = useState(false);
@@ -64,11 +57,14 @@ export const useTreeConsoleContent = (
     }
   }, []);
 
-  const globalProcess = (globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  }).process;
+  const globalProcess = (
+    globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process;
   const isTestEnv = globalProcess?.env?.NODE_ENV === 'test';
-  const isLoading = !controller || controller.isLoading || (!isTestEnv && isWebKit && !webKitInitialized);
+  const isLoading =
+    !controller || controller.isLoading || (!isTestEnv && isWebKit && !webKitInitialized);
 
   const dataCount = controller?.data ? controller.data.length : 0;
   const hasMinimumData = controller && Array.isArray(controller.data);
@@ -134,7 +130,8 @@ export const useTreeConsoleContent = (
             controller.onNodeClick?.(nodeId as NodeId, node as TreeNode)
         : undefined,
       onNodeExpand: controller.onNodeExpand
-        ? (nodeId: string, expanded: boolean) => controller.onNodeExpand?.(nodeId as NodeId, expanded)
+        ? (nodeId: string, expanded: boolean) =>
+            controller.onNodeExpand?.(nodeId as NodeId, expanded)
         : undefined,
       onNodeSelect: controller.onNodeSelect
         ? (nodeIds: string[], selected: boolean) =>
@@ -170,7 +167,8 @@ export const useTreeConsoleContent = (
   }, [onDragStateChange]);
 
   const shouldRenderDebugInfo =
-    typeof document === 'undefined' || !document.querySelector('[data-testid="treeconsole-debug-info"]');
+    typeof document === 'undefined' ||
+    !document.querySelector('[data-testid="treeconsole-debug-info"]');
 
   return {
     contentState,

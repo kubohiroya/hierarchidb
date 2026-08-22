@@ -4,19 +4,13 @@
  * @why Supports the naming guideline transition by identifying rename candidates before automation.
  */
 
-import path from 'node:path';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import process from 'node:process';
+import path from 'node:path';
 import { performance } from 'node:perf_hooks';
-import minimist from 'minimist';
+import process from 'node:process';
 import { globby } from 'globby';
-import {
-  Node,
-  Project,
-  SourceFile,
-  SyntaxKind,
-  VariableDeclaration,
-} from 'ts-morph';
+import minimist from 'minimist';
+import { Node, Project, SourceFile, SyntaxKind, VariableDeclaration } from 'ts-morph';
 
 const DEFAULT_INCLUDE = [
   'app/**/*.{ts,tsx,mts}',
@@ -132,7 +126,13 @@ function classifyDeclaration(node: Node): ExportKindCategory {
 }
 
 function getIdentifierName(node: Node, fallback: string): string | null {
-  if (Node.isClassDeclaration(node) || Node.isFunctionDeclaration(node) || Node.isInterfaceDeclaration(node) || Node.isTypeAliasDeclaration(node) || Node.isEnumDeclaration(node)) {
+  if (
+    Node.isClassDeclaration(node) ||
+    Node.isFunctionDeclaration(node) ||
+    Node.isInterfaceDeclaration(node) ||
+    Node.isTypeAliasDeclaration(node) ||
+    Node.isEnumDeclaration(node)
+  ) {
     return node.getName() ?? fallback;
   }
   if (Node.isVariableDeclaration(node)) {
@@ -184,7 +184,7 @@ function collectExportDescriptors(sourceFile: SourceFile): ExportDescriptor[] {
 
 function determineClassification(
   baseName: string,
-  descriptors: ExportDescriptor[],
+  descriptors: ExportDescriptor[]
 ): ReportItem['classification'] {
   if (descriptors.length === 0) {
     return 'no-export';
@@ -220,7 +220,9 @@ function buildReportItem(root: string, sourceFile: SourceFile): ReportItem | nul
   const descriptors = collectExportDescriptors(sourceFile);
   const classification = determineClassification(baseName, descriptors);
 
-  const valueExports = descriptors.filter((descriptor) => descriptor.category === 'value' && descriptor.identifierName);
+  const valueExports = descriptors.filter(
+    (descriptor) => descriptor.category === 'value' && descriptor.identifierName
+  );
   const exactMatches = valueExports
     .filter((descriptor) => descriptor.identifierName === baseName)
     .map((descriptor) => descriptor.identifierName!)
@@ -228,13 +230,20 @@ function buildReportItem(root: string, sourceFile: SourceFile): ReportItem | nul
 
   const normalizedBase = normalizeName(baseName);
   const fuzzyMatches = valueExports
-    .filter((descriptor) => descriptor.identifierName && normalizeName(descriptor.identifierName) === normalizedBase && descriptor.identifierName !== baseName)
+    .filter(
+      (descriptor) =>
+        descriptor.identifierName &&
+        normalizeName(descriptor.identifierName) === normalizedBase &&
+        descriptor.identifierName !== baseName
+    )
     .map((descriptor) => descriptor.identifierName!)
     .sort();
 
-  const recommended = valueExports.find((descriptor) => descriptor.identifierName && !descriptor.isDefault)?.identifierName
-    ?? valueExports.find((descriptor) => descriptor.identifierName)?.identifierName
-    ?? null;
+  const recommended =
+    valueExports.find((descriptor) => descriptor.identifierName && !descriptor.isDefault)
+      ?.identifierName ??
+    valueExports.find((descriptor) => descriptor.identifierName)?.identifierName ??
+    null;
 
   const recommendedFileName = recommended ? `${recommended}${extension}` : null;
 
@@ -251,7 +260,12 @@ function buildReportItem(root: string, sourceFile: SourceFile): ReportItem | nul
   };
 }
 
-async function prepareSourceFiles(project: Project, include: string[], ignore: string[], root: string): Promise<SourceFile[]> {
+async function prepareSourceFiles(
+  project: Project,
+  include: string[],
+  ignore: string[],
+  root: string
+): Promise<SourceFile[]> {
   const filePaths = await globby(include, {
     cwd: root,
     absolute: true,
@@ -374,7 +388,7 @@ function printSummary(report: Report, verbose: boolean): void {
       console.log(`  exports:`);
       for (const descriptor of item.exports) {
         console.log(
-          `    - ${descriptor.identifierName ?? '<anonymous>'} (${descriptor.kind}, ${descriptor.category}${descriptor.isDefault ? ', default' : ''})`,
+          `    - ${descriptor.identifierName ?? '<anonymous>'} (${descriptor.kind}, ${descriptor.category}${descriptor.isDefault ? ', default' : ''})`
         );
       }
     }
@@ -398,7 +412,12 @@ async function generateReport(options: CliOptions): Promise<Report> {
     },
   });
 
-  const sourceFiles = await prepareSourceFiles(project, options.include, options.ignore, options.root);
+  const sourceFiles = await prepareSourceFiles(
+    project,
+    options.include,
+    options.ignore,
+    options.root
+  );
   const items: ReportItem[] = [];
 
   for (const sourceFile of sourceFiles) {
@@ -437,7 +456,8 @@ async function generateReport(options: CliOptions): Promise<Report> {
 async function main(): Promise<void> {
   const cwd = process.cwd();
   const options = parseCliOptions(process.argv.slice(2), cwd);
-  const outPath = options.out ?? path.join(options.root, 'reports', 'naming', 'export-alignment-phase1.json');
+  const outPath =
+    options.out ?? path.join(options.root, 'reports', 'naming', 'export-alignment-phase1.json');
   const config: CliOptions = { ...options, out: outPath };
 
   await generateReport(config);

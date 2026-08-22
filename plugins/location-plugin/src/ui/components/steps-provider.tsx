@@ -1,10 +1,10 @@
-import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
+import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
+import { i18n } from '@hierarchidb/ui-i18n';
 import type { LocationEntity } from '~/common/types/index';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
-import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
-import { i18n } from '@hierarchidb/ui-i18n';
+import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -57,9 +57,8 @@ type StepProps = PluginStepProps<LocationStepData>;
 
 const LICENSE_REQUIRED = false;
 
-const resolveNodeId = (nodeId?: string): NodeId | undefined => (
-  typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined
-);
+const resolveNodeId = (nodeId?: string): NodeId | undefined =>
+  typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined;
 
 const canProceedFromDataSource = (data?: LocationStepData): boolean => {
   const source = data?.dataSource;
@@ -77,9 +76,8 @@ const hasSelection = (data?: LocationStepData): boolean => {
   return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
-const isMapPreviewReady = (data?: LocationStepData): boolean => (
-  canProceedFromDataSource(data) && hasSelection(data)
-);
+const isMapPreviewReady = (data?: LocationStepData): boolean =>
+  canProceedFromDataSource(data) && hasSelection(data);
 
 registry.registerConfigProvider<LocationStepData>({
   nodeType: 'location',
@@ -87,7 +85,9 @@ registry.registerConfigProvider<LocationStepData>({
     return [
       {
         id: 'data-source',
-        label: String(i18n.t('steps.dataSource.label', { ns: 'location-plugin', defaultValue: 'Data Source' })),
+        label: String(
+          i18n.t('steps.dataSource.label', { ns: 'location-plugin', defaultValue: 'Data Source' })
+        ),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           const handleUpdate = createDraftUpdater(draft, p.onChange);
@@ -107,22 +107,24 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'selection',
-        label: String(i18n.t('steps.selection.label', { ns: 'location-plugin', defaultValue: 'Location Selection' })),
+        label: String(
+          i18n.t('steps.selection.label', {
+            ns: 'location-plugin',
+            defaultValue: 'Location Selection',
+          })
+        ),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           const handleUpdate = createDraftUpdater(draft, p.onChange);
-          return (
-            <LocationSelectionStep
-              draft={draft}
-              onUpdate={handleUpdate}
-            />
-          );
+          return <LocationSelectionStep draft={draft} onUpdate={handleUpdate} />;
         },
         validate: (data?: LocationStepData) => hasSelection(data),
       },
       {
         id: 'map-preview',
-        label: String(i18n.t('steps.mapPreview.label', { ns: 'location-plugin', defaultValue: 'Map Preview' })),
+        label: String(
+          i18n.t('steps.mapPreview.label', { ns: 'location-plugin', defaultValue: 'Map Preview' })
+        ),
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);

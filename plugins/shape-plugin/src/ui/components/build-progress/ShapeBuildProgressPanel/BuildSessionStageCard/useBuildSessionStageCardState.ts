@@ -1,19 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
-import { useAtomValue, useSetAtom } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
-import { taskScrollTargetAtom, taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
-import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
+import {
+  taskScrollTargetAtom,
+  taskViewportRangeByStageAtom,
+} from '~/ui/atoms/shapeBuildProgressAtomConstants';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,
   normalizeUiStageId,
   resolveStageAliasArray,
 } from '~/ui/components/build-progress/stageIdAliases';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  sortGeometryTasks,
+  sortVectorTileTasks,
+} from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { isTaskVisibleForProgressFilter } from '../isTaskVisibleForProgressFilter.js';
 
 type BuildSessionStageCardStateArgs = {
@@ -38,7 +43,7 @@ type BuildSessionStageCardStateArgs = {
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (
     statusValue?: string,
-    skipped?: boolean,
+    skipped?: boolean
   ) => 'default' | 'success' | 'error' | 'warning' | 'info';
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   t: (key: string, fallback: string) => string;
@@ -117,10 +122,7 @@ export const useBuildSessionStageCardState = ({
 
   useEffect(() => {
     if (previousBuildStatusRef.current === buildStatus) return;
-    if (isBuildInProgressState && ![
-      'running',
-      'paused',
-    ].includes(previousBuildStatusRef.current)) {
+    if (isBuildInProgressState && !['running', 'paused'].includes(previousBuildStatusRef.current)) {
       cachedTasksByStageRef.current = {};
     }
     previousBuildStatusRef.current = buildStatus;
@@ -144,21 +146,27 @@ export const useBuildSessionStageCardState = ({
   const viewportRange = viewportRangeByStage[normalizeUiStageId(stage.id) ?? stage.id] ?? null;
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const listWrapperRef = useRef<HTMLDivElement | null>(null);
-  const scrollToTaskId = normalizeUiStageId(scrollTarget?.stageId) === normalizeUiStageId(stage.id)
-    ? scrollTarget?.taskId
-    : undefined;
+  const scrollToTaskId =
+    normalizeUiStageId(scrollTarget?.stageId) === normalizeUiStageId(stage.id)
+      ? scrollTarget?.taskId
+      : undefined;
   const scrollRequestId = scrollTarget?.requestedAt;
-  const disableVirtualization = typeof window !== 'undefined'
-    && new URLSearchParams(window.location.search).has('noTaskVirtual');
+  const disableVirtualization =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('noTaskVirtual');
 
-  const filteredTasks = useMemo(() => stageTasksForDisplay.filter((task) => {
-    if (!matchesSearchQuery(task)) return false;
-    return isTaskVisibleForProgressFilter({
-      statusValue: task.status.toLowerCase(),
-      isSkipped: isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata)),
-      filter,
-    });
-  }), [filter, matchesSearchQuery, stageTasksForDisplay]);
+  const filteredTasks = useMemo(
+    () =>
+      stageTasksForDisplay.filter((task) => {
+        if (!matchesSearchQuery(task)) return false;
+        return isTaskVisibleForProgressFilter({
+          statusValue: task.status.toLowerCase(),
+          isSkipped: isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata)),
+          filter,
+        });
+      }),
+    [filter, matchesSearchQuery, stageTasksForDisplay]
+  );
 
   const orderedTasks = useMemo(() => {
     if (isTileEmitLikeStageId(stage.id)) return sortVectorTileTasks(filteredTasks);
@@ -167,13 +175,16 @@ export const useBuildSessionStageCardState = ({
   }, [filteredTasks, stage.id]);
 
   const hasTasks = filteredTasks.length > 0;
-  const stagePane = paneProgress?.find((entry) => normalizeUiStageId(entry.paneId) === normalizeUiStageId(stage.id));
+  const stagePane = paneProgress?.find(
+    (entry) => normalizeUiStageId(entry.paneId) === normalizeUiStageId(stage.id)
+  );
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
-  const showTaskSkeleton = !hasTasks
-    && !showSummarySkeleton
-    && isTasksLoading
-    && (isBuildInProgressState || isStartupPending);
+  const showTaskSkeleton =
+    !hasTasks &&
+    !showSummarySkeleton &&
+    isTasksLoading &&
+    (isBuildInProgressState || isStartupPending);
 
   const requestedTargetIndex = useMemo(() => {
     if (!scrollToTaskId) return null;
@@ -193,24 +204,29 @@ export const useBuildSessionStageCardState = ({
   const currentIndex = useMemo(() => {
     if (orderedTasks.length === 0) return null;
     if (viewportIndices == null) return 0;
-    if (requestedTargetIndex !== null
-      && requestedTargetIndex >= viewportIndices.startIndex
-      && requestedTargetIndex <= viewportIndices.endIndex) {
+    if (
+      requestedTargetIndex !== null &&
+      requestedTargetIndex >= viewportIndices.startIndex &&
+      requestedTargetIndex <= viewportIndices.endIndex
+    ) {
       return requestedTargetIndex;
     }
     return Math.floor((viewportIndices.startIndex + viewportIndices.endIndex) / 2);
   }, [orderedTasks.length, requestedTargetIndex, viewportIndices]);
 
-  const activeTargetIndices = useMemo(() => (
-    orderedTasks.reduce<number[]>((acc, task, index) => {
-      if (task.status === 'running' || task.status === 'queued') acc.push(index);
-      return acc;
-    }, [])
-  ), [orderedTasks]);
+  const activeTargetIndices = useMemo(
+    () =>
+      orderedTasks.reduce<number[]>((acc, task, index) => {
+        if (task.status === 'running' || task.status === 'queued') acc.push(index);
+        return acc;
+      }, []),
+    [orderedTasks]
+  );
 
-  const hasActiveTargetTask = useMemo(() => (
-    orderedTasks.some((task) => task.status === 'running' || task.status === 'queued')
-  ), [orderedTasks]);
+  const hasActiveTargetTask = useMemo(
+    () => orderedTasks.some((task) => task.status === 'running' || task.status === 'queued'),
+    [orderedTasks]
+  );
 
   const upTargetIndex = useMemo(() => {
     if (currentIndex == null) return null;
@@ -231,10 +247,10 @@ export const useBuildSessionStageCardState = ({
   }, [activeTargetIndices, currentIndex]);
 
   const upTargetTaskId = upTargetIndex === null ? undefined : orderedTasks[upTargetIndex]?.taskId;
-  const downTargetTaskId = downTargetIndex === null ? undefined : orderedTasks[downTargetIndex]?.taskId;
-  const isScrollTargetReached = requestedTargetIndex !== null
-    && currentIndex !== null
-    && currentIndex === requestedTargetIndex;
+  const downTargetTaskId =
+    downTargetIndex === null ? undefined : orderedTasks[downTargetIndex]?.taskId;
+  const isScrollTargetReached =
+    requestedTargetIndex !== null && currentIndex !== null && currentIndex === requestedTargetIndex;
 
   const viewportStartIndex = viewportIndices?.startIndex;
   const viewportEndIndex = viewportIndices?.endIndex;
@@ -243,34 +259,42 @@ export const useBuildSessionStageCardState = ({
   // measured), hide the button to avoid false positives.
   // currentIndex !== null and upTargetIndex < currentIndex are implied when
   // viewportStartIndex != null, since upTargetIndex < viewportStartIndex <= currentIndex.
-  const showUpArrow = !isScrollTargetReached
-    && hasActiveTargetTask
-    && upTargetIndex !== null
-    && viewportStartIndex != null
-    && upTargetIndex < viewportStartIndex;
+  const showUpArrow =
+    !isScrollTargetReached &&
+    hasActiveTargetTask &&
+    upTargetIndex !== null &&
+    viewportStartIndex != null &&
+    upTargetIndex < viewportStartIndex;
   // Show the down arrow only when viewport info is available AND the nearest
   // down-target is below the visible range.
   // currentIndex !== null and currentIndex < downTargetIndex are implied when
   // viewportEndIndex != null, since currentIndex <= viewportEndIndex < downTargetIndex.
-  const showDownArrow = !isScrollTargetReached
-    && hasActiveTargetTask
-    && downTargetIndex !== null
-    && viewportEndIndex != null
-    && downTargetIndex > viewportEndIndex;
+  const showDownArrow =
+    !isScrollTargetReached &&
+    hasActiveTargetTask &&
+    downTargetIndex !== null &&
+    viewportEndIndex != null &&
+    downTargetIndex > viewportEndIndex;
 
-  const setAriaScrollToTaskId = useCallback((targetTaskId: string) => {
-    setScrollTarget({
-      stageId: stage.id,
-      taskId: targetTaskId,
-      requestedAt: Date.now(),
-    });
-  }, [setScrollTarget, stage.id]);
+  const setAriaScrollToTaskId = useCallback(
+    (targetTaskId: string) => {
+      setScrollTarget({
+        stageId: stage.id,
+        taskId: targetTaskId,
+        requestedAt: Date.now(),
+      });
+    },
+    [setScrollTarget, stage.id]
+  );
 
-  const handleScrollToDirection = useCallback((direction: 'up' | 'down') => {
-    const targetTaskId = direction === 'up' ? upTargetTaskId : downTargetTaskId;
-    if (!targetTaskId) return;
-    setAriaScrollToTaskId(targetTaskId);
-  }, [downTargetTaskId, setAriaScrollToTaskId, upTargetTaskId]);
+  const handleScrollToDirection = useCallback(
+    (direction: 'up' | 'down') => {
+      const targetTaskId = direction === 'up' ? upTargetTaskId : downTargetTaskId;
+      if (!targetTaskId) return;
+      setAriaScrollToTaskId(targetTaskId);
+    },
+    [downTargetTaskId, setAriaScrollToTaskId, upTargetTaskId]
+  );
 
   useEffect(() => {
     const wrapper = listWrapperRef.current;

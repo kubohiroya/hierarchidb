@@ -1,5 +1,5 @@
 import type { PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeUpdaterPayload, DialogUIState } from '@hierarchidb/tree-api';
+import type { DialogUIState, TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 export interface PropertyMappingRule {
   id: string;

@@ -1,13 +1,23 @@
 /**
-    */
+ */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceStrategyFactory, type DataSourceStrategyId, defaultDataSourceFactory } from '../../DataSourceStrategyFactory';
-import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type SaveTarget, type DataSourceConfig } from '../../DataSourceStrategy';
-import { NaturalEarthStrategy } from '../../NaturalEarthStrategy';
+import type { ShapeFeaturePayload } from '../../../../common/types/ShapeFeaturePayload';
+import {
+  BaseDataSourceStrategy,
+  type DataSourceConfig,
+  type FetchOptions,
+  type ProcessOptions,
+  type SaveTarget,
+} from '../../DataSourceStrategy';
+import {
+  DataSourceStrategyFactory,
+  type DataSourceStrategyId,
+  defaultDataSourceFactory,
+} from '../../DataSourceStrategyFactory';
 import { GADMStrategy } from '../../GADMStrategy';
 import { GeoBoundariesStrategy } from '../../GeoBoundariesStrategy';
-import type { ShapeFeaturePayload } from '../../../../common/types/ShapeFeaturePayload';
+import { NaturalEarthStrategy } from '../../NaturalEarthStrategy';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth', () => {
@@ -15,7 +25,7 @@ vi.mock('@hierarchidb/auth', () => {
     const url = String(input);
     // Natural Earth downloads a ZIP; return a tiny valid zip buffer
     if (url.includes('naturalearthdata.com')) {
-      const JSZip = (await import('jszip'));
+      const JSZip = await import('jszip');
       const zip = new JSZip();
       zip.file('dummy.txt', 'hello');
       const buf = await zip.generateAsync({ type: 'arraybuffer' });
@@ -24,13 +34,45 @@ vi.mock('@hierarchidb/auth', () => {
 
     // GeoBoundaries metadata endpoints
     if (url.includes('geoboundaries.org/api/current/gbOpen/available')) {
-      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
+      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), {
+        status: 200,
+      });
     }
     if (url.includes('/gbOpen/')) {
-      return new Response(JSON.stringify({ simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson',
+          boundaryYear: '2023',
+          licenseDetail: 'Open',
+        }),
+        { status: 200 }
+      );
     }
     if (url.includes('mock.local/gb.geojson')) {
-      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [0, 0],
+                    [1, 0],
+                    [1, 1],
+                    [0, 1],
+                    [0, 0],
+                  ],
+                ],
+              },
+              properties: { shapeName: 'Mock' },
+            },
+          ],
+        }),
+        { status: 200 }
+      );
     }
 
     // Default health check OK
@@ -101,7 +143,7 @@ class TestStrategy extends BaseDataSourceStrategy<unknown, ShapeFeaturePayload[]
     },
   };
 
-  async fetchData(options?: FetchOptions): Promise<{test: string, options?: FetchOptions}> {
+  async fetchData(options?: FetchOptions): Promise<{ test: string; options?: FetchOptions }> {
     return { test: 'data', options };
   }
 
@@ -156,13 +198,15 @@ describe('DataSourceStrategy', () => {
     });
 
     it('should validate data successfully', async () => {
-    const data: ShapeFeaturePayload[] = [{
-      properties: {
-        buildConfig: { ...minimalBuildConfig, dataSource: 'naturalearth' },
-        licenseAgreement: true,
-        selectedArrayByCountries: {},
-      },
-      }];
+      const data: ShapeFeaturePayload[] = [
+        {
+          properties: {
+            buildConfig: { ...minimalBuildConfig, dataSource: 'naturalearth' },
+            licenseAgreement: true,
+            selectedArrayByCountries: {},
+          },
+        },
+      ];
 
       const result = await strategy.validateData(data);
       expect(result.isValid).toBe(true);
@@ -176,10 +220,12 @@ describe('DataSourceStrategy', () => {
     });
 
     it('should save data successfully', async () => {
-      const data: ShapeFeaturePayload[] = [{
-        geometry: { type: 'Point', coordinates: [0, 0] },
-        properties: { source: 'test' },
-      }];
+      const data: ShapeFeaturePayload[] = [
+        {
+          geometry: { type: 'Point', coordinates: [0, 0] },
+          properties: { source: 'test' },
+        },
+      ];
       const target: SaveTarget = {
         type: 'hierarchidb',
         entityType: 'shape',

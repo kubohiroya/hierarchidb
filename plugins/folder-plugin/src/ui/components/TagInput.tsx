@@ -1,4 +1,5 @@
-import type React from 'react';
+import type { TagId } from '@hierarchidb/tag-api';
+import { Add as AddIcon, Delete as DeleteIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import {
   Autocomplete,
   Box,
@@ -16,8 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, LocalOffer as TagIcon } from '@mui/icons-material';
-import type { TagId } from '@hierarchidb/tag-api';
+import type React from 'react';
 import { useTagInput } from './useTagInput.js';
 
 export interface TagInputProps {
@@ -34,17 +34,17 @@ export interface TagInputProps {
 }
 
 export const TagInput: React.FC<TagInputProps> = ({
-                                                    value = [],
-                                                    onChange,
-                                                    placeholder = 'タグを入力または選択...',
-                                                    maxTags = 10,
-                                                    allowCreate = true,
-                                                    disabled = false,
-                                                    label = 'タグ',
-                                                    helperText,
-                                                    error = false,
-                                                    required = false,
-                                                  }) => {
+  value = [],
+  onChange,
+  placeholder = 'タグを入力または選択...',
+  maxTags = 10,
+  allowCreate = true,
+  disabled = false,
+  label = 'タグ',
+  helperText,
+  error = false,
+  required = false,
+}) => {
   const {
     createDialogOpen,
     handleCreateTag,
@@ -75,7 +75,7 @@ export const TagInput: React.FC<TagInputProps> = ({
       </Typography>
 
       {/*
-*/}
+       */}
       {selectedTags.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -95,11 +95,11 @@ export const TagInput: React.FC<TagInputProps> = ({
       )}
 
       {/*
-*/}
+       */}
       <Autocomplete
         multiple={false}
         options={suggestions}
-        getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
+        getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
         inputValue={inputValue}
         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
         onChange={(_, selectedOption) => {
@@ -115,7 +115,9 @@ export const TagInput: React.FC<TagInputProps> = ({
             {...params}
             placeholder={value.length >= maxTags ? `最大${maxTags}個まで` : placeholder}
             error={error}
-            helperText={helperText || (value.length >= maxTags ? `最大${maxTags}個まで選択可能` : undefined)}
+            helperText={
+              helperText || (value.length >= maxTags ? `最大${maxTags}個まで選択可能` : undefined)
+            }
             onKeyDown={handleKeyDown}
             InputProps={{
               ...params.InputProps,
@@ -173,9 +175,7 @@ export const TagInput: React.FC<TagInputProps> = ({
                 }}
               >
                 <AddIcon fontSize="small" />
-                <Typography variant="body2">
-                  「{inputValue}」を新しいタグとして作成
-                </Typography>
+                <Typography variant="body2">「{inputValue}」を新しいタグとして作成</Typography>
               </Box>
             )}
           </Paper>
@@ -183,7 +183,7 @@ export const TagInput: React.FC<TagInputProps> = ({
       />
 
       {/*
-*/}
+       */}
       <Dialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
@@ -213,14 +213,8 @@ export const TagInput: React.FC<TagInputProps> = ({
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>
-            キャンセル
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleCreateTag}
-            disabled={!newTagName.trim()}
-          >
+          <Button onClick={() => setCreateDialogOpen(false)}>キャンセル</Button>
+          <Button variant="contained" onClick={handleCreateTag} disabled={!newTagName.trim()}>
             作成
           </Button>
         </DialogActions>

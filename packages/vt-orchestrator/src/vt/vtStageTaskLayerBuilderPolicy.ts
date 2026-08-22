@@ -5,11 +5,7 @@ const layerBuildExecutionModes = [
   'buildMultiLayer',
 ] as const;
 
-const layerBuildSkipModes = [
-  'skipNoTiles',
-  'skipNoIntersectingFeatures',
-  'skipNoLayers',
-] as const;
+const layerBuildSkipModes = ['skipNoTiles', 'skipNoIntersectingFeatures', 'skipNoLayers'] as const;
 
 export const layerBuildSkipReason = {
   noTiles: 'no tiles',
@@ -17,17 +13,15 @@ export const layerBuildSkipReason = {
   noLayers: 'no layers',
 } as const;
 
-export type LayerBuildExecutionMode = typeof layerBuildExecutionModes[number];
-export type LayerBuildSkipMode = typeof layerBuildSkipModes[number];
+export type LayerBuildExecutionMode = (typeof layerBuildExecutionModes)[number];
+export type LayerBuildSkipMode = (typeof layerBuildSkipModes)[number];
 export type LayerBuildMode = LayerBuildExecutionMode | LayerBuildSkipMode;
 
-export const isLayerBuildExecutionMode = (
-  mode: LayerBuildMode,
-): mode is LayerBuildExecutionMode => layerBuildExecutionModes.includes(mode as LayerBuildExecutionMode);
+export const isLayerBuildExecutionMode = (mode: LayerBuildMode): mode is LayerBuildExecutionMode =>
+  layerBuildExecutionModes.includes(mode as LayerBuildExecutionMode);
 
-export const isLayerBuildSkipMode = (
-  mode: LayerBuildMode,
-): mode is LayerBuildSkipMode => layerBuildSkipModes.includes(mode as LayerBuildSkipMode);
+export const isLayerBuildSkipMode = (mode: LayerBuildMode): mode is LayerBuildSkipMode =>
+  layerBuildSkipModes.includes(mode as LayerBuildSkipMode);
 
 export type LayerBuildPolicy = {
   mode: LayerBuildMode;
@@ -60,7 +54,10 @@ export const decideLayerBuildPolicy = (input: LayerBuildPolicyInput): LayerBuild
   }
 
   if (intersectingFeatureCount === 0) {
-    return { mode: 'skipNoIntersectingFeatures', skipReason: layerBuildSkipReason.noIntersectingFeatures };
+    return {
+      mode: 'skipNoIntersectingFeatures',
+      skipReason: layerBuildSkipReason.noIntersectingFeatures,
+    };
   }
 
   if (!useTopojsonTileSimplify && groupByContinent && continentCount > 1) {

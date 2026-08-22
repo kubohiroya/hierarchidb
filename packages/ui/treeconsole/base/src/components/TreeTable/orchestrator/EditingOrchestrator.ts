@@ -1,15 +1,15 @@
 /**
-  * EditingOrchestrator
-   * - /
+ * EditingOrchestrator
+ * - /
  * -
  * - /
-  */
+ */
 
+import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeViewController } from '~/types/index';
 import { editingNodeIdAtom, editingValueAtom } from '~/components/TreeTable/state/index';
+import type { TreeViewController } from '~/types/index';
 
 export interface EditingOrchestratorResult {
   // State
@@ -25,9 +25,9 @@ export interface EditingOrchestratorResult {
 }
 
 /**
-    */
+ */
 export function useEditingOrchestrator(
-  controller: TreeViewController | null,
+  controller: TreeViewController | null
 ): EditingOrchestratorResult {
   // State atoms
   const [editingNodeId, setEditingNodeId] = useAtom(editingNodeIdAtom);
@@ -45,14 +45,14 @@ export function useEditingOrchestrator(
       //  Controller
       controller?.startEdit?.(nodeId as NodeId);
     },
-    [setEditingNodeId, setEditingValue, controller],
+    [setEditingNodeId, setEditingValue, controller]
   );
 
   const updateValue = useCallback(
     (value: string) => {
       setEditingValue(value);
     },
-    [setEditingValue],
+    [setEditingValue]
   );
 
   const confirmEdit = useCallback(async () => {

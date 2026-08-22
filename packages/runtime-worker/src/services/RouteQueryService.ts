@@ -1,4 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import type { LocationFeature } from '@hierarchidb/location-api';
+import { getLocationDB } from '@hierarchidb/location-store';
 import type {
   RouteBuildError,
   RouteLineString,
@@ -12,9 +15,6 @@ import type {
 } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { countRouteReferencesToLocations } from '@hierarchidb/route-store';
-import { getLocationDB } from '@hierarchidb/location-store';
-import type { LocationFeature } from '@hierarchidb/location-api';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   BTree,
@@ -25,8 +25,11 @@ import {
   tileToBbox,
   toTileCoord,
 } from './nearest/tileNearest.js';
+import {
+  DEFAULT_TILE_CACHE_SIZE,
+  LINESTRING_CACHE_TTL_MS,
+} from './routeQueryCacheConfigConstants.js';
 import { toLegacyBuildStage } from './stageAliasConstants.js';
-import { DEFAULT_TILE_CACHE_SIZE, LINESTRING_CACHE_TTL_MS } from './routeQueryCacheConfigConstants.js';
 
 type RoutePointSummary = {
   name?: string;
@@ -62,11 +65,14 @@ export class RouteQueryService implements RouteQueryAPI {
     await this.db.open?.();
     const tile = toTileCoord(cursor.longitude, cursor.latitude, zoom);
     const maxIndex = 2 ** zoom;
-    const candidates = new Map<string, {
-      line: RouteLineStringRecord;
-      distance: number;
-      nearestPoint: [number, number];
-    }>();
+    const candidates = new Map<
+      string,
+      {
+        line: RouteLineStringRecord;
+        distance: number;
+        nearestPoint: [number, number];
+      }
+    >();
 
     for (let dx = -1; dx <= 1; dx += 1) {
       for (let dy = -1; dy <= 1; dy += 1) {
@@ -94,7 +100,7 @@ export class RouteQueryService implements RouteQueryAPI {
             cursor.longitude,
             cursor.latitude,
             match.item.segmentStart,
-            match.item.segmentEnd,
+            match.item.segmentEnd
           );
           if (!nearestPoint) continue;
           const existing = candidates.get(key);
@@ -173,16 +179,18 @@ export class RouteQueryService implements RouteQueryAPI {
         'start',
         line.startPoint,
         locationDb,
-        locationCache,
+        locationCache
       );
       const endResult = await compareRoutePointWithLocation(
         'end',
         line.endPoint,
         locationDb,
-        locationCache,
+        locationCache
       );
 
-      [...startResult.staleFields, ...endResult.staleFields].forEach((field) => staleFields.add(field));
+      [...startResult.staleFields, ...endResult.staleFields].forEach((field) =>
+        staleFields.add(field)
+      );
       if (startResult.reason) reasons.push(startResult.reason);
       if (endResult.reason) reasons.push(endResult.reason);
 
@@ -272,7 +280,12 @@ export class RouteQueryService implements RouteQueryAPI {
     return (rows as RouteLineStringRecord[]).filter((row) => wanted.has(String(row.id)));
   }
 
-  private async getTileLineIds(nodeId: NodeId, z: number, x: number, y: number): Promise<string[] | null> {
+  private async getTileLineIds(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<string[] | null> {
     const rows = await this.db.tileIndex
       .where('[nodeId+z+x+y]')
       .equals([nodeId, z, x, y])
@@ -434,7 +447,7 @@ const compareRoutePointWithLocation = async (
   side: 'start' | 'end',
   point: RoutePointLike | undefined,
   locationDb: ReturnType<typeof getLocationDB>,
-  cache: Map<string, LocationFeature | null>,
+  cache: Map<string, LocationFeature | null>
 ): Promise<RoutePointComparisonResult> => {
   const staleFields: Array<RouteMetadataSyncRow['staleFields'][number]> = [];
   if (!point?.locationId || !point?.locationFeatureId) {
@@ -453,22 +466,25 @@ const compareRoutePointWithLocation = async (
     return { staleFields, reason: `${side}: location row not found` };
   }
 
-  const coordinateMismatch = !isNearlyEqual(point.longitude, location.data.longitude)
-    || !isNearlyEqual(point.latitude, location.data.latitude);
+  const coordinateMismatch =
+    !isNearlyEqual(point.longitude, location.data.longitude) ||
+    !isNearlyEqual(point.latitude, location.data.latitude);
   if (coordinateMismatch) {
     staleFields.push('coordinates');
   }
 
-  const adminCodeMismatch = !equalsNullableString(point.admin0Code, location.data.admin0Code)
-    || !equalsNullableString(point.admin1Code, location.data.admin1Code)
-    || !equalsNullableString(point.admin2Code, location.data.admin2Code);
+  const adminCodeMismatch =
+    !equalsNullableString(point.admin0Code, location.data.admin0Code) ||
+    !equalsNullableString(point.admin1Code, location.data.admin1Code) ||
+    !equalsNullableString(point.admin2Code, location.data.admin2Code);
   if (adminCodeMismatch) {
     staleFields.push('adminCode');
   }
 
-  const adminNameMismatch = !equalsNullableString(point.admin0Name, location.data.admin0)
-    || !equalsNullableString(point.admin1Name, location.data.admin1)
-    || !equalsNullableString(point.admin2Name, location.data.admin2);
+  const adminNameMismatch =
+    !equalsNullableString(point.admin0Name, location.data.admin0) ||
+    !equalsNullableString(point.admin1Name, location.data.admin1) ||
+    !equalsNullableString(point.admin2Name, location.data.admin2);
   if (adminNameMismatch) {
     staleFields.push('adminName');
   }
@@ -485,9 +501,8 @@ const isNearlyEqual = (left?: number, right?: number): boolean => {
   return Math.abs(left - right) <= 1e-9;
 };
 
-const equalsNullableString = (left?: string | null, right?: string | null): boolean => (
-  (left ?? '').trim() === (right ?? '').trim()
-);
+const equalsNullableString = (left?: string | null, right?: string | null): boolean =>
+  (left ?? '').trim() === (right ?? '').trim();
 
 const normalizeRouteBuildErrorStage = (stage: unknown): RouteBuildError['stage'] => {
   const stageId = typeof stage === 'string' ? stage : undefined;

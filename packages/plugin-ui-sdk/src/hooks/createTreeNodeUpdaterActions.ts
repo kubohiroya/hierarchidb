@@ -3,7 +3,7 @@ import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from './useTreeNodeUpdater.js';
 
 export const createTreeNodeUpdaterActions = <
-  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 >(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
 ) => {

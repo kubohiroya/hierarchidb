@@ -1,6 +1,6 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import type React from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface UseUserMenuViewArgs {
   themeMode: ThemeMode;
@@ -8,10 +8,7 @@ interface UseUserMenuViewArgs {
   onOpenLanguageMenu: (anchor: HTMLElement) => void;
 }
 
-const getThemeLabel = (
-  mode: ThemeMode,
-  t: (key: string, defaultValue?: string) => string
-) => {
+const getThemeLabel = (mode: ThemeMode, t: (key: string, defaultValue?: string) => string) => {
   switch (mode) {
     case 'dark':
       return t('userMenu.theme.dark', 'Dark');

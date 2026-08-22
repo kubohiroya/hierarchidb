@@ -1,4 +1,7 @@
-export type { SessionBroadcastChannel, SessionBroadcastMessage } from './createSessionBroadcastChannel.js';
+export type {
+  SessionBroadcastChannel,
+  SessionBroadcastMessage,
+} from './createSessionBroadcastChannel.js';
 export { createSessionBroadcastChannel } from './createSessionBroadcastChannel.js';
 
 export type SessionTabState = 'active' | 'hidden' | 'frozen';
@@ -57,15 +60,20 @@ export type SessionCoordinator = {
     sessionId: string,
     status: TStatus | null,
     progress: TProgress | null,
-    timestamp?: number,
+    timestamp?: number
   ) => void;
   sendPoll: (channel: BroadcastChannel, sessionId: string, timestamp?: number) => void;
-  sendAck: (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp?: number) => void;
+  sendAck: (
+    channel: BroadcastChannel,
+    sessionId: string,
+    receivedTabId: string,
+    timestamp?: number
+  ) => void;
   sendTabState: (
     channel: BroadcastChannel,
     sessionId: string,
     tabState: SessionTabState,
-    timestamp?: number,
+    timestamp?: number
   ) => void;
   isSessionChannelMessage: (message: unknown) => message is SessionChannelMessage;
   isRunnerTab: (referenceTime?: number) => boolean;
@@ -105,7 +113,7 @@ const createMemoryStorage = (): Pick<Storage, 'getItem' | 'setItem' | 'removeIte
 };
 
 const resolveStorage = (
-  storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null | undefined,
+  storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null | undefined
 ) => {
   if (storage) return storage;
   try {
@@ -169,7 +177,9 @@ const isSessionChannelMessage = (message: unknown): message is SessionChannelMes
   return true;
 };
 
-export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}): SessionCoordinator => {
+export const createSessionCoordinator = (
+  options: SessionCoordinatorOptions = {}
+): SessionCoordinator => {
   const channelName = options.channelName ?? 'sessions';
   const pollIntervalTimeout = options.pollIntervalTimeout ?? 3000;
   const quietThresholdTimeout = options.quietThresholdTimeout ?? 5000;
@@ -244,7 +254,7 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
 
   const publish = <TStatus, TProgress>(
     channel: BroadcastChannel,
-    message: SessionChannelMessage<TStatus, TProgress>,
+    message: SessionChannelMessage<TStatus, TProgress>
   ) => {
     try {
       channel.postMessage(message);
@@ -258,7 +268,7 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     sessionId: string,
     status: TStatus | null,
     progress: TProgress | null,
-    timestamp?: number,
+    timestamp?: number
   ) => {
     publish(channel, {
       type: 'broadcast',
@@ -279,7 +289,12 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     });
   };
 
-  const sendAck = (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp?: number) => {
+  const sendAck = (
+    channel: BroadcastChannel,
+    sessionId: string,
+    receivedTabId: string,
+    timestamp?: number
+  ) => {
     publish(channel, {
       type: 'ack',
       sessionId,
@@ -293,7 +308,7 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     channel: BroadcastChannel,
     sessionId: string,
     tabState: SessionTabState,
-    timestamp?: number,
+    timestamp?: number
   ) => {
     publish(channel, {
       type: 'tab-state',
@@ -310,9 +325,8 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     return Boolean(broadcastAt && snapshot - broadcastAt <= quietThresholdTimeout);
   };
 
-  const isWebLockSupported = () => (
-    typeof navigator !== 'undefined' && typeof navigator.locks?.request === 'function'
-  );
+  const isWebLockSupported = () =>
+    typeof navigator !== 'undefined' && typeof navigator.locks?.request === 'function';
 
   const tryAcquireSessionLock = async (key: string): Promise<SessionLockHandle | null> => {
     if (!isWebLockSupported()) {
@@ -330,21 +344,19 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
         released = true;
         resolveRelease?.();
       };
-      navigator.locks.request(
-        key,
-        { ifAvailable: true, mode: 'exclusive' },
-        (lock) => {
+      navigator.locks
+        .request(key, { ifAvailable: true, mode: 'exclusive' }, (lock) => {
           if (!lock) {
             resolve(null);
             return;
           }
           resolve({ release });
           return releasePromise;
-        },
-      ).catch((error) => {
-        console.warn('[session-coordinator] failed to acquire session lock', error);
-        resolve(null);
-      });
+        })
+        .catch((error) => {
+          console.warn('[session-coordinator] failed to acquire session lock', error);
+          resolve(null);
+        });
     });
   };
 
@@ -352,10 +364,8 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     if (!isWebLockSupported()) return 'unsupported';
     return new Promise<'held' | 'free'>((resolve) => {
       let resolved = false;
-      navigator.locks.request(
-        key,
-        { ifAvailable: true, mode: 'exclusive' },
-        (lock) => {
+      navigator.locks
+        .request(key, { ifAvailable: true, mode: 'exclusive' }, (lock) => {
           if (!lock) {
             resolved = true;
             resolve('held');
@@ -364,13 +374,13 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
           resolved = true;
           resolve('free');
           return undefined;
-        },
-      ).catch((error) => {
-        console.warn('[session-coordinator] failed to probe session lock', error);
-        if (!resolved) {
-          resolve('held');
-        }
-      });
+        })
+        .catch((error) => {
+          console.warn('[session-coordinator] failed to probe session lock', error);
+          if (!resolved) {
+            resolve('held');
+          }
+        });
     });
   };
 
@@ -399,5 +409,5 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
 
 /** Preferred role-oriented alias for createSessionCoordinator. */
 export const createTabSessionCoordinator = (
-  options: TabSessionCoordinatorOptions = {},
+  options: TabSessionCoordinatorOptions = {}
 ): TabSessionCoordinator => createSessionCoordinator(options);

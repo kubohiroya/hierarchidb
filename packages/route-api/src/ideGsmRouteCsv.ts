@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
+import type { IdeGsmRouteSelectionEntry } from './ideGsmRouteTypes.js';
 import type { RouteLineString, RouteMode, RoutePoint } from './ROUTE_MODES.js';
 import { ROUTE_MODES } from './ROUTE_MODES.js';
-import type { IdeGsmRouteSelectionEntry } from './ideGsmRouteTypes.js';
 
 export type IdeGsmRouteError = {
   id: string;
@@ -162,7 +162,9 @@ export function parseIdeGsmRouteRecords(
   locationIndex: Map<string, IdeGsmLocationRecord>,
   nodeId: NodeId
 ): { lineStrings: RouteLineString[]; errors: IdeGsmRouteError[] } {
-  const normalizedHeaders = headers.map((header) => header.trim()).filter((header) => header.length > 0);
+  const normalizedHeaders = headers
+    .map((header) => header.trim())
+    .filter((header) => header.length > 0);
   if (normalizedHeaders.length === 0) {
     return { lineStrings: [], errors: [] };
   }
@@ -333,10 +335,13 @@ const normalizeCountryCode = (value?: string): string | null => {
 
 export const filterIdeGsmRoutesBySelection = (
   lineStrings: RouteLineString[],
-  entries: IdeGsmRouteSelectionEntry[],
+  entries: IdeGsmRouteSelectionEntry[]
 ): RouteLineString[] => {
   if (entries.length === 0) return lineStrings;
-  const selectionByCountry = new Map<string, { orModes: Set<RouteMode>; andModes: Set<RouteMode> }>();
+  const selectionByCountry = new Map<
+    string,
+    { orModes: Set<RouteMode>; andModes: Set<RouteMode> }
+  >();
   entries.forEach((entry) => {
     const countryCode = normalizeCountryCode(entry.countryCode);
     if (!countryCode) return;

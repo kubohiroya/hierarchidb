@@ -4,21 +4,21 @@ import type { NodeId } from '@hierarchidb/core-types';
  * Chain execution strategies
  */
 export type ChainStrategy =
-  | 'sequential'     // Execute resolvers one after another
-  | 'parallel'       // Execute resolvers in parallel and merge results
-  | 'conditional'    // Execute based on conditions
-  | 'fallback'       // Try resolvers until one succeeds
-  | 'weighted';      // Weighted merge of parallel results
+  | 'sequential' // Execute resolvers one after another
+  | 'parallel' // Execute resolvers in parallel and merge results
+  | 'conditional' // Execute based on conditions
+  | 'fallback' // Try resolvers until one succeeds
+  | 'weighted'; // Weighted merge of parallel results
 
 /**
  * Conflict resolution strategies when merging results
  */
 export type ConflictResolution =
-  | 'last-wins'      // Use the last value
-  | 'first-wins'     // Keep the first value
-  | 'merge'          // Merge values
-  | 'error'          // Throw error on conflict
-  | 'custom';        // Custom resolution function
+  | 'last-wins' // Use the last value
+  | 'first-wins' // Keep the first value
+  | 'merge' // Merge values
+  | 'error' // Throw error on conflict
+  | 'custom'; // Custom resolution function
 
 /**
  * Individual resolver in a chain
@@ -26,9 +26,9 @@ export type ConflictResolution =
 export interface ResolverChainItem {
   resolverId: NodeId;
   order: number;
-  condition?: string;          // JavaScript condition expression
-  scope?: 'all' | 'partial';  // Apply to all or partial data
-  weight?: number;             // Weight for weighted merge (0-1)
+  condition?: string; // JavaScript condition expression
+  scope?: 'all' | 'partial'; // Apply to all or partial data
+  weight?: number; // Weight for weighted merge (0-1)
   enabled: boolean;
 }
 
@@ -42,7 +42,7 @@ export interface ResolverChain {
   resolvers: ResolverChainItem[];
   strategy: ChainStrategy;
   conflictResolution: ConflictResolution;
-  conflictResolver?: string;  // Custom resolution function
+  conflictResolver?: string; // Custom resolution function
   metadata: {
     createdAt: number;
     updatedAt: number;
@@ -114,7 +114,7 @@ export class ChainManager {
       timeout?: number;
       parallel?: boolean;
       cache?: boolean;
-    },
+    }
   ): Promise<ChainExecutionResult> {
     const chain = this.chains.get(chainId);
     if (!chain) {
@@ -172,7 +172,8 @@ export class ChainManager {
       chain.metadata.executionCount++;
       chain.metadata.averageExecutionTime =
         ((chain.metadata.averageExecutionTime || 0) * (chain.metadata.executionCount - 1) +
-          result.statistics.executionTime) / chain.metadata.executionCount;
+          result.statistics.executionTime) /
+        chain.metadata.executionCount;
     }
 
     return result;
@@ -184,12 +185,12 @@ export class ChainManager {
   private async executeSequential(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult,
+    result: ChainExecutionResult
   ): Promise<any> {
     let currentData = data;
 
     const sortedResolvers = [...chain.resolvers]
-      .filter(r => r.enabled)
+      .filter((r) => r.enabled)
       .sort((a, b) => a.order - b.order);
 
     for (const resolver of sortedResolvers) {
@@ -218,27 +219,35 @@ export class ChainManager {
   private async executeParallel(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult,
+    result: ChainExecutionResult
   ): Promise<any> {
-    const enabledResolvers = chain.resolvers.filter(r => r.enabled);
+    const enabledResolvers = chain.resolvers.filter((r) => r.enabled);
 
-    const promises = enabledResolvers.map(async (resolver): Promise<ResolverExecutionResult | null> => {
-      try {
-        const resolvedData = await this.executeResolver(resolver.resolverId, data);
-        result.resolverResults.set(resolver.resolverId, resolvedData);
-        result.statistics.successfulResolvers++;
-        return { resolverId: resolver.resolverId, data: resolvedData, weight: resolver.weight || 1 };
-      } catch (error) {
-        result.statistics.failedResolvers++;
-        result.errors.push({
-          resolverId: resolver.resolverId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        return null;
+    const promises = enabledResolvers.map(
+      async (resolver): Promise<ResolverExecutionResult | null> => {
+        try {
+          const resolvedData = await this.executeResolver(resolver.resolverId, data);
+          result.resolverResults.set(resolver.resolverId, resolvedData);
+          result.statistics.successfulResolvers++;
+          return {
+            resolverId: resolver.resolverId,
+            data: resolvedData,
+            weight: resolver.weight || 1,
+          };
+        } catch (error) {
+          result.statistics.failedResolvers++;
+          result.errors.push({
+            resolverId: resolver.resolverId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+          return null;
+        }
       }
-    });
+    );
 
-    const results = (await Promise.all(promises)).filter((r): r is ResolverExecutionResult => r !== null);
+    const results = (await Promise.all(promises)).filter(
+      (r): r is ResolverExecutionResult => r !== null
+    );
 
     // Merge results based on conflict resolution strategy
     return this.mergeResults(results, chain.conflictResolution);
@@ -250,7 +259,7 @@ export class ChainManager {
   private async executeConditional(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult,
+    result: ChainExecutionResult
   ): Promise<any> {
     for (const resolver of chain.resolvers) {
       if (!resolver.enabled) continue;
@@ -291,10 +300,10 @@ export class ChainManager {
   private async executeFallback(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult,
+    result: ChainExecutionResult
   ): Promise<any> {
     const sortedResolvers = [...chain.resolvers]
-      .filter(r => r.enabled)
+      .filter((r) => r.enabled)
       .sort((a, b) => a.order - b.order);
 
     for (const resolver of sortedResolvers) {
@@ -322,7 +331,7 @@ export class ChainManager {
   private async executeWeighted(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult,
+    result: ChainExecutionResult
   ): Promise<any> {
     // Similar to parallel, but with weighted merging
     return this.executeParallel(chain, data, result);
@@ -350,10 +359,7 @@ export class ChainManager {
   /**
    * Merge results from parallel execution
    */
-  private mergeResults(
-    results: ResolverExecutionResult[],
-    strategy: ConflictResolution,
-  ): any {
+  private mergeResults(results: ResolverExecutionResult[], strategy: ConflictResolution): any {
     if (results.length === 0) return null;
     if (results.length === 1) return results[0]?.data;
 
@@ -391,7 +397,11 @@ export class ChainManager {
 
     for (const key in source) {
       if (Object.hasOwn(source, key)) {
-        if (typeof source[key] === 'object' && !Array.isArray(source[key]) && source[key] !== null) {
+        if (
+          typeof source[key] === 'object' &&
+          !Array.isArray(source[key]) &&
+          source[key] !== null
+        ) {
           result[key] = this.deepMerge(target?.[key], source[key]);
         } else {
           result[key] = source[key];

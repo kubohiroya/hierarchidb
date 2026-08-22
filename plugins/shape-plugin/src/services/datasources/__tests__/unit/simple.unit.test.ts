@@ -1,6 +1,6 @@
 /**
-  * - Vitest
-  */
+ * - Vitest
+ */
 
 import { describe, expect, it } from 'vitest';
 import { DataSourceStrategyFactory } from '../../DataSourceStrategyFactory';

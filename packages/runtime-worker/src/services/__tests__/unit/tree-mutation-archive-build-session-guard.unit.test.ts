@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';
 
-const reconcileRunningBuildSessionsMock = vi.hoisted(() => vi.fn(async () => ({
-  checkedNodeIds: [],
-  activeNodeIds: [],
-  repairedNodeIds: [],
-})));
+const reconcileRunningBuildSessionsMock = vi.hoisted(() =>
+  vi.fn(async () => ({
+    checkedNodeIds: [],
+    activeNodeIds: [],
+    repairedNodeIds: [],
+  }))
+);
 const hasRouteReferencesToLocationsMock = vi.hoisted(() => vi.fn(async () => false));
 const hasLocationReferencesToShapesMock = vi.hoisted(() => vi.fn(async () => false));
 
@@ -95,8 +97,14 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
 
   it('returns API error when target shape node has a running build session', async () => {
     const nodes = new Map<NodeId, TreeNode>([
-      [asNodeId('r:root'), createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 })],
-      [asNodeId('shape-1'), createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 })],
+      [
+        asNodeId('r:root'),
+        createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 }),
+      ],
+      [
+        asNodeId('shape-1'),
+        createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 }),
+      ],
     ]);
     const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
     const processor = createCommandProcessorMock(core);
@@ -107,22 +115,27 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     });
 
     const { TreeMutationService } = await import('../../TreeMutationService');
-    const service = new TreeMutationService(
-      core,
-      processor
-    );
+    const service = new TreeMutationService(core, processor);
 
     const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: false, error: 'TRASH_BUILD_SESSION_RUNNING' });
-    expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledWith({ nodeIds: [asNodeId('shape-1')] });
+    expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledWith({
+      nodeIds: [asNodeId('shape-1')],
+    });
     expect(processor.processCommand).not.toHaveBeenCalled();
   });
 
   it('keeps existing archive flow when running build session does not exist', async () => {
     const nodes = new Map<NodeId, TreeNode>([
-      [asNodeId('r:root'), createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 })],
-      [asNodeId('shape-1'), createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 })],
+      [
+        asNodeId('r:root'),
+        createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 }),
+      ],
+      [
+        asNodeId('shape-1'),
+        createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 }),
+      ],
     ]);
     const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
     const processor = createCommandProcessorMock(core);
@@ -133,15 +146,14 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     });
 
     const { TreeMutationService } = await import('../../TreeMutationService');
-    const service = new TreeMutationService(
-      core,
-      processor
-    );
+    const service = new TreeMutationService(core, processor);
 
     const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: true });
-    expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledWith({ nodeIds: [asNodeId('shape-1')] });
+    expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledWith({
+      nodeIds: [asNodeId('shape-1')],
+    });
     expect(processor.processCommand).toHaveBeenCalledTimes(1);
   });
 });

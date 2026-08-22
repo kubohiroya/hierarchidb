@@ -6,10 +6,10 @@ export type {
 } from './TagAPI.js';
 export type { TagSuggestion } from './TagTypes.js';
 export type {
+  NodeTagAssociation,
+  NodeTagAssociationId,
   TagAssociationScope,
   TagEntity,
   TagId,
-  NodeTagAssociation,
-  NodeTagAssociationId,
 } from './toTagId.js';
 export { toTagId } from './toTagId.js';

@@ -1,6 +1,6 @@
+import { Box, Chip, List, ListItem, ListItemText, Typography } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
-import { Box, Chip, List, ListItem, ListItemText, Typography } from '@mui/material';
 
 const meta = {
   title: 'ui/legacy-dialog/UnsavedChangesDialog',
@@ -9,7 +9,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: '未保存の変更を破棄する際の確認ダイアログ。保存、破棄、キャンセルのオプションを提供します。',
+        component:
+          '未保存の変更を破棄する際の確認ダイアログ。保存、破棄、キャンセルのオプションを提供します。',
       },
     },
   },
@@ -54,10 +55,8 @@ export const Default: Story = {
     open: true,
     title: '未保存の変更',
     message: '変更が保存されていません。このまま移動すると、変更は失われます。',
-    onDiscard: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -67,12 +66,9 @@ export const WithSaveDraft: Story = {
     title: '未保存の変更',
     message: '編集中の内容が保存されていません。',
     showSaveDraft: true,
-    onDiscard: () => {
-    },
-    onSaveDraft: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -94,10 +90,8 @@ export const WithDetails: Story = {
         </ListItem>
       </List>
     ),
-    onDiscard: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -116,10 +110,7 @@ export const WithModifiedFiles: Story = {
             { name: 'styles.css', status: 'modified', lines: '+8, -3' },
           ].map((file) => (
             <ListItem key={file.name}>
-              <ListItemText
-                primary={file.name}
-                secondary={file.lines}
-              />
+              <ListItemText primary={file.name} secondary={file.lines} />
               <Chip
                 label={file.status}
                 size="small"
@@ -130,12 +121,9 @@ export const WithModifiedFiles: Story = {
         </List>
       </Box>
     ),
-    onDiscard: () => {
-    },
-    onSaveDraft: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -143,14 +131,12 @@ export const LongMessage: Story = {
   args: {
     open: true,
     title: 'プロジェクト設定の変更',
-    message: 'プロジェクトの重要な設定が変更されています。これらの変更を保存せずに終了すると、すべての設定変更が失われ、デフォルト値にリセットされます。変更を確認してから続行してください。',
+    message:
+      'プロジェクトの重要な設定が変更されています。これらの変更を保存せずに終了すると、すべての設定変更が失われ、デフォルト値にリセットされます。変更を確認してから続行してください。',
     showSaveDraft: true,
-    onDiscard: () => {
-    },
-    onSaveDraft: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -167,10 +153,8 @@ export const WithWarning: Story = {
         </Typography>
       </Box>
     ),
-    onDiscard: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -193,10 +177,8 @@ export const DataMigration: Story = {
         </Typography>
       </Box>
     ),
-    onDiscard: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -231,11 +213,8 @@ export const FormValidation: Story = {
         </ListItem>
       </List>
     ),
-    onDiscard: () => {
-    },
-    onSaveDraft: () => {
-    },
-    onCancel: () => {
-    },
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };

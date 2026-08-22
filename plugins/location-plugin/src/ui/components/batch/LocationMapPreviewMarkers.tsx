@@ -1,6 +1,6 @@
-import type { ReactElement } from 'react';
-import { Box } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { Box } from '@mui/material';
+import type { ReactElement } from 'react';
 
 export type LocationMapPreviewMarkerEntry = {
   id: string;

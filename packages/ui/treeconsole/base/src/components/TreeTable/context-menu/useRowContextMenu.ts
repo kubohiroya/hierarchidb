@@ -1,14 +1,14 @@
+import { useIconRegistry } from '@hierarchidb/components';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import {
+  type MouseEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type MouseEvent,
-  type ReactNode,
 } from 'react';
-import { useIconRegistry } from '@hierarchidb/components';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import type { CreateMenuBuilder, CreateMenuEntry, GlobalMenuBuilders } from '~/types/menu-types';
 import type { RowContextMenuProps } from './RowContextMenu.js';
 
@@ -65,7 +65,7 @@ export function useRowContextMenu(props: RowContextMenuProps): UseRowContextMenu
 
   const isVisible = props.isVisible;
   const effectiveVisible =
-    localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+    localInvisible !== null ? !localInvisible : typeof isVisible === 'boolean' ? isVisible : true;
   const effectiveInvisible = !effectiveVisible;
 
   const translateWithFallback = useMemo(() => {
@@ -84,11 +84,11 @@ export function useRowContextMenu(props: RowContextMenuProps): UseRowContextMenu
       if (!description || description.trim().length === 0) return label;
       const template = translateWithFallback(
         'treeConsole.contextMenu.createTooltip',
-        '{{label}}: {{description}}',
+        '{{label}}: {{description}}'
       );
       return template.replace('{{label}}', label).replace('{{description}}', description);
     },
-    [translateWithFallback],
+    [translateWithFallback]
   );
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export function useRowContextMenu(props: RowContextMenuProps): UseRowContextMenu
         onCreate(type);
       });
     },
-    [handleMainMenuClose],
+    [handleMainMenuClose]
   );
 
   const handleOpenFolderClick = useCallback(() => {
@@ -211,7 +211,8 @@ export function useRowContextMenu(props: RowContextMenuProps): UseRowContextMenu
 
   const { localizedCreateMenuEntries, createMenuUnavailable } = useMemo(() => {
     try {
-      const globals = (globalThis as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
+      const globals = (globalThis as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders })
+        .__HDB_MENU_BUILDERS__;
       const builder: CreateMenuBuilder | undefined =
         globals?.buildMenuItemsForTreeId || globals?.buildMenuItemsForContext;
 
@@ -225,10 +226,13 @@ export function useRowContextMenu(props: RowContextMenuProps): UseRowContextMenu
       const entries = (builder(props.treeId) as CreateMenuEntry[] | undefined) ?? [];
       return {
         localizedCreateMenuEntries: entries.map((entry) => {
-          const localizedLabel = translateWithFallback(`plugins.${entry.nodeType}.name`, entry.label);
+          const localizedLabel = translateWithFallback(
+            `plugins.${entry.nodeType}.name`,
+            entry.label
+          );
           const localizedDescription = translateWithFallback(
             `plugins.${entry.nodeType}.description`,
-            entry.description ?? '',
+            entry.description ?? ''
           ).trim();
 
           return {

@@ -10,13 +10,13 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 import { globby } from 'globby';
 import ts from 'typescript';
-import process from 'node:process';
 
 const roots = process.argv.slice(2);
 const patterns = (roots.length ? roots : ['.', 'packages', 'plugins']).map((r) =>
-  r.endsWith('.json') ? r : path.posix.join(r.replace(/\\/g, '/'), '**/tsconfig*.json'),
+  r.endsWith('.json') ? r : path.posix.join(r.replace(/\\/g, '/'), '**/tsconfig*.json')
 );
 const files = await globby(patterns, {
   ignore: ['**/node_modules/**', '**/dist/**'],

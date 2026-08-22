@@ -1,5 +1,3 @@
-export { discardTreeNodeDraft as discardDraft } from './draft/discardTreeNodeDraft.js';
-
 export {
   type CommitConflict,
   type CommitOk,
@@ -7,6 +5,7 @@ export {
   commitTreeNodeDraft as commitDraft,
   type NameConflict,
 } from './draft/commitOperations.js';
+export { discardTreeNodeDraft as discardDraft } from './draft/discardTreeNodeDraft.js';
 export { initTreeNode } from './draft/initTreeNode.js';
 
 export {

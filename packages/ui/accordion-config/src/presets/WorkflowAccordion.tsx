@@ -1,6 +1,6 @@
+import { Chip } from '@mui/material';
 import React from 'react';
 import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
-import { Chip } from '@mui/material';
 import { useWorkflowAccordionView } from './useWorkflowAccordionView.js';
 
 export interface WorkflowStep {
@@ -28,37 +28,21 @@ export interface WorkflowAccordionProps extends Omit<StyledAccordionProps, 'icon
  * Can be used for wizards, multi-step forms, build processes, etc.
  */
 export const WorkflowAccordion: React.FC<WorkflowAccordionProps> = ({
-                                                                      step,
-                                                                      showStepBadge = true,
-                                                                      renderStep,
-                                                                      ...accordionProps
-                                                                    }) => {
-  const {
-    shouldRenderStepBadge,
-    label,
-    color,
-    chipSx,
-    variant,
-  } = useWorkflowAccordionView({
+  step,
+  showStepBadge = true,
+  renderStep,
+  ...accordionProps
+}) => {
+  const { shouldRenderStepBadge, label, color, chipSx, variant } = useWorkflowAccordionView({
     step,
     showStepBadge,
   });
-  const stepElement = step && shouldRenderStepBadge
-    ? (renderStep?.(step) ?? (
-      <Chip
-        label={label}
-        color={color}
-        size="small"
-        variant={variant}
-        sx={chipSx}
-      />
-    ))
-    : null;
+  const stepElement =
+    step && shouldRenderStepBadge
+      ? (renderStep?.(step) ?? (
+          <Chip label={label} color={color} size="small" variant={variant} sx={chipSx} />
+        ))
+      : null;
 
-  return (
-    <StyledAccordion
-      {...accordionProps}
-      icon={stepElement}
-    />
-  );
+  return <StyledAccordion {...accordionProps} icon={stepElement} />;
 };

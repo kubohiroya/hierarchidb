@@ -1,22 +1,11 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM"
-    ],
+    "lib": ["ES2022", "DOM"],
     "experimentalDecorators": true,
     "allowImportingTsExtensions": true,
     "baseUrl": "."
   },
-  "include": [
-    "../../global.d.ts",
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ]
+  "include": ["../../global.d.ts", "src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

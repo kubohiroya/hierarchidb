@@ -51,7 +51,6 @@ export const useOptionalBootProgress = (): BootProgressContextValue | null => {
 };
 
 export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {
     const base = Object.fromEntries(defaultSteps.map((s) => [s.name, { ...s }])) as Record<
       StepName,

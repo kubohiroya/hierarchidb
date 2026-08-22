@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import {
+  isShapeBuildSessionContractError,
   LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING,
   ShapeBuildSessionContractError,
-  isShapeBuildSessionContractError,
   type ShapeBuildSessionProbeResult,
 } from '@hierarchidb/shape-api';
 import type {
@@ -145,16 +145,16 @@ const resolveSessionUpdatedAt = (params: {
 
 /**
  * Compute progress information from an array of build tasks
- * 
+ *
  * @param tasks - Array of build task records
  * @returns ProgressInfo with total, completed, failed, skipped counts and percentage
  */
 export function computeProgressFromTasks(tasks: EphemeralBuildTaskRecord[]): ProgressInfo {
   const total = tasks.length;
-  const completed = tasks.filter(t => t.status === 'completed').length;
-  const failed = tasks.filter(t => t.status === 'failed').length;
+  const completed = tasks.filter((t) => t.status === 'completed').length;
+  const failed = tasks.filter((t) => t.status === 'failed').length;
   const skipped = 0; // Computed from task metadata if needed in the future
-  
+
   return {
     total,
     completed,
@@ -166,7 +166,7 @@ export function computeProgressFromTasks(tasks: EphemeralBuildTaskRecord[]): Pro
 
 /**
  * Compute per-stage status information from an array of build tasks
- * 
+ *
  * @param tasks - Array of build task records
  * @returns Record mapping each BuildStage to its EphemeralStageStatus
  */
@@ -178,12 +178,12 @@ export function computeStagesFromTasks(
     geometry: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
     tileEmit: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
   };
-  
+
   // Aggregate tasks by stage
   for (const task of tasks) {
     const stage = stages[task.stage];
     stage.tasksTotal++;
-    
+
     if (task.status === 'completed') {
       stage.tasksCompleted++;
     }
@@ -194,12 +194,12 @@ export function computeStagesFromTasks(
       stage.status = 'running';
     }
   }
-  
+
   // Calculate progress percentage and determine final status for each stage
   for (const stage of Object.values(stages)) {
     // Calculate progress percentage
     stage.progress = stage.tasksTotal > 0 ? (stage.tasksCompleted / stage.tasksTotal) * 100 : 0;
-    
+
     // Determine stage status based on task statuses
     if (stage.tasksFailed > 0) {
       stage.status = 'failed';
@@ -210,17 +210,17 @@ export function computeStagesFromTasks(
       stage.status = 'queued';
     }
   }
-  
+
   return stages;
 }
 
 /**
  * Unified query interface for session data
- * 
+ *
  * Queries all four normalized tables (buildSessionConfigs, buildSessionHeartbeats,
  * buildSessionStatuses, buildStageStatuses) and buildTasks, then reconstructs
  * the unified EphemeralBuildSessionRecord structure.
- * 
+ *
  * @param nodeId - The node ID to query session data for
  * @param queryFn - Function that queries the database tables
  * @returns Unified session record or null if session not found
@@ -240,7 +240,9 @@ export async function getSessionWithDetails(
 
   if (!config && !status) {
     if (heartbeat || stageStatuses.length > 0) {
-      throw new Error(`[getSessionWithDetails] normalized session has orphan rows: ${String(nodeId)}`);
+      throw new Error(
+        `[getSessionWithDetails] normalized session has orphan rows: ${String(nodeId)}`
+      );
     }
     return null;
   }

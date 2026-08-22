@@ -4,7 +4,9 @@ export interface RegisterLocationWorkerStoresOptions {
   signal?: AbortSignal;
 }
 
-export async function registerLocationWorkerStores(options: RegisterLocationWorkerStoresOptions = {}): Promise<void> {
+export async function registerLocationWorkerStores(
+  options: RegisterLocationWorkerStoresOptions = {}
+): Promise<void> {
   if (options.signal?.aborted) return;
 }
 

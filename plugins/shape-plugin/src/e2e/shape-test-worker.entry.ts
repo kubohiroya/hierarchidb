@@ -2,33 +2,44 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import type {
+  BuildContinuationPolicy,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-  BuildContinuationPolicy,
   StageSnapshotUpdatedEvent,
 } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeRouteDB } from '@hierarchidb/route-store';
+import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
-import { initializeShapeDB } from '@hierarchidb/shape-store';
-import { initializeRouteDB } from '@hierarchidb/route-store';
-import { initializeShapeChunkStore } from '../services/utils/initializeShapeChunkStore.js';
-import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
-import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
-import { metadataLoader } from '../services/metadata/MetadataLoader';
-import { shapeBuildAPI } from '../worker/api';
+import type {
+  CountryMetadata,
+  SelectedArrayByCountries,
+  ShapeBuildConfig,
+  ShapeProcessingConfig,
+  SourceTaskPayload,
+} from '../common/types/index';
 import { shapeMutationAPIImpl } from '../services/build/ShapeBuildAPIClient';
-import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '../services/vt/shapePipelineShared';
-import { runShapeSourceStageSection } from '../services/vt/shapePipelineSourceStage';
+import { metadataLoader } from '../services/metadata/MetadataLoader';
+import { initializeShapeChunkStore } from '../services/utils/initializeShapeChunkStore.js';
 import { runShapeGeometryStageSection } from '../services/vt/runShapeGeometryStageSection';
-import { runShapeTileEmitStageSection } from '../services/vt/runShapeTileEmitStageSection';
 import { runShapeMetadataStage } from '../services/vt/runShapeMetadataStage';
 import { runShapePipelineCleanup } from '../services/vt/runShapePipelineCleanup';
+import { runShapeTileEmitStageSection } from '../services/vt/runShapeTileEmitStageSection';
+import {
+  buildBands,
+  buildContinentLookup,
+  buildCountryLookup,
+  hasHighDetailSelection,
+} from '../services/vt/shapePipelineShared';
+import { runShapeSourceStageSection } from '../services/vt/shapePipelineSourceStage';
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
-import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { shapeBuildAPI } from '../worker/api';
 
 const testDatabasePrefix = getBuildDatabasePrefix();
 const shapeDB = initializeShapeDB(getDBName(testDatabasePrefix, 'shape'));
@@ -118,7 +129,6 @@ type ShapeWorkerTestAPI = {
   getShapePipelineTestAPI(): ShapePipelineTestAPI;
   getShapeBuildTestAPI(): ShapeBuildTestAPI;
 };
-
 
 const pipelineRuns = new Map<string, Promise<void>>();
 const pipelineStates = new Map<string, PipelineState>();
@@ -213,7 +223,10 @@ async function main(endpoint?: Endpoint): Promise<void> {
         createdAt: now,
       });
     },
-    clearShapeEphemeralCache: async (nodeId: NodeId, cacheType: EphemeralCacheType): Promise<void> => {
+    clearShapeEphemeralCache: async (
+      nodeId: NodeId,
+      cacheType: EphemeralCacheType
+    ): Promise<void> => {
       await ensureEphemeralOpen();
       switch (cacheType) {
         case 'sourceCache':
@@ -237,13 +250,14 @@ async function main(endpoint?: Endpoint): Promise<void> {
     },
     getShapeEphemeralCounts: async (nodeId: NodeId): Promise<EphemeralCacheCounts> => {
       await ensureEphemeralOpen();
-      const [sourceCache, geometryCache, geometryErrors, tileEmitBufferRelations, buildTasks] = await Promise.all([
-        ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.geometryErrors.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.buildTasks.where('nodeId').equals(nodeId).count(),
-      ]);
+      const [sourceCache, geometryCache, geometryErrors, tileEmitBufferRelations, buildTasks] =
+        await Promise.all([
+          ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count(),
+          ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count(),
+          ephemeralDB.geometryErrors.where('nodeId').equals(nodeId).count(),
+          ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).count(),
+          ephemeralDB.buildTasks.where('nodeId').equals(nodeId).count(),
+        ]);
       return {
         sourceCache,
         geometryCache,
@@ -294,7 +308,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     const failureHandling = resolveFailureHandling(buildContinuationPolicy);
     const enableHighDetailBands = hasHighDetailSelection(
       params.selectedArrayByCountries,
-      params.downloadTaskPayloads,
+      params.downloadTaskPayloads
     );
     const bands = buildBands(params.buildConfig.geometryConfig.zoomBandBoundaries);
     const recyclingAllowlist = new Set<string>();
@@ -310,12 +324,10 @@ async function main(endpoint?: Endpoint): Promise<void> {
       metadataCache = await metadataLoader.loadMetadata(dataSource, params.nodeId);
       return metadataCache;
     };
-    const loadCountryLookup = async (): Promise<Map<string, CountryMetadata>> => (
-      buildCountryLookup(await loadMetadata())
-    );
-    const loadContinentLookup = async (): Promise<Map<string, string>> => (
-      buildContinentLookup(await loadMetadata())
-    );
+    const loadCountryLookup = async (): Promise<Map<string, CountryMetadata>> =>
+      buildCountryLookup(await loadMetadata());
+    const loadContinentLookup = async (): Promise<Map<string, string>> =>
+      buildContinentLookup(await loadMetadata());
 
     const waitForPause = () => waitIfPaused(params.nodeId);
 
@@ -426,9 +438,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
         await promise;
       }
     },
-    getPipelineState: async (nodeId) => (
-      pipelineStates.get(String(nodeId)) ?? 'idle'
-    ),
+    getPipelineState: async (nodeId) => pipelineStates.get(String(nodeId)) ?? 'idle',
   };
 
   const ensureRootNode = async (coreDB: CoreDB): Promise<NodeId> => {
@@ -456,9 +466,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
 
   const buildApi: ShapeBuildTestAPI = {
     seedDraftNode: async (payload) => {
-      const coreDB = await CoreDB.getSingleton(
-        getDBName(getBuildDatabasePrefix(), 'core')
-      );
+      const coreDB = await CoreDB.getSingleton(getDBName(getBuildDatabasePrefix(), 'core'));
       const rootId = await ensureRootNode(coreDB);
       const now = Date.now();
       const existing = await coreDB.getNode(payload.nodeId);
@@ -482,23 +490,22 @@ async function main(endpoint?: Endpoint): Promise<void> {
         lastTouchedAt: now,
       });
     },
-    startBuildSession: async (payload) => shapeBuildAPI.startBuildSession(
-      payload.nodeId,
-      payload.buildConfig,
-      payload.processingConfig,
-      payload.downloadTaskPayloads,
-      payload.buildContinuationPolicy,
-    ),
-    subscribeStageSnapshots: (nodeId, callback) => proxy(shapeBuildAPI.subscribeStageSnapshots(nodeId, callback)),
+    startBuildSession: async (payload) =>
+      shapeBuildAPI.startBuildSession(
+        payload.nodeId,
+        payload.buildConfig,
+        payload.processingConfig,
+        payload.downloadTaskPayloads,
+        payload.buildContinuationPolicy
+      ),
+    subscribeStageSnapshots: (nodeId, callback) =>
+      proxy(shapeBuildAPI.subscribeStageSnapshots(nodeId, callback)),
     subscribeTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeTasks(nodeId, callback)),
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
   };
 
   const shapeChunkStoreDatabaseName = getDBName(testDatabasePrefix, 'shape-chunks');
-  const queryService = await ShapeQueryService.getSingleton(
-    shapeDB,
-    shapeChunkStoreDatabaseName
-  );
+  const queryService = await ShapeQueryService.getSingleton(shapeDB, shapeChunkStoreDatabaseName);
   const mutationService = await ShapeMutationService.getSingleton(
     shapeDB,
     shapeChunkStoreDatabaseName

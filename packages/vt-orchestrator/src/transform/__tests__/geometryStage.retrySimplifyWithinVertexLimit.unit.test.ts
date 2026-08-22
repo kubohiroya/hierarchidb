@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
 import type { Feature } from 'geojson';
+import { describe, expect, it } from 'vitest';
 import { retrySimplifyFeatureWithinVertexLimit } from '../createGeometryStageHandler/retrySimplifyWithinVertexLimit.js';
 
 const buildLineFeature = (vertexCount: number): Feature => {
-  const coordinates = Array.from({ length: vertexCount }, (_, index) => [index, index] as [number, number]);
+  const coordinates = Array.from(
+    { length: vertexCount },
+    (_, index) => [index, index] as [number, number]
+  );
   return {
     type: 'Feature',
     properties: {},
@@ -28,7 +31,8 @@ describe('geometry stage retrySimplifyFeatureWithinVertexLimit', () => {
       minTolerance: 0.2,
       featureIndex: 1,
       featureTotal: 1,
-      runRetrySimplifyAttempt: async (tolerance) => (tolerance >= 1 ? buildLineFeature(4) : buildLineFeature(10)),
+      runRetrySimplifyAttempt: async (tolerance) =>
+        tolerance >= 1 ? buildLineFeature(4) : buildLineFeature(10),
       countVerticesFromGeometry: (geometry) => {
         if (!geometry || geometry.type !== 'LineString') return 0;
         return geometry.coordinates.length;

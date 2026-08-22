@@ -1,27 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  buildCategoryFilter,
-  buildRoutePreviewRows,
-  DEFAULT_MAP_CONFIG,
-  type ResourceVectorLayer,
-  useVectorTilePreviewSearch,
-  type MapAttributionItem,
-  type MapPreviewErrorSummaryById,
-  type MapLibreMapInstance,
-  type MapToggleSelection,
-  type MapViewState,
-} from '@hierarchidb/ui-map';
-import {
-  DirectionsBoat as DirectionsBoatIcon,
-  DirectionsCar as DirectionsCarIcon,
-  Flight as FlightIcon,
-  Speed as SpeedIcon,
-  Train as TrainIcon,
-} from '@mui/icons-material';
-import type { SvgIconComponent } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/core-types';
-import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useFloatingWindow } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   RouteBuildError,
   RouteEntity,
@@ -29,23 +7,45 @@ import type {
   RouteMetadataSyncSummary,
   RouteNearestLineResponse,
 } from '@hierarchidb/route-api';
-import {
-  formatDistance,
-  getTransportModeName,
-  type SupportedLocale,
-} from '~/common/i18n/index';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import {
+  buildCategoryFilter,
+  buildRoutePreviewRows,
+  DEFAULT_MAP_CONFIG,
+  type MapAttributionItem,
+  type MapLibreMapInstance,
+  type MapPreviewErrorSummaryById,
+  type MapToggleSelection,
+  type MapViewState,
+  type ResourceVectorLayer,
+  useVectorTilePreviewSearch,
+} from '@hierarchidb/ui-map';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import type { SvgIconComponent } from '@mui/icons-material';
+import {
+  DirectionsBoat as DirectionsBoatIcon,
+  DirectionsCar as DirectionsCarIcon,
+  Flight as FlightIcon,
+  Speed as SpeedIcon,
+  Train as TrainIcon,
+} from '@mui/icons-material';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
+import { formatDistance, getTransportModeName, type SupportedLocale } from '~/common/i18n/index';
+import {
+  buildRouteColorExpression,
+  mergeRouteStyleConfig,
+  resolveLineDashArray,
+} from '~/common/styles/routeStyle';
+import { RoutePreviewHoverMatch } from './RoutePreviewStepElements.js';
 import {
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
   ROUTE_MODE_COLUMNS,
   ROUTE_STYLE_OPTIONS,
 } from './routeSelectionConstants.js';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
-import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
-import { buildRouteColorExpression, mergeRouteStyleConfig, resolveLineDashArray } from '~/common/styles/routeStyle';
-import { RoutePreviewHoverMatch } from './RoutePreviewStepElements.js';
 
 type Bounds = { minLon: number; maxLon: number; minLat: number; maxLat: number };
 const HOVER_DISTANCE_PX = 16;
@@ -64,10 +64,25 @@ type RouteModeOption = {
 
 const ROUTE_MODE_OPTIONS: RouteModeOption[] = [
   { id: ROUTE_MODES.AIRWAY, label: 'Air', Icon: FlightIcon, modes: [ROUTE_MODES.AIRWAY] },
-  { id: ROUTE_MODES.WATERWAY, label: 'Sea', Icon: DirectionsBoatIcon, modes: [ROUTE_MODES.WATERWAY] },
+  {
+    id: ROUTE_MODES.WATERWAY,
+    label: 'Sea',
+    Icon: DirectionsBoatIcon,
+    modes: [ROUTE_MODES.WATERWAY],
+  },
   { id: ROUTE_MODES.RAILWAY, label: 'Rail', Icon: TrainIcon, modes: [ROUTE_MODES.RAILWAY] },
-  { id: ROUTE_MODES.H_RAILWAY, label: 'High-speed Rail', Icon: SpeedIcon, modes: [ROUTE_MODES.H_RAILWAY] },
-  { id: ROUTE_MODES.ROAD, label: 'Road', Icon: DirectionsCarIcon, modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY] },
+  {
+    id: ROUTE_MODES.H_RAILWAY,
+    label: 'High-speed Rail',
+    Icon: SpeedIcon,
+    modes: [ROUTE_MODES.H_RAILWAY],
+  },
+  {
+    id: ROUTE_MODES.ROAD,
+    label: 'Road',
+    Icon: DirectionsCarIcon,
+    modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY],
+  },
 ];
 
 const ROUTE_MODE_SELECTION_PERSIST_KEY = 'hierarchidb:ui:floating-window:route:mode-selection';
@@ -75,11 +90,15 @@ const ROUTE_MODE_SELECTION_PERSIST_KEY = 'hierarchidb:ui:floating-window:route:m
 const loadRouteModeSelection = (): MapToggleSelection => {
   try {
     if (typeof localStorage === 'undefined') {
-      return Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection;
+      return Object.fromEntries(
+        ROUTE_MODE_OPTIONS.map((option) => [option.id, true])
+      ) as MapToggleSelection;
     }
     const raw = localStorage.getItem(ROUTE_MODE_SELECTION_PERSIST_KEY);
     if (!raw) {
-      return Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection;
+      return Object.fromEntries(
+        ROUTE_MODE_OPTIONS.map((option) => [option.id, true])
+      ) as MapToggleSelection;
     }
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const next: Record<string, boolean> = {};
@@ -88,7 +107,9 @@ const loadRouteModeSelection = (): MapToggleSelection => {
     });
     return next as MapToggleSelection;
   } catch {
-    return Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection;
+    return Object.fromEntries(
+      ROUTE_MODE_OPTIONS.map((option) => [option.id, true])
+    ) as MapToggleSelection;
   }
 };
 
@@ -126,7 +147,9 @@ const normalizeCoordinate = (point: [number, number] | number[]): [number, numbe
   return [lon, lat];
 };
 
-const normalizeLineCoordinates = (points: Array<[number, number] | number[]>): [number, number][] => {
+const normalizeLineCoordinates = (
+  points: Array<[number, number] | number[]>
+): [number, number][] => {
   const coords: [number, number][] = [];
   for (const point of points) {
     const normalized = normalizeCoordinate(point);
@@ -144,20 +167,22 @@ const resolveMetersPerPixel = (latitude: number, zoom: number): number => {
 
 const toDistanceLabel = (value: number, locale: SupportedLocale) => formatDistance(value, locale);
 
-const resolveLabelParts = (parts: Array<string | undefined>) => parts.filter((value): value is string => Boolean(value));
+const resolveLabelParts = (parts: Array<string | undefined>) =>
+  parts.filter((value): value is string => Boolean(value));
 
 const projectToMiniMap = (point: { x: number; y: number }, cursor: { x: number; y: number }) => ({
   x: MINI_MAP_CENTER + (point.x - cursor.x) * MINI_MAP_SCALE,
   y: MINI_MAP_CENTER + (point.y - cursor.y) * MINI_MAP_SCALE,
 });
 
-const clampMiniMapCoordinate = (value: number): number => Math.max(4, Math.min(MINI_MAP_SIZE - 4, value));
+const clampMiniMapCoordinate = (value: number): number =>
+  Math.max(4, Math.min(MINI_MAP_SIZE - 4, value));
 
 const projectSegmentPath = (
   segmentStart: { x: number; y: number },
   segmentEnd: { x: number; y: number },
   segmentNearest: { x: number; y: number },
-  cursor: { x: number; y: number },
+  cursor: { x: number; y: number }
 ) => {
   const start = projectToMiniMap(segmentStart, cursor);
   const end = projectToMiniMap(segmentEnd, cursor);
@@ -189,26 +214,32 @@ const buildLabelCandidates = () => [
 const projectPointOnSegment = (
   point: { x: number; y: number },
   start: { x: number; y: number },
-  end: { x: number; y: number },
+  end: { x: number; y: number }
 ) => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   if (dx === 0 && dy === 0) {
     return { x: start.x, y: start.y };
   }
-  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)));
+  const t = Math.max(
+    0,
+    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy))
+  );
   return {
     x: start.x + t * dx,
     y: start.y + t * dy,
   };
 };
 
-const toLineSummaryLine = (routeMode: string | undefined, routeName: string | undefined, startLabel: string, endLabel: string) =>
-  [routeMode, routeName, `${startLabel} -> ${endLabel}`].filter(Boolean).join(' / ');
+const toLineSummaryLine = (
+  routeMode: string | undefined,
+  routeName: string | undefined,
+  startLabel: string,
+  endLabel: string
+) => [routeMode, routeName, `${startLabel} -> ${endLabel}`].filter(Boolean).join(' / ');
 
-const resolveLineRouteModeLabel = (routeMode: string | undefined, locale: SupportedLocale) => (
-  routeMode ? getTransportModeName(routeMode, locale) : 'Unknown route'
-);
+const resolveLineRouteModeLabel = (routeMode: string | undefined, locale: SupportedLocale) =>
+  routeMode ? getTransportModeName(routeMode, locale) : 'Unknown route';
 
 export const useRoutePreviewStep = ({
   draft,
@@ -227,11 +258,14 @@ export const useRoutePreviewStep = ({
   const [lineStringsLoading, setLineStringsLoading] = useState(false);
   const [lineStringsError, setLineStringsError] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
-  const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(loadRouteModeSelection);
+  const [routeModeSelection, setRouteModeSelection] =
+    useState<MapToggleSelection>(loadRouteModeSelection);
   const [listSearch, setListSearch] = useState('');
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [metadataSyncSummary, setMetadataSyncSummary] = useState<RouteMetadataSyncSummary | null>(null);
+  const [metadataSyncSummary, setMetadataSyncSummary] = useState<RouteMetadataSyncSummary | null>(
+    null
+  );
   const [buildErrors, setBuildErrors] = useState<RouteBuildError[]>([]);
   const [metadataSyncRunning, setMetadataSyncRunning] = useState(false);
   const [metadataSyncError, setMetadataSyncError] = useState<string | null>(null);
@@ -239,7 +273,10 @@ export const useRoutePreviewStep = ({
   const hasHoverMatchesRef = useRef(false);
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const hoverRequestIdRef = useRef(0);
-  const lineLookup = useMemo(() => new Map(lineStrings.map((line) => [String(line.id), line])), [lineStrings]);
+  const lineLookup = useMemo(
+    () => new Map(lineStrings.map((line) => [String(line.id), line])),
+    [lineStrings]
+  );
 
   useEffect(() => {
     setHoverMatches((current) => {
@@ -258,19 +295,21 @@ export const useRoutePreviewStep = ({
   }, [selectedIdSet]);
   const hasGeometry = lineStrings.length > 0;
   const showMissingGeometry = !lineStringsLoading && !hasGeometry && !lineStringsError;
-  const lineGeometries = useMemo<[number, number][][]>(() => (
-    lineStrings
-      .map((line) => {
-        if (Array.isArray(line.waypoints) && line.waypoints.length >= 2) {
-          return normalizeLineCoordinates(line.waypoints);
-        }
-        return normalizeLineCoordinates([
-          [line.startPoint.longitude, line.startPoint.latitude],
-          [line.endPoint.longitude, line.endPoint.latitude],
-        ]);
-      })
-      .filter((coords) => coords.length >= 2)
-  ), [lineStrings]);
+  const lineGeometries = useMemo<[number, number][][]>(
+    () =>
+      lineStrings
+        .map((line) => {
+          if (Array.isArray(line.waypoints) && line.waypoints.length >= 2) {
+            return normalizeLineCoordinates(line.waypoints);
+          }
+          return normalizeLineCoordinates([
+            [line.startPoint.longitude, line.startPoint.latitude],
+            [line.endPoint.longitude, line.endPoint.latitude],
+          ]);
+        })
+        .filter((coords) => coords.length >= 2),
+    [lineStrings]
+  );
   const bounds = useMemo(() => resolveBoundsForLines(lineGeometries), [lineGeometries]);
   const dataSourceConfig = useMemo(() => {
     const name = draft.dataSourceName;
@@ -280,7 +319,7 @@ export const useRoutePreviewStep = ({
   }, [draft.dataSourceName]);
   const routeStyleConfig = useMemo(
     () => mergeRouteStyleConfig(draft.routeStyleConfig),
-    [draft.routeStyleConfig],
+    [draft.routeStyleConfig]
   );
   const modeWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:route:mode-toggle',
@@ -299,14 +338,16 @@ export const useRoutePreviewStep = ({
   });
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceConfig) return [];
-    return [{
-      id: `route:${dataSourceConfig.name}`,
-      label: dataSourceConfig.displayName ?? dataSourceConfig.name,
-      attribution: dataSourceConfig.attribution,
-      url: dataSourceConfig.website,
-      license: dataSourceConfig.license,
-      licenseUrl: dataSourceConfig.licenseUrl,
-    }];
+    return [
+      {
+        id: `route:${dataSourceConfig.name}`,
+        label: dataSourceConfig.displayName ?? dataSourceConfig.name,
+        attribution: dataSourceConfig.attribution,
+        url: dataSourceConfig.website,
+        license: dataSourceConfig.license,
+        licenseUrl: dataSourceConfig.licenseUrl,
+      },
+    ];
   }, [dataSourceConfig]);
 
   useEffect(() => {
@@ -356,107 +397,122 @@ export const useRoutePreviewStep = ({
     }
   }, [routeModeSelection]);
 
-  const buildHoverMatchList = useCallback((
-    queryResponse: RouteNearestLineResponse,
-    cursorPoint: { x: number; y: number },
-    cursor: { longitude: number; latitude: number },
-  ) => {
-    if (!mapInstance) return [];
-    const mapWithProject = mapInstance as MapLibreMapInstance & {
-      project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
-    };
-    if (!mapWithProject.project) return [];
-    const mapProject = mapWithProject.project;
-    const placed: Array<{ x: number; y: number }> = [];
-    return queryResponse.matches
-      .map((match, index) => {
-        const line = lineLookup.get(match.line.lineStringId);
-        if (!line) return null;
-        const pathPoints = normalizeLineCoordinates(line.waypoints ?? []);
-        if (pathPoints.length < 2) return null;
-        const nearestPoint = match.line.nearestPoint ?? [cursor.longitude, cursor.latitude];
-        const nearestProjected = mapProject({ lng: nearestPoint[0], lat: nearestPoint[1] });
-        let best:
-          | { start: { x: number; y: number }; end: { x: number; y: number }; nearest: { x: number; y: number }; distance: number }
-          | undefined;
-        for (let i = 0; i < pathPoints.length - 1; i += 1) {
-          const startPoint = pathPoints[i];
-          const endPoint = pathPoints[i + 1];
-          if (!startPoint || !endPoint) continue;
-          const start = mapProject({ lng: startPoint[0], lat: startPoint[1] });
-          const end = mapProject({ lng: endPoint[0], lat: endPoint[1] });
-          const projectedNearest = projectPointOnSegment(nearestProjected, start, end);
-          const dx = projectedNearest.x - nearestProjected.x;
-          const dy = projectedNearest.y - nearestProjected.y;
-          const distance = Math.hypot(dx, dy);
-          if (!best || distance < best.distance) {
-            best = {
-              start: { x: start.x, y: start.y },
-              end: { x: end.x, y: end.y },
-              nearest: projectedNearest,
-              distance,
-            };
+  const buildHoverMatchList = useCallback(
+    (
+      queryResponse: RouteNearestLineResponse,
+      cursorPoint: { x: number; y: number },
+      cursor: { longitude: number; latitude: number }
+    ) => {
+      if (!mapInstance) return [];
+      const mapWithProject = mapInstance as MapLibreMapInstance & {
+        project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+      };
+      if (!mapWithProject.project) return [];
+      const mapProject = mapWithProject.project;
+      const placed: Array<{ x: number; y: number }> = [];
+      return queryResponse.matches
+        .map((match, index) => {
+          const line = lineLookup.get(match.line.lineStringId);
+          if (!line) return null;
+          const pathPoints = normalizeLineCoordinates(line.waypoints ?? []);
+          if (pathPoints.length < 2) return null;
+          const nearestPoint = match.line.nearestPoint ?? [cursor.longitude, cursor.latitude];
+          const nearestProjected = mapProject({ lng: nearestPoint[0], lat: nearestPoint[1] });
+          let best:
+            | {
+                start: { x: number; y: number };
+                end: { x: number; y: number };
+                nearest: { x: number; y: number };
+                distance: number;
+              }
+            | undefined;
+          for (let i = 0; i < pathPoints.length - 1; i += 1) {
+            const startPoint = pathPoints[i];
+            const endPoint = pathPoints[i + 1];
+            if (!startPoint || !endPoint) continue;
+            const start = mapProject({ lng: startPoint[0], lat: startPoint[1] });
+            const end = mapProject({ lng: endPoint[0], lat: endPoint[1] });
+            const projectedNearest = projectPointOnSegment(nearestProjected, start, end);
+            const dx = projectedNearest.x - nearestProjected.x;
+            const dy = projectedNearest.y - nearestProjected.y;
+            const distance = Math.hypot(dx, dy);
+            if (!best || distance < best.distance) {
+              best = {
+                start: { x: start.x, y: start.y },
+                end: { x: end.x, y: end.y },
+                nearest: projectedNearest,
+                distance,
+              };
+            }
           }
-        }
-        if (!best) return null;
-        const pathInfo = projectSegmentPath(
-          best.start,
-          best.end,
-          best.nearest,
-          { x: cursorPoint.x, y: cursorPoint.y },
-        );
-        const startParts = resolveLabelParts([
-          match.line.start?.name,
-          match.line.start?.admin2Name,
-          match.line.start?.admin1Name,
-          match.line.start?.admin0Name,
-        ]);
-        const endParts = resolveLabelParts([
-          match.line.end?.name,
-          match.line.end?.admin2Name,
-          match.line.end?.admin1Name,
-          match.line.end?.admin0Name,
-        ]);
-        const startLabel = startParts.length > 0 ? startParts.join(' / ') : t('preview.hoverUnknown', 'Unknown route');
-        const endLabel = endParts.length > 0 ? endParts.join(' / ') : t('preview.hoverUnknown', 'Unknown route');
-        const summaryMode = resolveLineRouteModeLabel(match.line.routeMode, locale);
-        const summaryLine = toLineSummaryLine(summaryMode, match.line.routeName, startLabel, endLabel);
-        const distanceLabel = toDistanceLabel(match.distanceMeters, locale);
-        const colorKey = match.line.routeMode as RouteMode | undefined;
-        const modeColor = colorKey ? routeStyleConfig.modeColors[colorKey] : '#9ca3af';
-        const nearestX = clampMiniMapCoordinate(pathInfo.labelX);
-        const nearestY = clampMiniMapCoordinate(pathInfo.labelY);
-        const candidateCandidates = buildLabelCandidates();
-        const selectedLabel = candidateCandidates
-          .map((candidate) => ({
-            x: clampMiniMapCoordinate(nearestX + candidate.x),
-            y: clampMiniMapCoordinate(nearestY + candidate.y),
-          }))
-          .find((candidate) => {
-            return placed.every((placedEntry) => {
-              const dx = placedEntry.x - candidate.x;
-              const dy = placedEntry.y - candidate.y;
-              return Math.hypot(dx, dy) > HOVER_LABEL_SPACING;
-            });
-          }) ?? { x: nearestX, y: nearestY };
-        const id = match.line.lineStringId;
-        placed.push(selectedLabel);
-        return {
-          id,
-          index: index + 1,
-          linePath: pathInfo.path,
-          summaryLine,
-          routeName: match.line.routeName ?? '',
-          distanceLabel,
-          modeColor,
-          isSelected: selectedIdSet.has(id),
-          miniMapLabelX: selectedLabel.x,
-          miniMapLabelY: selectedLabel.y,
-        };
-      })
-      .filter((match): match is RoutePreviewHoverMatch => match !== null)
-      .slice(0, MAX_HOVER_MATCHES);
-  }, [lineLookup, locale, mapInstance, routeStyleConfig.modeColors, selectedIdSet, t]);
+          if (!best) return null;
+          const pathInfo = projectSegmentPath(best.start, best.end, best.nearest, {
+            x: cursorPoint.x,
+            y: cursorPoint.y,
+          });
+          const startParts = resolveLabelParts([
+            match.line.start?.name,
+            match.line.start?.admin2Name,
+            match.line.start?.admin1Name,
+            match.line.start?.admin0Name,
+          ]);
+          const endParts = resolveLabelParts([
+            match.line.end?.name,
+            match.line.end?.admin2Name,
+            match.line.end?.admin1Name,
+            match.line.end?.admin0Name,
+          ]);
+          const startLabel =
+            startParts.length > 0
+              ? startParts.join(' / ')
+              : t('preview.hoverUnknown', 'Unknown route');
+          const endLabel =
+            endParts.length > 0 ? endParts.join(' / ') : t('preview.hoverUnknown', 'Unknown route');
+          const summaryMode = resolveLineRouteModeLabel(match.line.routeMode, locale);
+          const summaryLine = toLineSummaryLine(
+            summaryMode,
+            match.line.routeName,
+            startLabel,
+            endLabel
+          );
+          const distanceLabel = toDistanceLabel(match.distanceMeters, locale);
+          const colorKey = match.line.routeMode as RouteMode | undefined;
+          const modeColor = colorKey ? routeStyleConfig.modeColors[colorKey] : '#9ca3af';
+          const nearestX = clampMiniMapCoordinate(pathInfo.labelX);
+          const nearestY = clampMiniMapCoordinate(pathInfo.labelY);
+          const candidateCandidates = buildLabelCandidates();
+          const selectedLabel = candidateCandidates
+            .map((candidate) => ({
+              x: clampMiniMapCoordinate(nearestX + candidate.x),
+              y: clampMiniMapCoordinate(nearestY + candidate.y),
+            }))
+            .find((candidate) => {
+              return placed.every((placedEntry) => {
+                const dx = placedEntry.x - candidate.x;
+                const dy = placedEntry.y - candidate.y;
+                return Math.hypot(dx, dy) > HOVER_LABEL_SPACING;
+              });
+            }) ?? { x: nearestX, y: nearestY };
+          const id = match.line.lineStringId;
+          placed.push(selectedLabel);
+          return {
+            id,
+            index: index + 1,
+            linePath: pathInfo.path,
+            summaryLine,
+            routeName: match.line.routeName ?? '',
+            distanceLabel,
+            modeColor,
+            isSelected: selectedIdSet.has(id),
+            miniMapLabelX: selectedLabel.x,
+            miniMapLabelY: selectedLabel.y,
+          };
+        })
+        .filter((match): match is RoutePreviewHoverMatch => match !== null)
+        .slice(0, MAX_HOVER_MATCHES);
+    },
+    [lineLookup, locale, mapInstance, routeStyleConfig.modeColors, selectedIdSet, t]
+  );
 
   const toggleHoverMatchSelection = useCallback((matchId: string) => {
     setSelectedIds((prev) => {
@@ -473,32 +529,35 @@ export const useRoutePreviewStep = ({
     setHoverMatches([]);
   }, []);
 
-  const runHoverLookup = useCallback((longitude: number, latitude: number, zoom: number, point: { x: number; y: number }) => {
-    if (!previewNodeId) return;
-    const requestId = ++hoverRequestIdRef.current;
-    void (async () => {
-      try {
-        const api = await workerBridgeRef.current.getRouteQueryAPI();
-        const metersPerPixel = resolveMetersPerPixel(latitude, zoom);
-        const result = await api.findNearestRouteLine({
-          nodeId: previewNodeId,
-          longitude,
-          latitude,
-          zoom,
-          maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
-          maxMatches: MAX_HOVER_MATCHES,
-        });
-        if (hoverRequestIdRef.current !== requestId) return;
-        const nextMatches = buildHoverMatchList(result, point, { longitude, latitude });
-        setHoverMatches(nextMatches);
-      } catch (error) {
-        if (hoverRequestIdRef.current === requestId) {
-          setHoverMatches([]);
+  const runHoverLookup = useCallback(
+    (longitude: number, latitude: number, zoom: number, point: { x: number; y: number }) => {
+      if (!previewNodeId) return;
+      const requestId = ++hoverRequestIdRef.current;
+      void (async () => {
+        try {
+          const api = await workerBridgeRef.current.getRouteQueryAPI();
+          const metersPerPixel = resolveMetersPerPixel(latitude, zoom);
+          const result = await api.findNearestRouteLine({
+            nodeId: previewNodeId,
+            longitude,
+            latitude,
+            zoom,
+            maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
+            maxMatches: MAX_HOVER_MATCHES,
+          });
+          if (hoverRequestIdRef.current !== requestId) return;
+          const nextMatches = buildHoverMatchList(result, point, { longitude, latitude });
+          setHoverMatches(nextMatches);
+        } catch (error) {
+          if (hoverRequestIdRef.current === requestId) {
+            setHoverMatches([]);
+          }
+          console.warn('[RoutePreviewStep] hover lookup failed', error);
         }
-        console.warn('[RoutePreviewStep] hover lookup failed', error);
-      }
-    })();
-  }, [buildHoverMatchList, previewNodeId]);
+      })();
+    },
+    [buildHoverMatchList, previewNodeId]
+  );
 
   useEffect(() => {
     hasHoverMatchesRef.current = hoverMatches.length > 0;
@@ -506,7 +565,8 @@ export const useRoutePreviewStep = ({
 
   useEffect(() => {
     if (!mapInstance) return;
-    const mapContainer = (mapInstance as { getContainer?: () => HTMLElement | null }).getContainer?.() ?? null;
+    const mapContainer =
+      (mapInstance as { getContainer?: () => HTMLElement | null }).getContainer?.() ?? null;
     const handleClick = (event: unknown) => {
       const lngLat = (event as { lngLat?: { lng: number; lat: number } })?.lngLat;
       const point = (event as { point?: { x: number; y: number } })?.point;
@@ -546,15 +606,19 @@ export const useRoutePreviewStep = ({
 
   const routeModeValues = useMemo(
     () => Array.from(new Set(ROUTE_MODE_OPTIONS.flatMap((option) => option.modes))),
-    [],
+    []
   );
   const enabledRouteModes = useMemo(
-    () => ROUTE_MODE_OPTIONS.filter((option) => routeModeSelection[option.id]).flatMap((option) => option.modes),
-    [routeModeSelection],
+    () =>
+      ROUTE_MODE_OPTIONS.filter((option) => routeModeSelection[option.id]).flatMap(
+        (option) => option.modes
+      ),
+    [routeModeSelection]
   );
   const routeFilter = useMemo(
-    () => buildCategoryFilter(enabledRouteModes, routeModeValues, ['routeMode', 'mode', 'route_mode']),
-    [enabledRouteModes, routeModeValues],
+    () =>
+      buildCategoryFilter(enabledRouteModes, routeModeValues, ['routeMode', 'mode', 'route_mode']),
+    [enabledRouteModes, routeModeValues]
   );
   const initialViewState = useMemo<MapViewState>(() => {
     if (!bounds) return DEFAULT_MAP_CONFIG.viewState;
@@ -618,65 +682,86 @@ export const useRoutePreviewStep = ({
   }, [previewNodeId]);
   const listRows = useMemo(
     () => (hasGeometry ? buildRoutePreviewRows(lineStrings) : []),
-    [hasGeometry, lineStrings],
+    [hasGeometry, lineStrings]
   );
-  const routeModeMeta = useMemo(() => Object.fromEntries(
-    ROUTE_MODE_COLUMNS.map((mode) => [
-      mode.id,
-      {
-        label: t(mode.labelKey, mode.id),
-        Icon: mode.icon,
-        color: routeStyleConfig.modeColors[mode.id],
-      },
-    ]),
-  ), [routeStyleConfig.modeColors, t]);
-  const updateStyleConfig = useCallback((next: typeof routeStyleConfig) => {
-    onUpdate({ routeStyleConfig: next });
-  }, [onUpdate, routeStyleConfig]);
-  const handleModeColorChange = useCallback((mode: RouteMode, value: string) => {
-    updateStyleConfig({
-      ...routeStyleConfig,
-      modeColors: {
-        ...routeStyleConfig.modeColors,
-        [mode]: value,
-      },
-    });
-  }, [routeStyleConfig, updateStyleConfig]);
-  const handleLineWidthChange = useCallback((value: number | number[]) => {
-    const raw = Array.isArray(value) ? value[0] ?? routeStyleConfig.lineWidth : value;
-    const nextWidth = Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, Number(raw)));
-    updateStyleConfig({
-      ...routeStyleConfig,
-      lineWidth: nextWidth,
-    });
-  }, [routeStyleConfig, updateStyleConfig]);
-  const handleLineStyleChange = useCallback((value: string) => {
-    const nextStyle = ROUTE_STYLE_OPTIONS.find((option) => option.id === value)?.id ?? 'solid';
-    updateStyleConfig({
-      ...routeStyleConfig,
-      lineStyle: nextStyle,
-    });
-  }, [routeStyleConfig, updateStyleConfig]);
+  const routeModeMeta = useMemo(
+    () =>
+      Object.fromEntries(
+        ROUTE_MODE_COLUMNS.map((mode) => [
+          mode.id,
+          {
+            label: t(mode.labelKey, mode.id),
+            Icon: mode.icon,
+            color: routeStyleConfig.modeColors[mode.id],
+          },
+        ])
+      ),
+    [routeStyleConfig.modeColors, t]
+  );
+  const updateStyleConfig = useCallback(
+    (next: typeof routeStyleConfig) => {
+      onUpdate({ routeStyleConfig: next });
+    },
+    [onUpdate, routeStyleConfig]
+  );
+  const handleModeColorChange = useCallback(
+    (mode: RouteMode, value: string) => {
+      updateStyleConfig({
+        ...routeStyleConfig,
+        modeColors: {
+          ...routeStyleConfig.modeColors,
+          [mode]: value,
+        },
+      });
+    },
+    [routeStyleConfig, updateStyleConfig]
+  );
+  const handleLineWidthChange = useCallback(
+    (value: number | number[]) => {
+      const raw = Array.isArray(value) ? (value[0] ?? routeStyleConfig.lineWidth) : value;
+      const nextWidth = Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, Number(raw)));
+      updateStyleConfig({
+        ...routeStyleConfig,
+        lineWidth: nextWidth,
+      });
+    },
+    [routeStyleConfig, updateStyleConfig]
+  );
+  const handleLineStyleChange = useCallback(
+    (value: string) => {
+      const nextStyle = ROUTE_STYLE_OPTIONS.find((option) => option.id === value)?.id ?? 'solid';
+      updateStyleConfig({
+        ...routeStyleConfig,
+        lineStyle: nextStyle,
+      });
+    },
+    [routeStyleConfig, updateStyleConfig]
+  );
   const getRowId = useCallback((row: (typeof listRows)[number]) => String(row.id), []);
-  const buildSearchText = useCallback((row: (typeof listRows)[number]) => {
-    const modeLabel = row.routeMode ? routeModeMeta[row.routeMode]?.label : undefined;
-    return [
-      row.id,
-      row.routeMode,
-      modeLabel,
-      row.routeName,
-      row.startName,
-      row.startAdmin0,
-      row.startAdmin1,
-      row.startAdmin2,
-      row.endName,
-      row.endAdmin0,
-      row.endAdmin1,
-      row.endAdmin2,
-      row.waypointCount,
-      row.distanceMeters,
-    ].filter((value) => value != null && value !== '').join(' ');
-  }, [routeModeMeta]);
+  const buildSearchText = useCallback(
+    (row: (typeof listRows)[number]) => {
+      const modeLabel = row.routeMode ? routeModeMeta[row.routeMode]?.label : undefined;
+      return [
+        row.id,
+        row.routeMode,
+        modeLabel,
+        row.routeName,
+        row.startName,
+        row.startAdmin0,
+        row.startAdmin1,
+        row.startAdmin2,
+        row.endName,
+        row.endAdmin0,
+        row.endAdmin1,
+        row.endAdmin2,
+        row.waypointCount,
+        row.distanceMeters,
+      ]
+        .filter((value) => value != null && value !== '')
+        .join(' ');
+    },
+    [routeModeMeta]
+  );
 
   useVectorTilePreviewSearch(
     hasGeometry,
@@ -684,7 +769,7 @@ export const useRoutePreviewStep = ({
     listSearch,
     getRowId,
     buildSearchText,
-    setMatchedIds,
+    setMatchedIds
   );
   const matchedIdSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const staleSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
@@ -704,8 +789,10 @@ export const useRoutePreviewStep = ({
 
   const metadataSyncBadgeText = useMemo(() => {
     if (!metadataSyncSummary) return '';
-    return `${t('preview.metadataSync.synced', '✅ Synced')}(${metadataSyncSummary.syncedCount}/${metadataSyncSummary.totalCount}) `
-      + `${t('preview.metadataSync.stale', '⚠️ Rebuild required')}(${metadataSyncSummary.staleCount}/${metadataSyncSummary.totalCount})`;
+    return (
+      `${t('preview.metadataSync.synced', '✅ Synced')}(${metadataSyncSummary.syncedCount}/${metadataSyncSummary.totalCount}) ` +
+      `${t('preview.metadataSync.stale', '⚠️ Rebuild required')}(${metadataSyncSummary.staleCount}/${metadataSyncSummary.totalCount})`
+    );
   }, [metadataSyncSummary, t]);
 
   const hoverSnackbarProps = {
@@ -713,9 +800,12 @@ export const useRoutePreviewStep = ({
     onToggleMatchSelection: toggleHoverMatchSelection,
   };
 
-  const emptyContentProps = listRows.length === 0 ? {
-    message: t('preview.list.empty', 'No route lines are available yet.'),
-  } : undefined;
+  const emptyContentProps =
+    listRows.length === 0
+      ? {
+          message: t('preview.list.empty', 'No route lines are available yet.'),
+        }
+      : undefined;
 
   return {
     t,

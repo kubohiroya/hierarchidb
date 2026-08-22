@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
+import { useCallback, useEffect, useState } from 'react';
 import { UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/constants.js';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -99,7 +99,7 @@ export const useShapeBuildProgressResidueMonitor = ({
     }
     if (!crashSuspectOpen) {
       setCrashSuspectMessage(
-        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.')
       );
       setCrashSuspectOpen(true);
     }

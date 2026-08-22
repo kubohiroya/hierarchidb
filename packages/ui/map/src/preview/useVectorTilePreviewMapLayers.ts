@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import type { Theme } from '@mui/material/styles';
-import type { MapLibreMapInstance } from '~/types/maplibre-public';
+import { useEffect } from 'react';
 import { isFloatingWindowInteractionActive } from '~/lib/floating-window-interaction';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
 
 type MapLibreInteractiveMap = MapLibreMapInstance & {
   on(event: string, cb: (...args: unknown[]) => void): void;
@@ -50,8 +50,7 @@ export const useVectorTilePreviewMapLayers = ({
     const sourceId = baseSourceId;
     const sourceLayer = tilesLayer;
     const layerType = 'fill';
-    const hasStyle = () =>
-      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
+    const hasStyle = () => Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
 
     const ensureLayer = (id: string, color: string, opacity: number) => {
       if (!hasStyle()) return;
@@ -69,7 +68,7 @@ export const useVectorTilePreviewMapLayers = ({
           filter: ['==', ['get', idProperty], '__none__'],
           'source-layer': sourceLayer,
         },
-        undefined,
+        undefined
       );
     };
 
@@ -92,8 +91,7 @@ export const useVectorTilePreviewMapLayers = ({
   useEffect(() => {
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
-    const hasStyle = () =>
-      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
+    const hasStyle = () => Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
     const updateFilter = (id: string, ids: string[]) => {
       if (!hasStyle()) return;
       if (!map.getLayer(id)) return;
@@ -113,8 +111,7 @@ export const useVectorTilePreviewMapLayers = ({
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
     let hoverBlocked = false;
-    const hasStyle = () =>
-      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
+    const hasStyle = () => Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
     let attached = false;
     const handleMouseMove = (...args: unknown[]) => {
       if (isFloatingWindowInteractionActive()) {
@@ -125,7 +122,9 @@ export const useVectorTilePreviewMapLayers = ({
         return;
       }
       hoverBlocked = false;
-      const event = args[0] as { features?: Array<{ id?: unknown; properties?: Record<string, unknown> }> };
+      const event = args[0] as {
+        features?: Array<{ id?: unknown; properties?: Record<string, unknown> }>;
+      };
       const feature = event?.features?.[0];
       if (feature?.properties) {
         console.debug('[ShapePreview] hover properties', feature.properties);

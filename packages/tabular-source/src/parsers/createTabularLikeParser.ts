@@ -67,7 +67,8 @@ export function createTabularLikeParser(id: 'csv' | 'tsv', delimiter: string): T
       if (lines.length === 0) {
         const preview: TabularPreview = { schema: { columns: [] }, sample: [], totalRows: 0 };
 
-        async function* empty(): AsyncGenerator<TabularChunk> { /* no rows */
+        async function* empty(): AsyncGenerator<TabularChunk> {
+          /* no rows */
         }
 
         return { preview, [Symbol.asyncIterator]: () => empty() } as TabularParseResult;
@@ -90,10 +91,12 @@ export function createTabularLikeParser(id: 'csv' | 'tsv', delimiter: string): T
         let chunkIndex = 0;
         for (let i = startIdx; i < lines.length; i++) {
           const line = lines[i];
-          if(! line)continue;
+          if (!line) continue;
           const parts = tabularDatabaseSplit(line, delimiter);
           const row: Record<string, any> = {};
-          headers.forEach((h, idx) => {row[h] = parts[idx] ?? ''});
+          headers.forEach((h, idx) => {
+            row[h] = parts[idx] ?? '';
+          });
           if (previewRows.length < 50) previewRows.push(row);
           buf.push(row);
           if (buf.length >= chunkSize) {
@@ -103,7 +106,11 @@ export function createTabularLikeParser(id: 'csv' | 'tsv', delimiter: string): T
           }
         }
         if (buf.length > 0) {
-          yield { rows: buf, index: Math.ceil((lines.length - startIdx) / chunkSize) - 1, hasMore: false };
+          yield {
+            rows: buf,
+            index: Math.ceil((lines.length - startIdx) / chunkSize) - 1,
+            hasMore: false,
+          };
         }
       }
 

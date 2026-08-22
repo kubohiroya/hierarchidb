@@ -1,6 +1,5 @@
+import type { TagSuggestion as BaseTagSuggestion, TagId } from '@hierarchidb/tag-api';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TagId } from '@hierarchidb/tag-api';
-import type { TagSuggestion as BaseTagSuggestion } from '@hierarchidb/tag-api';
 
 type TagSuggestion = Omit<BaseTagSuggestion, 'id'> & { id: TagId };
 
@@ -28,9 +27,7 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
       { id: 'tag_5' as TagId, name: 'バックログ', color: '#9c27b0' },
     ];
 
-    return mockTags.filter(tag =>
-      tag.name.toLowerCase().includes(query.toLowerCase()),
-    );
+    return mockTags.filter((tag) => tag.name.toLowerCase().includes(query.toLowerCase()));
   }, []);
 
   const mockCreateTag = useCallback(async (name: string): Promise<TagSuggestion> => {
@@ -42,24 +39,27 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
     };
   }, []);
 
-  const searchTags = useCallback(async (query: string) => {
-    if (!query) {
-      setSuggestions([]);
-      return;
-    }
+  const searchTags = useCallback(
+    async (query: string) => {
+      if (!query) {
+        setSuggestions([]);
+        return;
+      }
 
-    setLoading(true);
-    try {
-      const results = await mockSearchTags(query);
-      const filtered = results.filter(tag => !value.includes(tag.id));
-      setSuggestions(filtered);
-    } catch (error) {
-      console.error('Tag search failed:', error);
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [mockSearchTags, value]);
+      setLoading(true);
+      try {
+        const results = await mockSearchTags(query);
+        const filtered = results.filter((tag) => !value.includes(tag.id));
+        setSuggestions(filtered);
+      } catch (error) {
+        console.error('Tag search failed:', error);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [mockSearchTags, value]
+  );
 
   useEffect(() => {
     const loadSelectedTags = async () => {
@@ -82,20 +82,26 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
     return () => clearTimeout(timeoutId);
   }, [inputValue, searchTags]);
 
-  const handleTagAdd = useCallback((tag: TagSuggestion) => {
-    if (value.length >= maxTags) {
-      return;
-    }
+  const handleTagAdd = useCallback(
+    (tag: TagSuggestion) => {
+      if (value.length >= maxTags) {
+        return;
+      }
 
-    if (!value.includes(tag.id)) {
-      onChange([...value, tag.id]);
-      setInputValue('');
-    }
-  }, [value, maxTags, onChange]);
+      if (!value.includes(tag.id)) {
+        onChange([...value, tag.id]);
+        setInputValue('');
+      }
+    },
+    [value, maxTags, onChange]
+  );
 
-  const handleTagRemove = useCallback((tagId: TagId) => {
-    onChange(value.filter(id => id !== tagId));
-  }, [value, onChange]);
+  const handleTagRemove = useCallback(
+    (tagId: TagId) => {
+      onChange(value.filter((id) => id !== tagId));
+    },
+    [value, onChange]
+  );
 
   const handleCreateTag = useCallback(async () => {
     if (!newTagName.trim()) return;
@@ -110,32 +116,35 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
     }
   }, [newTagName, mockCreateTag, handleTagAdd]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && inputValue && allowCreate) {
-      event.preventDefault();
-      const existingTag = suggestions.find(tag =>
-        tag.name.toLowerCase() === inputValue.toLowerCase(),
-      );
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' && inputValue && allowCreate) {
+        event.preventDefault();
+        const existingTag = suggestions.find(
+          (tag) => tag.name.toLowerCase() === inputValue.toLowerCase()
+        );
 
-      if (existingTag) {
-        handleTagAdd(existingTag);
-      } else {
-        setNewTagName(inputValue);
-        setCreateDialogOpen(true);
+        if (existingTag) {
+          handleTagAdd(existingTag);
+        } else {
+          setNewTagName(inputValue);
+          setCreateDialogOpen(true);
+        }
+      } else if (event.key === 'Backspace' && !inputValue && value.length > 0) {
+        const lastTag = value[value.length - 1];
+        if (lastTag) {
+          handleTagRemove(lastTag);
+        }
       }
-    } else if (event.key === 'Backspace' && !inputValue && value.length > 0) {
-      const lastTag = value[value.length - 1];
-      if (lastTag) {
-        handleTagRemove(lastTag);
-      }
-    }
-  }, [inputValue, suggestions, allowCreate, value, handleTagAdd, handleTagRemove]);
+    },
+    [inputValue, suggestions, allowCreate, value, handleTagAdd, handleTagRemove]
+  );
 
   const shouldOfferCreate = useMemo(
     () =>
       allowCreate &&
       inputValue &&
-      !suggestions.some(s => s.name.toLowerCase() === inputValue.toLowerCase()),
+      !suggestions.some((s) => s.name.toLowerCase() === inputValue.toLowerCase()),
     [allowCreate, inputValue, suggestions]
   );
 

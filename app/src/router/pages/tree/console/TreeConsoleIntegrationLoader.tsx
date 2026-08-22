@@ -1,4 +1,4 @@
-import { memo, lazy } from 'react';
+import { lazy, memo } from 'react';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration';
 
 const LazyTreeConsoleIntegration = lazy(async () => {

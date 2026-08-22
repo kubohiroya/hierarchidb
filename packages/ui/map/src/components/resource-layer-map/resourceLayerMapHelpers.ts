@@ -1,9 +1,9 @@
-import { formatAdminLevelLabel } from '../../preview/layerSetDefinitions.js';
 import type React from 'react';
 import { isValidElement } from 'react';
-import type { LayerStyleOverrides, MapLayerType } from './ResourceLayerMap.types';
-import type { VectorTileLayerConfig } from '~/types/unified-map-props';
 import type { MapLibreGeoJSONFeature } from '~/types/maplibre-public';
+import type { VectorTileLayerConfig } from '~/types/unified-map-props';
+import { formatAdminLevelLabel } from '../../preview/layerSetDefinitions.js';
+import type { LayerStyleOverrides, MapLayerType } from './ResourceLayerMap.types';
 
 export type SortableLayer = {
   absolutePath?: string;
@@ -18,21 +18,26 @@ export const LAYER_PAINT_KEYS: Record<MapLayerType, Set<string>> = {
   line: new Set(['line-color', 'line-opacity', 'line-width']),
   circle: new Set(['circle-color', 'circle-opacity', 'circle-radius']),
   symbol: new Set(['text-color', 'text-halo-color', 'text-halo-width']),
-  raster: new Set(['raster-opacity', 'raster-brightness-max', 'raster-brightness-min', 'raster-contrast']),
+  raster: new Set([
+    'raster-opacity',
+    'raster-brightness-max',
+    'raster-brightness-min',
+    'raster-contrast',
+  ]),
   background: new Set(['background-color', 'background-opacity', 'background-pattern']),
 };
 
 export const pickStyleOverrides = (
   layerType: VectorTileLayerConfig['layerType'] | undefined,
   overrides?: Record<string, unknown>,
-  overridesByType?: LayerStyleOverrides,
+  overridesByType?: LayerStyleOverrides
 ): Record<string, unknown> => {
   const allowed = LAYER_PAINT_KEYS[layerType ?? 'fill'];
   if (!allowed) return {};
   const globalOverrides = overrides ?? {};
   const typedOverrides = overridesByType?.[layerType ?? 'fill'] ?? {};
   return Object.fromEntries(
-    Object.entries({ ...typedOverrides, ...globalOverrides }).filter(([key]) => allowed.has(key)),
+    Object.entries({ ...typedOverrides, ...globalOverrides }).filter(([key]) => allowed.has(key))
   );
 };
 
@@ -42,7 +47,7 @@ export const toFiniteNumber = (value: unknown, fallback: number): number =>
 export const buildDefaultHighlightOverrides = (
   layerType: VectorTileLayerConfig['layerType'] | undefined,
   basePaint: Record<string, unknown>,
-  theme: import('@mui/material/styles').Theme,
+  theme: import('@mui/material/styles').Theme
 ): Record<string, unknown> => {
   const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
   const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
@@ -180,7 +185,10 @@ const toPropertyString = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const pickFirstString = (properties: Record<string, unknown>, keys: string[]): string | undefined => {
+const pickFirstString = (
+  properties: Record<string, unknown>,
+  keys: string[]
+): string | undefined => {
   for (const key of keys) {
     const value = toPropertyString(properties[key]);
     if (value) return value;
@@ -222,7 +230,7 @@ const resolveAdminLevel = (properties: Record<string, unknown>): number | undefi
 };
 
 const buildAdminHoverCandidate = (
-  properties: Record<string, unknown>,
+  properties: Record<string, unknown>
 ): { level: number; label: string } | null => {
   const level = resolveAdminLevel(properties);
   if (level == null) return null;
@@ -262,7 +270,9 @@ const buildAdminHoverCandidate = (
   const adminLabel = formatAdminLevelLabel(level);
 
   if (level <= 0) {
-    const label = countryName ? `${adminLabel}: ${countryName}${countrySuffix}` : `${adminLabel}: Unknown`;
+    const label = countryName
+      ? `${adminLabel}: ${countryName}${countrySuffix}`
+      : `${adminLabel}: Unknown`;
     return { level, label };
   }
   if (level === 1) {
@@ -279,7 +289,9 @@ const buildAdminHoverCandidate = (
     'admin1',
   ]);
   const country = countryName ?? 'Unknown';
-  const parts = [admin2, admin1, country].filter((part): part is string => Boolean(part && part.trim().length > 0));
+  const parts = [admin2, admin1, country].filter((part): part is string =>
+    Boolean(part && part.trim().length > 0)
+  );
   return { level, label: `${adminLabel}: ${parts.join(' / ')}${countrySuffix}` };
 };
 
@@ -301,19 +313,17 @@ export const buildHoverSnackbarContent = (features: MapLibreGeoJSONFeature[]): R
       if (!adminParts) return null;
       return { index, ...adminParts };
     })
-    .filter(
-      (candidate): candidate is { index: number; level: number; label: string } => Boolean(candidate),
+    .filter((candidate): candidate is { index: number; level: number; label: string } =>
+      Boolean(candidate)
     );
   if (adminCandidates.length > 0) {
-    adminCandidates.sort((a, b) => (b.level - a.level) || (a.index - b.index));
+    adminCandidates.sort((a, b) => b.level - a.level || a.index - b.index);
     return adminCandidates[0]?.label ?? '';
   }
-  const labels = features
-    .slice(0, 3)
-    .map((feature) => {
-      const props = (feature.properties ?? {}) as Record<string, unknown>;
-      return buildDefaultHoverLabel(props) ?? 'Feature';
-    });
+  const labels = features.slice(0, 3).map((feature) => {
+    const props = (feature.properties ?? {}) as Record<string, unknown>;
+    return buildDefaultHoverLabel(props) ?? 'Feature';
+  });
   return labels.join(' / ');
 };
 

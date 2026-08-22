@@ -4,8 +4,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import { getLocationDB } from '@hierarchidb/location-store';
 import type { LocationFeatureId, LocationPointId } from '@hierarchidb/location-api';
+import { getLocationDB } from '@hierarchidb/location-store';
 
 type LocationIdLike = string | NodeId | LocationFeatureId | LocationPointId;
 
@@ -54,9 +54,13 @@ export interface LocationData {
   metadata?: Record<string, string | number | null>;
 }
 
-const normalizeSearchKey = (value: unknown): string => String(value ?? '').trim().toLowerCase();
+const normalizeSearchKey = (value: unknown): string =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase();
 const trimString = (value?: string): string | undefined => value?.trim();
-const hasFiniteCoordinate = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+const hasFiniteCoordinate = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 /**
  * Location resolver service
  * Interfaces with Location plugin to resolve location references
@@ -130,8 +134,7 @@ export class LocationResolver {
       const criteria = normalizeCriteria(_criteria);
       await this.db.open?.();
       const all = await this.db.features.toArray();
-      const matches = all
-        .filter((feature) => matchesLocationCriteria(feature, criteria));
+      const matches = all.filter((feature) => matchesLocationCriteria(feature, criteria));
       return matches
         .map((feature) => toLocationData(feature.nodeId, feature.data))
         .filter((feature): feature is LocationData => feature !== null);
@@ -148,26 +151,30 @@ export class LocationResolver {
     this.locationCache.clear();
   }
 
-  private async fetchLocationByFallbackKey(locationId: LocationIdLike): Promise<LocationData | null> {
+  private async fetchLocationByFallbackKey(
+    locationId: LocationIdLike
+  ): Promise<LocationData | null> {
     const key = normalizeSearchKey(locationId);
     if (!key) return null;
     const all = await this.db.features.toArray();
 
-    const exactMatch = all.find((item) => (
-      normalizeSearchKey(item.nodeId) === key
-      || normalizeSearchKey(item.id) === key
-      || normalizeSearchKey(item.data.pointId) === key
-      || normalizeSearchKey(item.type) === key
-    ));
+    const exactMatch = all.find(
+      (item) =>
+        normalizeSearchKey(item.nodeId) === key ||
+        normalizeSearchKey(item.id) === key ||
+        normalizeSearchKey(item.data.pointId) === key ||
+        normalizeSearchKey(item.type) === key
+    );
     if (exactMatch) {
       return toLocationData(exactMatch.nodeId, exactMatch.data);
     }
 
-    const partialMatch = all.find((item) => (
-      item.data.name.toLowerCase().includes(key)
-      || (item.data.pointId?.toLowerCase().includes(key) ?? false)
-      || item.type.toLowerCase().includes(key)
-    ));
+    const partialMatch = all.find(
+      (item) =>
+        item.data.name.toLowerCase().includes(key) ||
+        (item.data.pointId?.toLowerCase().includes(key) ?? false) ||
+        item.type.toLowerCase().includes(key)
+    );
     if (!partialMatch) return null;
 
     return toLocationData(partialMatch.nodeId, partialMatch.data);
@@ -217,20 +224,40 @@ function matchesLocationCriteria(
     type: string;
     data: LocationFeatureData;
   },
-  criteria: SearchCriteria,
+  criteria: SearchCriteria
 ): boolean {
   if (criteria.name && !feature.data.name.toLowerCase().includes(criteria.name)) return false;
-  if (criteria.type && feature.type.toLowerCase() !== criteria.type && feature.data.type?.toLowerCase() !== criteria.type) {
+  if (
+    criteria.type &&
+    feature.type.toLowerCase() !== criteria.type &&
+    feature.data.type?.toLowerCase() !== criteria.type
+  ) {
     return false;
   }
 
   const featureLon = feature.data.longitude;
   const featureLat = feature.data.latitude;
 
-  if (criteria.minLon !== undefined && (!hasFiniteCoordinate(featureLon) || featureLon < criteria.minLon)) return false;
-  if (criteria.maxLon !== undefined && (!hasFiniteCoordinate(featureLon) || featureLon > criteria.maxLon)) return false;
-  if (criteria.minLat !== undefined && (!hasFiniteCoordinate(featureLat) || featureLat < criteria.minLat)) return false;
-  if (criteria.maxLat !== undefined && (!hasFiniteCoordinate(featureLat) || featureLat > criteria.maxLat)) return false;
+  if (
+    criteria.minLon !== undefined &&
+    (!hasFiniteCoordinate(featureLon) || featureLon < criteria.minLon)
+  )
+    return false;
+  if (
+    criteria.maxLon !== undefined &&
+    (!hasFiniteCoordinate(featureLon) || featureLon > criteria.maxLon)
+  )
+    return false;
+  if (
+    criteria.minLat !== undefined &&
+    (!hasFiniteCoordinate(featureLat) || featureLat < criteria.minLat)
+  )
+    return false;
+  if (
+    criteria.maxLat !== undefined &&
+    (!hasFiniteCoordinate(featureLat) || featureLat > criteria.maxLat)
+  )
+    return false;
 
   if (!hasFiniteCoordinate(featureLon) || !hasFiniteCoordinate(featureLat)) return false;
   return true;

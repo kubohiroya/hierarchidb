@@ -1,12 +1,13 @@
 /* eslint-disable storybook/no-renderer-packages */
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { Layer, Source } from '@vis.gl/react-maplibre';
 import type React from 'react';
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
-import { Source, Layer } from '@vis.gl/react-maplibre';
 import { MapLibreMap } from '~/components/MapLibreMap';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
-import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
 import type { MapViewState } from '~/types/unified-map-props';
-import type { Meta, StoryObj } from '@storybook/react';
+import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
 
 type Position = [number, number];
 
@@ -168,10 +169,7 @@ const computeGeometryBounds = (geometry: Geometry): BoundingBox =>
   createBoundsFromPositions(collectPositions(geometry));
 
 const boundsIntersect = (a: BoundingBox, b: BoundingBox): boolean =>
-  !(a.maxLng < b.minLng ||
-    a.minLng > b.maxLng ||
-    a.maxLat < b.minLat ||
-    a.minLat > b.maxLat);
+  !(a.maxLng < b.minLng || a.minLng > b.maxLng || a.maxLat < b.minLat || a.minLat > b.maxLat);
 
 type MapLibreMapWithBounds = MapLibreMapInstance & {
   getBounds: () => {
@@ -323,7 +321,7 @@ interface FeatureListProps {
 const FeatureList: React.FC<FeatureListProps> = ({ groups, bounds, viewState }) => {
   const totalCount = useMemo(
     () => CATEGORY_ORDER.reduce((sum, category) => sum + groups[category].length, 0),
-    [groups],
+    [groups]
   );
 
   return (
@@ -418,7 +416,9 @@ const FeatureList: React.FC<FeatureListProps> = ({ groups, bounds, viewState }) 
                 />
                 <strong style={{ fontSize: '0.9rem' }}>{CATEGORY_LABELS[category]}</strong>
               </span>
-              <span style={{ fontSize: '0.85rem', color: '#555' }}>{groups[category].length} 件</span>
+              <span style={{ fontSize: '0.85rem', color: '#555' }}>
+                {groups[category].length} 件
+              </span>
             </header>
             {groups[category].length === 0 ? (
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#777' }}>
@@ -437,7 +437,9 @@ const FeatureList: React.FC<FeatureListProps> = ({ groups, bounds, viewState }) 
               >
                 {groups[category].map((feature) => (
                   <li key={feature.properties.id} style={{ fontSize: '0.85rem', color: '#333' }}>
-                    <strong style={{ display: 'block', fontSize: '0.9rem' }}>{feature.properties.name}</strong>
+                    <strong style={{ display: 'block', fontSize: '0.9rem' }}>
+                      {feature.properties.name}
+                    </strong>
                     <span style={{ color: '#555' }}>{feature.properties.summary}</span>
                   </li>
                 ))}
@@ -494,7 +496,7 @@ const ViewportFeatureDemo: React.FC = () => {
       mapRef.current = mapInstance as MapLibreMapWithBounds;
       recomputeVisibleFeatures();
     },
-    [recomputeVisibleFeatures],
+    [recomputeVisibleFeatures]
   );
 
   const handleViewStateChange = useCallback(
@@ -502,7 +504,7 @@ const ViewportFeatureDemo: React.FC = () => {
       setViewState(nextViewState);
       recomputeVisibleFeatures();
     },
-    [recomputeVisibleFeatures],
+    [recomputeVisibleFeatures]
   );
 
   return (

@@ -1,9 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const storyUrl = (id: string, args?: Record<string, string>) => {
   const params = new URLSearchParams({ id });
   if (args) {
-    params.set('args', Object.entries(args).map(([k, v]) => `${k}:${v}`).join(';'));
+    params.set(
+      'args',
+      Object.entries(args)
+        .map(([k, v]) => `${k}:${v}`)
+        .join(';')
+    );
   }
   return `/?${params.toString()}`;
 };
@@ -11,7 +16,7 @@ const storyUrl = (id: string, args?: Record<string, string>) => {
 test.describe('HeadlessPluginDialog display modes', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
 
-test('switches between normal, maximize, and full-screen', async ({ page }) => {
+  test('switches between normal, maximize, and full-screen', async ({ page }) => {
     await page.goto(storyUrl('ui-headless-headlessPluginDialog--default'));
     const iframe = page.frameLocator('iframe[title="storybook-preview"]');
 

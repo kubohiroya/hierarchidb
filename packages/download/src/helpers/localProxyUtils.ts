@@ -20,9 +20,10 @@ function getOrigin(): string | null {
   try {
     const workerScope = typeof self !== 'undefined' ? (self as { location?: Location }) : undefined;
     const globalScope = globalThis as { location?: Location };
-    const candidate = typeof window !== 'undefined'
-      ? window.location
-      : workerScope?.location ?? globalScope.location;
+    const candidate =
+      typeof window !== 'undefined'
+        ? window.location
+        : (workerScope?.location ?? globalScope.location);
     if (!candidate) return null;
     return `${candidate.protocol}//${candidate.host}`;
   } catch {
@@ -88,6 +89,8 @@ export function shouldUseLocalProxy(targetUrl: string): boolean {
 export function toLocalProxyUrl(targetUrl: string): string {
   const base = getBasePath().replace(/\/+$/, '');
   // Prefer base-prefixed /proxy; fallback path /hierarchidb/proxy
-  const primary = `${base}/proxy/?url=${encodeURIComponent(targetUrl)}`.replace(/\/{2,}/g, '/').replace(':/', '://');
+  const primary = `${base}/proxy/?url=${encodeURIComponent(targetUrl)}`
+    .replace(/\/{2,}/g, '/')
+    .replace(':/', '://');
   return primary;
 }

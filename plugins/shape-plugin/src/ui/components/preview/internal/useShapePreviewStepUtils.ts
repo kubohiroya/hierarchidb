@@ -1,13 +1,12 @@
-import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
-import { parseAdminLevelValue } from './parseAdminLevelValue';
 import { toNodeId } from '@hierarchidb/core-types';
-import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeDataSourceMetadata, ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import { formatAdminLevelLabel, type MapWithVectorTilesProps } from '@hierarchidb/ui-map';
+import { VectorTile } from '@mapbox/vector-tile';
+import Pbf from 'pbf';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
-import type { DataSourceName, ShapePreviewMapView } from '~/common/types/index';
-import type { ShapeEntity } from '~/common/types/index';
+import type { DataSourceName, ShapeEntity, ShapePreviewMapView } from '~/common/types/index';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { parseAdminLevelValue } from './parseAdminLevelValue';
 
 export type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;
@@ -49,7 +48,7 @@ export const toPropString = (value: unknown): string | undefined => {
 
 export const pickFromProps = (
   properties: Record<string, unknown> | undefined,
-  keys: string[],
+  keys: string[]
 ): string | undefined => {
   if (!properties) return undefined;
   for (const key of keys) {
@@ -61,7 +60,7 @@ export const pickFromProps = (
 
 export const resolveAdminLevelFromProps = (
   properties: Record<string, unknown> | undefined,
-  fallback?: number,
+  fallback?: number
 ): number | undefined => {
   if (properties) {
     const candidates = [
@@ -83,11 +82,32 @@ export const resolveAdminLevelFromProps = (
   return parseAdminLevelValue(fallback);
 };
 
-export const pickCountryNameFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
-  pickFromProps(properties, ['countryName', 'country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNTY']);
+export const pickCountryNameFromProps = (
+  properties: Record<string, unknown> | undefined
+): string | undefined =>
+  pickFromProps(properties, [
+    'countryName',
+    'country',
+    'COUNTRY',
+    'COUNTRY_NAME',
+    'NAME_0',
+    'ADMIN',
+    'SOVEREIGNTY',
+  ]);
 
-export const pickCountryCodeFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
-  pickFromProps(properties, ['countryCode', 'ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
+export const pickCountryCodeFromProps = (
+  properties: Record<string, unknown> | undefined
+): string | undefined =>
+  pickFromProps(properties, [
+    'countryCode',
+    'ISO_A2',
+    'ISO2',
+    'ISO_2',
+    'ISO_A3',
+    'ADM0_A3',
+    'ISO3',
+    'shapeISO',
+  ]);
 
 export const buildFlagEmoji = (countryCode?: string): string | null => {
   if (!countryCode || countryCode.length !== 2) return null;
@@ -101,30 +121,43 @@ export const buildFlagEmoji = (countryCode?: string): string | null => {
 
 export const pickAdminNameByLevel = (
   properties: Record<string, unknown> | undefined,
-  level: number,
+  level: number
 ): string | undefined => {
   if (level === 2) {
-    return pickFromProps(properties, ['admin2Name', 'NAME_2', 'name_2', 'ADM2_NAME', 'admin2', 'name', 'NAME']);
+    return pickFromProps(properties, [
+      'admin2Name',
+      'NAME_2',
+      'name_2',
+      'ADM2_NAME',
+      'admin2',
+      'name',
+      'NAME',
+    ]);
   }
   if (level === 1) {
-    return pickFromProps(properties, ['admin1Name', 'NAME_1', 'name_1', 'ADM1_NAME', 'admin1', 'name', 'NAME']);
+    return pickFromProps(properties, [
+      'admin1Name',
+      'NAME_1',
+      'name_1',
+      'ADM1_NAME',
+      'admin1',
+      'name',
+      'NAME',
+    ]);
   }
   return pickFromProps(properties, ['adminName', 'name', 'NAME', 'shapeName']);
 };
 
 export const buildHoverLabel = (
   row: ShapeDataSourceMetadata,
-  properties?: Record<string, unknown>,
+  properties?: Record<string, unknown>
 ): string => {
   const resolvedLevel = resolveAdminLevelFromProps(properties, row.adminLevel);
   const adminLevel = typeof resolvedLevel === 'number' ? resolvedLevel : 0;
   const countryName =
-    pickCountryNameFromProps(properties)
-    ?? row.countryName
-    ?? row.countryCode
-    ?? 'Unknown';
+    pickCountryNameFromProps(properties) ?? row.countryName ?? row.countryCode ?? 'Unknown';
   const countryCode = normalizeCountryCodeValue(
-    pickCountryCodeFromProps(properties) ?? row.countryCode,
+    pickCountryCodeFromProps(properties) ?? row.countryCode
   );
   const normalizedCountryName = normalizeText(countryName);
   const hasCountryName = Boolean(normalizedCountryName) && normalizedCountryName !== 'unknown';
@@ -152,7 +185,9 @@ export const buildHoverLabel = (
   return `${adminLabel}: ${adminName} / ${countryLabel}${countrySuffix}`;
 };
 
-export const parseSourceKey = (sourceKey?: string): { countryCode?: string; adminLevel?: number } => {
+export const parseSourceKey = (
+  sourceKey?: string
+): { countryCode?: string; adminLevel?: number } => {
   const trimmed = normalizeText(sourceKey);
   if (!trimmed) return {};
   const [countryCodeRaw, adminLevelRaw] = trimmed.split(':');
@@ -186,47 +221,59 @@ export const isRepairIssueKind = (issueKind?: string): boolean => {
 export const resolveAdminNameFromMetadata = (
   row: ShapeFeatureMetadata,
   adminLevel: number | undefined,
-  context: { countryName?: string },
+  context: { countryName?: string }
 ): string | undefined => {
   if (adminLevel === 2) {
-    return normalizeText(row.admin2Name)
-      ?? normalizeText(row.admin1Name)
-      ?? normalizeText(row.admin0Name)
-      ?? normalizeText(row.countryName)
-      ?? normalizeText(context.countryName);
+    return (
+      normalizeText(row.admin2Name) ??
+      normalizeText(row.admin1Name) ??
+      normalizeText(row.admin0Name) ??
+      normalizeText(row.countryName) ??
+      normalizeText(context.countryName)
+    );
   }
   if (adminLevel === 1) {
-    return normalizeText(row.admin1Name)
-      ?? normalizeText(row.admin0Name)
-      ?? normalizeText(row.countryName)
-      ?? normalizeText(context.countryName);
+    return (
+      normalizeText(row.admin1Name) ??
+      normalizeText(row.admin0Name) ??
+      normalizeText(row.countryName) ??
+      normalizeText(context.countryName)
+    );
   }
-  return normalizeText(row.admin0Name)
-    ?? normalizeText(row.countryName)
-    ?? normalizeText(context.countryName);
+  return (
+    normalizeText(row.admin0Name) ??
+    normalizeText(row.countryName) ??
+    normalizeText(context.countryName)
+  );
 };
 
 export const resolveAdminCodeFromMetadata = (
   row: ShapeFeatureMetadata,
   adminLevel: number | undefined,
-  context: { countryCode?: string },
+  context: { countryCode?: string }
 ): string | undefined => {
   if (adminLevel === 2) {
-    return normalizeText(row.admin2Code)
-      ?? normalizeText(row.admin1Code)
-      ?? normalizeCountryCodeValue(row.admin0Code)
-      ?? normalizeCountryCodeValue(row.countryCode)
-      ?? normalizeCountryCodeValue(context.countryCode);
+    return (
+      normalizeText(row.admin2Code) ??
+      normalizeText(row.admin1Code) ??
+      normalizeCountryCodeValue(row.admin0Code) ??
+      normalizeCountryCodeValue(row.countryCode) ??
+      normalizeCountryCodeValue(context.countryCode)
+    );
   }
   if (adminLevel === 1) {
-    return normalizeText(row.admin1Code)
-      ?? normalizeCountryCodeValue(row.admin0Code)
-      ?? normalizeCountryCodeValue(row.countryCode)
-      ?? normalizeCountryCodeValue(context.countryCode);
+    return (
+      normalizeText(row.admin1Code) ??
+      normalizeCountryCodeValue(row.admin0Code) ??
+      normalizeCountryCodeValue(row.countryCode) ??
+      normalizeCountryCodeValue(context.countryCode)
+    );
   }
-  return normalizeCountryCodeValue(row.admin0Code)
-    ?? normalizeCountryCodeValue(row.countryCode)
-    ?? normalizeCountryCodeValue(context.countryCode);
+  return (
+    normalizeCountryCodeValue(row.admin0Code) ??
+    normalizeCountryCodeValue(row.countryCode) ??
+    normalizeCountryCodeValue(context.countryCode)
+  );
 };
 
 export const isNumericId = (value?: string): boolean => {
@@ -248,7 +295,7 @@ export const fetchTile = async (
   nodeId: string,
   z: number,
   x: number,
-  y: number,
+  y: number
 ): Promise<ArrayBuffer | null> => {
   const data = await shapeQueryAPIImpl.getVectorTile(toNodeId(nodeId), z, x, y);
   if (!data) return null;
@@ -256,7 +303,7 @@ export const fetchTile = async (
 };
 
 export const resolvePersistedViewState = (
-  view?: ShapePreviewMapView,
+  view?: ShapePreviewMapView
 ): MapWithVectorTilesProps['initialViewState'] | null => {
   if (!view) return null;
   const { longitude, latitude, zoom } = view;
@@ -276,9 +323,8 @@ export const createShapePreviewDraft = (data: Partial<ShapeEntity>): ShapePrevie
 
 export const getPreviewMetadataEnabled = (): boolean => isShapePreviewMetadataEnabled();
 
-export const getPreviewDataSource = (
-  buildConfigDataSource?: string,
-): DataSourceName | undefined => buildConfigDataSource as DataSourceName | undefined;
+export const getPreviewDataSource = (buildConfigDataSource?: string): DataSourceName | undefined =>
+  buildConfigDataSource as DataSourceName | undefined;
 
 type ShapeLayerAdminLevelRow = {
   adminLevel?: unknown;
@@ -288,7 +334,7 @@ export const collectShapeLayerAdminLevels = (
   dataSourceMetadataRows: ShapeLayerAdminLevelRow[],
   featureMetadataRows: ShapeLayerAdminLevelRow[],
   transformErrorRows: ShapeLayerAdminLevelRow[],
-  selectionMetadataRows: ShapeLayerAdminLevelRow[] = [],
+  selectionMetadataRows: ShapeLayerAdminLevelRow[] = []
 ): number[] => {
   const selectedLevels = new Set<number>();
 

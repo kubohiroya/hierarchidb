@@ -2,8 +2,8 @@
 // Type definitions for vector tile generation.
 // ============================================================
 
-import type { FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import type { GeometryEngine } from '../configTypes.js';
 
 export type GeojsonVtModule = typeof import('geojson-vt');

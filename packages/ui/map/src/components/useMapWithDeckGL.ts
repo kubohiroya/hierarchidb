@@ -1,8 +1,8 @@
+import type { MapboxOverlay as DeckMapboxOverlay } from '@deck.gl/mapbox';
+import type { IControl } from 'maplibre-gl';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { IControl } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
-import type { MapboxOverlay as DeckMapboxOverlay } from '@deck.gl/mapbox';
 import type { MapLibreMapProps } from './MapLibreMap.js';
 import type { DeckOverlayProps, MapWithDeckGLProps } from './MapWithDeckGL.js';
 
@@ -46,7 +46,9 @@ const loadDeckOverlayCtor = async (): Promise<DeckOverlayCtor | null> => {
   if (!overlayCtorPromise) {
     overlayCtorPromise = import('@deck.gl/mapbox')
       .then((mod) => {
-        const ctor = (mod?.MapboxOverlay ?? (mod as { default?: unknown }).default) as DeckOverlayCtor | undefined;
+        const ctor = (mod?.MapboxOverlay ?? (mod as { default?: unknown }).default) as
+          | DeckOverlayCtor
+          | undefined;
         cachedOverlayCtor = typeof ctor === 'function' ? ctor : null;
         return cachedOverlayCtor;
       })
@@ -64,7 +66,9 @@ export const useMapWithDeckGL = ({ deck, onLoad, ...mapProps }: MapWithDeckGLPro
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const overlayRef = useRef<DeckOverlayControl | null>(null);
   const [overlayCtor, setOverlayCtor] = useState<DeckOverlayCtor | null>(cachedOverlayCtor);
-  const [MapComponent, setMapComponent] = useState<MapLibreComponent | null>(getCachedMapLibreComponent);
+  const [MapComponent, setMapComponent] = useState<MapLibreComponent | null>(
+    getCachedMapLibreComponent
+  );
 
   useEffect(() => {
     if (MapComponent) return;
@@ -100,7 +104,7 @@ export const useMapWithDeckGL = ({ deck, onLoad, ...mapProps }: MapWithDeckGLPro
       }) as DeckOverlayControl;
       mapInstance.addControl(overlayRef.current);
     },
-    [deck.interleaved, deck.layers, deck.getTooltip, deck.onClick],
+    [deck.interleaved, deck.layers, deck.getTooltip, deck.onClick]
   );
 
   const handleLoad = useCallback(
@@ -118,7 +122,7 @@ export const useMapWithDeckGL = ({ deck, onLoad, ...mapProps }: MapWithDeckGLPro
       }
       onLoad?.(mapInstance);
     },
-    [ensureOverlay, onLoad, overlayCtor],
+    [ensureOverlay, onLoad, overlayCtor]
   );
 
   useEffect(() => {
@@ -142,7 +146,7 @@ export const useMapWithDeckGL = ({ deck, onLoad, ...mapProps }: MapWithDeckGLPro
         overlayRef.current = null;
       }
     },
-    [],
+    []
   );
 
   const fallbackStyle: React.CSSProperties = {

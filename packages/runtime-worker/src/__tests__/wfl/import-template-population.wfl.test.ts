@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
 import { readFile } from 'node:fs/promises';
-import type { ImportData } from '@hierarchidb/import-export-api';
 import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
+import type { ImportData } from '@hierarchidb/import-export-api';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';

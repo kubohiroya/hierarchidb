@@ -12,4 +12,3 @@ export interface ArtifactStorePort {
   getBuffer(stage: StageArtifactName, bufferId: string): Promise<ArrayBuffer | undefined>;
   listBuffers(stage: StageArtifactName): Promise<BufferDescriptor[]>;
 }
-

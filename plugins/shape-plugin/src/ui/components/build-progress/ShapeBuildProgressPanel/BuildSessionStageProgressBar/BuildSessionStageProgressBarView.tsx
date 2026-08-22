@@ -1,10 +1,7 @@
 import { Box } from '@mui/material';
-import type {
-  KeyboardEvent as ReactKeyboardEvent,
-  MouseEvent as ReactMouseEvent,
-} from 'react';
-import type { BuildSessionStageProgressBarData } from './useBuildSessionStageProgressBarState.js';
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
+import type { BuildSessionStageProgressBarData } from './useBuildSessionStageProgressBarState.js';
 
 type BuildSessionStageProgressBarViewProps = BuildSessionStageProgressBarData;
 
@@ -17,13 +14,12 @@ const isSegmentInViewport = (
   segmentStart: number,
   segmentEnd: number,
   viewportStart: number | null,
-  viewportEnd: number | null,
-) => (
-  viewportStart !== null
-  && viewportEnd !== null
-  && segmentStart <= viewportEnd
-  && segmentEnd >= viewportStart
-);
+  viewportEnd: number | null
+) =>
+  viewportStart !== null &&
+  viewportEnd !== null &&
+  segmentStart <= viewportEnd &&
+  segmentEnd >= viewportStart;
 
 const renderSegment = ({
   segmentStartX,
@@ -149,37 +145,34 @@ export const BuildSessionStageProgressBarView = ({
         {flowBandRange ? (
           <defs>
             <clipPath id={`task-progress-flow-${flowBandClipId}`}>
-              <rect
-                x={flowBandRange.x}
-                y={0}
-                width={flowBandRange.width}
-                height={1}
-              />
+              <rect x={flowBandRange.x} y={0} width={flowBandRange.width} height={1} />
             </clipPath>
           </defs>
         ) : null}
-        {segments.length > 0 ? (() => {
-          let offset = 0;
-          return segments.map((segment: BuildSessionStageProgressBarSegment, index: number) => {
-            const segmentStart = offset;
-            const segmentEnd = segmentStart + segment.width - 1;
-            const inViewport = isSegmentInViewport(
-              segmentStart,
-              segmentEnd,
-              viewportStartGlobal,
-              viewportEndGlobal,
-            );
-            const node = renderSegment({
-              segmentStartX: segmentStart,
-              keySuffix: `${index}-${segment.width}-${segment.taskId ?? 'empty'}`,
-              segment,
-              isInViewport: inViewport,
-              onActivateTaskSegment,
+        {segments.length > 0 ? (
+          (() => {
+            let offset = 0;
+            return segments.map((segment: BuildSessionStageProgressBarSegment, index: number) => {
+              const segmentStart = offset;
+              const segmentEnd = segmentStart + segment.width - 1;
+              const inViewport = isSegmentInViewport(
+                segmentStart,
+                segmentEnd,
+                viewportStartGlobal,
+                viewportEndGlobal
+              );
+              const node = renderSegment({
+                segmentStartX: segmentStart,
+                keySuffix: `${index}-${segment.width}-${segment.taskId ?? 'empty'}`,
+                segment,
+                isInViewport: inViewport,
+                onActivateTaskSegment,
+              });
+              offset += segment.width;
+              return node;
             });
-            offset += segment.width;
-            return node;
-          });
-        })() : (
+          })()
+        ) : (
           <rect
             key="task-empty"
             x={0}

@@ -1,30 +1,38 @@
-import { describe, expect, it, afterEach, vi } from 'vitest';
-import type { TreeConsoleBreadcrumbRendererProps, TreeConsolePanelProps } from '../TreeConsolePanel';
-import { TreeConsolePanel } from '../TreeConsolePanel';
 import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type {
+  TreeConsoleBreadcrumbRendererProps,
+  TreeConsolePanelProps,
+} from '../TreeConsolePanel';
+import { TreeConsolePanel } from '../TreeConsolePanel';
+
 import React = require('react');
-import type { HierarchicalTreeNode } from '../../types/index';
-import type { TreeTableColumn } from '../TreeTable/index';
-import { DualKeyMap } from '@hierarchidb/util';
+
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { DualKeyMap } from '@hierarchidb/util';
+import type { HierarchicalTreeNode } from '../../types/index';
+import type { TreeTableColumn } from '../TreeTable/index';
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const breadcrumbModule = vi.hoisted(() => ({
-  TreeConsoleBreadcrumb: vi.fn((props: { renderer?: (args: unknown) => React.ReactNode; nodePath?: unknown[] }) => {
-    const { renderer, ...baseProps } = props;
-    if (renderer) {
-      return renderer({
-        items: Array.isArray(baseProps.nodePath) ? baseProps.nodePath : [],
-        defaultRendererProps: baseProps,
-        defaultRenderer: () => React.createElement('div', { 'data-testid': 'default-breadcrumb' }),
-      });
+  TreeConsoleBreadcrumb: vi.fn(
+    (props: { renderer?: (args: unknown) => React.ReactNode; nodePath?: unknown[] }) => {
+      const { renderer, ...baseProps } = props;
+      if (renderer) {
+        return renderer({
+          items: Array.isArray(baseProps.nodePath) ? baseProps.nodePath : [],
+          defaultRendererProps: baseProps,
+          defaultRenderer: () =>
+            React.createElement('div', { 'data-testid': 'default-breadcrumb' }),
+        });
+      }
+      return React.createElement('div', { 'data-testid': 'default-breadcrumb' });
     }
-    return React.createElement('div', { 'data-testid': 'default-breadcrumb' });
-  }),
+  ),
   getPluginIconColor: vi.fn(() => undefined),
   isFolderNodeType: vi.fn((nodeType: string) => nodeType === 'folder'),
   buildCreateMenuItems: vi.fn(() => []),
@@ -36,14 +44,12 @@ vi.mock('@hierarchidb/ui-treeconsole-treetable', () => ({
   TreeTableCore: () => React.createElement('div', { 'data-testid': 'console-table-core' }),
 }));
 
-const noop = () => { };
-const stringNoop = (_value: string) => { };
-const viewModeNoop = (_mode: 'icon' | 'list' | 'column') => { };
-const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => { };
+const noop = () => {};
+const stringNoop = (_value: string) => {};
+const viewModeNoop = (_mode: 'icon' | 'list' | 'column') => {};
+const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => {};
 
-const baseColumns: TreeTableColumn[] = [
-  { id: 'name', label: 'Name', width: 120 },
-];
+const baseColumns: TreeTableColumn[] = [{ id: 'name', label: 'Name', width: 120 }];
 
 function buildProps(overrides: Partial<TreeConsolePanelProps> = {}): TreeConsolePanelProps {
   const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
@@ -105,7 +111,9 @@ describe('TreeConsolePanel breadcrumbRenderer', () => {
 
   it('invokes the custom renderer with default props and allows fallback rendering', () => {
     const items = [{ id: 'archive', name: 'Archive' }];
-    let capturedDefaultProps: TreeConsoleBreadcrumbRendererProps['defaultRendererProps'] | undefined;
+    let capturedDefaultProps:
+      | TreeConsoleBreadcrumbRendererProps['defaultRendererProps']
+      | undefined;
     const renderer = vi.fn((params: TreeConsoleBreadcrumbRendererProps) => {
       capturedDefaultProps = params.defaultRendererProps;
       const fallback = params.defaultRenderer();

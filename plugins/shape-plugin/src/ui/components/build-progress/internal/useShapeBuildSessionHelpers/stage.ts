@@ -25,28 +25,26 @@ export const resolveMostAdvancedStageIdByStatus = (params: {
 export const resolveMostAdvancedRunningStageId = (params: {
   stages: Array<{ id: string }>;
   tasks: StageLikeRunningTask[];
-}): string | null => (
+}): string | null =>
   resolveMostAdvancedStageIdByStatus({
     stages: params.stages,
     tasks: params.tasks,
     statuses: new Set(['running']),
-  })
-);
+  });
 
 export const resolveMostAdvancedInFlightStageId = (params: {
   stages: Array<{ id: string }>;
   tasks: StageLikeRunningTask[];
-}): string | null => (
+}): string | null =>
   resolveMostAdvancedStageIdByStatus({
     stages: params.stages,
     tasks: params.tasks,
     statuses: new Set(['running', 'queued']),
-  })
-);
+  });
 
 const resolveMostAdvancedRunningStage = (
   stageIds: Set<string>,
-  stages: Array<{ id: string }>,
+  stages: Array<{ id: string }>
 ): string | null => {
   return resolveMostAdvancedStageId(stageIds, stages);
 };

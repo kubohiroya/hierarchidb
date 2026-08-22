@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import type { User } from 'oidc-client-ts';
+import { useMemo } from 'react';
 import type { AuthContextProps } from 'react-oidc-context';
 
 type AuthPanelState =

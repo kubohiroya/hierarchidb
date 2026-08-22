@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { resolveLocationAttribution } from '@hierarchidb/location-plugin/common';
 import type { LocationType } from '@hierarchidb/location-store';
-import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin/common';
 import type { RouteDataSourceConfig } from '@hierarchidb/route-plugin/common';
-import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin/common';
+import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin/common';
 import type { DataSourceConfig as ShapeDataSourceConfig } from '@hierarchidb/shape-plugin/common';
+import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin/common';
 import type {
   LayerSetId,
   LayerSetVisibility,
@@ -40,10 +40,10 @@ import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
-import type { MapLayerInfo } from '~/state/mapSearch.atoms';
-import { mapLayerInfoAtom, mapStylerToggleAtom } from '~/state/mapSearch.atoms';
 import type { MapViewState as LoaderMapViewState } from '~/router/loaders/mapLoader';
 import { ModelessDialogManager } from '~/router/routes/modeless/ModelessDialogManager';
+import type { MapLayerInfo } from '~/state/mapSearch.atoms';
+import { mapLayerInfoAtom, mapStylerToggleAtom } from '~/state/mapSearch.atoms';
 import {
   BUILT_IN_STYLE_URLS,
   LOCATION_TYPE_COLORS,
@@ -54,8 +54,8 @@ import {
 } from './constants.js';
 import type { MapSearch } from './types.js';
 import { useFolderLayers } from './useFolderLayers.js';
-import { useMapViewState } from './useMapViewState.js';
 import { useLocationViewportLayers } from './useLocationViewportLayers.js';
+import { useMapViewState } from './useMapViewState.js';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
 const LOCATION_INTERACTION_RADIUS_PX = 8;
@@ -105,7 +105,9 @@ const getMapDebugFlags = (): MapDebugFlags => {
 const resolveCommonZoomBounds = () => {
   const settings = loadTreeConsoleSettings();
   const boundaries = Array.isArray(settings.zoomBandBoundaries)
-    ? settings.zoomBandBoundaries.filter((value) => typeof value === 'number' && Number.isFinite(value))
+    ? settings.zoomBandBoundaries.filter(
+        (value) => typeof value === 'number' && Number.isFinite(value)
+      )
     : [];
   if (boundaries.length === 0) {
     return {
@@ -121,7 +123,6 @@ const resolveCommonZoomBounds = () => {
     maxZoom: Math.max(minZoom, maxZoom),
   };
 };
-
 
 export default function MapPage() {
   const useGeolocation =
@@ -182,7 +183,6 @@ export default function MapPage() {
     onPersistedZxy: applyPersistedZxy,
     stylerToggles,
   });
-
 
   const setMapLayerInfo = useSetAtom(mapLayerInfoAtom);
   const {
@@ -337,15 +337,23 @@ export default function MapPage() {
       }
       return layer;
     });
-  }, [enabledLocationKinds, enabledRouteModes, locationTypeFilter, routeModeValues, vectorLayers, layerSetVisibility]);
-
+  }, [
+    enabledLocationKinds,
+    enabledRouteModes,
+    locationTypeFilter,
+    routeModeValues,
+    vectorLayers,
+    layerSetVisibility,
+  ]);
 
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     const items: MapAttributionItem[] = [];
     const resolveShape = (dataSourceName?: string | null) => {
       if (!dataSourceName) return null;
       const normalized = dataSourceName.toLowerCase();
-      const config = SHAPE_DATA_SOURCES.find((source: ShapeDataSourceConfig) => source.name.toLowerCase() === normalized);
+      const config = SHAPE_DATA_SOURCES.find(
+        (source: ShapeDataSourceConfig) => source.name.toLowerCase() === normalized
+      );
       if (!config) return null;
       return {
         id: `shape:${config.name}`,
@@ -358,7 +366,9 @@ export default function MapPage() {
     const resolveRoute = (dataSourceName?: string | null) => {
       if (!dataSourceName) return null;
       const normalized = dataSourceName.toLowerCase();
-      const config = ROUTE_DATA_SOURCES.find((source: RouteDataSourceConfig) => source.name.toLowerCase() === normalized);
+      const config = ROUTE_DATA_SOURCES.find(
+        (source: RouteDataSourceConfig) => source.name.toLowerCase() === normalized
+      );
       if (!config) return null;
       return {
         id: `route:${config.name}`,
@@ -563,7 +573,15 @@ export default function MapPage() {
     ];
     return {
       'circle-color': colorExpression,
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, radiusByState(CIRCLE_RADIUS_MIN), LOCATION_MAX_ZOOM, radiusByState(CIRCLE_RADIUS_AT_MAX)],
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        0,
+        radiusByState(CIRCLE_RADIUS_MIN),
+        LOCATION_MAX_ZOOM,
+        radiusByState(CIRCLE_RADIUS_AT_MAX),
+      ],
       'circle-opacity': ['case', hasSelected, 0.95, hasHover, 0.9, hasSearch, 0.85, 0.8],
       'circle-blur': ['case', hasHover, 0.8, hasSearch, 0.6, hasSelected, 0.4, 0],
       'circle-stroke-color': colorExpression,
@@ -581,39 +599,33 @@ export default function MapPage() {
   }, []);
 
   const locationIconSizeExpression = useMemo(
-    () =>
-      [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        0,
-        ICON_SIZE_MIN,
-        LOCATION_MAX_ZOOM,
-        ICON_SIZE_AT_MAX,
-      ],
+    () => [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      0,
+      ICON_SIZE_MIN,
+      LOCATION_MAX_ZOOM,
+      ICON_SIZE_AT_MAX,
+    ],
     []
   );
 
-  const {
-    locationGeoJsonLayers,
-    handleMapLoad,
-    handleLocationMoveEnd,
-  } = useLocationViewportLayers({
-    nodeId,
-    locationLayers,
-    layerSetVisibility,
-    enabledLocationKinds,
-    locationTypeFilter,
-    locationCirclePaint,
-    locationIconImageExpression,
-    locationIconSizeExpression,
-  });
+  const { locationGeoJsonLayers, handleMapLoad, handleLocationMoveEnd } = useLocationViewportLayers(
+    {
+      nodeId,
+      locationLayers,
+      layerSetVisibility,
+      enabledLocationKinds,
+      locationTypeFilter,
+      locationCirclePaint,
+      locationIconImageExpression,
+      locationIconSizeExpression,
+    }
+  );
 
   const combinedGeoJsonLayers = useMemo(
-    () => [
-      ...geoJsonLayers,
-      ...(layerSetVisibility.location ? locationGeoJsonLayers : []),
-    ],
+    () => [...geoJsonLayers, ...(layerSetVisibility.location ? locationGeoJsonLayers : [])],
     [geoJsonLayers, layerSetVisibility.location, locationGeoJsonLayers]
   );
 
@@ -657,7 +669,7 @@ export default function MapPage() {
   );
   const effectiveVectorLayers = useMemo(
     () => (debugFlags.skipVectorTileLayers ? [] : filteredVectorLayers),
-    [debugFlags.skipVectorTileLayers, filteredVectorLayers],
+    [debugFlags.skipVectorTileLayers, filteredVectorLayers]
   );
 
   return (

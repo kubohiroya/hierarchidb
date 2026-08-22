@@ -29,7 +29,6 @@ export interface WindowConstraints {
   maxHeight?: number;
 }
 
- 
 import type React from 'react';
 
 export interface FloatingWindowProps {

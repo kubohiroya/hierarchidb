@@ -1,11 +1,11 @@
 import '../utils/skip-if-disabled';
 import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
-  dismissGuidedTour,
-  waitForTreeTableLoad,
-  setupConsoleErrorTracking,
-  clearTestData,
   buildAppUrl,
+  clearTestData,
+  dismissGuidedTour,
+  setupConsoleErrorTracking,
+  waitForTreeTableLoad,
 } from '../utils/test-helpers';
 
 type TreeRecord = {
@@ -21,7 +21,10 @@ type MutationResult = {
 
 type ShapeWorkerQueryAPI = {
   listTrees: () => Promise<TreeRecord[]>;
-  getNode: (nodeId: string) => Promise<{ draftData?: { processingStatus?: string } | null; data?: { processingStatus?: string } | null }>;
+  getNode: (nodeId: string) => Promise<{
+    draftData?: { processingStatus?: string } | null;
+    data?: { processingStatus?: string } | null;
+  }>;
 };
 
 type ShapeVectorSummary = {
@@ -48,7 +51,10 @@ type ShapeWorkerAPI = {
     updateTreeNode: (nodeId: string, payload: Record<string, unknown>) => Promise<void>;
   }>;
   startBuildSession?: (nodeType: string, nodeId: string) => Promise<{ status?: string }>;
-  getBuildTasks?: (nodeType: string, nodeId: string) => Promise<Array<{ status?: string; [key: string]: unknown }>>;
+  getBuildTasks?: (
+    nodeType: string,
+    nodeId: string
+  ) => Promise<Array<{ status?: string; [key: string]: unknown }>>;
   initialize?: () => Promise<void> | void;
   getShapeQueryAPI?: () => Promise<ShapeQueryAPI>;
 };
@@ -70,10 +76,7 @@ test.describe('Shape build background (real pipeline)', () => {
     await clearTestData(page);
   });
 
-  test('continues build after leaving step and persists tiles', async ({
-    page,
-    canonicalAuth,
-  }) => {
+  test('continues build after leaving step and persists tiles', async ({ page, canonicalAuth }) => {
     test.setTimeout(120000);
 
     await canonicalAuth.signIn();
@@ -84,7 +87,7 @@ test.describe('Shape build background (real pipeline)', () => {
     await page.waitForFunction(
       () => Boolean((window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client),
       null,
-      { timeout: 15000 },
+      { timeout: 15000 }
     );
 
     await page.evaluate(async () => {
@@ -166,56 +169,59 @@ test.describe('Shape build background (real pipeline)', () => {
     };
     const selectedArrayByCountries = { JP: [true] };
 
-    const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries, nodeType }) => {
-      const client = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client;
-      if (!client) {
-        throw new Error('Worker client not ready');
-      }
-      const queryAPI = await client.getQueryAPI();
-      const mutationAPI = await client.getMutationAPI();
-      const updaterAPI = await client.getTreeNodeUpdaterAPI();
+    const shapeNode = await page.evaluate(
+      async ({ buildConfig, selectedArrayByCountries, nodeType }) => {
+        const client = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client;
+        if (!client) {
+          throw new Error('Worker client not ready');
+        }
+        const queryAPI = await client.getQueryAPI();
+        const mutationAPI = await client.getMutationAPI();
+        const updaterAPI = await client.getTreeNodeUpdaterAPI();
 
-      const trees = await queryAPI.listTrees();
-      const tree = trees.find((t) => t.id === 'r') ?? trees[0];
-      if (!tree) throw new Error('No console available');
-      const rootId = tree.rootId;
+        const trees = await queryAPI.listTrees();
+        const tree = trees.find((t) => t.id === 'r') ?? trees[0];
+        if (!tree) throw new Error('No console available');
+        const rootId = tree.rootId;
 
-      const name = `Shape Build ${Date.now()}`;
-      const createResult = await mutationAPI.createNode({
-        nodeType,
-        treeId: tree.id,
-        parentId: rootId,
-        name,
-      });
-      if (!createResult.success) {
-        throw new Error(`Failed to create shape node: ${createResult ?? 'unknown error'}`);
-      }
+        const name = `Shape Build ${Date.now()}`;
+        const createResult = await mutationAPI.createNode({
+          nodeType,
+          treeId: tree.id,
+          parentId: rootId,
+          name,
+        });
+        if (!createResult.success) {
+          throw new Error(`Failed to create shape node: ${createResult ?? 'unknown error'}`);
+        }
 
-      const nodeId = createResult.nodeId;
-      const now = Date.now();
-      const draftPayload = {
-        name,
-        description: 'E2E shape build background test',
-        buildConfig,
-        selectedArrayByCountries,
-        processingStatus: 'idle',
-        licenseAgreement: true,
-        licenseAgreedAt: new Date(now).toISOString(),
-      };
+        const nodeId = createResult.nodeId;
+        const now = Date.now();
+        const draftPayload = {
+          name,
+          description: 'E2E shape build background test',
+          buildConfig,
+          selectedArrayByCountries,
+          processingStatus: 'idle',
+          licenseAgreement: true,
+          licenseAgreedAt: new Date(now).toISOString(),
+        };
 
-      await updaterAPI.updateTreeNode(nodeId, {
-        mode: 'save-draft',
-        data: draftPayload,
-        draftData: draftPayload,
-      });
+        await updaterAPI.updateTreeNode(nodeId, {
+          mode: 'save-draft',
+          data: draftPayload,
+          draftData: draftPayload,
+        });
 
-      return {
-        treeId: tree.id,
-        pageNodeId: rootId,
-        nodeId,
-        name,
-      };
-    }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
+        return {
+          treeId: tree.id,
+          pageNodeId: rootId,
+          nodeId,
+          name,
+        };
+      },
+      { buildConfig, selectedArrayByCountries, nodeType: 'shape' }
+    );
 
     const startResult = await page.evaluate(async (nodeId) => {
       const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
@@ -240,15 +246,36 @@ test.describe('Shape build background (real pipeline)', () => {
       throw new Error('startBuildSession returned null');
     }
 
-    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'domcontentloaded' });
+    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+      waitUntil: 'domcontentloaded',
+    });
     await waitForTreeTableLoad(page);
 
     const waitForCompletion = async () => {
       const deadline = Date.now() + 90000;
-      let lastStatus: { status: string | null; tiles: number; taskSummary: Record<string, number> | null; runningStages: string[]; runningTask: { taskId: string | null; stage: string | null; status: string | null; progress: number | null; message: string | null } | null; failedTask: { taskId: string | null; stage: string | null; status: string | null; progress: number | null; message: string | null } | null } | null = null;
+      let lastStatus: {
+        status: string | null;
+        tiles: number;
+        taskSummary: Record<string, number> | null;
+        runningStages: string[];
+        runningTask: {
+          taskId: string | null;
+          stage: string | null;
+          status: string | null;
+          progress: number | null;
+          message: string | null;
+        } | null;
+        failedTask: {
+          taskId: string | null;
+          stage: string | null;
+          status: string | null;
+          progress: number | null;
+          message: string | null;
+        } | null;
+      } | null = null;
       while (Date.now() < deadline) {
         const status = await page.evaluate(async (nodeId) => {
-        const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
+          const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
           const api = ref?.client ?? ref?.getAPI?.();
           if (!api) {
             return {
@@ -276,24 +303,30 @@ test.describe('Shape build background (real pipeline)', () => {
           const runningTasks = Array.isArray(tasks)
             ? tasks.filter((task: { status?: string }) => task.status === 'running')
             : [];
-          const runningStages = runningTasks.map((task: { stage?: string }) => task.stage ?? 'unknown');
+          const runningStages = runningTasks.map(
+            (task: { stage?: string }) => task.stage ?? 'unknown'
+          );
           const failedTasks = Array.isArray(tasks)
             ? tasks.filter((task: { status?: string }) => task.status === 'failed')
             : [];
-          const firstRunning = runningTasks[0] as {
-            taskId?: string;
-            stage?: string;
-            status?: string;
-            progress?: number;
-            message?: string;
-          } | undefined;
-          const firstFailed = failedTasks[0] as {
-            taskId?: string;
-            stage?: string;
-            status?: string;
-            progress?: number;
-            message?: string;
-          } | undefined;
+          const firstRunning = runningTasks[0] as
+            | {
+                taskId?: string;
+                stage?: string;
+                status?: string;
+                progress?: number;
+                message?: string;
+              }
+            | undefined;
+          const firstFailed = failedTasks[0] as
+            | {
+                taskId?: string;
+                stage?: string;
+                status?: string;
+                progress?: number;
+                message?: string;
+              }
+            | undefined;
           return {
             status: data?.processingStatus ?? null,
             tiles: summary?.tiles ?? 0,
@@ -304,7 +337,8 @@ test.describe('Shape build background (real pipeline)', () => {
                   taskId: firstRunning.taskId ?? null,
                   stage: firstRunning.stage ?? null,
                   status: firstRunning.status ?? null,
-                  progress: typeof firstRunning.progress === 'number' ? firstRunning.progress : null,
+                  progress:
+                    typeof firstRunning.progress === 'number' ? firstRunning.progress : null,
                   message: firstRunning.message ?? null,
                 }
               : null,
@@ -338,12 +372,16 @@ test.describe('Shape build background (real pipeline)', () => {
 
     await waitForCompletion();
 
-    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'domcontentloaded' });
+    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+      waitUntil: 'domcontentloaded',
+    });
     await waitForTreeTableLoad(page);
     const nodeLinkAfter = page.getByRole('link', { name: new RegExp(shapeNode.name) });
     await expect(nodeLinkAfter).toBeVisible({ timeout: 10000 });
     await nodeLinkAfter.click();
-    const launchBuildButtonAfter = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i });
+    const launchBuildButtonAfter = page.getByRole('button', {
+      name: /ビルドを開始|ビルド開始|Build/i,
+    });
     await expect(launchBuildButtonAfter).toBeVisible({ timeout: 10000 });
     await launchBuildButtonAfter.click();
     const summaryCard = page.locator('[data-testid="shape-plugin-build-progress-summary"]');

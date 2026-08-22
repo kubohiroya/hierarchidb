@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { CrossViewStyles } from '@hierarchidb/ui-grid';
+import * as React from 'react';
 
 const logMapLibreFeatureWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -14,7 +14,12 @@ export interface UseMapLibreFeatureStateOptions {
   throttleMs?: number;
 }
 
-export function useMapLibreFeatureState({ datasetId, map, sourceId, throttleMs = 0 }: UseMapLibreFeatureStateOptions) {
+export function useMapLibreFeatureState({
+  datasetId,
+  map,
+  sourceId,
+  throttleMs = 0,
+}: UseMapLibreFeatureStateOptions) {
   const last = React.useRef(0);
   React.useEffect(() => {
     if (!map) return;

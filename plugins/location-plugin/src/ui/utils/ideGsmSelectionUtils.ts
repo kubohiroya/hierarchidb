@@ -1,5 +1,9 @@
+import type {
+  IdeGsmSelectionEntry,
+  LocationPointProperties,
+  LocationType,
+} from '@hierarchidb/location-api';
 import type { Country } from '@hierarchidb/ui-country-select';
-import type { IdeGsmSelectionEntry, LocationPointProperties, LocationType } from '@hierarchidb/location-api';
 
 export const buildIdeGsmSelectionHash = (selection: Record<string, boolean[]>): string => {
   const keys = Object.keys(selection).sort();
@@ -15,7 +19,7 @@ export const buildIdeGsmSelectionHash = (selection: Record<string, boolean[]>): 
 
 export const buildAvailabilityMapFromIdeGsmPoints = (
   points: LocationPointProperties[],
-  baseTypes: ReadonlyArray<{ id: LocationType }>,
+  baseTypes: ReadonlyArray<{ id: LocationType }>
 ): Record<string, boolean[]> => {
   const typeIndex = new Map(baseTypes.map((typeDef, index) => [typeDef.id, index]));
   const availabilityMap: Record<string, boolean[]> = {};
@@ -33,7 +37,7 @@ export const buildAvailabilityMapFromIdeGsmPoints = (
 };
 
 export const buildSelectionMapFromAvailability = (
-  availabilityMap: Record<string, boolean[]>,
+  availabilityMap: Record<string, boolean[]>
 ): Record<string, boolean[]> => {
   const selectionMap: Record<string, boolean[]> = {};
   Object.entries(availabilityMap).forEach(([countryCode, row]) => {
@@ -44,15 +48,14 @@ export const buildSelectionMapFromAvailability = (
 
 export const buildSelectionMapFromIdeGsmPoints = (
   points: LocationPointProperties[],
-  baseTypes: ReadonlyArray<{ id: LocationType }>,
-): Record<string, boolean[]> => (
-  buildSelectionMapFromAvailability(buildAvailabilityMapFromIdeGsmPoints(points, baseTypes))
-);
+  baseTypes: ReadonlyArray<{ id: LocationType }>
+): Record<string, boolean[]> =>
+  buildSelectionMapFromAvailability(buildAvailabilityMapFromIdeGsmPoints(points, baseTypes));
 
 export const buildIdeGsmSelectionEntries = (
   selection: Record<string, boolean[]>,
   countries: Country[],
-  baseTypes: ReadonlyArray<{ id: LocationType }>,
+  baseTypes: ReadonlyArray<{ id: LocationType }>
 ): IdeGsmSelectionEntry[] => {
   const countryNameByCode = new Map(countries.map((country) => [country.code, country.name]));
   const entries: IdeGsmSelectionEntry[] = [];

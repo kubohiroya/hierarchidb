@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
 import type { DialogDisplayMode } from '@hierarchidb/tree-api';
+import { useCallback, useState } from 'react';
 
 export interface UseCommonDialogViewParams {
   initialDisplayMode: DialogDisplayMode;
@@ -81,7 +81,7 @@ export function useCommonDialogView({
       setDisplayMode(mode);
       onDisplayModeChange?.(mode);
     },
-    [onDisplayModeChange],
+    [onDisplayModeChange]
   );
 
   const isFullscreen = displayMode === 'full-screen';

@@ -2,8 +2,8 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type { LocationType } from '@hierarchidb/location-store';
 import type {
-  LayerSetId,
   LayerSetEntryId,
+  LayerSetId,
   LayerSetVisibility,
   MapLibreMapInstance,
   MapViewState,
@@ -16,8 +16,6 @@ import {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { createElement } from 'react';
-import { LocationViewportIcon, type LocationViewportIconProps } from './LocationViewportIcon.js';
 import {
   DirectionsBoat as DirectionsBoatIcon,
   FlightTakeoff as FlightTakeoffIcon,
@@ -27,14 +25,18 @@ import {
 } from '@mui/icons-material';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
 import type { Feature } from 'geojson';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { LocationLayerEntry } from './useFolderLayers.js';
 import { LOCATION_TYPE_COLORS } from './constants.js';
+import { LocationViewportIcon, type LocationViewportIconProps } from './LocationViewportIcon.js';
+import type { LocationLayerEntry } from './useFolderLayers.js';
 
 const PREFETCH_MARGIN_PX = 64;
 
-const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: LayerSetEntryId): number => {
+const resolveLayerSetEntryPriority = (
+  layerSetId: LayerSetId,
+  entryId?: LayerSetEntryId
+): number => {
   const layerSet = DEFAULT_LAYER_SETS.find((set) => set.id === layerSetId);
   if (!layerSet) return 0;
   if (!entryId) return layerSet.priority * 100;
@@ -146,9 +148,7 @@ export const useLocationViewportLayers = (
 
   const ensureLocationIcons = useCallback(
     (map: MapLibreMapInstance) => {
-      (
-        Object.keys(LOCATION_ICON_COMPONENTS) as LocationType[]
-      ).forEach((type) => {
+      (Object.keys(LOCATION_ICON_COMPONENTS) as LocationType[]).forEach((type) => {
         loadLocationIcon(map, type);
       });
     },
@@ -393,7 +393,12 @@ export const useLocationViewportLayers = (
         locationQueryTimerRef.current = null;
       }
     };
-  }, [buildLocationLayersForNode, layerSetVisibility.location, locationLayers, scheduleLocationQuery]);
+  }, [
+    buildLocationLayersForNode,
+    layerSetVisibility.location,
+    locationLayers,
+    scheduleLocationQuery,
+  ]);
 
   const handleMapLoad = useCallback(
     (map: MapLibreMapInstance) => {

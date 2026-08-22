@@ -59,16 +59,20 @@ describe('buildRouteSourceIdentity', () => {
   });
 
   it('fails on invalid directionality metadata instead of defaulting it', () => {
-    expect(() => buildRouteSourceIdentity({
-      ...buildInput(),
-      metadata: { bidirectional: 'true' },
-    })).toThrow('metadata.bidirectional must be boolean');
+    expect(() =>
+      buildRouteSourceIdentity({
+        ...buildInput(),
+        metadata: { bidirectional: 'true' },
+      })
+    ).toThrow('metadata.bidirectional must be boolean');
   });
 
   it('fails on contradictory directionality metadata', () => {
-    expect(() => buildRouteSourceIdentity({
-      ...buildInput(),
-      metadata: { bidirectional: true, oneway: true },
-    })).toThrow('must not contain conflicting bidirectional and oneway values');
+    expect(() =>
+      buildRouteSourceIdentity({
+        ...buildInput(),
+        metadata: { bidirectional: true, oneway: true },
+      })
+    ).toThrow('must not contain conflicting bidirectional and oneway values');
   });
 });

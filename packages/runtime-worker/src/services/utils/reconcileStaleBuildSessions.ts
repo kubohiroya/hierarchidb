@@ -57,7 +57,10 @@ const resolveLastActivityAt = (
   heartbeat: BuildSessionHeartbeatRow | undefined,
   config: BuildSessionConfigRow | undefined
 ): number | null => {
-  if (typeof heartbeat?.lastHeartbeatAt === 'number' && Number.isFinite(heartbeat.lastHeartbeatAt)) {
+  if (
+    typeof heartbeat?.lastHeartbeatAt === 'number' &&
+    Number.isFinite(heartbeat.lastHeartbeatAt)
+  ) {
     return heartbeat.lastHeartbeatAt;
   }
   if (typeof config?.startedAt === 'number' && Number.isFinite(config.startedAt)) {
@@ -74,7 +77,7 @@ const isStaleInactiveRunningSession = (params: {
 }): boolean => {
   if (params.activeTaskCount > 0) return false;
   if (params.lastActivityAt === null) return true;
-  return (params.now - params.lastActivityAt) > params.staleTimeoutMs;
+  return params.now - params.lastActivityAt > params.staleTimeoutMs;
 };
 
 export const reconcileRunningBuildSessions = async (params?: {
@@ -89,12 +92,13 @@ export const reconcileRunningBuildSessions = async (params?: {
 
   await db.open?.();
 
-  const candidateStatuses = params?.nodeIds && params.nodeIds.length > 0
-    ? await db.buildSessionStatuses.bulkGet(params.nodeIds)
-    : await db.buildSessionStatuses.where('status').equals('running').toArray();
+  const candidateStatuses =
+    params?.nodeIds && params.nodeIds.length > 0
+      ? await db.buildSessionStatuses.bulkGet(params.nodeIds)
+      : await db.buildSessionStatuses.where('status').equals('running').toArray();
 
-  const runningStatuses = candidateStatuses.filter(
-    (status): status is BuildSessionStatusRow => Boolean(status && status.status === 'running')
+  const runningStatuses = candidateStatuses.filter((status): status is BuildSessionStatusRow =>
+    Boolean(status && status.status === 'running')
   );
   const runningNodeIds = runningStatuses.map((status) => status.nodeId);
   if (runningNodeIds.length === 0) {
@@ -110,9 +114,10 @@ export const reconcileRunningBuildSessions = async (params?: {
     db.buildSessionConfigs.bulkGet(runningNodeIds),
     Promise.all(
       runningNodeIds.map((nodeId) =>
-        db.buildTasks.where('[nodeId+status]').anyOf([
-          [nodeId, 'running'],
-        ]).count()
+        db.buildTasks
+          .where('[nodeId+status]')
+          .anyOf([[nodeId, 'running']])
+          .count()
       )
     ),
   ]);

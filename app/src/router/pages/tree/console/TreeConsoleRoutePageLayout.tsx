@@ -1,7 +1,7 @@
 import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import { Box, CircularProgress } from '@mui/material';
 import { Outlet } from '@tanstack/react-router';
-import { Suspense, type ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
 import { NodeNotFoundDialog } from './NodeNotFoundDialog';
 import { TreeConsoleAppBar } from './TreeConsoleAppBar';
@@ -53,7 +53,14 @@ export function TreeConsoleRoutePageLayout({
           <>
             <Suspense
               fallback={
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                  }}
+                >
                   <CircularProgress />
                 </Box>
               }

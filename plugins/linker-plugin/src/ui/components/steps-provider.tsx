@@ -1,10 +1,15 @@
-import { PluginStepRegistry, type PluginStepConfig, type PluginStepProps, type StepData } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/core-types';
+import {
+  type PluginStepConfig,
+  type PluginStepProps,
+  PluginStepRegistry,
+  type StepData,
+} from '@hierarchidb/plugin-base';
+import { i18n, useTranslation } from '@hierarchidb/ui-i18n';
 import type { LinkerDraft } from '~/common/types/index';
-import { ResourcePicker } from '~/ui/steps/ResourcePicker';
 import { AggregatedList } from '~/ui/steps/AggregatedList';
 import { MapPreview } from '~/ui/steps/MapPreview';
-import { i18n, useTranslation } from '@hierarchidb/ui-i18n';
+import { ResourcePicker } from '~/ui/steps/ResourcePicker';
 import { useLinkerSteps } from './hooks/useLinkerSteps.js';
 
 type LinkerStepData = StepData & LinkerDraft;
@@ -46,7 +51,7 @@ const createDraftUpdater = (initial: LinkerStepData, onChange: LinkerStepProps['
 const ResourcesStepWrapper = (props: LinkerStepProps) => {
   const { ensureDraft, toSelectionSet } = useLinkerSteps();
   const draft = ensureDraft(props.data);
-  const {t} = useTranslation('linker-plugin');
+  const { t } = useTranslation('linker-plugin');
   const selection = toSelectionSet(props.data?.draftData?.linkedNodeIds);
   const handleUpdate = createDraftUpdater(draft, props.onChange);
   return (
@@ -58,8 +63,12 @@ const ResourcesStepWrapper = (props: LinkerStepProps) => {
             ...(draft?.draftData ?? {}),
             linkedNodeIds: Array.from(nextSet) as NodeId[],
           },
-        })}
-      notice={t('resourcePicker.notice', 'Select resources from the console. Multiple selection is allowed. Data is read-only.')}
+        })
+      }
+      notice={t(
+        'resourcePicker.notice',
+        'Select resources from the console. Multiple selection is allowed. Data is read-only.'
+      )}
     />
   );
 };

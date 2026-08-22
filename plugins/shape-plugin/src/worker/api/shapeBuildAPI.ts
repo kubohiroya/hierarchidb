@@ -1,4 +1,3 @@
-import type { NodeId } from '@hierarchidb/core-types';
 import type {
   BuildContinuationPolicy,
   BuildTaskSummary,
@@ -7,50 +6,48 @@ import type {
   TaskStage,
   TaskStatus,
 } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import type {
-  SessionStatusUpdatedEvent,
-  StageSnapshotUpdatedEvent,
-  HeartbeatEvent,
-  WorkerLogEvent,
-} from '~/common/types/session-events';
+import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   type BuildSession,
   type CountryMetadata,
   type DataSourceConfig,
   type DataSourceName,
-  type SourceTaskPayload,
+  getPreferredCountryCodeFormat,
+  isDataSourceName,
   type ProgressInfo,
+  requireDataSourceName,
+  type SelectedArrayByCountries,
+  SHAPE_DATA_SOURCES,
   type ShapeBuildConfig,
   type ShapeProcessingConfig,
   type ShapeStepValidationResult,
-  type SelectedArrayByCountries,
-  SHAPE_DATA_SOURCES,
-  isDataSourceName,
-  requireDataSourceName,
-  getPreferredCountryCodeFormat,
+  type SourceTaskPayload,
 } from '~/common/types/index';
+import type {
+  HeartbeatEvent,
+  SessionStatusUpdatedEvent,
+  StageSnapshotUpdatedEvent,
+  WorkerLogEvent,
+} from '~/common/types/session-events';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
-import {
-  generateDownloadTaskPayloads,
-} from '~/services/utils/shapeBuildUtils';
-import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
-import { shapeBuildRuntime } from './shapeBuildRuntime.js';
-import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { generateDownloadTaskPayloads } from '~/services/utils/shapeBuildUtils';
 import { unconditionalEventStreamer } from './eventBuffering.js';
 import {
   emitSessionStatusUpdated,
   emitStageSnapshotUpdated,
   readStartedStageTiming,
 } from './eventEmissionConstantsUtils.js';
+import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
+import { shapeBuildRuntime } from './shapeBuildRuntime.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { resolveEffectiveTaskStatus } from './taskQueueManagement.js';
 
 export const shapeBuildAPI = {
-
   // ===================================
   // Data Source Operations
   // ===================================
@@ -59,7 +56,10 @@ export const shapeBuildAPI = {
     return SHAPE_DATA_SOURCES;
   },
 
-  getCountryMetadata: async (nodeId: NodeId, dataSource: DataSourceName): Promise<CountryMetadata[]> => {
+  getCountryMetadata: async (
+    nodeId: NodeId,
+    dataSource: DataSourceName
+  ): Promise<CountryMetadata[]> => {
     const data = await metadataLoader.loadMetadata(dataSource, nodeId);
     if (Array.isArray(data) && data.length > 0) return data;
     throw new Error(`No country metadata returned for data source: ${dataSource}`);
@@ -69,24 +69,32 @@ export const shapeBuildAPI = {
     nodeId: NodeId,
     dataSource: DataSourceName,
     countries: string[],
-    adminLevels: number[],
+    adminLevels: number[]
   ): Promise<SourceTaskPayload[]> => {
     const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloads');
     // Get country metadata first
     const preferredFormat = getPreferredCountryCodeFormat(resolvedDataSource);
     const normalizedCountries = await Promise.all(
-      countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
+      countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat))
     );
     const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
-    return generateDownloadTaskPayloads(resolvedDataSource, normalizedCountries, adminLevels, countryMetadata);
+    return generateDownloadTaskPayloads(
+      resolvedDataSource,
+      normalizedCountries,
+      adminLevels,
+      countryMetadata
+    );
   },
 
   generateDownloadTaskPayloadsFromSelection: async (
     nodeId: NodeId,
     dataSource: DataSourceName,
-    selectedArrayByCountries: SelectedArrayByCountries,
+    selectedArrayByCountries: SelectedArrayByCountries
   ): Promise<SourceTaskPayload[]> => {
-    const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloadsFromSelection');
+    const resolvedDataSource = requireDataSourceName(
+      dataSource,
+      'generateDownloadTaskPayloadsFromSelection'
+    );
     const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
     const strategy = resolveSourceStageStrategy(resolvedDataSource);
     return strategy.buildSourceTaskPayloads({
@@ -102,7 +110,7 @@ export const shapeBuildAPI = {
   validateSelection: async (
     countries: string[],
     adminLevels: number[],
-    dataSource: DataSourceName,
+    dataSource: DataSourceName
   ): Promise<ShapeStepValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -137,15 +145,16 @@ export const shapeBuildAPI = {
     buildConfig: ShapeBuildConfig,
     processingConfig: ShapeProcessingConfig | undefined,
     downloadTaskPayloads: SourceTaskPayload[],
-    buildContinuationPolicy?: BuildContinuationPolicy,
-  ): Promise<NodeId> => shapeBuildRuntime.startBuildSessionInternal(
-    'startBuildSession',
-    draftId,
-    buildConfig,
-    processingConfig,
-    downloadTaskPayloads,
-    buildContinuationPolicy,
-  ),
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<NodeId> =>
+    shapeBuildRuntime.startBuildSessionInternal(
+      'startBuildSession',
+      draftId,
+      buildConfig,
+      processingConfig,
+      downloadTaskPayloads,
+      buildContinuationPolicy
+    ),
   pauseBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
     await shapeBuildAPI.invokeBuildCommand('session/pause', {
       nodeId: draftId,
@@ -163,9 +172,8 @@ export const shapeBuildAPI = {
     return shapeBuildRuntime.invokeShapeBuildCommand(command, payload);
   },
 
-  getBuildSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
-    shapeBuildRuntimeCore.getBuildSessionInternal(nodeId)
-  ),
+  getBuildSession: async (nodeId: NodeId): Promise<BuildSession | undefined> =>
+    shapeBuildRuntimeCore.getBuildSessionInternal(nodeId),
 
   getBuildTasks: async (nodeId: NodeId): Promise<BuildTaskSummary[]> => {
     const taskQueue = new VtTaskQueueDb();
@@ -207,7 +215,7 @@ export const shapeBuildAPI = {
   },
 
   getBuildStatus: async (
-    nodeId: NodeId,
+    nodeId: NodeId
   ): Promise<{
     nodeId: NodeId;
     status: string;
@@ -245,7 +253,7 @@ export const shapeBuildAPI = {
   },
 
   getBuildSessionStatus: async (
-    nodeId: NodeId,
+    nodeId: NodeId
   ): Promise<{
     exists: boolean;
     canResume: boolean;
@@ -255,7 +263,8 @@ export const shapeBuildAPI = {
     const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     if (sessionRecord) {
       const lastActivity = sessionRecord.lastActivity ?? sessionRecord.updatedAt;
-      const expiresAt = sessionRecord.expiresAt ?? shapeBuildRuntime.resolveSessionExpiresAt(lastActivity);
+      const expiresAt =
+        sessionRecord.expiresAt ?? shapeBuildRuntime.resolveSessionExpiresAt(lastActivity);
       return {
         exists: true,
         canResume: Boolean(sessionRecord.canResume ?? sessionRecord.status === 'paused'),
@@ -310,7 +319,10 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
+  subscribeTasks: (
+    nodeId: NodeId,
+    callback: (event: BuildTaskUpdateEvent) => void
+  ): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.taskCallbacks.get(key);
     unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
@@ -338,9 +350,10 @@ export const shapeBuildAPI = {
         const tasks = await shapeBuildRuntimeCore.buildTaskSummarySnapshot(nodeId, taskQueue);
         // Compute version from tasks; empty snapshot must carry explicit version=0
         // so the UI-side resolveSnapshotVersion contract is satisfied.
-        const snapshotVersion = tasks.length > 0
-          ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
-          : 0;
+        const snapshotVersion =
+          tasks.length > 0
+            ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
+            : 0;
         unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
           nodeId,
           timestamp: Date.now(),
@@ -348,7 +361,12 @@ export const shapeBuildAPI = {
           message: '[sendSnapshot] published',
           data: { nodeId: String(nodeId), taskCount: tasks.length, snapshotVersion },
         });
-        callback({ type: 'snapshot', nodeId, tasks, version: snapshotVersion } as BuildTaskUpdateEvent);
+        callback({
+          type: 'snapshot',
+          nodeId,
+          tasks,
+          version: snapshotVersion,
+        } as BuildTaskUpdateEvent);
       } catch (error) {
         unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
           nodeId,
@@ -386,7 +404,10 @@ export const shapeBuildAPI = {
       const active = shapeBuildRuntimeCore.taskCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
         shapeBuildRuntimeCore.taskCallbacks.delete(key);
-        console.log('[shapeBuildAPI] unsubscribeTasks removed active subscription', JSON.stringify({ nodeId }));
+        console.log(
+          '[shapeBuildAPI] unsubscribeTasks removed active subscription',
+          JSON.stringify({ nodeId })
+        );
       }
       unsubscribe();
     };
@@ -396,16 +417,23 @@ export const shapeBuildAPI = {
   // Real-time Session State Subscription (4 channels)
   // ===================================
 
-  subscribeSessionState: (nodeId: NodeId, callback: (event: SessionStatusUpdatedEvent) => void): (() => void) => {
+  subscribeSessionState: (
+    nodeId: NodeId,
+    callback: (event: SessionStatusUpdatedEvent) => void
+  ): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
     existing?.unsubscribe?.();
     let subscriptionActive = true;
 
     // Subscribe to unconditional event stream
-    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
-      callback(event as SessionStatusUpdatedEvent);
-    });
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(
+      nodeId,
+      'session-state',
+      (event) => {
+        callback(event as SessionStatusUpdatedEvent);
+      }
+    );
 
     const unsubscribe = () => {
       subscriptionActive = false;
@@ -419,15 +447,18 @@ export const shapeBuildAPI = {
     // This prevents event loss when startBuildSession emits sessionStatusUpdated
     // before subscribeAll completes (race condition on session start).
     // Per spec: "when the initial runtime snapshot is loaded on subscription start"
-    void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then((record) => {
-      if (!subscriptionActive) return;
-      if (record) {
-        emitSessionStatusUpdated(nodeId, record);
-      }
-    }).catch((error: unknown) => {
-      if (!subscriptionActive) return;
-      throw error;
-    });
+    void shapeQueryAPIImpl
+      .getBuildSessionRecord(nodeId)
+      .then((record) => {
+        if (!subscriptionActive) return;
+        if (record) {
+          emitSessionStatusUpdated(nodeId, record);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!subscriptionActive) return;
+        throw error;
+      });
 
     return () => {
       const active = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
@@ -438,7 +469,10 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotUpdatedEvent) => void): (() => void) => {
+  subscribeStageSnapshots: (
+    nodeId: NodeId,
+    callback: (event: StageSnapshotUpdatedEvent) => void
+  ): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
@@ -446,10 +480,13 @@ export const shapeBuildAPI = {
     let snapshotDispatchChain = Promise.resolve();
     const taskStatusById = new Map<string, TaskStatus>();
     const taskStageById = new Map<string, TaskStage>();
-    const timingByStage = new Map<TaskStage, {
-      stageStartedAt: number;
-      stageInactiveMs: number;
-    }>();
+    const timingByStage = new Map<
+      TaskStage,
+      {
+        stageStartedAt: number;
+        stageInactiveMs: number;
+      }
+    >();
 
     const resolveTaskStage = (value: unknown): TaskStage => {
       if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
@@ -459,11 +496,11 @@ export const shapeBuildAPI = {
     };
     const resolveTaskStatus = (value: unknown): TaskStatus => {
       if (
-        value === 'queued'
-        || value === 'running'
-        || value === 'completed'
-        || value === 'failed'
-        || value === 'recycled'
+        value === 'queued' ||
+        value === 'running' ||
+        value === 'completed' ||
+        value === 'failed' ||
+        value === 'recycled'
       ) {
         return value;
       }
@@ -472,7 +509,7 @@ export const shapeBuildAPI = {
 
     const surfaceSnapshotDispatchFailure = (
       stage: TaskStage | 'initial-subscription',
-      error: unknown,
+      error: unknown
     ): void => {
       const message = error instanceof Error ? error.message : String(error);
       console.error('[shapeBuildAPI] task-status stage snapshot failed', {
@@ -502,7 +539,7 @@ export const shapeBuildAPI = {
             nodeId,
             stage,
             timing.stageStartedAt,
-            timing.stageInactiveMs,
+            timing.stageInactiveMs
           );
         })
         .catch((error: unknown) => {
@@ -513,30 +550,34 @@ export const shapeBuildAPI = {
     };
 
     // Subscribe to unconditional event stream
-    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (event) => {
-      const snapshot = event as StageSnapshotUpdatedEvent;
-      const stage = resolveTaskStage(snapshot.payload.stageId);
-      timingByStage.set(stage, {
-        stageStartedAt: snapshot.payload.stageStartedAt,
-        stageInactiveMs: snapshot.payload.stageInactiveMs,
-      });
-      for (const [taskId, taskStage] of taskStageById) {
-        if (taskStage !== stage) continue;
-        taskStageById.delete(taskId);
-        taskStatusById.delete(taskId);
-      }
-      snapshot.payload.tasks.forEach((task) => {
-        const taskStage = resolveTaskStage(task.stage);
-        if (taskStage !== stage) {
-          throw new Error(
-            `[shapeBuildAPI] snapshot task stage mismatch: ${taskStage} !== ${stage}`,
-          );
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(
+      nodeId,
+      'stage-snapshot',
+      (event) => {
+        const snapshot = event as StageSnapshotUpdatedEvent;
+        const stage = resolveTaskStage(snapshot.payload.stageId);
+        timingByStage.set(stage, {
+          stageStartedAt: snapshot.payload.stageStartedAt,
+          stageInactiveMs: snapshot.payload.stageInactiveMs,
+        });
+        for (const [taskId, taskStage] of taskStageById) {
+          if (taskStage !== stage) continue;
+          taskStageById.delete(taskId);
+          taskStatusById.delete(taskId);
         }
-        taskStageById.set(task.taskId, taskStage);
-        taskStatusById.set(task.taskId, resolveTaskStatus(task.status));
-      });
-      callback(snapshot);
-    });
+        snapshot.payload.tasks.forEach((task) => {
+          const taskStage = resolveTaskStage(task.stage);
+          if (taskStage !== stage) {
+            throw new Error(
+              `[shapeBuildAPI] snapshot task stage mismatch: ${taskStage} !== ${stage}`
+            );
+          }
+          taskStageById.set(task.taskId, taskStage);
+          taskStatusById.set(task.taskId, resolveTaskStatus(task.status));
+        });
+        callback(snapshot);
+      }
+    );
 
     const unsubscribeTaskQueue = shapeBuildRuntimeCore.onTaskQueueUpdate(nodeId, (event) => {
       if (event.type === 'delete') {
@@ -569,21 +610,24 @@ export const shapeBuildAPI = {
 
     // Deliver the current stage snapshot immediately on subscription start.
     // Per spec: "Initial snapshot on subscription start (only for stages that have started)"
-    void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then(async (record) => {
-      if (!subscriptionActive) return;
-      if (!record) return;
-      const timing = readStartedStageTiming(record);
-      if (!timing) return;
-      await emitStageSnapshotUpdated(
-        nodeId,
-        timing.stage,
-        timing.stageStartedAt,
-        timing.stageInactiveMs,
-      );
-    }).catch((error: unknown) => {
-      if (!subscriptionActive) return;
-      surfaceSnapshotDispatchFailure('initial-subscription', error);
-    });
+    void shapeQueryAPIImpl
+      .getBuildSessionRecord(nodeId)
+      .then(async (record) => {
+        if (!subscriptionActive) return;
+        if (!record) return;
+        const timing = readStartedStageTiming(record);
+        if (!timing) return;
+        await emitStageSnapshotUpdated(
+          nodeId,
+          timing.stage,
+          timing.stageStartedAt,
+          timing.stageInactiveMs
+        );
+      })
+      .catch((error: unknown) => {
+        if (!subscriptionActive) return;
+        surfaceSnapshotDispatchFailure('initial-subscription', error);
+      });
 
     return () => {
       const active = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
@@ -620,15 +664,22 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressUpdatedEvent) => void): (() => void) => {
+  subscribeTaskProgress: (
+    nodeId: NodeId,
+    callback: (event: TaskProgressUpdatedEvent) => void
+  ): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
     existing?.unsubscribe?.();
 
     // Subscribe to unconditional event stream
-    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'task-progress', (event) => {
-      callback(event as TaskProgressUpdatedEvent);
-    });
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(
+      nodeId,
+      'task-progress',
+      (event) => {
+        callback(event as TaskProgressUpdatedEvent);
+      }
+    );
 
     const unsubscribe = () => {
       unsubscribeStream();
@@ -652,9 +703,13 @@ export const shapeBuildAPI = {
     existing?.unsubscribe?.();
 
     // Subscribe to unconditional event stream
-    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'worker-log', (event) => {
-      callback(event as WorkerLogEvent);
-    });
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(
+      nodeId,
+      'worker-log',
+      (event) => {
+        callback(event as WorkerLogEvent);
+      }
+    );
 
     const unsubscribe = () => {
       unsubscribeStream();

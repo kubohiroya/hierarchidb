@@ -4,9 +4,9 @@
  * @module @hierarchidb/plugin-styler-plugin/types
  */
 
-import { UUID } from '@hierarchidb/core/types/UUID';
-import { TreeNodeId, TreeNodeType } from '@hierarchidb/core/types/TreeNode';
 import { PrimaryResourceEntity } from '@hierarchidb/core/types/entities';
+import { TreeNodeId, TreeNodeType } from '@hierarchidb/core/types/TreeNode';
+import { UUID } from '@hierarchidb/core/types/UUID';
 
 // ================================================================================
 // 🟢 Core Entity Interfaces (Based on eria-cartograph)
@@ -304,20 +304,14 @@ export interface StylerWorkerAPI {
   calculateFileHash(file: File): Promise<string>;
 
   // Styler CRUD operations
-  createStyler(
-    parentId: TreeNodeId,
-    formData: StylerFormData
-  ): Promise<DraftResult<StylerEntity>>;
+  createStyler(parentId: TreeNodeId, formData: StylerFormData): Promise<DraftResult<StylerEntity>>;
   getStyler(nodeId: TreeNodeId): Promise<StylerEntity | undefined>;
   updateStyler(nodeId: TreeNodeId, updates: Partial<StylerEntity>): Promise<void>;
   deleteStyler(nodeId: TreeNodeId): Promise<void>;
 
   // Working copy operations
   createDraft(nodeId: TreeNodeId): Promise<DraftResult<StylerDraft>>;
-  updateDraft(
-    draftId: UUID,
-    updates: Partial<StylerEntity>
-  ): Promise<DraftResult>;
+  updateDraft(draftId: UUID, updates: Partial<StylerEntity>): Promise<DraftResult>;
   commitDraft(draftId: UUID): Promise<DraftResult>;
   discardDraft(draftId: UUID): Promise<DraftResult>;
 

@@ -8,32 +8,37 @@ import { TreeConsoleRoutePage } from '~/router/pages/tree/console/TreeConsoleRou
 
 const VALID_VIEW_MODES = new Set(['icon', 'list', 'column']);
 const VALID_SORT_MODES = new Set([
-    'none', 'name', 'type', 'lastOpened', 'created', 'modified', 'size', 'tag',
+  'none',
+  'name',
+  'type',
+  'lastOpened',
+  'created',
+  'modified',
+  'size',
+  'tag',
 ]);
 
 export function FolderViewPage() {
-    const data = useLoaderData({ strict: false }) as LoadPageNodeReturn;
-    const params = useParams({ strict: false }) as {
-        viewMode?: string;
-        sortMode?: string;
-        targetNodeId?: string;
-    };
+  const data = useLoaderData({ strict: false }) as LoadPageNodeReturn;
+  const params = useParams({ strict: false }) as {
+    viewMode?: string;
+    sortMode?: string;
+    targetNodeId?: string;
+  };
 
-    const viewMode = VALID_VIEW_MODES.has(params.viewMode ?? '')
-        ? (params.viewMode as 'icon' | 'list' | 'column')
-        : 'list';
-    const sortMode = VALID_SORT_MODES.has(params.sortMode ?? '')
-        ? params.sortMode
-        : 'name';
+  const viewMode = VALID_VIEW_MODES.has(params.viewMode ?? '')
+    ? (params.viewMode as 'icon' | 'list' | 'column')
+    : 'list';
+  const sortMode = VALID_SORT_MODES.has(params.sortMode ?? '') ? params.sortMode : 'name';
 
-    const targetNodeId = params.targetNodeId === '-' ? undefined : params.targetNodeId;
+  const targetNodeId = params.targetNodeId === '-' ? undefined : params.targetNodeId;
 
-    return (
-        <TreeConsoleRoutePage
-            data={data}
-            viewMode={viewMode}
-            sortMode={sortMode}
-            columnTargetNodeId={targetNodeId}
-        />
-    );
+  return (
+    <TreeConsoleRoutePage
+      data={data}
+      viewMode={viewMode}
+      sortMode={sortMode}
+      columnTargetNodeId={targetNodeId}
+    />
+  );
 }

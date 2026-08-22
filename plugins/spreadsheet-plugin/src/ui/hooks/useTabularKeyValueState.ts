@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import {
   binCountAtom,
   filterRulesAtom,
   histogramStatsAtom,
-  rulesEqual,
   keyColumnAtom,
   numericValuesAtom,
+  rulesEqual,
   tabularProcessingAtom,
   tabularRowsAtom,
   valueColumnAtom,
@@ -18,7 +18,7 @@ import {
 
 const coerceColumns = (
   metadata?: TabularTableMetadata | null,
-  previewColumns?: unknown[] | null,
+  previewColumns?: unknown[] | null
 ): string[] => {
   const fromMetadata = (metadata?.columns ?? [])
     .map((col) => (typeof col === 'string' ? col : col?.name))
@@ -68,25 +68,36 @@ export const useTabularKeyValueState = <T extends SpreadsheetDraft>({
   const stats = useAtomValue(histogramStatsAtom);
   const [histogramWidth, setHistogramWidth] = useState<number>(480);
 
-  const dialogData = useMemo<T>(() => (typeof data === 'object' && data ? (data as T) : ({} as T)), [data]);
+  const dialogData = useMemo<T>(
+    () => (typeof data === 'object' && data ? (data as T) : ({} as T)),
+    [data]
+  );
 
   const columns = useMemo(
     () =>
       coerceColumns(
         dialogData.tabularTableMetadata as TabularTableMetadata | undefined,
-        dialogData.lastPreview?.columns ?? null,
+        dialogData.lastPreview?.columns ?? null
       ),
-    [dialogData.lastPreview?.columns, dialogData.tabularTableMetadata],
+    [dialogData.lastPreview?.columns, dialogData.tabularTableMetadata]
   );
 
   useEffect(() => {
-    const next = Array.isArray(dialogData.filters) ? (dialogData.filters as TabularFilterRule[]) : [];
+    const next = Array.isArray(dialogData.filters)
+      ? (dialogData.filters as TabularFilterRule[])
+      : [];
     setFilterRules((prev: TabularFilterRule[]) => (rulesEqual(prev, next) ? prev : next));
   }, [dialogData.filters, setFilterRules]);
 
-  const mapping = (dialogData as { mapping?: { keyColumn?: string; valueColumn?: string } }).mapping;
-  const stylerConfig = (dialogData as { stylerConfig?: { keyColumn?: string; valueColumn?: string } }).stylerConfig;
-  const legacySelection = dialogData as { selectedKeyColumn?: string; selectedValueColumn?: string };
+  const mapping = (dialogData as { mapping?: { keyColumn?: string; valueColumn?: string } })
+    .mapping;
+  const stylerConfig = (
+    dialogData as { stylerConfig?: { keyColumn?: string; valueColumn?: string } }
+  ).stylerConfig;
+  const legacySelection = dialogData as {
+    selectedKeyColumn?: string;
+    selectedValueColumn?: string;
+  };
 
   const selectedValueColumn =
     dialogData.valueColumn ??
@@ -118,7 +129,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetDraft>({
       onChange(nextData);
       setKeyColumnAtom(keyColumn);
     },
-    [dialogData, mapping, onChange, selectedKeyColumn, setKeyColumnAtom],
+    [dialogData, mapping, onChange, selectedKeyColumn, setKeyColumnAtom]
   );
 
   const handleValueColumnChange = useCallback(
@@ -137,7 +148,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetDraft>({
       onChange(nextData);
       setValueColumnAtom(valueColumn);
     },
-    [dialogData, mapping, onChange, selectedValueColumn, setValueColumnAtom],
+    [dialogData, mapping, onChange, selectedValueColumn, setValueColumnAtom]
   );
 
   useEffect(() => {

@@ -1,5 +1,5 @@
-import { Card, CardContent, Stack, Typography } from '@mui/material';
 import { buildZoomBandRanges } from '@hierarchidb/util';
+import { Card, CardContent, Stack, Typography } from '@mui/material';
 
 type ZoomBandRangeSummaryProps = {
   title: string;

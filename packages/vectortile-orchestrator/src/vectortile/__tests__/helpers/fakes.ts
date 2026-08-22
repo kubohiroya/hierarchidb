@@ -2,10 +2,13 @@ import { vi } from 'vitest';
 
 import type { ProgressInfo, VectorTileTask } from '~/ports/sharedTypes';
 import type {
+  VectorTileStageAdapter,
+  VectorTileStageAdapterResult,
+} from '~/ports/VectorTileStageAdapter';
+import type {
   RunVectorTileStageOrchestratorParams,
   VectorTileStageSummary,
 } from '~/vectortile/orchestratorTypes';
-import type { VectorTileStageAdapter, VectorTileStageAdapterResult } from '~/ports/VectorTileStageAdapter';
 
 export type FakeTask = VectorTileTask & { index: number };
 
@@ -54,7 +57,9 @@ export function makeTaskRegistry(params?: {
   };
 }
 
-export function makePostprocess(callLog?: string[]): RunVectorTileStageOrchestratorParams['postprocess'] {
+export function makePostprocess(
+  callLog?: string[]
+): RunVectorTileStageOrchestratorParams['postprocess'] {
   return {
     persistPlaceholderMetadata: vi.fn(async () => {
       callLog?.push('postprocess.persistPlaceholderMetadata');
@@ -76,7 +81,9 @@ export function makePostprocess(callLog?: string[]): RunVectorTileStageOrchestra
   };
 }
 
-export function makeAfterRun(out?: { last?: VectorTileStageSummary }): RunVectorTileStageOrchestratorParams['afterRun'] {
+export function makeAfterRun(out?: {
+  last?: VectorTileStageSummary;
+}): RunVectorTileStageOrchestratorParams['afterRun'] {
   return vi.fn(async (summary) => {
     if (out) out.last = summary;
   });
@@ -101,7 +108,10 @@ export function makeAdapter(params?: {
         // cooperate with orchestrator's pause contract
         await controls?.waitIfPaused();
       }
-      return params?.result ?? ({ processed: tasks.length, failed: 0 } satisfies VectorTileStageAdapterResult);
+      return (
+        params?.result ??
+        ({ processed: tasks.length, failed: 0 } satisfies VectorTileStageAdapterResult)
+      );
     }),
   };
 }

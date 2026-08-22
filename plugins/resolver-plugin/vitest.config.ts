@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -23,28 +23,94 @@ export default defineConfig({
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/util': path.resolve(__dirname, '../../packages/util/src/index.ts'),
       '@hierarchidb/download': path.resolve(__dirname, '../../packages//src/index.ts'),
-      '@hierarchidb/ui-worker-client': path.resolve(__dirname, '../../packages/runtime-worker/client/src/index.ts'),
-      '@hierarchidb/basemap-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/folder-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/linker-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/location-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/resolver-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/route-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/shape-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/spreadsheet-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/styler-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/timeline-plugin/icon': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'),
-      '@hierarchidb/basemap-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/folder-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/linker-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/location-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/resolver-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/route-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/shape-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/spreadsheet-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/styler-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/timeline-plugin': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'),
-      '@hierarchidb/plugin-registry/dist/registry.js': path.resolve(__dirname, 'src/ui/components/__tests__/__mocks__/pluginRegistryStub.ts'),
+      '@hierarchidb/ui-worker-client': path.resolve(
+        __dirname,
+        '../../packages/runtime-worker/client/src/index.ts'
+      ),
+      '@hierarchidb/basemap-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/folder-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/linker-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/location-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/resolver-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/route-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/shape-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/spreadsheet-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/styler-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/timeline-plugin/icon': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/BasemapPluginIcon.ts'
+      ),
+      '@hierarchidb/basemap-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/folder-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/linker-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/location-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/resolver-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/route-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/shape-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/spreadsheet-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/styler-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/timeline-plugin': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginModuleStub.ts'
+      ),
+      '@hierarchidb/plugin-registry/dist/registry.js': path.resolve(
+        __dirname,
+        'src/ui/components/__tests__/__mocks__/pluginRegistryStub.ts'
+      ),
     },
   },
 });

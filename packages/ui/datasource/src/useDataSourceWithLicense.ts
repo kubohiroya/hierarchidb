@@ -11,7 +11,7 @@ interface UseDataSourceWithLicenseArgs<TAgreedAt> {
   createAgreedAt?: () => TAgreedAt;
 }
 
-export const useDataSourceWithLicense = <TAgreedAt,>({
+export const useDataSourceWithLicense = <TAgreedAt>({
   options,
   state,
   onChange,
@@ -27,19 +27,20 @@ export const useDataSourceWithLicense = <TAgreedAt,>({
       : String(state.licenseAgreedAt)
     : undefined;
 
-  const handleSelect = useCallback((next: string) => {
-    if (next === value) return;
-    onChange({
-      dataSourceId: next,
-      licenseAgreement: false,
-      licenseAgreedAt: undefined,
-    });
-  }, [onChange, value]);
+  const handleSelect = useCallback(
+    (next: string) => {
+      if (next === value) return;
+      onChange({
+        dataSourceId: next,
+        licenseAgreement: false,
+        licenseAgreedAt: undefined,
+      });
+    },
+    [onChange, value]
+  );
 
   const handleAgree = useCallback(() => {
-    const buildAgreedAt =
-      createAgreedAt ??
-      (() => new Date().toISOString() as TAgreedAt);
+    const buildAgreedAt = createAgreedAt ?? (() => new Date().toISOString() as TAgreedAt);
     if (selected?.licenseUrl) {
       window.open(selected.licenseUrl, '_blank', 'noopener,noreferrer');
     }

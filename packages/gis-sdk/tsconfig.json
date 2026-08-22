@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

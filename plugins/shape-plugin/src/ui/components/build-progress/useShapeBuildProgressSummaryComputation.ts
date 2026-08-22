@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { BuildProgress, BuildSessionDisplayStatus } from './shapeBuildProgressTypes.js';
+import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   buildStageTaskSummary,
   buildTaskCountSummary,
-  useBuildTaskProgress,
   type TaskCountSummary,
   type TaskLike,
+  useBuildTaskProgress,
 } from '@hierarchidb/ui-build-sessions';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildTaskSummary } from '@hierarchidb/build-api';
-import type { TaskStage } from '@hierarchidb/build-api';
-import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   buildStageCountPlan,
   chooseInFlightStage,
@@ -20,12 +18,14 @@ import {
   makeRawDisplayCounts,
   makeStageTotals,
 } from './shapeBuildProgressSummaryComputationHelpers.js';
+import type { BuildProgress, BuildSessionDisplayStatus } from './shapeBuildProgressTypes.js';
 
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
-type ShapeTaskStageCarrier = BuildTaskSummary & TaskLike & {
-  stage: TaskStage;
-};
+type ShapeTaskStageCarrier = BuildTaskSummary &
+  TaskLike & {
+    stage: TaskStage;
+  };
 
 type ShapeBuildProgressSummaryArgs<T extends ShapeTaskStageCarrier> = {
   stages: BuildStage[];
@@ -76,35 +76,46 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
   isSkippedTask,
   timingStageMs,
 }: ShapeBuildProgressSummaryArgs<T>): ShapeBuildProgressSummaryResult<T> => {
-  const isRecycledTask = useCallback((task: ShapeTaskStageCarrier): boolean => task.status === 'recycled', []);
-  const normalizedTasks = useMemo<ShapeTaskStageCarrier[]>(() => tasks as ShapeTaskStageCarrier[], [tasks]);
-  const isRecycledTaskForBuild = useCallback((task: T): boolean => isRecycledTask(task), [isRecycledTask]);
-  const isSkippedTaskForSummary = useCallback((task: ShapeTaskStageCarrier): boolean => (
-    isSkippedTask(task as T)
-  ), [isSkippedTask]);
+  const isRecycledTask = useCallback(
+    (task: ShapeTaskStageCarrier): boolean => task.status === 'recycled',
+    []
+  );
+  const normalizedTasks = useMemo<ShapeTaskStageCarrier[]>(
+    () => tasks as ShapeTaskStageCarrier[],
+    [tasks]
+  );
+  const isRecycledTaskForBuild = useCallback(
+    (task: T): boolean => isRecycledTask(task),
+    [isRecycledTask]
+  );
+  const isSkippedTaskForSummary = useCallback(
+    (task: ShapeTaskStageCarrier): boolean => isSkippedTask(task as T),
+    [isSkippedTask]
+  );
 
   const taskSummary = useMemo(
-    () => buildStageTaskSummary(
-      normalizedTasks,
-      (task: ShapeTaskStageCarrier) => task.stage,
-      isSkippedTaskForSummary,
-      { isExcluded: isRecycledTask },
-    ),
-    [isRecycledTask, isSkippedTaskForSummary, normalizedTasks],
+    () =>
+      buildStageTaskSummary(
+        normalizedTasks,
+        (task: ShapeTaskStageCarrier) => task.stage,
+        isSkippedTaskForSummary,
+        { isExcluded: isRecycledTask }
+      ),
+    [isRecycledTask, isSkippedTaskForSummary, normalizedTasks]
   );
 
   const aggregatedCounts = useMemo(
-    () => buildTaskCountSummary(
-      normalizedTasks,
-      isSkippedTaskForSummary,
-      { isExcluded: isRecycledTask },
-    ),
-    [isRecycledTask, isSkippedTaskForSummary, normalizedTasks],
+    () =>
+      buildTaskCountSummary(normalizedTasks, isSkippedTaskForSummary, {
+        isExcluded: isRecycledTask,
+      }),
+    [isRecycledTask, isSkippedTaskForSummary, normalizedTasks]
   );
 
-  const hasProgressData = Boolean(effectiveProgress)
-    || Boolean(effectiveStatus && effectiveStatus.status !== 'idle')
-    || tasks.length > 0;
+  const hasProgressData =
+    Boolean(effectiveProgress) ||
+    Boolean(effectiveStatus && effectiveStatus.status !== 'idle') ||
+    tasks.length > 0;
   const hasEffectiveTasks = aggregatedCounts.total > 0;
 
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
@@ -113,39 +124,42 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
     overallProgress,
     buildStatus,
     tasks,
-    { isExcludedTask: isRecycledTaskForBuild },
+    { isExcludedTask: isRecycledTaskForBuild }
   );
 
   const stageTaskCounts = useMemo(
-    () => createStageTaskCounts({
-      stages,
-      tasksByStage,
-      isSkippedTask: isSkippedTaskForSummary,
-      isExcludedTask: isRecycledTask,
-    }),
-    [isRecycledTask, isSkippedTaskForSummary, stages, tasksByStage],
+    () =>
+      createStageTaskCounts({
+        stages,
+        tasksByStage,
+        isSkippedTask: isSkippedTaskForSummary,
+        isExcludedTask: isRecycledTask,
+      }),
+    [isRecycledTask, isSkippedTaskForSummary, stages, tasksByStage]
   );
 
   const stageCountsWithPlan = useMemo(
-    () => buildStageCountPlan({
-      stages,
-      stageTaskCounts,
-      buildStatus,
-      effectiveProgress,
-    }),
-    [buildStatus, effectiveProgress, stageTaskCounts, stages],
+    () =>
+      buildStageCountPlan({
+        stages,
+        stageTaskCounts,
+        buildStatus,
+        effectiveProgress,
+      }),
+    [buildStatus, effectiveProgress, stageTaskCounts, stages]
   );
 
   const paneProgressWithSummary = useMemo(
-    () => makePaneProgress({
-      stages,
-      paneProgress,
-      stageCountsWithPlan,
-      buildStatus,
-      failureStageId: buildStatus === 'failed' && stage ? stage : undefined,
-      hasFailureData: aggregatedCounts.total > 0,
-    }),
-    [aggregatedCounts, buildStatus, paneProgress, stageCountsWithPlan, stage, stages],
+    () =>
+      makePaneProgress({
+        stages,
+        paneProgress,
+        stageCountsWithPlan,
+        buildStatus,
+        failureStageId: buildStatus === 'failed' && stage ? stage : undefined,
+        hasFailureData: aggregatedCounts.total > 0,
+      }),
+    [aggregatedCounts, buildStatus, paneProgress, stageCountsWithPlan, stage, stages]
   );
 
   const stageProgressWithSummary = useMemo(() => {
@@ -178,14 +192,16 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
   }, [displayStageId, stageCountsWithPlan]);
 
   const rawDisplayCounts = useMemo<CountsWithPercentage>(
-    () => makeRawDisplayCounts({
-      effectiveProgress,
-      shouldUseRuntimeProgress: buildStatus === 'running' || buildStatus === 'paused' || aggregatedCounts.total > 0,
-      aggregatedCounts,
-      derivedCounts,
-      buildStatus,
-    }),
-    [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress],
+    () =>
+      makeRawDisplayCounts({
+        effectiveProgress,
+        shouldUseRuntimeProgress:
+          buildStatus === 'running' || buildStatus === 'paused' || aggregatedCounts.total > 0,
+        aggregatedCounts,
+        derivedCounts,
+        buildStatus,
+      }),
+    [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress]
   );
 
   const runningProgress = useMemo(() => {
@@ -214,7 +230,11 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
 
   const stableCountsRef = useRef<number | null>(null);
   useEffect(() => {
-    if ((buildStatus !== 'running' && buildStatus !== 'paused') || !hasProgressData || runningProgress.total <= 0) {
+    if (
+      (buildStatus !== 'running' && buildStatus !== 'paused') ||
+      !hasProgressData ||
+      runningProgress.total <= 0
+    ) {
       stableCountsRef.current = null;
       return;
     }
@@ -224,7 +244,12 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
   }, [buildStatus, hasProgressData, rawDisplayCounts, runningProgress.total]);
 
   const displayCounts = useMemo(() => {
-    if ((buildStatus === 'running' || buildStatus === 'paused') && runningProgress.total === 0 && hasProgressData && hasEffectiveTasks) {
+    if (
+      (buildStatus === 'running' || buildStatus === 'paused') &&
+      runningProgress.total === 0 &&
+      hasProgressData &&
+      hasEffectiveTasks
+    ) {
       if (stableCountsRef.current !== null) {
         return {
           ...runningProgress,
@@ -240,11 +265,16 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
   }, [buildStatus, hasProgressData, hasEffectiveTasks, rawDisplayCounts, runningProgress]);
 
   const monotonicDisplayCounts = useMemo(() => {
-    if ((buildStatus !== 'running' && buildStatus !== 'paused') || !hasProgressData || displayCounts.total <= 0) {
+    if (
+      (buildStatus !== 'running' && buildStatus !== 'paused') ||
+      !hasProgressData ||
+      displayCounts.total <= 0
+    ) {
       return displayCounts;
     }
     const prev = stableCountsRef.current;
-    const next = prev === null ? displayCounts.percentage : Math.max(prev, displayCounts.percentage);
+    const next =
+      prev === null ? displayCounts.percentage : Math.max(prev, displayCounts.percentage);
     stableCountsRef.current = next;
     return {
       ...displayCounts,
@@ -252,17 +282,21 @@ export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStage
     };
   }, [buildStatus, displayCounts, hasProgressData]);
 
-  const stageTotals = useMemo(() => makeStageTotals(stages, stageCountsWithPlan), [stages, stageCountsWithPlan]);
+  const stageTotals = useMemo(
+    () => makeStageTotals(stages, stageCountsWithPlan),
+    [stages, stageCountsWithPlan]
+  );
 
   const stageRemainingMs = useMemo(
-    () => estimateStageRemainingMs({
-      resolvedTaskType,
-      stageCountsWithPlan,
-      timingStageMs,
-      minElapsedMs: MIN_REMAINING_ESTIMATE_ELAPSED_MS,
-      minDoneTasks: MIN_REMAINING_ESTIMATE_DONE_TASKS,
-    }),
-    [resolvedTaskType, stageCountsWithPlan, timingStageMs],
+    () =>
+      estimateStageRemainingMs({
+        resolvedTaskType,
+        stageCountsWithPlan,
+        timingStageMs,
+        minElapsedMs: MIN_REMAINING_ESTIMATE_ELAPSED_MS,
+        minDoneTasks: MIN_REMAINING_ESTIMATE_DONE_TASKS,
+      }),
+    [resolvedTaskType, stageCountsWithPlan, timingStageMs]
   );
 
   return {

@@ -1,6 +1,6 @@
 /**
-  * Shared types for Folder plugin - UI-Worker
-  */
+ * Shared types for Folder plugin - UI-Worker
+ */
 
 // Re-export existing types from the entities directory
 export type {

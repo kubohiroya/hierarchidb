@@ -1,5 +1,5 @@
-import type { Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { Table } from 'dexie';
 import type { FeatureStore, VectorTileStore } from './storeTypes.js';
 
 type VectorTileRowBase = {
@@ -53,7 +53,7 @@ const defaultBuildTileId = (nodeId: NodeId, z: number, x: number, y: number): st
 
 export function createDexieVectorTileStore<TRecord extends VectorTileRowBase>(
   db: DexieVectorTileDb<TRecord>,
-  options: DexieVectorTileStoreOptions<TRecord> = {},
+  options: DexieVectorTileStoreOptions<TRecord> = {}
 ): VectorTileStore<VectorTileItem<TRecord>> {
   const buildTileId = options.buildTileId ?? defaultBuildTileId;
   const timestampField = options.timestampField;
@@ -90,7 +90,10 @@ export function createDexieVectorTileStore<TRecord extends VectorTileRowBase>(
       });
       await db.vectorTiles.bulkPut(rows);
     },
-    async bulkDelete(_nodeId: NodeId, itemIds: Array<VectorTileItem<TRecord>['id']>): Promise<void> {
+    async bulkDelete(
+      _nodeId: NodeId,
+      itemIds: Array<VectorTileItem<TRecord>['id']>
+    ): Promise<void> {
       await db.vectorTiles.bulkDelete(itemIds);
     },
   };
@@ -98,7 +101,7 @@ export function createDexieVectorTileStore<TRecord extends VectorTileRowBase>(
 
 export function createDexieFeatureStore<TRecord extends FeatureRowBase>(
   db: DexieFeatureDb<TRecord>,
-  options: DexieFeatureStoreOptions = {},
+  options: DexieFeatureStoreOptions = {}
 ): FeatureStore<TRecord> {
   const attachNodeId = options.attachNodeId ?? true;
 
@@ -110,7 +113,7 @@ export function createDexieFeatureStore<TRecord extends FeatureRowBase>(
     async bulkUpsert(nodeId: NodeId, items: TRecord[]): Promise<void> {
       if (!items.length) return;
       const rows = items.map((item) =>
-        attachNodeId ? ({ ...item, nodeId } as TRecord) : ({ ...item } as TRecord),
+        attachNodeId ? ({ ...item, nodeId } as TRecord) : ({ ...item } as TRecord)
       );
       await db.features.bulkPut(rows);
     },

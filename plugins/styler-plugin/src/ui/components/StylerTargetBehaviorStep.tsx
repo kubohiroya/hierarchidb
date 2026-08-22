@@ -1,4 +1,5 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Box,
   FormControl,
@@ -11,7 +12,6 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   MAPLIBRE_PROPERTY_METADATA,
   STYLE_TYPE_OPTIONS,

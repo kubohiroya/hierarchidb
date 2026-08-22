@@ -25,9 +25,8 @@ export const createClipboardActions = (deps: TreeConsoleActionDeps) => {
     translateWithFallback,
   } = deps;
 
-  const translateError = (key: string, fallback: string): string => (
-    translateWithFallback ? translateWithFallback(key, fallback) : fallback
-  );
+  const translateError = (key: string, fallback: string): string =>
+    translateWithFallback ? translateWithFallback(key, fallback) : fallback;
 
   const applyClipboard = (ids: NodeId[], cut: boolean) => {
     const clip = ensureClipboard();

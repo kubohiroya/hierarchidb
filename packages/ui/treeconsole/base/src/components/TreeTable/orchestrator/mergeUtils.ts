@@ -4,7 +4,16 @@ export function coalesceBatches(pending: SubTreeChanges[]): SubTreeChanges {
   const added = new Map<string, Record<string, unknown>>();
   const updated = new Map<string, Record<string, unknown>>();
   const removed = new Set<string>();
-  const moved = new Map<string, { nodeId: string; oldParentId?: string; newParentId: string; oldIndex?: number; newIndex?: number }>();
+  const moved = new Map<
+    string,
+    {
+      nodeId: string;
+      oldParentId?: string;
+      newParentId: string;
+      oldIndex?: number;
+      newIndex?: number;
+    }
+  >();
 
   for (const u of pending) {
     if (u.removed) {
@@ -44,4 +53,3 @@ export function coalesceBatches(pending: SubTreeChanges[]): SubTreeChanges {
     moved: Array.from(moved.values()),
   };
 }
-

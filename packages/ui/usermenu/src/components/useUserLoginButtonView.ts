@@ -1,8 +1,8 @@
 import type { TFunction } from '@hierarchidb/ui-i18n';
-import { useMemo, useState } from 'react';
 import type React from 'react';
-import type { OpenMaintenanceContext } from './UserLoginButton.js';
+import { useMemo, useState } from 'react';
 import type { LanguageOption } from './LanguageMenu.js';
+import type { OpenMaintenanceContext } from './UserLoginButton.js';
 import type { useUserMenu } from './useUserMenu.js';
 
 const buildLanguageOptions = (

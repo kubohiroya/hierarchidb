@@ -5,7 +5,6 @@
 
 import type React from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
-import { VectorTileLayer } from './VectorTileLayer.js';
 import {
   type BaseMapProps,
   type MapClickEvent,
@@ -14,6 +13,7 @@ import {
 } from '~/types/unified-map-props';
 import type { MapLibreMapProps } from './MapLibreMap.js';
 import { useMapWithVectorTiles } from './useMapWithVectorTiles.js';
+import { VectorTileLayer } from './VectorTileLayer.js';
 
 // Re-export for backward compatibility - but mark as deprecated
 /**
@@ -21,29 +21,30 @@ import { useMapWithVectorTiles } from './useMapWithVectorTiles.js';
  */
 export type LayerOptions = VectorTileLayerConfig;
 
-export type MapWithVectorTilesProps = BaseMapProps & VectorTileDataSource & {
-  /** Vector tile layer configuration */
-  layerConfig?: VectorTileLayerConfig;
+export type MapWithVectorTilesProps = BaseMapProps &
+  VectorTileDataSource & {
+    /** Vector tile layer configuration */
+    layerConfig?: VectorTileLayerConfig;
 
-  /** Optional built-in control toggles */
-  controls?: MapLibreMapProps['controls'];
+    /** Optional built-in control toggles */
+    controls?: MapLibreMapProps['controls'];
 
-  // Backward compatibility props (deprecated)
-  /**
-   * @deprecated Use layerConfig instead
-   */
-  layerOptions?: VectorTileLayerConfig;
+    // Backward compatibility props (deprecated)
+    /**
+     * @deprecated Use layerConfig instead
+     */
+    layerOptions?: VectorTileLayerConfig;
 
-  /**
-   * @deprecated Use onLoad instead
-   */
-  onMapLoad?: (map: MapLibreMapInstance) => void;
+    /**
+     * @deprecated Use onLoad instead
+     */
+    onMapLoad?: (map: MapLibreMapInstance) => void;
 
-  /**
-   * @deprecated Use onClick instead
-   */
-  onMapClick?: (event: MapClickEvent) => void;
-};
+    /**
+     * @deprecated Use onClick instead
+     */
+    onMapClick?: (event: MapClickEvent) => void;
+  };
 
 export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
   // Vector tile data source props

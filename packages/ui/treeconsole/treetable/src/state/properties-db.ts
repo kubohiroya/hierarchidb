@@ -1,5 +1,5 @@
-import { Dexie, type Table } from 'dexie';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { Dexie, type Table } from 'dexie';
 
 type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
@@ -39,9 +39,14 @@ class UIStateDB extends Dexie {
 }
 
 let _db: UIStateDB | null = null;
-function db(): UIStateDB { if (!_db) _db = new UIStateDB(); return _db; }
+function db(): UIStateDB {
+  if (!_db) _db = new UIStateDB();
+  return _db;
+}
 
-export async function getProperties(pageNodeId: string | undefined): Promise<TreeTableProps | null> {
+export async function getProperties(
+  pageNodeId: string | undefined
+): Promise<TreeTableProps | null> {
   if (!pageNodeId) return null;
   const d = db();
   // Try new store first
@@ -63,10 +68,14 @@ export async function getProperties(pageNodeId: string | undefined): Promise<Tre
   return null;
 }
 
-export async function saveProperties(pageNodeId: string | undefined, patch: Partial<TreeTableProps>): Promise<void> {
+export async function saveProperties(
+  pageNodeId: string | undefined,
+  patch: Partial<TreeTableProps>
+): Promise<void> {
   if (!pageNodeId) return;
   const d = db();
-  const prev = (await d.treetableProps.get(pageNodeId)) || { pageNodeId, updatedAt: 0 } as TreeTableProps;
+  const prev =
+    (await d.treetableProps.get(pageNodeId)) || ({ pageNodeId, updatedAt: 0 } as TreeTableProps);
   const next: TreeTableProps = { ...prev, ...patch, pageNodeId, updatedAt: Date.now() };
   await d.treetableProps.put(next);
 }
@@ -82,12 +91,17 @@ export async function removePropertiesMany(pageNodeIds: readonly string[]): Prom
 }
 
 // Convenience adapters for column widths
-export async function getColumnWidths(pageNodeId: string | undefined): Promise<Record<string, number> | null> {
+export async function getColumnWidths(
+  pageNodeId: string | undefined
+): Promise<Record<string, number> | null> {
   const props = await getProperties(pageNodeId);
   return props?.columnWidths ?? null;
 }
 
-export async function saveColumnWidths(pageNodeId: string | undefined, widths: Record<string, number>): Promise<void> {
+export async function saveColumnWidths(
+  pageNodeId: string | undefined,
+  widths: Record<string, number>
+): Promise<void> {
   await saveProperties(pageNodeId, { columnWidths: widths });
 }
 

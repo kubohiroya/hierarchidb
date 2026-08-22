@@ -8,7 +8,11 @@ export function createRequiredColumnsValidator(id: string, required: string[]): 
       const missing: string[] = [];
       for (const key of set) {
         const value = row[key];
-        if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+        if (
+          value === null ||
+          value === undefined ||
+          (typeof value === 'string' && value.trim() === '')
+        ) {
           missing.push(key);
         }
       }

@@ -1,10 +1,10 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { BandConfig, StageHandlerResult } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
+import type { BandConfig, StageHandlerResult } from '~/types/types';
+import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import type { VtDebugFocusConfig } from './vtStageDebug.js';
-import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
 
 export type TaskLayerContext = {
   taskId: string;
@@ -16,21 +16,23 @@ export type TaskLayerContext = {
 
 export type LayerMap = Map<string, Feature<Geometry>[]>;
 
-export type VtLayerBuildResult = {
-  kind: 'ready';
-  aggregatedLayersByTileId: Map<number, Record<string, Tile>> | null;
-  indexes: Map<string, GeojsonVtIndex> | null;
-} | {
-  kind: 'skipped';
-  result: StageHandlerResult;
-};
+export type VtLayerBuildResult =
+  | {
+      kind: 'ready';
+      aggregatedLayersByTileId: Map<number, Record<string, Tile>> | null;
+      indexes: Map<string, GeojsonVtIndex> | null;
+    }
+  | {
+      kind: 'skipped';
+      result: StageHandlerResult;
+    };
 
 export type BuildLayerIndexForTile = (
   layerName: string,
   features: Feature<Geometry>[],
   z: number,
   x: number,
-  y: number,
+  y: number
 ) => Promise<Tile | null>;
 
 export type LayerBuildBranchResult = {

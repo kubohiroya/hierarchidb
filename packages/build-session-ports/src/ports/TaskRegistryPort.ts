@@ -29,7 +29,7 @@ export interface TaskRegistryPort<TStage extends string, TTask extends StageTask
     stage: TStage,
     tasks: TTask[],
     existingTaskIds: Set<string> | undefined,
-    inputsByTaskId: Map<string, TInput>,
+    inputsByTaskId: Map<string, TInput>
   ): Promise<void>;
 
   resolveStageTasks(stage: TStage, tasks: TTask[]): Promise<ResolveStageTasksResult<TTask>>;

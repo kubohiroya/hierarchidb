@@ -3,24 +3,30 @@ import { shouldResumeBuildSession } from '../../../components/build-progress/sho
 
 describe('shouldResumeBuildSession', () => {
   it('returns true when build status is paused', () => {
-    expect(shouldResumeBuildSession({
-      buildStatus: 'paused',
-      runtimeStatus: 'running',
-    })).toBe(true);
+    expect(
+      shouldResumeBuildSession({
+        buildStatus: 'paused',
+        runtimeStatus: 'running',
+      })
+    ).toBe(true);
   });
 
   it('returns true when runtime status is paused', () => {
-    expect(shouldResumeBuildSession({
-      buildStatus: 'idle',
-      runtimeStatus: 'paused',
-    })).toBe(true);
+    expect(
+      shouldResumeBuildSession({
+        buildStatus: 'idle',
+        runtimeStatus: 'paused',
+      })
+    ).toBe(true);
   });
 
   it('returns false when forceRestart is true', () => {
-    expect(shouldResumeBuildSession({
-      forceRestart: true,
-      buildStatus: 'paused',
-      runtimeStatus: 'paused',
-    })).toBe(false);
+    expect(
+      shouldResumeBuildSession({
+        forceRestart: true,
+        buildStatus: 'paused',
+        runtimeStatus: 'paused',
+      })
+    ).toBe(false);
   });
 });

@@ -1,16 +1,17 @@
-import { describe, expect, it, afterEach, vi } from 'vitest';
 import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
+import { cleanup, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TreeConsolePanelProps } from '../TreeConsolePanel';
 // Lazy import after mocking
 import { TreeConsolePanel } from '../TreeConsolePanel';
 
-import { render, cleanup } from '@testing-library/react';
 import React = require('react');
-import type { HierarchicalTreeNode } from '../../types/index';
-import type { TreeTableColumn } from '../TreeTable/index';
-import { DualKeyMap } from '@hierarchidb/util';
+
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { DualKeyMap } from '@hierarchidb/util';
+import type { HierarchicalTreeNode } from '../../types/index';
+import type { TreeTableColumn } from '../TreeTable/index';
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
@@ -35,15 +36,13 @@ vi.mock('@hierarchidb/ui-treeconsole-treetable', () => {
   };
 });
 
-const noop = () => { };
-const stringNoop = (_value: string) => { };
-const viewModeNoop = (_mode: 'icon' | 'list' | 'column') => { };
-const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => { };
-const moveNodesNoop = async (_nodeIds: string[], _targetParentId: string) => { };
+const noop = () => {};
+const stringNoop = (_value: string) => {};
+const viewModeNoop = (_mode: 'icon' | 'list' | 'column') => {};
+const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => {};
+const moveNodesNoop = async (_nodeIds: string[], _targetParentId: string) => {};
 
-const baseColumns: TreeTableColumn[] = [
-  { id: 'name', label: 'Name', width: 120 },
-];
+const baseColumns: TreeTableColumn[] = [{ id: 'name', label: 'Name', width: 120 }];
 
 function renderPanel(data: HierarchicalTreeNode[]): TreeTableController {
   capturedControllers.length = 0;

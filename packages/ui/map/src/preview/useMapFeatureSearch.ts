@@ -1,8 +1,5 @@
 import { useCallback } from 'react';
-import type {
-  MapLibreGeoJSONFeature,
-  MapLibreMapInstance,
-} from '~/types/maplibre-public';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
 import type { MapSearchTargetDefinition } from './mapPreviewSearchTypes.js';
 
 const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
@@ -42,16 +39,25 @@ const collectSearchValues = (properties: Record<string, unknown>, keys: string[]
 
 const getTargetsForLayerType = <TargetId extends string>(
   layerType: string | undefined,
-  definitions: Record<TargetId, MapSearchTargetDefinition>,
+  definitions: Record<TargetId, MapSearchTargetDefinition>
 ): TargetId[] => {
   const group =
-    layerType === 'circle' ? 'point' : layerType === 'line' ? 'route' : layerType === 'fill' ? 'shape' : null;
+    layerType === 'circle'
+      ? 'point'
+      : layerType === 'line'
+        ? 'route'
+        : layerType === 'fill'
+          ? 'shape'
+          : null;
   const targetIds = Object.keys(definitions) as TargetId[];
   if (!group) return targetIds;
   return targetIds.filter((targetId) => definitions[targetId].group === group);
 };
 
-export type UseMapFeatureSearchParams<TargetId extends string, HighlightEntry extends { source: string; id: string | number }> = {
+export type UseMapFeatureSearchParams<
+  TargetId extends string,
+  HighlightEntry extends { source: string; id: string | number },
+> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
   searchText: string;
@@ -60,9 +66,14 @@ export type UseMapFeatureSearchParams<TargetId extends string, HighlightEntry ex
   buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
   onMatchesChange: (entries: HighlightEntry[]) => void;
   onFeaturesChange?: (features: MapLibreGeoJSONFeature[]) => void;
-  onSearchComplete?: (result: { entries: HighlightEntry[]; features: MapLibreGeoJSONFeature[] }) => void;
+  onSearchComplete?: (result: {
+    entries: HighlightEntry[];
+    features: MapLibreGeoJSONFeature[];
+  }) => void;
   setSearchText?: (value: string) => void;
-  setSearchTargets?: (updater: (prev: Record<TargetId, boolean>) => Record<TargetId, boolean>) => void;
+  setSearchTargets?: (
+    updater: (prev: Record<TargetId, boolean>) => Record<TargetId, boolean>
+  ) => void;
   onMissingLayers?: (layerIds: string[]) => void;
 };
 
@@ -72,7 +83,10 @@ export type UseMapFeatureSearchResult<TargetId extends string> = {
   handleSearchTargetToggle: (targetId: TargetId) => void;
 };
 
-export const useMapFeatureSearch = <TargetId extends string, HighlightEntry extends { source: string; id: string | number }>({
+export const useMapFeatureSearch = <
+  TargetId extends string,
+  HighlightEntry extends { source: string; id: string | number },
+>({
   mapInstance,
   highlightLayerIds,
   searchText,
@@ -130,7 +144,7 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
           [0, 0],
           [canvas.width, canvas.height],
         ],
-        { layers: highlightLayerIds },
+        { layers: highlightLayerIds }
       ) as MapLibreGeoJSONFeature[];
     } catch (error) {
       console.debug('[MapPreview] Failed to query search features', error);

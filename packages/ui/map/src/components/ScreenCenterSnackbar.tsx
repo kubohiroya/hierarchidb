@@ -3,9 +3,9 @@
  * @description Lightweight center-screen overlay for transient status messages.
  */
 
-import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import type React from 'react';
 import { useScreenCenterSnackbar } from './useScreenCenterSnackbar.js';
 
 export type ScreenCenterSnackbarProps = {

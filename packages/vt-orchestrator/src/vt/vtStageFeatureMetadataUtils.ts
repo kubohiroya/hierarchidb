@@ -25,11 +25,8 @@ export const collectUniqueFeatureIds = (features: Feature<Geometry>[]): string[]
   return Array.from(unique);
 };
 
-export const normalizeGeojsonByteSize = (value: number | undefined): number | undefined => (
-  typeof value !== 'number' || !Number.isFinite(value)
-    ? undefined
-    : Math.max(0, Math.round(value))
-);
+export const normalizeGeojsonByteSize = (value: number | undefined): number | undefined =>
+  typeof value !== 'number' || !Number.isFinite(value) ? undefined : Math.max(0, Math.round(value));
 
 export const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> => {
   const map = new Map<string, Feature[]>();

@@ -2,18 +2,28 @@
  * @fileoverview CommonDialogTitle - Standardized base-dialog title component
  */
 
-import React from 'react';
-import { Box, Chip, DialogTitle, IconButton, Stack, Tooltip, Typography, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import {
-  Close as CloseIcon,
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-} from '@mui/icons-material';
-import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
-  useCommonDialogTitleView,
-} from './useCommonDialogTitleView.js';
+  Close as CloseIcon,
+  FullscreenExit as FullscreenExitIcon,
+  Fullscreen as FullscreenIcon,
+} from '@mui/icons-material';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import {
+  Box,
+  Chip,
+  DialogTitle,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import React from 'react';
+import { useCommonDialogTitleView } from './useCommonDialogTitleView.js';
 
 export interface CommonDialogTitleProps {
   title: string;
@@ -87,20 +97,34 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
                   <OpenInFullIcon />
                 </IconButton>
               </Tooltip>
-              <Menu anchorEl={modeMenuAnchor} open={isModeMenuOpen} onClose={closeModeMenu} keepMounted>
-                <MenuItem selected={displayMode === 'normal'} onClick={() => selectDisplayMode('normal')}>
+              <Menu
+                anchorEl={modeMenuAnchor}
+                open={isModeMenuOpen}
+                onClose={closeModeMenu}
+                keepMounted
+              >
+                <MenuItem
+                  selected={displayMode === 'normal'}
+                  onClick={() => selectDisplayMode('normal')}
+                >
                   <ListItemIcon>
                     <FullscreenExitIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>{displayModeLabels.normal}</ListItemText>
                 </MenuItem>
-                <MenuItem selected={displayMode === 'maximize'} onClick={() => selectDisplayMode('maximize')}>
+                <MenuItem
+                  selected={displayMode === 'maximize'}
+                  onClick={() => selectDisplayMode('maximize')}
+                >
                   <ListItemIcon>
                     <OpenInFullIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>{displayModeLabels.maximize}</ListItemText>
                 </MenuItem>
-                <MenuItem selected={displayMode === 'full-screen'} onClick={() => selectDisplayMode('full-screen')}>
+                <MenuItem
+                  selected={displayMode === 'full-screen'}
+                  onClick={() => selectDisplayMode('full-screen')}
+                >
                   <ListItemIcon>
                     <FullscreenIcon fontSize="small" />
                   </ListItemIcon>

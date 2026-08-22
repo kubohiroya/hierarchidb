@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Collapse, IconButton, type SxProps, type Theme, Typography } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { Box, Collapse, IconButton, type SxProps, type Theme, Typography } from '@mui/material';
+import React from 'react';
 import { useCollapsibleSection } from './useCollapsibleSection.js';
 
 export interface CollapsibleSectionProps {
@@ -46,21 +46,21 @@ const paddingSizes = {
  * Useful for inline collapsible content
  */
 export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
-                                                                        title,
-                                                                        defaultCollapsed = false,
-                                                                        collapsible = true,
-                                                                        collapseIcon = <ExpandLess />,
-                                                                        expandIcon = <ExpandMore />,
-                                                                        togglePosition = 'end',
-                                                                        onCollapseChange,
-                                                                        children,
-                                                                        sx,
-                                                                        headerSx,
-                                                                        contentSx,
-                                                                        bordered = false,
-                                                                        padding = 'medium',
-                                                                        animationDuration = 300,
-                                                                      }) => {
+  title,
+  defaultCollapsed = false,
+  collapsible = true,
+  collapseIcon = <ExpandLess />,
+  expandIcon = <ExpandMore />,
+  togglePosition = 'end',
+  onCollapseChange,
+  children,
+  sx,
+  headerSx,
+  contentSx,
+  bordered = false,
+  padding = 'medium',
+  animationDuration = 300,
+}) => {
   const { collapsed, handleToggle } = useCollapsibleSection({
     defaultCollapsed,
     collapsible,
@@ -93,9 +93,11 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
             alignItems: 'center',
             p: paddingSizes[padding],
             cursor: collapsible ? 'pointer' : 'default',
-            '&:hover': collapsible ? {
-              bgcolor: 'action.hover',
-            } : {},
+            '&:hover': collapsible
+              ? {
+                  bgcolor: 'action.hover',
+                }
+              : {},
             ...headerSx,
           }}
           onClick={collapsible ? handleToggle : undefined}

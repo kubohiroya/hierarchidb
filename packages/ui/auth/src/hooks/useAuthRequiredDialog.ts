@@ -128,7 +128,16 @@ export function useAuthRequiredDialog({
         console.debug('[auth][ui] Authentication required details', details);
       }
     }
-  }, [context.requestId, context.sessionId, context.url, errorCode, errorMessage, open, pluginType, retryCount]);
+  }, [
+    context.requestId,
+    context.sessionId,
+    context.url,
+    errorCode,
+    errorMessage,
+    open,
+    pluginType,
+    retryCount,
+  ]);
 
   useEffect(() => {
     if (!open || !shouldAutoResolve) return;

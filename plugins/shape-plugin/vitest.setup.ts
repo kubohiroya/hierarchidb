@@ -19,14 +19,13 @@ initializeShapeChunkStore(getDBName('test', 'shape-chunks'));
 setCorsProxyBaseURL('');
 // Package-specific setup can be added here if needed
 
-
 const ensureLocalStorage = () => {
   const target = (globalThis as { window?: typeof globalThis }).window ?? globalThis;
   const storage = (target as { localStorage?: Storage }).localStorage;
   if (storage && typeof storage.clear === 'function') return;
   const store = new Map<string, string>();
   const localStorageShim: Storage = {
-    getItem: (key: string) => (store.has(key) ? store.get(key) ?? null : null),
+    getItem: (key: string) => (store.has(key) ? (store.get(key) ?? null) : null),
     setItem: (key: string, value: string) => {
       store.set(key, String(value));
     },

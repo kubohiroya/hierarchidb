@@ -1,15 +1,14 @@
-import { describe, expect, it, beforeEach } from 'vitest';
-import type { FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
+import type { FeatureCollection } from 'geojson';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { decodeSourceCacheByFormat } from '../../transform/createGeometryStageHandler/helpers/validation';
 import {
   __getTopojsonRuntimeLoadCount,
   __resetTopojsonRuntimeForTests,
 } from '../../transform/topojsonRuntimeAdapter';
 
-const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => (
-  bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-);
+const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
+  bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 
 const buildFlatGeobuf = async (collection: FeatureCollection): Promise<ArrayBuffer> => {
   const encoded = await geojsonApi.serialize(collection);

@@ -1,11 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type {
-  ShapeFeatureMetadata,
-  ShapeGeometryErrorRecord,
-} from '@hierarchidb/shape-api';
 import type { RouteLineString } from '@hierarchidb/route-api';
 import { RouteDB } from '@hierarchidb/route-store';
+import type { ShapeFeatureMetadata, ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import type { GenericDataGridProps, GridColumn } from '@hierarchidb/ui-grid';
 import type {
@@ -15,14 +11,15 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   buildErrorSummaryById,
-  useVectorTilePreviewMetadata,
-  useVectorTilePreviewSearch,
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
+  useVectorTilePreviewMetadata,
+  useVectorTilePreviewSearch,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '~/state/mapSearch.atoms';
 import { mapLayerInfoAtom } from '~/state/mapSearch.atoms';
 
@@ -60,17 +57,14 @@ export const buildColumns = (names: string[]): GridColumn[] =>
     sortable: true,
   }));
 
-const resolveShapeDisplayName = (feature: ShapeFeatureMetadata): string => (
-  feature.admin2Name
-  ?? feature.admin1Name
-  ?? feature.admin0Name
-  ?? feature.countryName
-  ?? ''
-);
+const resolveShapeDisplayName = (feature: ShapeFeatureMetadata): string =>
+  feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
 
 const resolveShapeAdminName = (feature: ShapeFeatureMetadata): string => {
   if (feature.adminLevel === 2) {
-    return feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
+    return (
+      feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? ''
+    );
   }
   if (feature.adminLevel === 1) {
     return feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
@@ -78,7 +72,9 @@ const resolveShapeAdminName = (feature: ShapeFeatureMetadata): string => {
   if (feature.adminLevel === 0) {
     return feature.admin0Name ?? feature.countryName ?? '';
   }
-  return feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
+  return (
+    feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? ''
+  );
 };
 
 const resolveShapeAdminCode = (feature: ShapeFeatureMetadata): string => {
@@ -96,7 +92,7 @@ const resolveShapeAdminCode = (feature: ShapeFeatureMetadata): string => {
 
 const isVisibleShapeFeature = (
   feature: ShapeFeatureMetadata,
-  visibleIdSet: Set<string | number>,
+  visibleIdSet: Set<string | number>
 ): boolean => {
   const metadataId = String(feature.id);
   if (visibleIdSet.has(metadataId)) return true;
@@ -159,7 +155,9 @@ export const useShapeTableData = (
             totalRows = 0;
             items = [];
           } else {
-            const filtered = collection.filter((feature) => isVisibleShapeFeature(feature, visibleIdSet));
+            const filtered = collection.filter((feature) =>
+              isVisibleShapeFeature(feature, visibleIdSet)
+            );
             totalRows = filtered.length;
             items = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
           }
@@ -213,10 +211,7 @@ export const useRouteTableData = (
   rowsPerPage: number,
   visibleIds?: Set<string | number> | null
 ): DataGridState => {
-  const routeDb = useMemo(
-    () => new RouteDB(getDBName(getBuildDatabasePrefix(), 'route')),
-    []
-  );
+  const routeDb = useMemo(() => new RouteDB(getDBName(getBuildDatabasePrefix(), 'route')), []);
   const [state, setState] = useState<DataGridState>({
     rows: [],
     columns: buildColumns([
@@ -337,7 +332,7 @@ export const useLocationTableData = (
         const columnNames = extractColumnNames(metadata?.columns);
         const svc = new TabularQueryService(
           'location',
-          getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
+          getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db')
         );
         const rows = await svc.query(tableId, [], MAX_ROWS + 1);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
@@ -500,7 +495,7 @@ export const useMapHighlightSelection = (nodeId: NodeId | null) => {
   return { getSelectedRows, setSelectedRows };
 };
 
-const areSetsEqual = <T,>(left?: Set<T> | null, right?: Set<T> | null) => {
+const areSetsEqual = <T>(left?: Set<T> | null, right?: Set<T> | null) => {
   if (left === right) return true;
   if (!left || !right) return false;
   if (left.size !== right.size) return false;
@@ -591,33 +586,42 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
   const bridgeRef = useRef(getBuildWorkerBridge());
   const shapeNodeIds = useMemo(
-    () => Array.from(new Set(
-      mapLayerInfo
-        .filter((info) => info.nodeType === 'shape')
-        .map((info) => String(info.nodeId))
-    )),
-    [mapLayerInfo],
+    () =>
+      Array.from(
+        new Set(
+          mapLayerInfo
+            .filter((info) => info.nodeType === 'shape')
+            .map((info) => String(info.nodeId))
+        )
+      ),
+    [mapLayerInfo]
   );
   const metadataEnabled = shapeNodeIds.length > 0;
   const metadataKey = metadataEnabled ? shapeNodeIds.join('|') : null;
 
-  const loadFeatureMetadataRows = useCallback(async (_targetNodeId: NodeId) => {
-    await bridgeRef.current.initialize();
-    const query = await bridgeRef.current.getShapeQueryAPI();
-    const entries = await Promise.all(
-      shapeNodeIds.map((shapeNodeId) => query.listFeatureMetadata(shapeNodeId as NodeId))
-    );
-    return entries.flat() as ShapeFeatureMetadata[];
-  }, [shapeNodeIds]);
+  const loadFeatureMetadataRows = useCallback(
+    async (_targetNodeId: NodeId) => {
+      await bridgeRef.current.initialize();
+      const query = await bridgeRef.current.getShapeQueryAPI();
+      const entries = await Promise.all(
+        shapeNodeIds.map((shapeNodeId) => query.listFeatureMetadata(shapeNodeId as NodeId))
+      );
+      return entries.flat() as ShapeFeatureMetadata[];
+    },
+    [shapeNodeIds]
+  );
 
-  const loadTransformErrorRows = useCallback(async (_targetNodeId: NodeId) => {
-    await bridgeRef.current.initialize();
-    const query = await bridgeRef.current.getShapeQueryAPI();
-    const entries = await Promise.all(
-      shapeNodeIds.map((shapeNodeId) => query.listGeometryErrorRecords(shapeNodeId as NodeId))
-    );
-    return entries.flat() as ShapeGeometryErrorRecord[];
-  }, [shapeNodeIds]);
+  const loadTransformErrorRows = useCallback(
+    async (_targetNodeId: NodeId) => {
+      await bridgeRef.current.initialize();
+      const query = await bridgeRef.current.getShapeQueryAPI();
+      const entries = await Promise.all(
+        shapeNodeIds.map((shapeNodeId) => query.listGeometryErrorRecords(shapeNodeId as NodeId))
+      );
+      return entries.flat() as ShapeGeometryErrorRecord[];
+    },
+    [shapeNodeIds]
+  );
 
   const {
     metadataRows: featureMetadataRows,
@@ -627,7 +631,7 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
   } = useVectorTilePreviewMetadata(
     metadataEnabled,
     metadataKey ? (metadataKey as NodeId) : null,
-    loadFeatureMetadataRows,
+    loadFeatureMetadataRows
   );
 
   const {
@@ -638,26 +642,28 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
   } = useVectorTilePreviewMetadata(
     metadataEnabled,
     metadataKey ? (metadataKey as NodeId) : null,
-    loadTransformErrorRows,
+    loadTransformErrorRows
   );
 
-  const featureListRows = useMemo<ShapePreviewFeatureRow[]>(() => (
-    featureMetadataRows.map((row) => ({
-      id: row.id,
-      featureId: row.featureId,
-      countryName: row.countryName,
-      countryCode: row.countryCode,
-      adminName: resolveShapeAdminName(row),
-      adminLevel: row.adminLevel,
-      adminCode: resolveShapeAdminCode(row),
-      dataSource: row.dataSource,
-      createdAt: row.createdAt,
-      vertexCount: row.vertexCount,
-      polygonCount: row.polygonCount,
-      bbox: row.bbox,
-      area: row.area,
-    }))
-  ), [featureMetadataRows]);
+  const featureListRows = useMemo<ShapePreviewFeatureRow[]>(
+    () =>
+      featureMetadataRows.map((row) => ({
+        id: row.id,
+        featureId: row.featureId,
+        countryName: row.countryName,
+        countryCode: row.countryCode,
+        adminName: resolveShapeAdminName(row),
+        adminLevel: row.adminLevel,
+        adminCode: resolveShapeAdminCode(row),
+        dataSource: row.dataSource,
+        createdAt: row.createdAt,
+        vertexCount: row.vertexCount,
+        polygonCount: row.polygonCount,
+        bbox: row.bbox,
+        area: row.area,
+      })),
+    [featureMetadataRows]
+  );
 
   const getFeatureRowId = useCallback(
     (row: ShapePreviewFeatureRow) => String(row.featureId ?? row.id ?? ''),
@@ -665,7 +671,7 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
   );
 
   const buildFeatureSearchText = useCallback(
-    (row: ShapePreviewFeatureRow) => (
+    (row: ShapePreviewFeatureRow) =>
       [
         row.featureId,
         row.countryName,
@@ -676,8 +682,7 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
         row.dataSource,
       ]
         .filter(Boolean)
-        .join(' ')
-    ),
+        .join(' '),
     []
   );
 
@@ -690,17 +695,16 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
     setMatchedFeatureIds
   );
 
-  const matchedIds = useMemo(
-    () => new Set(matchedFeatureIds),
-    [matchedFeatureIds]
-  );
+  const matchedIds = useMemo(() => new Set(matchedFeatureIds), [matchedFeatureIds]);
 
-  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
-    buildErrorSummaryById(transformErrorRows, {
-      getId: (row) => row.featureId ?? undefined,
-      getMessage: (row) => row.message ?? undefined,
-    })
-  ), [transformErrorRows]);
+  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(
+    () =>
+      buildErrorSummaryById(transformErrorRows, {
+        getId: (row) => row.featureId ?? undefined,
+        getMessage: (row) => row.message ?? undefined,
+      }),
+    [transformErrorRows]
+  );
 
   return {
     rows: featureListRows,
@@ -722,8 +726,7 @@ export const normalizeRowId = (row: DataGridRow, index: number): string | number
   return `row-${index}`;
 };
 
-export const buildSearchTextFromRow = (row: DataGridRow): string => (
+export const buildSearchTextFromRow = (row: DataGridRow): string =>
   Object.values(row)
     .map((value) => String(value ?? ''))
-    .join(' ')
-);
+    .join(' ');

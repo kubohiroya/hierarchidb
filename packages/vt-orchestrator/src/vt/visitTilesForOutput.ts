@@ -1,6 +1,10 @@
-import { assertNotAborted } from './vtStageCoreUtils.js';
 import { parentToChildRange } from '~/tiles/tileId';
-import type { VtTileBandRange, VtTileOutputCounts, VtTileParent } from './vtStageTaskOutputTypes.js';
+import { assertNotAborted } from './vtStageCoreUtils.js';
+import type {
+  VtTileBandRange,
+  VtTileOutputCounts,
+  VtTileParent,
+} from './vtStageTaskOutputTypes.js';
 
 type TileVisitState = {
   z: number;
@@ -22,7 +26,7 @@ type TileTraversalInput = {
 };
 
 export const visitTilesForOutput = async (
-  input: TileTraversalInput,
+  input: TileTraversalInput
 ): Promise<VtTileOutputCounts> => {
   const { parent, band, abortSignal, onVisitTile } = input;
   let processedTiles = 0;

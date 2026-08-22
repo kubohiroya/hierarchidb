@@ -1,11 +1,8 @@
-import type { StageHandlerResult } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
-import { prepareVtTaskExecution } from './prepareVtTaskExecution.js';
-import {
-  logVtTaskFocusConfig,
-  logVtTaskStart,
-} from './vtStageTaskProcessorLoggerUtils.js';
+import type { StageHandlerResult } from '~/types/types';
 import { executeVtTaskProcessing } from './executeVtTaskProcessing.js';
+import { prepareVtTaskExecution } from './prepareVtTaskExecution.js';
+import { logVtTaskFocusConfig, logVtTaskStart } from './vtStageTaskProcessorLoggerUtils.js';
 import type { VtTaskExecutionInput } from './vtStageTaskTypes.js';
 
 type VtTaskProcessorFlowInput = {
@@ -14,7 +11,7 @@ type VtTaskProcessorFlowInput = {
 };
 
 export const runVtTaskProcessorFlow = async (
-  input: VtTaskProcessorFlowInput,
+  input: VtTaskProcessorFlowInput
 ): Promise<StageHandlerResult> => {
   const preparation = prepareVtTaskExecution(input);
 

@@ -1,10 +1,6 @@
-import { useCallback } from 'react';
+import type { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
 import type { MutableRefObject } from 'react';
-import type {
-  DialogDisplayMode,
-  DialogPosition,
-  DialogSize,
-} from '@hierarchidb/tree-api';
+import { useCallback } from 'react';
 
 export const FRAME_CONSTANTS = {
   MIN_DIALOG_WIDTH: 560,
@@ -41,13 +37,19 @@ export function getDialogLayoutViewport(): { width: number; height: number } {
 
 export function getPresetSize(
   mode: DialogDisplayMode,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): DialogSize {
   switch (mode) {
     case 'maximize':
       return {
-        width: Math.max(viewport.width - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(viewport.height - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        width: Math.max(
+          viewport.width - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2,
+          FRAME_CONSTANTS.MIN_DIALOG_WIDTH
+        ),
+        height: Math.max(
+          viewport.height - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2,
+          FRAME_CONSTANTS.MIN_DIALOG_HEIGHT
+        ),
       };
     case 'full-screen':
       return {
@@ -60,7 +62,10 @@ export function getPresetSize(
       const targetHeight = viewport.height * 0.66;
       return {
         width: Math.min(Math.max(targetWidth, FRAME_CONSTANTS.MIN_DIALOG_WIDTH), viewport.width),
-        height: Math.min(Math.max(targetHeight, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT), viewport.height),
+        height: Math.min(
+          Math.max(targetHeight, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+          viewport.height
+        ),
       };
     }
   }
@@ -74,13 +79,9 @@ export function normalizeDialogState(
     enforceTopLeftMargin?: boolean;
     minPosition?: number;
     clampSizeToViewport?: boolean;
-  } = {},
+  } = {}
 ): { size: DialogSize; position: DialogPosition } {
-  const {
-    enforceTopLeftMargin = true,
-    minPosition = 0,
-    clampSizeToViewport = true,
-  } = options;
+  const { enforceTopLeftMargin = true, minPosition = 0, clampSizeToViewport = true } = options;
 
   const minWidth = Math.min(FRAME_CONSTANTS.MIN_DIALOG_WIDTH, viewport.width);
   const minHeight = Math.min(FRAME_CONSTANTS.MIN_DIALOG_HEIGHT, viewport.height);
@@ -115,7 +116,7 @@ export function normalizeDialogState(
 
 export function initialPosition(
   size: DialogSize,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): DialogPosition {
   const centeredX = Math.max((viewport.width - size.width) / 2, 0);
   const centeredY = Math.max((viewport.height - size.height) / 2, 0);
@@ -151,41 +152,49 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
     viewportResolver = getDialogLayoutViewport,
   } = options;
 
-  const handleDisplayModeChange = useCallback(async (mode: DialogDisplayMode) => {
-    const viewport = viewportResolver();
+  const handleDisplayModeChange = useCallback(
+    async (mode: DialogDisplayMode) => {
+      const viewport = viewportResolver();
 
-    const apply = (size: DialogSize, position: DialogPosition) => {
-      sizeRef.current = size;
-      positionRef.current = position;
-      onSizeChange?.(size);
-      onPositionChange?.(position);
-    };
-
-    if (mode === 'full-screen') {
-      const size: DialogSize = {
-        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+      const apply = (size: DialogSize, position: DialogPosition) => {
+        sizeRef.current = size;
+        positionRef.current = position;
+        onSizeChange?.(size);
+        onPositionChange?.(position);
       };
-      apply(size, { x: 0, y: 0 });
-    } else if (mode === 'maximize') {
-      const preset = getPresetSize('maximize', viewport);
-      const centered = initialPosition(preset, viewport);
-      const normalized = normalizeDialogState(preset, centered, viewport, {
-        enforceTopLeftMargin: false,
-        minPosition: 0,
-        clampSizeToViewport: true,
-      });
-      apply(normalized.size, normalized.position);
-    } else {
-      const preset = getPresetSize('normal', viewport);
-      const normalized = normalizeDialogState(preset, initialPosition(preset, viewport), viewport, {
-        enforceTopLeftMargin: true,
-      });
-      apply(normalized.size, normalized.position);
-    }
 
-    setDisplayMode(mode);
-  }, [onPositionChange, onSizeChange, positionRef, setDisplayMode, sizeRef, viewportResolver]);
+      if (mode === 'full-screen') {
+        const size: DialogSize = {
+          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        };
+        apply(size, { x: 0, y: 0 });
+      } else if (mode === 'maximize') {
+        const preset = getPresetSize('maximize', viewport);
+        const centered = initialPosition(preset, viewport);
+        const normalized = normalizeDialogState(preset, centered, viewport, {
+          enforceTopLeftMargin: false,
+          minPosition: 0,
+          clampSizeToViewport: true,
+        });
+        apply(normalized.size, normalized.position);
+      } else {
+        const preset = getPresetSize('normal', viewport);
+        const normalized = normalizeDialogState(
+          preset,
+          initialPosition(preset, viewport),
+          viewport,
+          {
+            enforceTopLeftMargin: true,
+          }
+        );
+        apply(normalized.size, normalized.position);
+      }
+
+      setDisplayMode(mode);
+    },
+    [onPositionChange, onSizeChange, positionRef, setDisplayMode, sizeRef, viewportResolver]
+  );
 
   return { handleDisplayModeChange };
 }

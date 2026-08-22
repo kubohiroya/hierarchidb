@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import type { ChipProps } from '@mui/material';
+import { useMemo } from 'react';
 import type { WorkflowStep } from './WorkflowAccordion.js';
 
 interface UseWorkflowAccordionViewParams {
@@ -18,7 +18,15 @@ interface UseWorkflowAccordionViewResult {
   variant: 'filled' | 'outlined';
 }
 
-const MUI_COLORS: Array<ChipProps['color']> = ['default', 'primary', 'secondary', 'error', 'info', 'success', 'warning'];
+const MUI_COLORS: Array<ChipProps['color']> = [
+  'default',
+  'primary',
+  'secondary',
+  'error',
+  'info',
+  'success',
+  'warning',
+];
 
 function resolveStatusColor(status?: WorkflowStep['status']): string {
   switch (status) {
@@ -63,9 +71,9 @@ export function useWorkflowAccordionView({
       chipSx: color
         ? undefined
         : {
-          backgroundColor: resolvedColor,
-          color: '#fff',
-        },
+            backgroundColor: resolvedColor,
+            color: '#fff',
+          },
       variant: step.status === 'active' ? 'filled' : 'outlined',
     };
   }, [showStepBadge, step]);

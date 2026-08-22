@@ -4,10 +4,10 @@
  * and transitive visual selection for ancestor relationships.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import type { Dispatch, SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { TreeTableController } from '~/types';
 
 interface UseTreeTableSelectionOverlayParams {
@@ -57,7 +57,9 @@ export function useTreeTableSelectionOverlay({
     actualSelectionIds.forEach((id) => {
       derived.add(id);
       const descendants = getDescendants(id);
-      descendants.forEach((descendantId) => {derived.add(descendantId);});
+      descendants.forEach((descendantId) => {
+        derived.add(descendantId);
+      });
     });
     return derived;
   }, [selectAll, data, actualSelectionIds, getDescendants]);
@@ -90,12 +92,15 @@ export function useTreeTableSelectionOverlay({
     }
   }, []);
 
-  const batchSelect = useCallback((ids: string[], checked: boolean) => {
-    pendingSelectionRef.current = { ids, checked };
-    if (rafRef.current == null) {
-      rafRef.current = requestAnimationFrame(flushBatchedSelect);
-    }
-  }, [flushBatchedSelect]);
+  const batchSelect = useCallback(
+    (ids: string[], checked: boolean) => {
+      pendingSelectionRef.current = { ids, checked };
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(flushBatchedSelect);
+      }
+    },
+    [flushBatchedSelect]
+  );
 
   useEffect(() => {
     return () => {
@@ -107,9 +112,12 @@ export function useTreeTableSelectionOverlay({
     };
   }, []);
 
-  const handleSelectAll = useCallback((checked: boolean) => {
-    setSelectAll((prev) => (prev === checked ? prev : checked));
-  }, [setSelectAll]);
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      setSelectAll((prev) => (prev === checked ? prev : checked));
+    },
+    [setSelectAll]
+  );
 
   const previousSelectAllRef = useRef(selectAll);
   useEffect(() => {

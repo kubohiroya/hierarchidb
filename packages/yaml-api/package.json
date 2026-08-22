@@ -1,63 +1,63 @@
 {
-    "name": "@hierarchidb/yaml-api",
-    "version": "0.1.0",
-    "private": true,
-    "type": "module",
-    "main": "dist/index.js",
-    "module": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        },
-        "./migration": {
-            "types": "./dist/migration/index.d.ts",
-            "import": "./dist/migration/index.js"
-        },
-        "./validation": {
-            "types": "./dist/validation/index.d.ts",
-            "import": "./dist/validation/index.js"
-        },
-        "./inverse-migration": {
-            "types": "./dist/inverse-migration/index.d.ts",
-            "import": "./dist/inverse-migration/index.js"
-        }
+  "name": "@hierarchidb/yaml-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "typesVersions": {
-        "*": {
-            "migration": [
-                "dist/migration/index.d.ts"
-            ],
-            "validation": [
-                "dist/validation/index.d.ts"
-            ],
-            "inverse-migration": [
-                "dist/inverse-migration/index.d.ts"
-            ],
-            "*": [
-                "dist/index.d.ts"
-            ]
-        }
+    "./migration": {
+      "types": "./dist/migration/index.d.ts",
+      "import": "./dist/migration/index.js"
     },
-    "scripts": {
-        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/migration/index.ts --config ../../tsdown.config.ts --outDir dist/migration && tsdown src/validation/index.ts --config ../../tsdown.config.ts --outDir dist/validation && tsdown src/inverse-migration/index.ts --config ../../tsdown.config.ts --outDir dist/inverse-migration",
-        "clean": "rm -rf dist",
-        "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
-        "test": "vitest run --passWithNoTests",
-        "test:run": "vitest run"
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "import": "./dist/validation/index.js"
     },
-    "peerDependencies": {
-        "@hierarchidb/core-types": "workspace:*"
-    },
-    "dependencies": {
-        "ajv": "^8.18.0",
-        "yaml": "^2.0.0"
-    },
-    "devDependencies": {
-        "@hierarchidb/core-types": "workspace:*",
-        "fast-check": "^4.5.3",
-        "typescript": "workspace:^5.9.3",
-        "vitest": "^4.1.0"
+    "./inverse-migration": {
+      "types": "./dist/inverse-migration/index.d.ts",
+      "import": "./dist/inverse-migration/index.js"
     }
+  },
+  "typesVersions": {
+    "*": {
+      "migration": [
+        "dist/migration/index.d.ts"
+      ],
+      "validation": [
+        "dist/validation/index.d.ts"
+      ],
+      "inverse-migration": [
+        "dist/inverse-migration/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/migration/index.ts --config ../../tsdown.config.ts --outDir dist/migration && tsdown src/validation/index.ts --config ../../tsdown.config.ts --outDir dist/validation && tsdown src/inverse-migration/index.ts --config ../../tsdown.config.ts --outDir dist/inverse-migration",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run --passWithNoTests",
+    "test:run": "vitest run"
+  },
+  "peerDependencies": {
+    "@hierarchidb/core-types": "workspace:*"
+  },
+  "dependencies": {
+    "ajv": "^8.18.0",
+    "yaml": "^2.0.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/core-types": "workspace:*",
+    "fast-check": "^4.5.3",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0"
+  }
 }

@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { WindowState } from '@hierarchidb/components';
 import { useTheme } from '@mui/material/styles';
+import type { ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
+import { DEFAULT_STATS_WINDOW_STATE } from './resource-layer-map/MapStatsPanel.js';
 import type { ResourceLayerMapProps } from './resource-layer-map/ResourceLayerMap.types.js';
 import {
   buildDefaultHighlightOverrides,
@@ -15,9 +17,7 @@ import {
 import { useGeoJsonLayerSync } from './resource-layer-map/useGeoJsonLayerSync.js';
 import { useMapLayerRuntime } from './resource-layer-map/useMapLayerRuntime.js';
 import { useResourceLayerMapInteractions } from './resource-layer-map/useResourceLayerMapInteractions.js';
-import { DEFAULT_STATS_WINDOW_STATE } from './resource-layer-map/MapStatsPanel.js';
 import { useResourceLayerMapStats } from './useResourceLayerMapStats.js';
-import type { WindowState } from '@hierarchidb/components';
 
 export function useResourceLayerMap(props: ResourceLayerMapProps) {
   const theme = useTheme();
@@ -56,15 +56,19 @@ export function useResourceLayerMap(props: ResourceLayerMapProps) {
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
 
-  const orderedBasemaps = useMemo(() => (basemapStyles ? sortByPath(basemapStyles) : []), [basemapStyles]);
+  const orderedBasemaps = useMemo(
+    () => (basemapStyles ? sortByPath(basemapStyles) : []),
+    [basemapStyles]
+  );
   const orderedLayers = useMemo(() => sortByLayerPriority(vectorLayers), [vectorLayers]);
   const orderedGeoJsonLayers = useMemo(
     () => (geoJsonLayers ? sortByLayerPriority(geoJsonLayers) : []),
-    [geoJsonLayers],
+    [geoJsonLayers]
   );
 
   const fitSelectionEnabled =
-    (interaction ? (interaction.enabled ?? true) : false) && (interaction?.fitSelection?.enabled ?? true);
+    (interaction ? (interaction.enabled ?? true) : false) &&
+    (interaction?.fitSelection?.enabled ?? true);
   const searchConfig = interaction?.search;
 
   useGeoJsonLayerSync({ mapInstance, orderedGeoJsonLayers });
@@ -75,27 +79,28 @@ export function useResourceLayerMap(props: ResourceLayerMapProps) {
   });
 
   const renderLayerEntries = useMemo(
-    () => orderedLayers.map((layer) => {
-      const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
-      const layerType = layerConfig.layerType ?? 'fill';
-      const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
-      const baseLayerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides };
-      const highlightOverrides =
-        highlightOverridesByType?.[layerType]
-        ?? buildDefaultHighlightOverrides(layerType, baseLayerPaint, theme);
-      const layerPaint = { ...baseLayerPaint, ...highlightOverrides };
-      const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
-      const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
-      return {
-        layer,
-        layerConfig,
-        layerType,
-        layerPaint,
-        layerId,
-        sourceId,
-      };
-    }),
-    [orderedLayers, styleOverrides, styleOverridesByType, highlightOverridesByType, theme],
+    () =>
+      orderedLayers.map((layer) => {
+        const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
+        const layerType = layerConfig.layerType ?? 'fill';
+        const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
+        const baseLayerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides };
+        const highlightOverrides =
+          highlightOverridesByType?.[layerType] ??
+          buildDefaultHighlightOverrides(layerType, baseLayerPaint, theme);
+        const layerPaint = { ...baseLayerPaint, ...highlightOverrides };
+        const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
+        const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
+        return {
+          layer,
+          layerConfig,
+          layerType,
+          layerPaint,
+          layerId,
+          sourceId,
+        };
+      }),
+    [orderedLayers, styleOverrides, styleOverridesByType, highlightOverridesByType, theme]
   );
 
   const statsEnabled = Boolean(stats?.enabled);
@@ -124,14 +129,20 @@ export function useResourceLayerMap(props: ResourceLayerMapProps) {
   const statsToggleButtonVisible = statsWindowConfig?.showToggleButton ?? false;
   const statsToggleButtonIcon = statsWindowConfig?.toggleButtonIcon ?? statsWindowIcon;
   const resolvedStatsWindowIcon = isRenderableNode(statsWindowIcon) ? statsWindowIcon : null;
-  const resolvedStatsToggleButtonIcon = isRenderableNode(statsToggleButtonIcon) ? statsToggleButtonIcon : null;
+  const resolvedStatsToggleButtonIcon = isRenderableNode(statsToggleButtonIcon)
+    ? statsToggleButtonIcon
+    : null;
   const statsWindowOpen = statsWindowState.isVisible !== false;
   const statsToggleButtonPosition = useMemo(
     () => statsWindowConfig?.toggleButtonPosition ?? { top: 12, left: 12 },
-    [statsWindowConfig?.toggleButtonPosition],
+    [statsWindowConfig?.toggleButtonPosition]
   );
   const resolvedStatsToggleButtonPosition = useMemo(() => {
-    if (!mapControlContainer || statsToggleButtonPosition.top == null || statsToggleButtonPosition.right == null) {
+    if (
+      !mapControlContainer ||
+      statsToggleButtonPosition.top == null ||
+      statsToggleButtonPosition.right == null
+    ) {
       return statsToggleButtonPosition;
     }
     const rect = mapControlContainer.getBoundingClientRect();
@@ -152,10 +163,13 @@ export function useResourceLayerMap(props: ResourceLayerMapProps) {
       ? { mapStyleUrl: resolvedBaseStyle }
       : { mapStyleObject: resolvedBaseStyle };
 
-  const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
-    setMapInstance(map);
-    onLoad?.(map);
-  }, [onLoad]);
+  const handleMapLoad = useCallback(
+    (map: MapLibreMapInstance) => {
+      setMapInstance(map);
+      onLoad?.(map);
+    },
+    [onLoad]
+  );
 
   const {
     searchEnabled,
@@ -180,19 +194,14 @@ export function useResourceLayerMap(props: ResourceLayerMapProps) {
     snackbar,
   });
 
-  const {
-    statsActive,
-    statsContainer,
-    statsPositionStyle,
-    statsStore,
-    handleTileRequest,
-  } = useResourceLayerMapStats({
-    mapInstance,
-    orderedLayers,
-    vectorLayerEntries,
-    statsEnabled,
-    statsPosition,
-  });
+  const { statsActive, statsContainer, statsPositionStyle, statsStore, handleTileRequest } =
+    useResourceLayerMapStats({
+      mapInstance,
+      orderedLayers,
+      vectorLayerEntries,
+      statsEnabled,
+      statsPosition,
+    });
 
   const snackbarPosition = effectiveSnackbar?.position ?? 'bottom-center';
   const anchorOrigin = (() => {
@@ -239,9 +248,9 @@ export function useResourceLayerMap(props: ResourceLayerMapProps) {
   })();
 
   const rawSnackbarContent =
-    effectiveSnackbar?.content
-    ?? effectiveSnackbar?.renderContent?.(snackbarFeatures)
-    ?? buildHoverSnackbarContent(snackbarFeatures);
+    effectiveSnackbar?.content ??
+    effectiveSnackbar?.renderContent?.(snackbarFeatures) ??
+    buildHoverSnackbarContent(snackbarFeatures);
   const snackbarContent: ReactNode = isRenderableNode(rawSnackbarContent) ? rawSnackbarContent : '';
   const snackbarOpen = effectiveSnackbar?.open ?? (snackbarEnabled && snackbarFeatures.length > 0);
 

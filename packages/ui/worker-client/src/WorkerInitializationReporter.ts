@@ -8,8 +8,8 @@
 import type {
   InitializationStep,
   WorkerInitMessage,
-  WorkerInitRequest,
   WorkerInitMessageTarget,
+  WorkerInitRequest,
 } from './types.js';
 
 export class WorkerInitializationReporter {
@@ -33,7 +33,9 @@ export class WorkerInitializationReporter {
   ) {
     this.initSteps = steps;
     this.debug = debug;
-    this.messageTarget = options?.messageTarget ?? (typeof self !== 'undefined' ? (self as WorkerInitMessageTarget) : null);
+    this.messageTarget =
+      options?.messageTarget ??
+      (typeof self !== 'undefined' ? (self as WorkerInitMessageTarget) : null);
     this.sender = options?.sender;
     this.messageListenerEnabled = options?.listenForRequests ?? true;
     this.setupMessageListener();

@@ -19,18 +19,31 @@ async function resolveLoader(): Promise<PluginManifestLoader | null> {
     return loader;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn('[generate-plugin-registry] Failed to load manifest loader via workspace import:', message);
+    console.warn(
+      '[generate-plugin-registry] Failed to load manifest loader via workspace import:',
+      message
+    );
   }
 
-  const fallbackDist = path.join(repoRoot, 'packages', 'tools', 'load-plugin-manifest', 'dist', 'index.js');
+  const fallbackDist = path.join(
+    repoRoot,
+    'packages',
+    'tools',
+    'load-plugin-manifest',
+    'dist',
+    'index.js'
+  );
   if (await fileExists(fallbackDist)) {
     try {
       const imported = await import(pathToFileURL(fallbackDist).href);
       loader = imported.loadPluginManifestFromFile as PluginManifestLoader;
-      console.warn('[generate-plugin-registry] Fallback: loaded manifest loader from local dist stage.');
+      console.warn(
+        '[generate-plugin-registry] Fallback: loaded manifest loader from local dist stage.'
+      );
       return loader;
     } catch (fallbackError) {
-      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      const fallbackMessage =
+        fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
       console.warn('[generate-plugin-registry] Fallback import failed:', fallbackMessage);
     }
   } else {

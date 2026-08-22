@@ -1,7 +1,7 @@
+import type { Timestamp } from '@hierarchidb/core-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
-import type { Timestamp } from '@hierarchidb/core-types';
 import { LocationSelectionStep } from '../../LocationSelectionStep';
 
 vi.mock('@hierarchidb/ui-country-select', () => ({
@@ -9,13 +9,23 @@ vi.mock('@hierarchidb/ui-country-select', () => ({
     status: 'ready',
     countries: [{ code: 'JP', name: 'Japan', continent: 'Asia' }],
   }),
-  CountryMatrixSelector: ({ matrixConfig, onSelectionsChange }: { matrixConfig: { columns: { id: string; label: string }[] }; onSelectionsChange: (value: any) => void }) => (
+  CountryMatrixSelector: ({
+    matrixConfig,
+    onSelectionsChange,
+  }: {
+    matrixConfig: { columns: { id: string; label: string }[] };
+    onSelectionsChange: (value: any) => void;
+  }) => (
     <div>
       <div>{matrixConfig.columns[0]?.label}</div>
       <button
         type="button"
         aria-label="toggle-selection"
-        onClick={() => onSelectionsChange([{ countryCode: 'JP', selections: { [matrixConfig.columns[0]?.id ?? '']: true } }])}
+        onClick={() =>
+          onSelectionsChange([
+            { countryCode: 'JP', selections: { [matrixConfig.columns[0]?.id ?? '']: true } },
+          ])
+        }
       >
         toggle
       </button>
@@ -53,7 +63,8 @@ describe('LocationSelectionStep (component)', () => {
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
     const patch = onUpdate.mock.calls[0][0] as Partial<LocationEntity>;
-    const nextSelections = patch.selectedArrayByCountries ?? baseDraft.selectedArrayByCountries ?? {};
+    const nextSelections =
+      patch.selectedArrayByCountries ?? baseDraft.selectedArrayByCountries ?? {};
     const selectedRow = Object.values(nextSelections).find((row) => row?.some(Boolean));
     expect(selectedRow?.[0]).toBe(true);
 
@@ -61,7 +72,7 @@ describe('LocationSelectionStep (component)', () => {
       <LocationSelectionStep
         draft={{ ...baseDraft, selectedArrayByCountries: nextSelections }}
         onUpdate={onUpdate}
-      />,
+      />
     );
   });
 });

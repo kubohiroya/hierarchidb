@@ -4,4 +4,3 @@ export type GeometryStatsSummary = {
   area: number;
   bbox?: [number, number, number, number];
 };
-

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
+import { getDBName } from '@hierarchidb/util';
 import { assertCommandFailure } from '../../../test-utils/assertions';
 import { CommandProcessor } from '../../CommandProcessor';
 import { CoreDB } from '../../CoreDB';
 import { commandRegistry } from '../../command/commandRegistry';
 import { WorkerErrorCodeValue } from '../../WorkerErrorCodeValue';
-import { getDBName } from '@hierarchidb/util';
 
 describe('CommandProcessor error model', () => {
   let core: CoreDB;

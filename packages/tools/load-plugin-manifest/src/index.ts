@@ -30,7 +30,7 @@ const TRANSPILER_OPTIONS: ts.TranspileOptions['compilerOptions'] = {
 
 async function evaluateManifestModule(
   manifestPath: string,
-  { silent = false }: LoadOptions = {},
+  { silent = false }: LoadOptions = {}
 ): Promise<Record<string, unknown> | undefined> {
   if (!fs.existsSync(manifestPath)) {
     return undefined;
@@ -38,7 +38,10 @@ async function evaluateManifestModule(
 
   const manifestDir = path.dirname(manifestPath);
   const tmpDir = path.join(manifestDir, '.manifest-eval');
-  const tmpFile = path.join(tmpDir, `manifest.${Date.now()}.${Math.random().toString(16).slice(2)}.mjs`);
+  const tmpFile = path.join(
+    tmpDir,
+    `manifest.${Date.now()}.${Math.random().toString(16).slice(2)}.mjs`
+  );
 
   try {
     await fs.promises.mkdir(tmpDir, { recursive: true });
@@ -68,14 +71,14 @@ async function evaluateManifestModule(
 
 export async function loadPluginManifestFromFile(
   manifestPath: string,
-  options: LoadOptions = {},
+  options: LoadOptions = {}
 ): Promise<Record<string, unknown> | undefined> {
   return evaluateManifestModule(manifestPath, options);
 }
 
 export async function loadPluginManifestFromPackageJson(
   pkg: PackageLike,
-  options: LoadOptions = {},
+  options: LoadOptions = {}
 ): Promise<Record<string, unknown> | undefined> {
   const pkgPath = pkg?.__path;
   if (!pkgPath) {

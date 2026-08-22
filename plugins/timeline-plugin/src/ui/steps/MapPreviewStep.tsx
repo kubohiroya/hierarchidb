@@ -1,7 +1,17 @@
-import { useMemo, useState, useId } from 'react';
-import { Box, Slider, Stack, Switch, TextField, Typography, FormControlLabel, Paper, Chip } from '@mui/material';
-import { Map as MapIcon } from '@mui/icons-material';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Map as MapIcon } from '@mui/icons-material';
+import {
+  Box,
+  Chip,
+  FormControlLabel,
+  Paper,
+  Slider,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useId, useMemo, useState } from 'react';
 import type { TimelineFrame } from '~/common/types/index';
 
 export interface MapPreviewStepProps {
@@ -36,14 +46,16 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
           position: 'relative',
           overflow: 'hidden',
           borderRadius: 2,
-          background: 'radial-gradient(circle at 20% 20%, rgba(123,174,255,0.35), transparent 55%),\
+          background:
+            'radial-gradient(circle at 20% 20%, rgba(123,174,255,0.35), transparent 55%),\
             radial-gradient(circle at 80% 30%, rgba(132, 215, 247, 0.45), transparent 60%),\
             linear-gradient(135deg, rgba(33,150,243,0.35), rgba(156,39,176,0.25))',
           '&::after': {
             content: '""',
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(circle at 50% 120%, rgba(255,255,255,0.15), transparent 70%)',
+            background:
+              'radial-gradient(circle at 50% 120%, rgba(255,255,255,0.15), transparent 70%)',
             mixBlendMode: 'screen',
           },
         }}
@@ -85,7 +97,9 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
           }}
         >
           <Typography variant="body2">
-            {t('map.activeSelections', 'Active selections: {{count}}', { count: frame ? index + 1 : 0 })}
+            {t('map.activeSelections', 'Active selections: {{count}}', {
+              count: frame ? index + 1 : 0,
+            })}
           </Typography>
           <Typography variant="caption" display="block">
             {t('map.bearingPitch', 'Bearing {{bearing}}°, Pitch {{pitch}}°', {
@@ -131,13 +145,13 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
             sx={{ width: 120 }}
           />
           <FormControlLabel
-            control={(
+            control={
               <Switch
                 checked={loop}
                 onChange={(e) => setLoop(e.target.checked)}
                 inputProps={{ id: `${controlId}-loop`, name: 'loop' }}
               />
-            )}
+            }
             label={t('map.loop', 'Loop')}
           />
         </Stack>

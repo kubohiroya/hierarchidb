@@ -1,15 +1,3 @@
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
-import type { HeapPressureEvent } from '@hierarchidb/memory';
-import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
-import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
-import type {
-  ShapeBuildSessionRecord,
-  ShapeDataSourceName,
-  ShapeMutationAPI,
-  ShapeQueryAPI,
-} from '@hierarchidb/shape-api';
-import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type {
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
@@ -21,7 +9,19 @@ import type {
   TaskProgressUpdatedEvent,
   WorkerLogEvent,
 } from '@hierarchidb/build-api';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
+import type { HeapPressureEvent } from '@hierarchidb/memory';
+import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeDataSourceName,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
+} from '@hierarchidb/shape-api';
+import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
 import type {
   TreeMutationAPI,
@@ -90,10 +90,7 @@ export interface WorkerAPI<T> {
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
   /** Canonical build API. */
-  startBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-  ): Promise<BuildSessionStatus>;
+  startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   /** Canonical build API. */
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   /** Canonical build API. */

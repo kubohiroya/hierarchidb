@@ -1,5 +1,5 @@
-import { useId, useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
+import { useId, useMemo } from 'react';
 import type { SearchResult } from '~/types/index';
 import type { SearchResultChipData } from './useSearchResultTable.js';
 
@@ -37,7 +37,7 @@ export function useSearchResultTableView({
         isSelected: selectedResults.has(result.nodeId),
         rowChips: getRowChips(result),
       })),
-    [getRowChips, results, selectedResults],
+    [getRowChips, results, selectedResults]
   );
 
   return {

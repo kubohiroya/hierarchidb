@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
 // Skip network-dependent tests unless explicitly enabled via env
 // Run with: NETWORK_TESTS=1 pnpm -C packages/backend/cors-proxy test:run
 const describeIf = process.env.NETWORK_TESTS === '1' ? describe : describe.skip;
@@ -62,7 +63,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
           headers: {
             Origin: 'http://localhost:3000',
           },
-        },
+        }
       );
 
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000');
@@ -74,7 +75,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
   describe('Authentication Validation', () => {
     it('should reject requests without Bearer token', async () => {
       const response = await fetch(
-        `${config.proxyUrl}/?url=${encodeURIComponent(config.targetUrl)}`,
+        `${config.proxyUrl}/?url=${encodeURIComponent(config.targetUrl)}`
       );
 
       expect(response.status).toBe(401);
@@ -89,7 +90,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
           headers: {
             Authorization: 'InvalidFormat token123',
           },
-        },
+        }
       );
 
       expect(response.status).toBe(401);
@@ -104,7 +105,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
           headers: {
             Authorization: 'Bearer invalid-token-123',
           },
-        },
+        }
       );
 
       expect(response.status).toBe(401);
@@ -134,7 +135,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
               headers: {
                 Authorization: `Bearer ${config.bffToken}`,
               },
-            },
+            }
           );
 
           // Should either succeed or fail based on allowed target list
@@ -154,7 +155,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
               headers: {
                 Authorization: `Bearer ${config.bffToken}`,
               },
-            },
+            }
           );
 
           // Should be rejected if allowlist is configured
@@ -175,7 +176,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
               headers: {
                 Authorization: `Bearer ${config.googleToken}`,
               },
-            },
+            }
           );
 
           // Should work if Google validation is configured
@@ -196,7 +197,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
               headers: {
                 Authorization: `Bearer ${config.githubToken}`,
               },
-            },
+            }
           );
 
           // Should work if GitHub validation is configured
@@ -217,7 +218,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
               headers: {
                 Authorization: `Bearer ${config.microsoftToken}`,
               },
-            },
+            }
           );
 
           // Should work if Microsoft validation is configured
@@ -266,7 +267,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
               Authorization: `Bearer ${config.bffToken}`,
               'X-Custom-Header': customHeader,
             },
-          },
+          }
         );
 
         // If httpbin.org is in allowed list, check headers were forwarded
@@ -288,7 +289,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
             headers: {
               Authorization: `Bearer ${config.bffToken}`,
             },
-          },
+          }
         );
 
         // Should preserve the 404 from the target or return 403 if not allowed
@@ -304,7 +305,7 @@ describeIf('CORS Proxy Service Integration Tests', () => {
             headers: {
               Authorization: `Bearer ${config.bffToken}`,
             },
-          },
+          }
         );
 
         if (response.status === 200) {

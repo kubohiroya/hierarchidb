@@ -36,57 +36,65 @@ export interface UseAccordionStateOptions {
  * Hook to manage accordion expansion atoms
  */
 export function useAccordionState(options: UseAccordionStateOptions = {}): AccordionState {
-  const {
-    defaultExpanded = [],
-    exclusive = false,
-    onChange,
-    allKeys = [],
-  } = options;
+  const { defaultExpanded = [], exclusive = false, onChange, allKeys = [] } = options;
 
-  const [expanded, setExpandedInternal] = useState<Set<string>>(
-    new Set(defaultExpanded),
+  const [expanded, setExpandedInternal] = useState<Set<string>>(new Set(defaultExpanded));
+
+  const updateExpanded = useCallback(
+    (newExpanded: Set<string>) => {
+      setExpandedInternal(newExpanded);
+      onChange?.(Array.from(newExpanded));
+    },
+    [onChange]
   );
 
-  const updateExpanded = useCallback((newExpanded: Set<string>) => {
-    setExpandedInternal(newExpanded);
-    onChange?.(Array.from(newExpanded));
-  }, [onChange]);
+  const isExpanded = useCallback(
+    (key: string) => {
+      return expanded.has(key);
+    },
+    [expanded]
+  );
 
-  const isExpanded = useCallback((key: string) => {
-    return expanded.has(key);
-  }, [expanded]);
+  const toggle = useCallback(
+    (key: string) => {
+      const newExpanded = new Set(expanded);
 
-  const toggle = useCallback((key: string) => {
-    const newExpanded = new Set(expanded);
+      if (newExpanded.has(key)) {
+        newExpanded.delete(key);
+      } else {
+        if (exclusive) {
+          newExpanded.clear();
+        }
+        newExpanded.add(key);
+      }
 
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key);
-    } else {
+      updateExpanded(newExpanded);
+    },
+    [expanded, exclusive, updateExpanded]
+  );
+
+  const expand = useCallback(
+    (key: string) => {
+      const newExpanded = new Set(expanded);
+
       if (exclusive) {
         newExpanded.clear();
       }
       newExpanded.add(key);
-    }
 
-    updateExpanded(newExpanded);
-  }, [expanded, exclusive, updateExpanded]);
+      updateExpanded(newExpanded);
+    },
+    [expanded, exclusive, updateExpanded]
+  );
 
-  const expand = useCallback((key: string) => {
-    const newExpanded = new Set(expanded);
-
-    if (exclusive) {
-      newExpanded.clear();
-    }
-    newExpanded.add(key);
-
-    updateExpanded(newExpanded);
-  }, [expanded, exclusive, updateExpanded]);
-
-  const collapse = useCallback((key: string) => {
-    const newExpanded = new Set(expanded);
-    newExpanded.delete(key);
-    updateExpanded(newExpanded);
-  }, [expanded, updateExpanded]);
+  const collapse = useCallback(
+    (key: string) => {
+      const newExpanded = new Set(expanded);
+      newExpanded.delete(key);
+      updateExpanded(newExpanded);
+    },
+    [expanded, updateExpanded]
+  );
 
   const expandAll = useCallback(() => {
     if (exclusive) {
@@ -103,41 +111,47 @@ export function useAccordionState(options: UseAccordionStateOptions = {}): Accor
     updateExpanded(new Set());
   }, [updateExpanded]);
 
-  const setExpanded = useCallback((keys: string[]) => {
-    if (exclusive && keys.length > 1) {
-      // In exclusive mode, only keep the last key
-      const lastKey = keys[keys.length - 1];
-      if (lastKey) {
-        updateExpanded(new Set([lastKey]));
+  const setExpanded = useCallback(
+    (keys: string[]) => {
+      if (exclusive && keys.length > 1) {
+        // In exclusive mode, only keep the last key
+        const lastKey = keys[keys.length - 1];
+        if (lastKey) {
+          updateExpanded(new Set([lastKey]));
+        }
+      } else {
+        updateExpanded(new Set(keys));
       }
-    } else {
-      updateExpanded(new Set(keys));
-    }
-  }, [exclusive, updateExpanded]);
+    },
+    [exclusive, updateExpanded]
+  );
 
   const getExpandedKeys = useCallback(() => {
     return Array.from(expanded);
   }, [expanded]);
 
-  return useMemo(() => ({
-    expanded,
-    isExpanded,
-    toggle,
-    expand,
-    collapse,
-    expandAll,
-    collapseAll,
-    setExpanded,
-    getExpandedKeys,
-  }), [
-    expanded,
-    isExpanded,
-    toggle,
-    expand,
-    collapse,
-    expandAll,
-    collapseAll,
-    setExpanded,
-    getExpandedKeys,
-  ]);
+  return useMemo(
+    () => ({
+      expanded,
+      isExpanded,
+      toggle,
+      expand,
+      collapse,
+      expandAll,
+      collapseAll,
+      setExpanded,
+      getExpandedKeys,
+    }),
+    [
+      expanded,
+      isExpanded,
+      toggle,
+      expand,
+      collapse,
+      expandAll,
+      collapseAll,
+      setExpanded,
+      getExpandedKeys,
+    ]
+  );
 }

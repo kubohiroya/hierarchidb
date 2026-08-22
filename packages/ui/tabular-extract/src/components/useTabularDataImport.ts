@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularProcessingConfig } from '../types/index';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import {
+  type ChangeEvent,
+  type DragEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { useTabularData } from '../hooks/useTabularData';
+import type { TabularProcessingConfig } from '../types/index';
 
 interface UseTabularDataImportArgs {
   onFileImported: (metadata: TabularTableMetadata) => void;
@@ -54,7 +62,7 @@ export const useTabularDataImport = ({
   const [urlInput, setUrlInput] = useState(initialUrl);
   const [importMethod, setImportMethod] = useState<'file' | 'url'>(initialImportMethod);
   const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig>(
-    initialProcessingConfig ?? defaultProcessingConfig,
+    initialProcessingConfig ?? defaultProcessingConfig
   );
   const [dragActive, setDragActive] = useState(false);
   const [dragError, setDragError] = useState(false);
@@ -91,26 +99,34 @@ export const useTabularDataImport = ({
     setUrlInput(initialUrl);
   }, [initialUrl]);
 
-  const processFile = useCallback((file: File) => {
-    const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
-    if (!acceptedFileTypes.includes(fileExtension)) {
-      onError(`Unsupported file type: ${fileExtension}. Accepted types: ${acceptedFileTypes.join(', ')}`);
-      return;
-    }
-    if (file.size > maxFileSize) {
-      onError(
-        `File size (${Math.round(file.size / 1024 / 1024)}MB) exceeds maximum allowed size (${Math.round(maxFileSize / 1024 / 1024)}MB)`,
-      );
-      return;
-    }
-    importTabularFile(file, processingConfig);
-  }, [acceptedFileTypes, importTabularFile, maxFileSize, onError, processingConfig]);
+  const processFile = useCallback(
+    (file: File) => {
+      const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+      if (!acceptedFileTypes.includes(fileExtension)) {
+        onError(
+          `Unsupported file type: ${fileExtension}. Accepted types: ${acceptedFileTypes.join(', ')}`
+        );
+        return;
+      }
+      if (file.size > maxFileSize) {
+        onError(
+          `File size (${Math.round(file.size / 1024 / 1024)}MB) exceeds maximum allowed size (${Math.round(maxFileSize / 1024 / 1024)}MB)`
+        );
+        return;
+      }
+      importTabularFile(file, processingConfig);
+    },
+    [acceptedFileTypes, importTabularFile, maxFileSize, onError, processingConfig]
+  );
 
-  const handleFileSelect = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    processFile(file);
-  }, [processFile]);
+  const handleFileSelect = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      processFile(file);
+    },
+    [processFile]
+  );
 
   const handleUrlDownload = useCallback(() => {
     if (!urlInput.trim()) {
@@ -137,7 +153,15 @@ export const useTabularDataImport = ({
     if (importSucceeded) return;
     autoDownloadTriggeredRef.current = true;
     handleUrlDownload();
-  }, [autoStartDownload, disabled, handleUrlDownload, importMethod, importSucceeded, isImporting, urlInput]);
+  }, [
+    autoStartDownload,
+    disabled,
+    handleUrlDownload,
+    importMethod,
+    importSucceeded,
+    isImporting,
+    urlInput,
+  ]);
 
   const handleImportClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -152,106 +176,142 @@ export const useTabularDataImport = ({
     return Boolean(dt.files && dt.files.length > 0);
   }, []);
 
-  const handleDrop = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setDragActive(false);
-    setDragError(false);
-    dragDepthRef.current = 0;
-    if (disabled || isImporting) return;
-    const file = event.dataTransfer.files?.[0];
-    if (!file) return;
-    processFile(file);
-  }, [disabled, isImporting, processFile]);
-
-  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
-    if (!hasFileItems(event.dataTransfer)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (disabled || isImporting) return;
-    setDragActive(true);
-  }, [disabled, hasFileItems, isImporting]);
-
-  const handleDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
-    if (!hasFileItems(event.dataTransfer)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (disabled || isImporting) return;
-    dragDepthRef.current += 1;
-    const item = event.dataTransfer?.items?.[0];
-    const file = item?.kind === 'file' ? item.getAsFile() : null;
-    const name = file?.name || item?.type || '';
-    const ext = name.includes('.') ? `.${name.split('.').pop()?.toLowerCase()}` : '';
-    const matches = ext !== '' && acceptedFileTypes.includes(ext);
-    setDragActive(matches);
-    setDragError(!matches);
-  }, [acceptedFileTypes, disabled, hasFileItems, isImporting]);
-
-  const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
-    if (!hasFileItems(event.dataTransfer)) {
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
       setDragActive(false);
       setDragError(false);
       dragDepthRef.current = 0;
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
-    if (dragDepthRef.current === 0) {
-      setDragActive(false);
-      setDragError(false);
-    }
-  }, [hasFileItems]);
+      if (disabled || isImporting) return;
+      const file = event.dataTransfer.files?.[0];
+      if (!file) return;
+      processFile(file);
+    },
+    [disabled, isImporting, processFile]
+  );
 
-  const updateProcessingConfig = useCallback((updater: (prev: TabularProcessingConfig) => TabularProcessingConfig) => {
-    setProcessingConfig((prev) => {
-      const next = updater(prev);
-      onProcessingConfigChange?.(next);
-      return next;
-    });
-  }, [onProcessingConfigChange]);
+  const handleDragOver = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (!hasFileItems(event.dataTransfer)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (disabled || isImporting) return;
+      setDragActive(true);
+    },
+    [disabled, hasFileItems, isImporting]
+  );
 
-  const handleImportMethodChange = useCallback((event: SelectChangeEvent) => {
-    const method = event.target.value as 'file' | 'url';
-    setImportMethod(method);
-    onImportMethodChange?.(method);
-  }, [onImportMethodChange]);
+  const handleDragEnter = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (!hasFileItems(event.dataTransfer)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (disabled || isImporting) return;
+      dragDepthRef.current += 1;
+      const item = event.dataTransfer?.items?.[0];
+      const file = item?.kind === 'file' ? item.getAsFile() : null;
+      const name = file?.name || item?.type || '';
+      const ext = name.includes('.') ? `.${name.split('.').pop()?.toLowerCase()}` : '';
+      const matches = ext !== '' && acceptedFileTypes.includes(ext);
+      setDragActive(matches);
+      setDragError(!matches);
+    },
+    [acceptedFileTypes, disabled, hasFileItems, isImporting]
+  );
 
-  const handleUrlInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const nextUrl = event.target.value;
-    setUrlInput(nextUrl);
-    onUrlChange?.(nextUrl);
-  }, [onUrlChange]);
+  const handleDragLeave = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (!hasFileItems(event.dataTransfer)) {
+        setDragActive(false);
+        setDragError(false);
+        dragDepthRef.current = 0;
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+      if (dragDepthRef.current === 0) {
+        setDragActive(false);
+        setDragError(false);
+      }
+    },
+    [hasFileItems]
+  );
 
-  const handleDelimiterChange = useCallback((event: SelectChangeEvent<string>) => {
-    updateProcessingConfig((prev) => ({
-      ...prev,
-      delimiter: event.target.value as TabularProcessingConfig['delimiter'],
-    }));
-  }, [updateProcessingConfig]);
+  const updateProcessingConfig = useCallback(
+    (updater: (prev: TabularProcessingConfig) => TabularProcessingConfig) => {
+      setProcessingConfig((prev) => {
+        const next = updater(prev);
+        onProcessingConfigChange?.(next);
+        return next;
+      });
+    },
+    [onProcessingConfigChange]
+  );
 
-  const handleEncodingChange = useCallback((event: SelectChangeEvent<string>) => {
-    updateProcessingConfig((prev) => ({
-      ...prev,
-      encoding: event.target.value as TabularProcessingConfig['encoding'],
-    }));
-  }, [updateProcessingConfig]);
+  const handleImportMethodChange = useCallback(
+    (event: SelectChangeEvent) => {
+      const method = event.target.value as 'file' | 'url';
+      setImportMethod(method);
+      onImportMethodChange?.(method);
+    },
+    [onImportMethodChange]
+  );
 
-  const handleQuoteCharChange = useCallback((event: SelectChangeEvent<string>) => {
-    updateProcessingConfig((prev) => ({
-      ...prev,
-      quoteChar: event.target.value as TabularProcessingConfig['quoteChar'],
-    }));
-  }, [updateProcessingConfig]);
+  const handleUrlInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const nextUrl = event.target.value;
+      setUrlInput(nextUrl);
+      onUrlChange?.(nextUrl);
+    },
+    [onUrlChange]
+  );
 
-  const handleHasHeaderChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const checked = event.target.checked;
-    updateProcessingConfig((prev) => ({ ...prev, hasHeader: checked }));
-  }, [updateProcessingConfig]);
+  const handleDelimiterChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      updateProcessingConfig((prev) => ({
+        ...prev,
+        delimiter: event.target.value as TabularProcessingConfig['delimiter'],
+      }));
+    },
+    [updateProcessingConfig]
+  );
 
-  const handleSkipEmptyLinesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const checked = event.target.checked;
-    updateProcessingConfig((prev) => ({ ...prev, skipEmptyLines: checked }));
-  }, [updateProcessingConfig]);
+  const handleEncodingChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      updateProcessingConfig((prev) => ({
+        ...prev,
+        encoding: event.target.value as TabularProcessingConfig['encoding'],
+      }));
+    },
+    [updateProcessingConfig]
+  );
+
+  const handleQuoteCharChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      updateProcessingConfig((prev) => ({
+        ...prev,
+        quoteChar: event.target.value as TabularProcessingConfig['quoteChar'],
+      }));
+    },
+    [updateProcessingConfig]
+  );
+
+  const handleHasHeaderChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const checked = event.target.checked;
+      updateProcessingConfig((prev) => ({ ...prev, hasHeader: checked }));
+    },
+    [updateProcessingConfig]
+  );
+
+  const handleSkipEmptyLinesChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const checked = event.target.checked;
+      updateProcessingConfig((prev) => ({ ...prev, skipEmptyLines: checked }));
+    },
+    [updateProcessingConfig]
+  );
 
   return {
     fileInputRef,

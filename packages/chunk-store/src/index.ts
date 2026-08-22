@@ -1,14 +1,14 @@
-import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
-  FetchNetworkPort,
   type DownloadProgress,
+  FetchNetworkPort,
   type FetchNetworkPortOptions,
   type NetworkPort,
   type StorageCommitMetadata,
   type StorageMetadata,
   type StoragePort,
 } from '@hierarchidb/download';
+import { Dexie, type Table } from 'dexie';
 import { NobleSha3HashPort } from './adapters/NobleSha3HashPort.js';
 import type { HashAlgorithm, HashPort } from './types.js';
 
@@ -124,7 +124,6 @@ class ChunkStoreDB extends Dexie {
       [tables.relations]: '&[nodeId+metadataId], nodeId, metadataId',
       [tables.keys]: '&[key+type], key, type, metadataId',
     });
-
   }
 }
 
@@ -168,10 +167,18 @@ export class DexieChunkStore<T> implements StoragePort {
       db = new ChunkStoreDB(databaseName, tables);
     }
 
-    this.files = options.db ? (db.table(tables.files) as Table<FileRecord, ChunkStoreMetadataId>) : (db as ChunkStoreDB).files;
-    this.chunks = options.db ? (db.table(tables.chunks) as Table<ChunkRecord, [ChunkStoreMetadataId, number]>) : (db as ChunkStoreDB).chunks;
-    this.relations = options.db ? (db.table(tables.relations) as Table<RelationRecord, [NodeId, ChunkStoreMetadataId]>) : (db as ChunkStoreDB).relations;
-    this.keys = options.db ? (db.table(tables.keys) as Table<KeyRecord, [string, KeyType]>) : (db as ChunkStoreDB).keys;
+    this.files = options.db
+      ? (db.table(tables.files) as Table<FileRecord, ChunkStoreMetadataId>)
+      : (db as ChunkStoreDB).files;
+    this.chunks = options.db
+      ? (db.table(tables.chunks) as Table<ChunkRecord, [ChunkStoreMetadataId, number]>)
+      : (db as ChunkStoreDB).chunks;
+    this.relations = options.db
+      ? (db.table(tables.relations) as Table<RelationRecord, [NodeId, ChunkStoreMetadataId]>)
+      : (db as ChunkStoreDB).relations;
+    this.keys = options.db
+      ? (db.table(tables.keys) as Table<KeyRecord, [string, KeyType]>)
+      : (db as ChunkStoreDB).keys;
     this.serializer = options.serializer;
     this.deserializer = options.deserializer;
     this.network = options.networkPort ?? new FetchNetworkPort(options.networkOptions);
@@ -185,7 +192,12 @@ export class DexieChunkStore<T> implements StoragePort {
     const metadata = await this.getMetadata(metadataId);
     if (!metadata) return undefined;
     const buffer = await this.readAll(metadataId);
-    return { key: cacheKey, metadataId, value: this.deserializer(buffer), metadata: metadata as ChunkStoreMetadata };
+    return {
+      key: cacheKey,
+      metadataId,
+      value: this.deserializer(buffer),
+      metadata: metadata as ChunkStoreMetadata,
+    };
   }
 
   async setForNode(
@@ -193,7 +205,7 @@ export class DexieChunkStore<T> implements StoragePort {
     cacheKey: string,
     value: T,
     metadata?: Partial<ChunkStoreMetadata>,
-    options: ChunkStoreSetOptions = {},
+    options: ChunkStoreSetOptions = {}
   ): Promise<ChunkStoreEntry<T>> {
     const buffer = this.serializer(value);
     const stored = await this.storeBufferForNode(
@@ -201,7 +213,7 @@ export class DexieChunkStore<T> implements StoragePort {
       cacheKey,
       buffer,
       metadata as Partial<FileRecord> | undefined,
-      options.identity ?? 'url+etag',
+      options.identity ?? 'url+etag'
     );
     return {
       key: cacheKey,
@@ -248,7 +260,7 @@ export class DexieChunkStore<T> implements StoragePort {
   async getOrFetchForNode(
     nodeId: NodeId,
     url: string,
-    options: ChunkStoreFetchOptions = {},
+    options: ChunkStoreFetchOptions = {}
   ): Promise<ChunkStoreEntry<T>> {
     const cacheKey = options.cacheKey ?? url;
     const fetchUrl = options.fetchUrl ?? url;
@@ -293,11 +305,10 @@ export class DexieChunkStore<T> implements StoragePort {
       const useConditional = Boolean(cachedMeta?.etag || cachedMeta?.lastModified);
       if (useConditional && cachedMetadataId && cachedMeta) {
         try {
-          const headers = buildHeaders(
-            options.accept,
-            options.headers,
-            { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified },
-          );
+          const headers = buildHeaders(options.accept, options.headers, {
+            etag: cachedMeta.etag,
+            lastModified: cachedMeta.lastModified,
+          });
           const head = await this.network.head(fetchUrl, { headers, signal: options.signal });
           if (head.status === 304) {
             const cached = await reuseCached();
@@ -307,7 +318,10 @@ export class DexieChunkStore<T> implements StoragePort {
             const headEtag = readHeader(head.headers, 'etag');
             const headLastModified = readHeader(head.headers, 'last-modified');
             const sameEtag = headEtag && cachedMeta.etag && headEtag === cachedMeta.etag;
-            const sameLastModified = headLastModified && cachedMeta.lastModified && headLastModified === cachedMeta.lastModified;
+            const sameLastModified =
+              headLastModified &&
+              cachedMeta.lastModified &&
+              headLastModified === cachedMeta.lastModified;
             if (sameEtag || sameLastModified) {
               const cached = await reuseCached();
               if (cached) return cached;
@@ -318,11 +332,15 @@ export class DexieChunkStore<T> implements StoragePort {
         }
       }
 
-      const attemptFetch = async (useConditional: boolean): Promise<{ buffer: ArrayBuffer; meta: Partial<FileRecord> }> => {
+      const attemptFetch = async (
+        useConditional: boolean
+      ): Promise<{ buffer: ArrayBuffer; meta: Partial<FileRecord> }> => {
         const headers = buildHeaders(
           options.accept,
           options.headers,
-          useConditional && cachedMeta ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified } : undefined,
+          useConditional && cachedMeta
+            ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified }
+            : undefined
         );
         const response = await this.network.get(fetchUrl, {
           headers,
@@ -354,7 +372,13 @@ export class DexieChunkStore<T> implements StoragePort {
 
       try {
         const fetched = await attemptFetch(useConditional);
-        const stored = await this.storeBufferForNode(nodeId, cacheKey, fetched.buffer, fetched.meta, identity);
+        const stored = await this.storeBufferForNode(
+          nodeId,
+          cacheKey,
+          fetched.buffer,
+          fetched.meta,
+          identity
+        );
         return {
           key: cacheKey,
           metadataId: stored.metadataId,
@@ -473,7 +497,10 @@ export class DexieChunkStore<T> implements StoragePort {
   async hasRelationForNode(nodeId: NodeId, cacheKey: string): Promise<boolean> {
     const metadataId = await this.getMetadataIdByCacheKey(cacheKey);
     if (!metadataId) return false;
-    const count = await this.relations.where('[nodeId+metadataId]').equals([nodeId, metadataId]).count();
+    const count = await this.relations
+      .where('[nodeId+metadataId]')
+      .equals([nodeId, metadataId])
+      .count();
     return count > 0;
   }
 
@@ -482,7 +509,7 @@ export class DexieChunkStore<T> implements StoragePort {
     cacheKey: string,
     buffer: ArrayBuffer,
     metadata: Partial<FileRecord> | undefined,
-    identity: ChunkStoreIdentity,
+    identity: ChunkStoreIdentity
   ): Promise<{ metadataId: ChunkStoreMetadataId; metadata: ChunkStoreMetadata }> {
     const now = Date.now();
     const resolved = await this.resolveIdentity(cacheKey, buffer, metadata, identity);
@@ -510,17 +537,25 @@ export class DexieChunkStore<T> implements StoragePort {
           sourceHash: metadata?.sourceHash,
           sourceHashAlgorithm: metadata?.sourceHashAlgorithm,
         });
-        await this.keys.put({ key: resolved.key, type: resolved.type, metadataId: existingId, createdAt: now });
+        await this.keys.put({
+          key: resolved.key,
+          type: resolved.type,
+          metadataId: existingId,
+          createdAt: now,
+        });
       }
       return {
         metadataId: existingId,
-        metadata: this.toMetadata(existingId, existingMeta ?? {
-          metadataId: existingId,
-          cacheKey,
-          createdAt: now,
-          updatedAt: now,
-          committed: true,
-        }),
+        metadata: this.toMetadata(
+          existingId,
+          existingMeta ?? {
+            metadataId: existingId,
+            cacheKey,
+            createdAt: now,
+            updatedAt: now,
+            committed: true,
+          }
+        ),
       };
     }
 
@@ -570,11 +605,16 @@ export class DexieChunkStore<T> implements StoragePort {
     await this.relations.put({ nodeId, metadataId, createdAt: Date.now() });
   }
 
-  private async getMetadataIdByCacheKey(cacheKey: string): Promise<ChunkStoreMetadataId | undefined> {
+  private async getMetadataIdByCacheKey(
+    cacheKey: string
+  ): Promise<ChunkStoreMetadataId | undefined> {
     return await this.getMetadataIdByKey(cacheKey, 'url');
   }
 
-  private async getMetadataIdByKey(key: string, type: KeyType): Promise<ChunkStoreMetadataId | undefined> {
+  private async getMetadataIdByKey(
+    key: string,
+    type: KeyType
+  ): Promise<ChunkStoreMetadataId | undefined> {
     const record = await this.keys.get([key, type]);
     return record?.metadataId;
   }
@@ -583,7 +623,7 @@ export class DexieChunkStore<T> implements StoragePort {
     cacheKey: string,
     buffer: ArrayBuffer,
     metadata: Partial<FileRecord> | undefined,
-    identity: ChunkStoreIdentity,
+    identity: ChunkStoreIdentity
   ): Promise<{ key: string; type: KeyType; hash?: string; hashAlgorithm?: HashAlgorithm }> {
     const etag = metadata?.etag;
     if (identity === 'url') {
@@ -594,17 +634,32 @@ export class DexieChunkStore<T> implements StoragePort {
         return { key: etag, type: 'etag' };
       }
       const hash = await this.hashPort.digest(buffer, this.hashAlgorithm);
-      return { key: `${this.hashAlgorithm}:${hash}`, type: 'hash', hash, hashAlgorithm: this.hashAlgorithm };
+      return {
+        key: `${this.hashAlgorithm}:${hash}`,
+        type: 'hash',
+        hash,
+        hashAlgorithm: this.hashAlgorithm,
+      };
     }
     if (identity === 'url+etag') {
       if (etag) {
         return { key: `${cacheKey}:${etag}`, type: 'url+etag' };
       }
       const hash = await this.hashPort.digest(buffer, this.hashAlgorithm);
-      return { key: `${this.hashAlgorithm}:${hash}`, type: 'hash', hash, hashAlgorithm: this.hashAlgorithm };
+      return {
+        key: `${this.hashAlgorithm}:${hash}`,
+        type: 'hash',
+        hash,
+        hashAlgorithm: this.hashAlgorithm,
+      };
     }
     const hash = await this.hashPort.digest(buffer, this.hashAlgorithm);
-    return { key: `${this.hashAlgorithm}:${hash}`, type: 'hash', hash, hashAlgorithm: this.hashAlgorithm };
+    return {
+      key: `${this.hashAlgorithm}:${hash}`,
+      type: 'hash',
+      hash,
+      hashAlgorithm: this.hashAlgorithm,
+    };
   }
 
   private toMetadata(metadataId: ChunkStoreMetadataId, record: FileRecord): ChunkStoreMetadata {
@@ -630,7 +685,7 @@ export class DexieChunkStore<T> implements StoragePort {
 const buildHeaders = (
   accept: string | undefined,
   extra: Record<string, string> | undefined,
-  conditional?: { etag?: string; lastModified?: string },
+  conditional?: { etag?: string; lastModified?: string }
 ): Headers => {
   const headers = new Headers(extra);
   if (accept) headers.set('Accept', accept);
@@ -658,8 +713,8 @@ const generateMetadataId = (): ChunkStoreMetadataId => {
   return `meta-${Date.now().toString(36)}-${rand}`;
 };
 
-export * from './types.js';
-export * from './cas/ContentAddressableStore.js';
-export * from './adapters/DexieContentIndexPort.js';
 export * from './adapters/CacheAPICachePort.js';
+export * from './adapters/DexieContentIndexPort.js';
 export * from './adapters/NobleSha3HashPort.js';
+export * from './cas/ContentAddressableStore.js';
+export * from './types.js';

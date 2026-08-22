@@ -1,3 +1,7 @@
+import type { SourceConfig } from '@hierarchidb/gis-sdk';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import {
   FormControl,
   Grid,
@@ -10,10 +14,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import type { SourceConfig } from '@hierarchidb/gis-sdk';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 import { useDownloadRetryControlsView } from './useDownloadRetryControlsView.js';
 
@@ -74,7 +74,10 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   fullWidth
                   disabled={disabled}
                   inputProps={{ min: 0 }}
-                  helperText={t('processing.download.timeoutHelp', 'Maximum time to wait for each download before failing.')}
+                  helperText={t(
+                    'processing.download.timeoutHelp',
+                    'Maximum time to wait for each download before failing.'
+                  )}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
@@ -86,7 +89,10 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   fullWidth
                   disabled={disabled}
                   inputProps={{ min: 0 }}
-                  helperText={t('processing.download.retryDelayHelp', 'Wait time between retry attempts when a download fails.')}
+                  helperText={t(
+                    'processing.download.retryDelayHelp',
+                    'Wait time between retry attempts when a download fails.'
+                  )}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
@@ -103,7 +109,10 @@ export const DownloadRetryControls: React.FC<Props> = ({
                     emptyIcon={<RadioButtonUncheckedIcon fontSize="inherit" />}
                   />
                   <Typography variant="caption" color="text.secondary">
-                    {t('processing.download.retryAttemptsHelp', 'Number of retries per failed download request.')}
+                    {t(
+                      'processing.download.retryAttemptsHelp',
+                      'Number of retries per failed download request.'
+                    )}
                   </Typography>
                 </Stack>
               </Grid>
@@ -116,7 +125,9 @@ export const DownloadRetryControls: React.FC<Props> = ({
                     labelId="fetch-retry-backoff-label"
                     value={baseRetryConfig.retryBackoff}
                     label={t('processing.download.retryBackoff', 'Retry Backoff')}
-                    onChange={(event) => updateRetryBackoff(event.target.value as typeof baseRetryConfig.retryBackoff)}
+                    onChange={(event) =>
+                      updateRetryBackoff(event.target.value as typeof baseRetryConfig.retryBackoff)
+                    }
                     disabled={disabled}
                   >
                     <MenuItem value="linear">
@@ -129,7 +140,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
                     {t(
                       'processing.download.retryBackoffHelp',
-                      'Spacing pattern used between retries.',
+                      'Spacing pattern used between retries.'
                     )}
                   </Typography>
                 </FormControl>

@@ -1,7 +1,11 @@
+import type {
+  TabularColumnInfo,
+  TabularColumnType,
+  TabularTableMetadata,
+} from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTabularFilter } from '../hooks/useTabularFilter';
-import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '../types/index';
+import type { TabularDataResult, TabularFilterOperator, TabularFilterRule } from '../types/index';
 import type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 
 const MAX_PREVIEW_ROWS = 500;
@@ -55,25 +59,19 @@ export const useTabularDataFilter = ({
 }: UseTabularDataFilterArgs) => {
   const normalizedInitialFilters = useMemo(
     () => initialFilters.map(normalizeInitialFilter),
-    [initialFilters],
+    [initialFilters]
   );
   const [filters, setFilters] = useState<TabularFilterRule[]>(normalizedInitialFilters);
   const [previewDirty, setPreviewDirty] = useState(false);
   const filtersRef = useRef(filters);
 
-  const {
-    previewData,
-    error,
-    getFilteredPreview,
-    validateFilters,
-    isLoading,
-    setRules,
-  } = useTabularFilter({
-    tableId: tableMetadata.id,
-    pluginId,
-    maxPreviewRows: MAX_PREVIEW_ROWS,
-    initialRules: normalizedInitialFilters,
-  });
+  const { previewData, error, getFilteredPreview, validateFilters, isLoading, setRules } =
+    useTabularFilter({
+      tableId: tableMetadata.id,
+      pluginId,
+      maxPreviewRows: MAX_PREVIEW_ROWS,
+      initialRules: normalizedInitialFilters,
+    });
 
   useEffect(() => {
     if (normalizedInitialFilters.length === 0) return;
@@ -87,20 +85,27 @@ export const useTabularDataFilter = ({
 
   const columnOptionsRef = useRef<TabularColumnInfo[]>([]);
   const columnOptions: TabularColumnInfo[] = useMemo(() => {
-    const nextColumns = hasMetadataColumns ? (tableMetadata.columns ?? []) : (previewData?.columns ?? []);
+    const nextColumns = hasMetadataColumns
+      ? (tableMetadata.columns ?? [])
+      : (previewData?.columns ?? []);
     const prevColumns = columnOptionsRef.current;
     const sameLength = prevColumns.length === nextColumns.length;
-    const shallowEqual = sameLength && prevColumns.every((col, idx) => {
-      const other = nextColumns[idx];
-      return col?.name === other?.name && col?.type === other?.type && col?.index === other?.index;
-    });
+    const shallowEqual =
+      sameLength &&
+      prevColumns.every((col, idx) => {
+        const other = nextColumns[idx];
+        return (
+          col?.name === other?.name && col?.type === other?.type && col?.index === other?.index
+        );
+      });
     if (shallowEqual) {
       return prevColumns;
     }
     columnOptionsRef.current = nextColumns;
     return nextColumns;
   }, [hasMetadataColumns, previewData?.columns, tableMetadata.columns]);
-  const previewColumns: TabularColumnInfo[] = hasPreviewColumns && previewData?.columns ? previewData.columns : columnOptions;
+  const previewColumns: TabularColumnInfo[] =
+    hasPreviewColumns && previewData?.columns ? previewData.columns : columnOptions;
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -121,7 +126,7 @@ export const useTabularDataFilter = ({
     const rowCount =
       Array.isArray(rows) && typeof rows.length === 'number'
         ? rows.length
-        : (rest as { totalRows?: number }).totalRows ?? 0;
+        : ((rest as { totalRows?: number }).totalRows ?? 0);
     const payload: TabularDataResult = {
       ...(rest as Omit<TabularDataResult, 'rows'>),
       rows: [],
@@ -143,13 +148,15 @@ export const useTabularDataFilter = ({
     setFilters((prev) => {
       const nextRules = prev.map((rule) => {
         const columnExists = columnOptions.some((col) => col.name === rule.column);
-        const columnName = columnExists ? rule.column : columnOptions[0]?.name ?? rule.column;
+        const columnName = columnExists ? rule.column : (columnOptions[0]?.name ?? rule.column);
         const normalizeType = (type?: TabularColumnType): TabularColumnType => type ?? 'string';
-        const columnType = normalizeType(columnOptions.find((col) => col.name === columnName)?.type);
+        const columnType = normalizeType(
+          columnOptions.find((col) => col.name === columnName)?.type
+        );
         const availableOps = FILTER_OPERATORS.filter((op) => op.types.includes(columnType));
         const operator = availableOps.some((op) => op.value === rule.operator)
           ? rule.operator
-          : availableOps[0]?.value ?? rule.operator;
+          : (availableOps[0]?.value ?? rule.operator);
         return {
           ...rule,
           column: columnName,
@@ -177,13 +184,13 @@ export const useTabularDataFilter = ({
       const left = a[i];
       const right = b[i];
       if (
-        !left
-        || !right
-        || left.id !== right.id
-        || left.column !== right.column
-        || left.operator !== right.operator
-        || left.value !== right.value
-        || left.enabled !== right.enabled
+        !left ||
+        !right ||
+        left.id !== right.id ||
+        left.column !== right.column ||
+        left.operator !== right.operator ||
+        left.value !== right.value ||
+        left.enabled !== right.enabled
       ) {
         return false;
       }
@@ -197,43 +204,49 @@ export const useTabularDataFilter = ({
     onSyncFilters(normalizedInitialFilters);
   }, [filtersEqual, initialFilters, normalizedInitialFilters, onSyncFilters]);
 
-  const handleFiltersChange = useCallback((next: TabularFilterRule[]) => {
-    setFilters((prev) => {
-      if (filtersEqual(prev, next)) {
-        return prev;
-      }
-      return next;
-    });
-    setPreviewDirty((prev) => (prev ? prev : true));
-  }, [filtersEqual]);
+  const handleFiltersChange = useCallback(
+    (next: TabularFilterRule[]) => {
+      setFilters((prev) => {
+        if (filtersEqual(prev, next)) {
+          return prev;
+        }
+        return next;
+      });
+      setPreviewDirty((prev) => (prev ? prev : true));
+    },
+    [filtersEqual]
+  );
 
   const syncFilters = useCallback(() => {
     onSyncFilters?.(filters);
   }, [filters, onSyncFilters]);
 
-  const handleCreateFilterFromCell = useCallback(({
-    column,
-    operator,
-    value,
-  }: {
-    column: string;
-    operator: TabularFilterOperator;
-    value: string | number | null;
-  }) => {
-    if (!column) return;
-    const id = `cell-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
-    setFilters((prev) => [
-      ...prev,
-      {
-        id,
-        column,
-        operator,
-        value: value ?? '',
-        enabled: true,
-      },
-    ]);
-    setPreviewDirty(true);
-  }, []);
+  const handleCreateFilterFromCell = useCallback(
+    ({
+      column,
+      operator,
+      value,
+    }: {
+      column: string;
+      operator: TabularFilterOperator;
+      value: string | number | null;
+    }) => {
+      if (!column) return;
+      const id = `cell-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+      setFilters((prev) => [
+        ...prev,
+        {
+          id,
+          column,
+          operator,
+          value: value ?? '',
+          enabled: true,
+        },
+      ]);
+      setPreviewDirty(true);
+    },
+    []
+  );
 
   useEffect(() => {
     return () => {

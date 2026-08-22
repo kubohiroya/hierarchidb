@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
 import * as UIIcon from '@hierarchidb/components';
+import type { ReactNode } from 'react';
 import type {
-  PluginPresentationDefinition,
   PluginPresentation,
+  PluginPresentationDefinition,
   PluginPresentationIconConfig,
   PluginPresentationManifest,
 } from './types.js';
@@ -43,9 +43,7 @@ function toPascalCase(value: string | undefined): string | undefined {
     .split(/[^A-Za-z0-9]+/)
     .filter(Boolean);
   if (parts.length === 0) return undefined;
-  return parts
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join('');
+  return parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join('');
 }
 
 function normalizeLabelText(raw: string): string {
@@ -79,23 +77,26 @@ function buildPresentation(def: PluginPresentationDefinition): PluginPresentatio
   const normalizedIconName = normalizeMuiIconName(rawIconName);
   const componentIconName = hasComponent ? toPascalCase(String(def.nodeType)) : undefined;
   const fallbackIcon = FALLBACK_ICONS[def.nodeType] ?? {};
-  const description = typeof manifest?.description === 'string' ? manifest.description.trim() : undefined;
+  const description =
+    typeof manifest?.description === 'string' ? manifest.description.trim() : undefined;
 
   return {
     nodeType: def.nodeType,
     label,
     icon: {
       muiIconName:
-        normalizedIconName
-        ?? componentIconName
-        ?? fallbackIcon.muiIconName
-        ?? (def.nodeType === 'folder' ? 'Folder' : 'Extension'),
-      emoji: typeof iconConfig.emoji === 'string'
-        ? iconConfig.emoji
-        : manifestIcon?.emoji ?? fallbackIcon.emoji,
-      color: typeof iconConfig.color === 'string'
-        ? iconConfig.color
-        : manifestIcon?.color ?? fallbackIcon.color,
+        normalizedIconName ??
+        componentIconName ??
+        fallbackIcon.muiIconName ??
+        (def.nodeType === 'folder' ? 'Folder' : 'Extension'),
+      emoji:
+        typeof iconConfig.emoji === 'string'
+          ? iconConfig.emoji
+          : (manifestIcon?.emoji ?? fallbackIcon.emoji),
+      color:
+        typeof iconConfig.color === 'string'
+          ? iconConfig.color
+          : (manifestIcon?.color ?? fallbackIcon.color),
     },
     priority: typeof priorityCandidate === 'number' ? priorityCandidate : 1000,
     description: description && description.length > 0 ? description : undefined,
@@ -186,7 +187,10 @@ export async function prefetchAllIcons(): Promise<void> {
   if (cache.size === 0) return;
   const iconNames = Array.from(cache.values())
     .map((item) => item.icon.muiIconName)
-    .filter((name, index, self): name is string => typeof name === 'string' && name.trim().length > 0 && self.indexOf(name) === index);
+    .filter(
+      (name, index, self): name is string =>
+        typeof name === 'string' && name.trim().length > 0 && self.indexOf(name) === index
+    );
   if (iconNames.length === 0) return;
   await UIIcon.prefetchMuiIcons?.(iconNames);
 }
@@ -219,8 +223,8 @@ export function resetPluginPresentationCacheForTests(): void {
 }
 
 export type {
-  PluginPresentationDefinition,
   PluginPresentation,
+  PluginPresentationDefinition,
   PluginPresentationIconConfig,
   PluginPresentationManifest,
 } from './types.js';

@@ -1,7 +1,7 @@
-import type React from 'react';
-import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
-import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { formatBytes } from '@hierarchidb/util';
+import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
+import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
+import type React from 'react';
 import { useMemoryUsageChartView } from './hooks/useMemoryUsageChartView.js';
 
 export interface MemoryUsageChartProps {
@@ -21,25 +21,25 @@ export interface MemoryUsageChartProps {
 }
 
 export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
-                                                                    variant = 'detailed',
-                                                                    width = '100%',
-                                                                    height = 300,
-                                                                    updateInterval = 5000,
-                                                                    //  timeRange = 300, // 5 -
-                                                                    maxDataPoints = 100,
-                                                                    categoryColors = {
-                                                                      JavaScript: '#F7DF1E',
-                                                                      DOM: '#E34C26',
-                                                                      Images: '#00D8FF',
-                                                                      Styles: '#1572B6',
-                                                                      Other: '#9CA3AF',
-                                                                    },
-                                                                    warningThreshold = 0.7,
-                                                                    criticalThreshold = 0.9,
-                                                                    showGrid = true,
-                                                                    showLegend = true,
-                                                                    maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
-                                                                  }) => {
+  variant = 'detailed',
+  width = '100%',
+  height = 300,
+  updateInterval = 5000,
+  //  timeRange = 300, // 5 -
+  maxDataPoints = 100,
+  categoryColors = {
+    JavaScript: '#F7DF1E',
+    DOM: '#E34C26',
+    Images: '#00D8FF',
+    Styles: '#1572B6',
+    Other: '#9CA3AF',
+  },
+  warningThreshold = 0.7,
+  criticalThreshold = 0.9,
+  showGrid = true,
+  showLegend = true,
+  maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
+}) => {
   const theme = useTheme();
   const {
     canvasRef,
@@ -129,10 +129,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       </Typography>
 
       <Box sx={{ mb: variant === 'compact' ? 1 : 2 }}>
-        <Typography
-          variant="body2"
-          sx={{ color: usageColor }}
-        >
+        <Typography variant="body2" sx={{ color: usageColor }}>
           Current Usage: {memoryData.percentage.toFixed(1)}%
         </Typography>
         {variant !== 'compact' && (

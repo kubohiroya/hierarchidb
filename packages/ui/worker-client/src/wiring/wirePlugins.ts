@@ -7,10 +7,7 @@ import type { AuthRuntimeBridge } from '@hierarchidb/auth-api';
  */
 import { registerRuntimeExports } from './runtime-export-registry.js';
 
-const RUNTIME_METHOD_KEYS = [
-  'registerAuthNotifier',
-  'registerRuntimeWorkerAdapters',
-] as const;
+const RUNTIME_METHOD_KEYS = ['registerAuthNotifier', 'registerRuntimeWorkerAdapters'] as const;
 
 function toRuntimeWiring(candidate: unknown): AuthRuntimeBridge | undefined {
   if (!candidate) return undefined;

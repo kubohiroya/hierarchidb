@@ -5,7 +5,7 @@ type TreeNodeWithTags = TreeNode & Record<string, unknown>;
 export const EMPTY_SET = new Set<string>();
 
 export const normalizeNodeKey = (
-  value: TreeNode['id'] | TreeNode['parentId'] | string | number | null | undefined,
+  value: TreeNode['id'] | TreeNode['parentId'] | string | number | null | undefined
 ): string | null => {
   if (value === null || value === undefined) return null;
   return String(value);

@@ -58,13 +58,29 @@ describe('chunkStore raw data metadata-id based cache deletion', () => {
     const sharedCacheKey = 'https://example.com/shared';
     const soloCacheKey = 'https://example.com/solo';
 
-    await storeRawDataDataSourceBufferForNode({ nodeId: nodeA, cacheKey: sharedCacheKey, buffer: encode('shared') });
-    await storeRawDataDataSourceBufferForNode({ nodeId: nodeB, cacheKey: sharedCacheKey, buffer: encode('shared') });
-    await storeRawDataDataSourceBufferForNode({ nodeId: nodeA, cacheKey: soloCacheKey, buffer: encode('solo') });
+    await storeRawDataDataSourceBufferForNode({
+      nodeId: nodeA,
+      cacheKey: sharedCacheKey,
+      buffer: encode('shared'),
+    });
+    await storeRawDataDataSourceBufferForNode({
+      nodeId: nodeB,
+      cacheKey: sharedCacheKey,
+      buffer: encode('shared'),
+    });
+    await storeRawDataDataSourceBufferForNode({
+      nodeId: nodeA,
+      cacheKey: soloCacheKey,
+      buffer: encode('solo'),
+    });
 
     const nodeAMetadata = await listRawDataDataSourceMetadataForNode(nodeA);
-    const sharedMetadataId = nodeAMetadata.find((entry) => entry.cacheKey === sharedCacheKey)?.metadataId;
-    const soloMetadataId = nodeAMetadata.find((entry) => entry.cacheKey === soloCacheKey)?.metadataId;
+    const sharedMetadataId = nodeAMetadata.find(
+      (entry) => entry.cacheKey === sharedCacheKey
+    )?.metadataId;
+    const soloMetadataId = nodeAMetadata.find(
+      (entry) => entry.cacheKey === soloCacheKey
+    )?.metadataId;
 
     expect(sharedMetadataId).toBeTypeOf('string');
     expect(soloMetadataId).toBeTypeOf('string');
@@ -96,7 +112,7 @@ describe('chunkStore raw data metadata-id based cache deletion', () => {
 
     const deleted = await deleteRawDataDataSourceBuffersForNodeMetadataIds(
       nodeId,
-      metadata.map((entry) => entry.metadataId),
+      metadata.map((entry) => entry.metadataId)
     );
 
     expect(deleted).toBe(1);
@@ -109,11 +125,15 @@ describe('chunkStore raw data metadata-id based cache deletion', () => {
     const rawCacheKey = 'https://example.com/raw-data';
     const nonRawCacheKey = 'not-a-raw-cache-key';
 
-    await storeRawDataDataSourceBufferForNode({ nodeId, cacheKey: rawCacheKey, buffer: encode('raw') });
+    await storeRawDataDataSourceBufferForNode({
+      nodeId,
+      cacheKey: rawCacheKey,
+      buffer: encode('raw'),
+    });
 
     const store = createShapeChunkStore(
       (value: unknown) => value as ArrayBuffer,
-      (buffer: ArrayBuffer) => buffer,
+      (buffer: ArrayBuffer) => buffer
     );
     await store.setForNode(nodeId, nonRawCacheKey, encode('non-raw'));
 

@@ -1,12 +1,11 @@
-import type { VtTaskInput } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
-import type { TaskContextForVt, VtTaskRunInput } from './vtStageTaskTypes.js';
-import type { VtCollectionResult } from './vtStageTaskTypes.js';
+import type { VtTaskInput } from '~/types/types';
 import {
   collectForVtTaskWithInput,
   logCollectDurationIfNeeded,
   logCollectStartWithHeap,
 } from './vtStageTaskProcessorExecutionCollectUtils.js';
+import type { TaskContextForVt, VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
 
 type VtTaskCollectionExecutionInput = {
   context: VTStageContext;
@@ -22,7 +21,7 @@ type VtTaskCollectionExecutionInput = {
 };
 
 export const collectVtTaskForExecution = async (
-  input: VtTaskCollectionExecutionInput,
+  input: VtTaskCollectionExecutionInput
 ): Promise<VtCollectionResult | null> => {
   const {
     context,

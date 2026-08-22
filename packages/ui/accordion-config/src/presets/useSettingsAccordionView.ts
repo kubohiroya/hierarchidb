@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
 import type React from 'react';
+import { useCallback } from 'react';
 
 interface UseSettingsAccordionViewParams {
   icon: React.ReactNode;
@@ -29,15 +29,21 @@ export function useSettingsAccordionView({
   onSave,
   onReset,
 }: UseSettingsAccordionViewParams): UseSettingsAccordionViewResult {
-  const handleSaveClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onSave?.();
-  }, [onSave]);
+  const handleSaveClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      onSave?.();
+    },
+    [onSave]
+  );
 
-  const handleResetClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onReset?.();
-  }, [onReset]);
+  const handleResetClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      onReset?.();
+    },
+    [onReset]
+  );
 
   return {
     showDefaultSettingsIcon: showSettingsIcon && !icon,

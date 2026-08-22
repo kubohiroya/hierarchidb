@@ -1,8 +1,8 @@
-import React, { type ReactElement } from 'react';
-import { Box, Menu, MenuItem, Typography } from '@mui/material';
-import { GenericDataGrid } from '@hierarchidb/ui-grid';
-import type { TabularFilterOperator } from '../types/index';
 import { TreeTableSearchInput as SearchField } from '@hierarchidb/components';
+import { GenericDataGrid } from '@hierarchidb/ui-grid';
+import { Box, Menu, MenuItem, Typography } from '@mui/material';
+import React, { type ReactElement } from 'react';
+import type { TabularFilterOperator } from '../types/index';
 import { useTabularPreviewGrid } from './useTabularPreviewGrid.js';
 
 export interface TabularPreviewGridProps {
@@ -68,7 +68,15 @@ export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
 
   return (
     <>
-      <Box sx={{ mb: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 1.5 }}>
+      <Box
+        sx={{
+          mb: 1,
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          gap: 1.5,
+        }}
+      >
         <SearchField
           searchText={view.searchText}
           handleSearchTextChange={view.setSearchText}
@@ -79,7 +87,9 @@ export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
         <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
           {[
             view.searchText ? `${formatCount(view.sortedRows.length)} Matched` : null,
-            hasFilters ? `${formatCount(filteredRowCount ?? view.effectiveRows.length)} Filtered` : null,
+            hasFilters
+              ? `${formatCount(filteredRowCount ?? view.effectiveRows.length)} Filtered`
+              : null,
             `${formatCount(totalRowCount ?? view.effectiveRows.length)} Rows`,
           ]
             .filter(Boolean)
@@ -97,7 +107,10 @@ export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
         striped
         rowSx={({ index }) =>
           index % 2 === 0
-            ? { backgroundColor: 'rgba(0,0,0,0.03)', '&:hover': { backgroundColor: 'action.hover' } }
+            ? {
+                backgroundColor: 'rgba(0,0,0,0.03)',
+                '&:hover': { backgroundColor: 'action.hover' },
+              }
             : undefined
         }
         rowStyle={
@@ -152,10 +165,7 @@ export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
         anchorPosition={view.menuState.anchorPosition ?? undefined}
       >
         {['equals', 'not_equals', 'contains'].map((op) => (
-          <MenuItem
-            key={op}
-            onClick={() => view.createFilterFromMenu(op as TabularFilterOperator)}
-          >
+          <MenuItem key={op} onClick={() => view.createFilterFromMenu(op as TabularFilterOperator)}>
             {op === 'equals' && 'Equals'}
             {op === 'not_equals' && 'Not Equals'}
             {op === 'contains' && 'Contains'}

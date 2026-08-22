@@ -1,18 +1,3 @@
-export type { TreeMutationAPI } from './TreeMutationAPI.js';
-export type { ListChildrenOptions, ListChildrenPrefetchOptions, TreeQueryAPI } from './TreeQueryAPI.js';
-export type {
-  CommitDraftMode,
-  CommitDraftOptions,
-  CommitDraftRequest,
-  DiscardDraftOptions,
-  TreeNodeUpdaterAPI,
-} from './TreeNodeUpdaterAPI.js';
-export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
-export type { PluginDialogAPI, PluginDialogAPIProxy, StepCapabilities } from './PluginDialogAPI.js';
-export type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
-export type { SubscriptionId, SubscriptionOptions, SubscriptionPrefetchOptions } from './TreeSubscriptionTypes.js';
-export { findRelatedNodesByPriority, type RelatedNodeSearchOptions } from './findRelatedNodesByPriority.js';
-export { NodeAction } from './NodeAction.js';
 export type {
   CommandGroupId,
   CommandId,
@@ -56,8 +41,19 @@ export type {
   CommitResult,
   CommitStatus,
 } from './commit-types.js';
-export type { DialogDisplayMode, DialogPosition, DialogSize, DialogState, DialogUIState, DialogWindowState, DialogProgressState } from './dialogStateTypes.js';
-export type { TreeChangeEvent, TreeNodeEvent } from './tree-node-event-types.js';
+export type {
+  DialogDisplayMode,
+  DialogPosition,
+  DialogProgressState,
+  DialogSize,
+  DialogState,
+  DialogUIState,
+  DialogWindowState,
+} from './dialogStateTypes.js';
+export {
+  findRelatedNodesByPriority,
+  type RelatedNodeSearchOptions,
+} from './findRelatedNodesByPriority.js';
 export type {
   DescendantProperties,
   NodeBase,
@@ -71,12 +67,35 @@ export type {
   TreeNodeUpdaterPayload,
   TreeNodeWithChildren,
 } from './NODE_TYPES.js';
-export { getTreeNodeDescription, getTreeNodeName } from './tree-node-utils.js';
 export { NODE_TYPES } from './NODE_TYPES.js';
-export type { TreeRootNodeType } from './TREE_ROOT_NODE_TYPES.js';
-export { TREE_ROOT_NODE_TYPES } from './TREE_ROOT_NODE_TYPES.js';
+export { NodeAction } from './NodeAction.js';
+export type { PluginDialogAPI, PluginDialogAPIProxy, StepCapabilities } from './PluginDialogAPI.js';
 export type { TreeRootState } from './SortOrder.js';
 export { SortOrder } from './SortOrder.js';
+export type { TreeRootNodeType } from './TREE_ROOT_NODE_TYPES.js';
+export { TREE_ROOT_NODE_TYPES } from './TREE_ROOT_NODE_TYPES.js';
+export type { TreeMutationAPI } from './TreeMutationAPI.js';
+export type {
+  CommitDraftMode,
+  CommitDraftOptions,
+  CommitDraftRequest,
+  DiscardDraftOptions,
+  TreeNodeUpdaterAPI,
+} from './TreeNodeUpdaterAPI.js';
+export type {
+  ListChildrenOptions,
+  ListChildrenPrefetchOptions,
+  TreeQueryAPI,
+} from './TreeQueryAPI.js';
+export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+export type {
+  SubscriptionId,
+  SubscriptionOptions,
+  SubscriptionPrefetchOptions,
+} from './TreeSubscriptionTypes.js';
+export type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
+export type { TreeChangeEvent, TreeNodeEvent } from './tree-node-event-types.js';
+export { getTreeNodeDescription, getTreeNodeName } from './tree-node-utils.js';
 export type { Tree } from './tree-types.js';
 export type { UndoStateEvent } from './undoStateEventTypes.js';
-export type { ViewMode, SortMode, IconPosition, ViewProperties } from './view-properties-types.js';
+export type { IconPosition, SortMode, ViewMode, ViewProperties } from './view-properties-types.js';

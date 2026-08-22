@@ -2,13 +2,13 @@
  * Location Selection Step
  */
 
+import { AuthReadyGate } from '@hierarchidb/ui-auth';
+import { CountryMatrixSelector, type MatrixSelection } from '@hierarchidb/ui-country-select';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type React from 'react';
 import { Suspense } from 'react';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { LocationEntity, LocationType } from '~/common/types/index';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { CountryMatrixSelector, type MatrixSelection } from '@hierarchidb/ui-country-select';
-import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { useLocationSelectionStep } from './useLocationSelectionStep.ts';
 
 interface LocationSelectionStepProps {
@@ -24,7 +24,7 @@ export const buildSelectionRecord = (
   countryCodes: string[],
   columns: SelectionColumn[],
   nextSelections: MatrixSelection[],
-  allowedTypeSet: Set<LocationType>,
+  allowedTypeSet: Set<LocationType>
 ): Record<string, boolean[]> => {
   const normalized: Record<string, boolean[]> = {};
   countryCodes.forEach((countryCode) => {
@@ -40,14 +40,8 @@ export const buildSelectionRecord = (
 };
 
 const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
-  const {
-    t,
-    iso,
-    matrixConfig,
-    currentSelections,
-    applySelections,
-    isCellEnabled,
-  } = useLocationSelectionStep({ draft, onUpdate, buildSelectionRecord });
+  const { t, iso, matrixConfig, currentSelections, applySelections, isCellEnabled } =
+    useLocationSelectionStep({ draft, onUpdate, buildSelectionRecord });
 
   if (iso.status === 'loading') {
     return (
@@ -102,11 +96,11 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = (prop
   return (
     <Suspense
       fallback={
-        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           <CircularProgress />
-          <Typography sx={{ ml: 2 }}>
-            {t('auth.loading', 'Checking authentication...')}
-          </Typography>
+          <Typography sx={{ ml: 2 }}>{t('auth.loading', 'Checking authentication...')}</Typography>
         </Box>
       }
     >

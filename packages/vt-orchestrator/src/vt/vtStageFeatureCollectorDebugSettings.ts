@@ -5,9 +5,8 @@ export type VtCollectDebugSettings = {
   useGetEach: boolean;
 };
 
-const getGlobalBoolean = (name: string): boolean => (
-  (globalThis as Record<string, unknown>)[name] === true
-);
+const getGlobalBoolean = (name: string): boolean =>
+  (globalThis as Record<string, unknown>)[name] === true;
 
 const getGlobalNumber = (name: string): number | undefined => {
   const value = (globalThis as Record<string, unknown>)[name];
@@ -23,5 +22,7 @@ export const getCollectDebugSettings = (): VtCollectDebugSettings => ({
 
 export const collectDebugTimeoutError = (nodeId: string, timeoutMs?: number): Error => {
   const finalTimeoutMs = timeoutMs ?? getGlobalNumber('__HDB_VT_COLLECT_TIMEOUT_MS') ?? 15000;
-  return new Error(`[tileEmit][debug] collect transaction timeout after ${finalTimeoutMs}ms (nodeId=${String(nodeId)})`);
+  return new Error(
+    `[tileEmit][debug] collect transaction timeout after ${finalTimeoutMs}ms (nodeId=${String(nodeId)})`
+  );
 };

@@ -1,22 +1,22 @@
 /**
-  * TreeTableOrchestrator (Extracted)
-  * TreeTable
-   */
+ * TreeTableOrchestrator (Extracted)
+ * TreeTable
+ */
 
 import { useMemo } from 'react';
 import type { TreeTableController, TreeTableOrchestratorResult } from '~/types';
 
 /**
-  * TreeTableOrchestrator Hook
-  * TreeTable
-  */
+ * TreeTableOrchestrator Hook
+ * TreeTable
+ */
 export function useTreeTableOrchestrator(
-  controller: TreeTableController | null,
+  controller: TreeTableController | null
 ): TreeTableOrchestratorResult {
   // Selection operations
   const selection = useMemo(() => {
     const selectedRowIds = new Set(
-      Object.keys(controller?.rowSelection || {}).filter((id) => controller?.rowSelection?.[id]),
+      Object.keys(controller?.rowSelection || {}).filter((id) => controller?.rowSelection?.[id])
     );
 
     return {
@@ -76,7 +76,7 @@ export function useTreeTableOrchestrator(
         controller?.cancelEdit?.();
       },
     }),
-    [controller?.startEdit, controller?.cancelEdit, controller?.finishEdit],
+    [controller?.startEdit, controller?.cancelEdit, controller?.finishEdit]
   );
 
   // Search operations
@@ -91,7 +91,7 @@ export function useTreeTableOrchestrator(
         controller?.handleSearchTextChange?.('');
       },
     }),
-    [controller?.searchText, controller?.handleSearchTextChange],
+    [controller?.searchText, controller?.handleSearchTextChange]
   );
 
   // Drag & Drop operations
@@ -113,7 +113,7 @@ export function useTreeTableOrchestrator(
         // TODO: Implement drop
       },
     }),
-    [],
+    []
   );
 
   return {

@@ -46,11 +46,11 @@ export const createDefaultShapeStageProfile = (): ShapeStageProfile => ({
   },
 });
 
-export const flattenShapeStageProfile = (profile: ShapeStageProfile): ShapeStageProfileEntry[] => ([
+export const flattenShapeStageProfile = (profile: ShapeStageProfile): ShapeStageProfileEntry[] => [
   profile.primary,
   ...profile.intermediate,
   profile.final,
-]);
+];
 
 export const validateShapeStageProfile = (profile: ShapeStageProfile): void => {
   const entries = flattenShapeStageProfile(profile);
@@ -80,4 +80,3 @@ export const validateShapeStageProfile = (profile: ShapeStageProfile): void => {
     throw new Error('[shape-stage-profile] intermediate entries must use kind "intermediate"');
   }
 };
-

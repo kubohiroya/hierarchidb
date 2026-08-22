@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationGroupItem, LocationRelation } from './LocationQueryAPI.js';
 import type {
   IdeGsmImportCallback,
   IdeGsmLocationImportRequest,
   IdeGsmLocationImportResult,
 } from './IDE_GSM_BULK_CHUNK_SIZE.js';
+import type { LocationGroupItem, LocationRelation } from './LocationQueryAPI.js';
 
 export interface LocationMutationAPI {
   upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void>;
@@ -17,6 +17,6 @@ export interface LocationMutationAPI {
   migrateLegacyAdmin0(nodeId: NodeId): Promise<{ scanned: number; updated: number }>;
   importIdeGsmLocations(
     request: IdeGsmLocationImportRequest,
-    progress?: IdeGsmImportCallback,
+    progress?: IdeGsmImportCallback
   ): Promise<IdeGsmLocationImportResult>;
 }

@@ -1,15 +1,15 @@
+import CssBaseline from '@mui/material/CssBaseline';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import type { Preview } from '@storybook/provider';
-import React from 'react';
 import {
-  RouterProvider,
-  Outlet,
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
+  Outlet,
+  RouterProvider,
 } from '@tanstack/react-router';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import React from 'react';
 
 const theme = createTheme({
   palette: {
@@ -28,7 +28,7 @@ const preview: Preview = {
     },
   },
   decorators: [
-    (Story) => (
+    (Story) =>
       (() => {
         const history = createMemoryHistory({ initialEntries: ['/'] });
 
@@ -55,8 +55,7 @@ const preview: Preview = {
         });
 
         return <RouterProvider router={router as any} />;
-      })()
-    ),
+      })(),
   ],
 };
 

@@ -1,25 +1,25 @@
 /**
-  * NodeTypeIcon -
-     */
+ * NodeTypeIcon -
+ */
 
-import type { MouseEvent, ReactElement } from 'react';
-import { Badge, Box, IconButton } from '@mui/material';
 import {
+  AccessTime as AccessTimeIcon,
+  AccountTree as AccountTreeIcon,
   Delete as ArchiveIcon,
+  Assessment as AssessmentIcon,
+  Extension as ExtensionIcon,
   Description as FileIcon,
   Folder as FolderIcon,
+  Hexagon as HexagonIcon,
   Home as HomeIcon,
   Note as NoteIcon,
-  Public as PublicIcon,
-  Hexagon as HexagonIcon,
-  Place as PlaceIcon,
-  Route as RouteIcon,
-  Assessment as AssessmentIcon,
   Palette as PaletteIcon,
-  Extension as ExtensionIcon,
-  AccountTree as AccountTreeIcon,
-  AccessTime as AccessTimeIcon,
+  Place as PlaceIcon,
+  Public as PublicIcon,
+  Route as RouteIcon,
 } from '@mui/icons-material';
+import { Badge, Box, IconButton } from '@mui/material';
+import type { MouseEvent, ReactElement } from 'react';
 
 interface NodeTypeIconProps {
   nodeType: string;
@@ -39,7 +39,7 @@ interface NodeTypeIconProps {
 }
 
 /**
-    */
+ */
 function getIconByType(nodeType: string) {
   switch (nodeType) {
     // Known HierarchiDB node types
@@ -85,8 +85,8 @@ function getIconByType(nodeType: string) {
 }
 
 /**
-  * NodeTypeIcon
-  */
+ * NodeTypeIcon
+ */
 export function NodeTypeIcon({
   nodeType,
   size = 'small',
@@ -107,79 +107,83 @@ export function NodeTypeIcon({
   const Icon = getIconByType(nodeType);
   const fontSize = iconSize === 'small' ? 'small' : iconSize === 'large' ? 'large' : 'medium';
 
-  const icon = isCustomSize
-    ? <Icon sx={{ fontSize: size }} color={color} htmlColor={htmlColor} />
-    : <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />;
+  const icon = isCustomSize ? (
+    <Icon sx={{ fontSize: size }} color={color} htmlColor={htmlColor} />
+  ) : (
+    <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+  );
 
   const draftBadgeProps = isDraft
     ? {
-      color: 'error' as const,
-      variant: 'dot' as const,
-      overlap: 'circular' as const,
-      anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
-      invisible: false,
-      sx: {
-        '& .MuiBadge-badge': {
-          width: 8,
-          height: 8,
-          minWidth: 8,
-          transform: 'scale(1) translate(22%, -22%) translateX(2px)',
-          borderRadius: '50%',
-          border: '1px solid currentColor',
+        color: 'error' as const,
+        variant: 'dot' as const,
+        overlap: 'circular' as const,
+        anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
+        invisible: false,
+        sx: {
+          '& .MuiBadge-badge': {
+            width: 8,
+            height: 8,
+            minWidth: 8,
+            transform: 'scale(1) translate(22%, -22%) translateX(2px)',
+            borderRadius: '50%',
+            border: '1px solid currentColor',
+          },
         },
-      },
-    }
+      }
     : { invisible: true as const };
 
   const buildRequiredBadgeProps = buildRequired
     ? {
-      color: 'default' as const,
-      variant: 'dot' as const,
-      overlap: 'circular' as const,
-      anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
-      invisible: false,
-      sx: {
-        '& .MuiBadge-badge': {
-          width: isCustomSize ? 16 : 12,
-          height: isCustomSize ? 16 : 12,
-          minWidth: isCustomSize ? 16 : 12,
-          transform: isCustomSize
-            ? 'scale(1) translate(30%, -30%)'
-            : 'scale(1) translate(18%, -18%) translateX(3px)',
-          borderRadius: '50%',
-          border: '2px solid',
-          borderColor: 'warning.main',
-          backgroundColor: 'transparent !important',
-          boxSizing: 'border-box',
+        color: 'default' as const,
+        variant: 'dot' as const,
+        overlap: 'circular' as const,
+        anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
+        invisible: false,
+        sx: {
+          '& .MuiBadge-badge': {
+            width: isCustomSize ? 16 : 12,
+            height: isCustomSize ? 16 : 12,
+            minWidth: isCustomSize ? 16 : 12,
+            transform: isCustomSize
+              ? 'scale(1) translate(30%, -30%)'
+              : 'scale(1) translate(18%, -18%) translateX(3px)',
+            borderRadius: '50%',
+            border: '2px solid',
+            borderColor: 'warning.main',
+            backgroundColor: 'transparent !important',
+            boxSizing: 'border-box',
+          },
         },
-      },
-    }
+      }
     : { invisible: true as const };
 
   const withBadges = (children: ReactElement): ReactElement => {
     const withDraftBadge = isDraft ? <Badge {...draftBadgeProps}>{children}</Badge> : children;
-    return buildRequired ? <Badge {...buildRequiredBadgeProps}>{withDraftBadge}</Badge> : withDraftBadge;
+    return buildRequired ? (
+      <Badge {...buildRequiredBadgeProps}>{withDraftBadge}</Badge>
+    ) : (
+      withDraftBadge
+    );
   };
 
   if (clickable && onClick) {
-    return (
-      withBadges(
-        <IconButton
-          size={iconSize}
-          onClick={onClick}
-          disabled={disabled}
-          sx={{
-            padding: iconSize === 'small' ? 0.5 : 1,
-            cursor: disabled ? 'not-allowed' : 'context-menu',
-            '&:hover': {
-              backgroundColor: 'action.hover',
-            },
-          }}
-        >
-          {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
-          {icon}
-        </IconButton>
-      )
+    return withBadges(
+      <IconButton
+        size={iconSize}
+        onClick={onClick}
+        disabled={disabled}
+        sx={{
+          padding: iconSize === 'small' ? 0.5 : 1,
+          cursor: disabled ? 'not-allowed' : 'context-menu',
+          '&:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }}
+      >
+        {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
+        {icon}
+      </IconButton>
     );
   }
 
@@ -193,15 +197,17 @@ export function NodeTypeIcon({
         ...(isCustomSize
           ? { width: size, height: size }
           : {
-            width: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
-            height: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
-          }),
+              width: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
+              height: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
+            }),
       }}
     >
       {withBadges(
-        isCustomSize
-          ? <Icon sx={{ fontSize: size }} color={color} htmlColor={htmlColor} />
-          : <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+        isCustomSize ? (
+          <Icon sx={{ fontSize: size }} color={color} htmlColor={htmlColor} />
+        ) : (
+          <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+        )
       )}
     </Box>
   );

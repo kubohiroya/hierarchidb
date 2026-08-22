@@ -8,9 +8,5 @@
     "allowSkipLibCheck": true,
     "reason": "MapLibre upstream d.ts uses ambient const enums; isolate skipLibCheck here only"
   },
-  "include": [
-    "../../../global.d.ts",
-    "src/**/*",
-    "**/*.d.ts"
-  ]
+  "include": ["../../../global.d.ts", "src/**/*", "**/*.d.ts"]
 }

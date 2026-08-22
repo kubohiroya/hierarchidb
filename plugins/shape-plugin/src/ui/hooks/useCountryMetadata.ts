@@ -1,6 +1,6 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import { useCallback, useEffect, useState } from 'react';
 import type { CountryMetadata, DataSourceName } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 
 export interface UseCountryMetadataOptions {
@@ -30,45 +30,48 @@ export function useCountryMetadata({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadMetadata = useCallback(async (options?: { force?: boolean }) => {
-    if (!dataSource) {
-      const err = new Error('Data source is not set. Please go back to Data Source selection.');
-      setError(err);
-      setMetadata([]);
-      setLoading(false);
-      return;
-    }
-
-    if (options?.force) {
-      // Clear in-memory cache so we can reload from the underlying chunk-store/network.
-      metadataLoader.clearCache(dataSource);
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      let data: CountryMetadata[];
-
-      if (countryCodes && countryCodes.length > 0) {
-        data = await metadataLoader.getCountriesMetadata(dataSource, countryCodes, nodeId);
-      } else {
-        data = await metadataLoader.loadMetadata(dataSource, nodeId);
+  const loadMetadata = useCallback(
+    async (options?: { force?: boolean }) => {
+      if (!dataSource) {
+        const err = new Error('Data source is not set. Please go back to Data Source selection.');
+        setError(err);
+        setMetadata([]);
+        setLoading(false);
+        return;
       }
 
-      setMetadata(Array.isArray(data) ? data : []);
-
-      if (!data?.length) {
-        throw new Error(`No country metadata returned for data source: ${dataSource}`);
+      if (options?.force) {
+        // Clear in-memory cache so we can reload from the underlying chunk-store/network.
+        metadataLoader.clearCache(dataSource);
       }
-    } catch (err) {
-      const e = err instanceof Error ? err : new Error('Failed to load metadata');
-      setError(e);
-      setMetadata([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [dataSource, countryCodes, nodeId]);
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        let data: CountryMetadata[];
+
+        if (countryCodes && countryCodes.length > 0) {
+          data = await metadataLoader.getCountriesMetadata(dataSource, countryCodes, nodeId);
+        } else {
+          data = await metadataLoader.loadMetadata(dataSource, nodeId);
+        }
+
+        setMetadata(Array.isArray(data) ? data : []);
+
+        if (!data?.length) {
+          throw new Error(`No country metadata returned for data source: ${dataSource}`);
+        }
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error('Failed to load metadata');
+        setError(e);
+        setMetadata([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dataSource, countryCodes, nodeId]
+  );
 
   useEffect(() => {
     loadMetadata();
@@ -77,20 +80,18 @@ export function useCountryMetadata({
   const getCountryName = useCallback(
     (countryCode: string): string => {
       const country = metadata.find(
-        c => c.countryCode.toLowerCase() === countryCode.toLowerCase(),
+        (c) => c.countryCode.toLowerCase() === countryCode.toLowerCase()
       );
       return country?.countryName || countryCode;
     },
-    [metadata],
+    [metadata]
   );
 
   const getCountryByCode = useCallback(
     (countryCode: string): CountryMetadata | undefined => {
-      return metadata.find(
-        c => c.countryCode.toLowerCase() === countryCode.toLowerCase(),
-      );
+      return metadata.find((c) => c.countryCode.toLowerCase() === countryCode.toLowerCase());
     },
-    [metadata],
+    [metadata]
   );
 
   return {

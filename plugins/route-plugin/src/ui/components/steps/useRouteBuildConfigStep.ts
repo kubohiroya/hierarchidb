@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import type { RouteEntity } from '@hierarchidb/route-store';
 import {
+  loadTreeConsoleSettings,
   resolveZoomBandSettings,
   TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
-  loadTreeConsoleSettings,
 } from '@hierarchidb/util';
-import type { RouteEntity } from '@hierarchidb/route-store';
+import { useCallback, useEffect, useMemo } from 'react';
 import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '~/common/config/buildConfig';
 
 const resolveInitialBuildConfig = (dataSourceName?: string) => {
@@ -57,9 +57,12 @@ export const useRouteBuildConfigStep = ({ data, onChange }: Args) => {
     }
   }, [data?.buildConfig, data?.dataSourceName, onChange]);
 
-  const handleChange = useCallback((nextConfig: typeof config) => {
-    onChange({ buildConfig: nextConfig });
-  }, [onChange]);
+  const handleChange = useCallback(
+    (nextConfig: typeof config) => {
+      onChange({ buildConfig: nextConfig });
+    },
+    [onChange]
+  );
 
   return { config, handleChange };
 };

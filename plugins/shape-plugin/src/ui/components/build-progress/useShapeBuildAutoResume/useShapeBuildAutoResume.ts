@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Args = {
   activeNodeId: NodeId | null;
@@ -36,22 +36,24 @@ export const useShapeBuildAutoResume = ({
     isStartPendingRef.current = next;
     setIsStartPending(next);
   }, []);
-  const canStart = useMemo(() => (
-    !isStartPending
-    && buildStatus !== 'running'
-    && hasDataSource
-    && hasSelection
-    && isProcessingValid
-    && isLockSupported
-  ), [buildStatus, hasDataSource, hasSelection, isLockSupported, isProcessingValid, isStartPending]);
+  const canStart = useMemo(
+    () =>
+      !isStartPending &&
+      buildStatus !== 'running' &&
+      hasDataSource &&
+      hasSelection &&
+      isProcessingValid &&
+      isLockSupported,
+    [buildStatus, hasDataSource, hasSelection, isLockSupported, isProcessingValid, isStartPending]
+  );
 
   useEffect(() => {
     if (!isStartPending) return;
     if (
-      buildStatus === 'running'
-      || buildStatus === 'completed'
-      || buildStatus === 'failed'
-      || buildStatus === 'paused'
+      buildStatus === 'running' ||
+      buildStatus === 'completed' ||
+      buildStatus === 'failed' ||
+      buildStatus === 'paused'
     ) {
       setStartPending(false);
     }
@@ -100,18 +102,21 @@ export const useShapeBuildAutoResume = ({
     };
   }, []);
 
-  const start = useCallback(async (options?: { autoResume?: boolean }) => {
-    if (isStartPendingRef.current) return;
-    if (!isLockSupported) return;
-    setStartPending(true);
-    const ok = await handleStart({
-      forceRestart: hasFailedSourceTasks,
-      autoResume: options?.autoResume,
-    });
-    if (!ok) {
-      setStartPending(false);
-    }
-  }, [handleStart, hasFailedSourceTasks, isLockSupported, setStartPending]);
+  const start = useCallback(
+    async (options?: { autoResume?: boolean }) => {
+      if (isStartPendingRef.current) return;
+      if (!isLockSupported) return;
+      setStartPending(true);
+      const ok = await handleStart({
+        forceRestart: hasFailedSourceTasks,
+        autoResume: options?.autoResume,
+      });
+      if (!ok) {
+        setStartPending(false);
+      }
+    },
+    [handleStart, hasFailedSourceTasks, isLockSupported, setStartPending]
+  );
   const clearStartPending = useCallback(() => {
     setStartPending(false);
   }, [setStartPending]);
@@ -121,7 +126,12 @@ export const useShapeBuildAutoResume = ({
     if (!isLockSupported) return;
     if (typeof window === 'undefined') return;
     const storage = window.localStorage;
-    if (!storage || typeof storage.getItem !== 'function' || typeof storage.removeItem !== 'function') return;
+    if (
+      !storage ||
+      typeof storage.getItem !== 'function' ||
+      typeof storage.removeItem !== 'function'
+    )
+      return;
 
     try {
       const stored = storage.getItem('autoResumeBuild');
@@ -157,7 +167,16 @@ export const useShapeBuildAutoResume = ({
         console.warn('[ShapeBuildStep] failed to cleanup autoResumeBuild flag', cleanupError);
       }
     }
-  }, [activeNodeId, canAutoResume, canStart, isStartPending, start, buildStatus, runtimeStatus, stopReason]);
+  }, [
+    activeNodeId,
+    canAutoResume,
+    canStart,
+    isStartPending,
+    start,
+    buildStatus,
+    runtimeStatus,
+    stopReason,
+  ]);
 
   return {
     canStart,

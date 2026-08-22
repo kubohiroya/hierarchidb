@@ -131,7 +131,7 @@ function countDirectory(dirPath: string, _indent = '', showDetails = true): numb
     console.log(`\n📁 ${dirPath}:`);
     console.log('─'.repeat(50));
 
-        const sorted = results.sort((a, b) => {
+    const sorted = results.sort((a, b) => {
       if (a.isDir && !b.isDir) return -1;
       if (!a.isDir && b.isDir) return 1;
       return a.name.localeCompare(b.name);

@@ -1,23 +1,31 @@
-import { Box, Checkbox, Chip, CircularProgress, IconButton, TextField, Tooltip } from '@mui/material';
-import {
-  ChevronRight as ChevronRightIcon,
-  DragIndicator as DragIndicatorIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
-import type { ColumnDef } from '@tanstack/react-table';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { rainbowColors } from '@hierarchidb/ui-theme';
-import { IndentSpace, NameCell } from '~/components/TreeTableStyles';
-import { extractTags, normalizeNodeKey } from '~/utils/treeTableHelpers';
-import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 import {
   buildTreeConsoleLinkHref,
   getPluginIconColor,
   isFolderNodeType,
 } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import {
+  ChevronRight as ChevronRightIcon,
+  DragIndicator as DragIndicatorIcon,
+  ExpandMore as ExpandMoreIcon,
+} from '@mui/icons-material';
+import {
+  Box,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Tooltip,
+} from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { IndentSpace, NameCell } from '~/components/TreeTableStyles';
+import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
+import { extractTags, normalizeNodeKey } from '~/utils/treeTableHelpers';
 import { useSparkleVisibility } from './useSparkleVisibility.js';
 
 type NodeTypeIconLikeProps = {
@@ -58,7 +66,10 @@ export interface ColumnBuilderParams {
   rowClickAction: 'Select/Navigate' | 'Edit';
   selectionMode: 'single' | 'multiple' | 'none';
   controller: TreeTableController | null;
-  validateInline: (field: 'name' | 'description', value: string) => { ok: boolean; message?: string };
+  validateInline: (
+    field: 'name' | 'description',
+    value: string
+  ) => { ok: boolean; message?: string };
   handleStartEdit: (node: TreeNodeInUI, field?: 'name' | 'description') => void;
   editingField: 'name' | 'description' | null;
   editingValue: string;
@@ -67,11 +78,13 @@ export interface ColumnBuilderParams {
   setEditingNodeId: (value: string | null) => void;
   setEditingField: (value: 'name' | 'description' | null) => void;
   treeId?: string;
-  setContextMenuState: React.Dispatch<React.SetStateAction<{
-    anchorEl: HTMLElement | null;
-    anchorPosition: { left: number; top: number } | null;
-    node: TreeNodeInUI | TreeNode | null;
-  }>>;
+  setContextMenuState: React.Dispatch<
+    React.SetStateAction<{
+      anchorEl: HTMLElement | null;
+      anchorPosition: { left: number; top: number } | null;
+      node: TreeNodeInUI | TreeNode | null;
+    }>
+  >;
   visualSelectionSet: Set<NodeId>;
   useArchiveColumns: boolean;
   archiveAction: 'restore' | 'empty';
@@ -206,8 +219,10 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     cell: ({ row }) => {
       const inheritedSelection = hasSelectedAncestor(row.original.id as NodeId);
       const forcedSelectAll = selectAll;
-      const visuallyChecked = forcedSelectAll || inheritedSelection || visualSelectionSet.has(row.original.id as NodeId);
-      const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
+      const visuallyChecked =
+        forcedSelectAll || inheritedSelection || visualSelectionSet.has(row.original.id as NodeId);
+      const disableCheckbox =
+        forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
       return (
         <Checkbox
           id={`${selectionCheckboxPrefix}-${row.original.id}`}
@@ -240,7 +255,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     cell: ({ row }) => {
       const node = row.original;
       const reportedDepth = typeof node.depth === 'number' ? node.depth : undefined;
-      const baseDepth = Math.max(0, ((reportedDepth ?? 1) + depthOffset) - 1);
+      const baseDepth = Math.max(0, (reportedDepth ?? 1) + depthOffset - 1);
       const depth = useArchiveColumns ? Math.max(0, baseDepth - 1) : baseDepth;
       const nodeMetrics = node as TreeNode & {
         children?: readonly string[];
@@ -262,48 +277,53 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         (typeof derivedChildCount === 'number' && derivedChildCount > 0);
       const isExpanded = expandedRowIds.has(node.id);
       const isEditing = editingNodeId === node.id && editingField === 'name';
-      const absoluteDepth = typeof (node as TreeNodeInUI).absoluteDepth === 'number'
-        ? ((node as TreeNodeInUI).absoluteDepth as number)
-        : reportedDepth;
+      const absoluteDepth =
+        typeof (node as TreeNodeInUI).absoluteDepth === 'number'
+          ? ((node as TreeNodeInUI).absoluteDepth as number)
+          : reportedDepth;
       const iconDepth = typeof absoluteDepth === 'number' ? Math.max(0, absoluteDepth) : baseDepth;
       const nodeType = node.nodeType || 'folder';
       const isVisible = (node as { visible?: boolean }).visible !== false;
-      const baseIconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
+      const baseIconColor =
+        rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
       const manifestIconColor = getPluginIconColor(nodeType);
-      const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
+      const iconColor = isFolderNodeType(nodeType)
+        ? baseIconColor
+        : (manifestIconColor ?? baseIconColor);
       const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
-      const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
+      const showSparkle =
+        typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
       const version = (node as { version?: number }).version;
-      const hasSelfDraft =
-        params.draftFlags.hasDraft.has(node.id as NodeId) ||
-        version === 0;
-      const isBuildRunning = Boolean(
-        buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
-      );
-      const isBuildActive = isBuildRunning
-        && Boolean(buildSessionIndicator?.activeNodeIds.has(node.id as NodeId));
+      const hasSelfDraft = params.draftFlags.hasDraft.has(node.id as NodeId) || version === 0;
+      const isBuildRunning = Boolean(buildSessionIndicator?.runningNodeIds.has(node.id as NodeId));
+      const isBuildActive =
+        isBuildRunning && Boolean(buildSessionIndicator?.activeNodeIds.has(node.id as NodeId));
       const isBuildRequiredForNode = Boolean(
         node.metadata?.buildMetadata?.buildRequired ||
-          (node as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } }).draftMetadata
-            ?.buildMetadata?.buildRequired
+          (node as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } })
+            .draftMetadata?.buildMetadata?.buildRequired
       );
-      const descendantIds = collectDescendantIds(node.id as NodeId)
-        .filter((descendantId) => descendantId !== node.id);
+      const descendantIds = collectDescendantIds(node.id as NodeId).filter(
+        (descendantId) => descendantId !== node.id
+      );
       const hasBuildRequiredDescendant = descendantIds.some((descendantId) => {
         const descendant = controller?.nodeIndex?.get(descendantId as NodeId);
         return Boolean(
           descendant?.metadata?.buildMetadata?.buildRequired ||
-            (descendant as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } })?.draftMetadata
-              ?.buildMetadata?.buildRequired
+            (descendant as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } })
+              ?.draftMetadata?.buildMetadata?.buildRequired
         );
       });
       const isBuildRequired = isBuildRequiredForNode || hasBuildRequiredDescendant;
 
       return (
         <NameCell>
-
           {!hideDragHandler && !disableDragAndDrop && (
-            <IconButton size="small" sx={{ padding: 0, cursor: 'grab' }} onClick={(e) => e.stopPropagation()}>
+            <IconButton
+              size="small"
+              sx={{ padding: 0, cursor: 'grab' }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <DragIndicatorIcon fontSize="small" />
             </IconButton>
           )}
@@ -334,7 +354,11 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   controller?.onNodeExpand?.(node.id, !isExpanded);
                 }}
               >
-                {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+                {isExpanded ? (
+                  <ExpandMoreIcon fontSize="small" />
+                ) : (
+                  <ChevronRightIcon fontSize="small" />
+                )}
               </IconButton>
             ) : null}
           </Box>
@@ -357,7 +381,11 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (rowClickAction === 'Select/Navigate' && selectionMode !== 'none' && (e.ctrlKey || e.metaKey)) {
+              if (
+                rowClickAction === 'Select/Navigate' &&
+                selectionMode !== 'none' &&
+                (e.ctrlKey || e.metaKey)
+              ) {
                 const prevSelection = { ...rowSelection };
                 const nextSelection = { ...rowSelection };
                 nextSelection[node.id] = !nextSelection[node.id];
@@ -471,70 +499,72 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 sx={{ flex: 1 }}
               />
             </Box>
-          ) : (() => {
-            const linkHref = buildTreeConsoleLinkHref({
-              treeId,
-              nodeId: node.id,
-              pageNodeId,
-              holderType: (node as { holderType?: 'draft' | 'archive' }).holderType,
-              holderMetaParentId: (node as { holderMetaParentId?: NodeId }).holderMetaParentId,
-              holderTargetId: (node as { holderTargetId?: NodeId }).holderTargetId,
-              useArchiveColumns,
-              archiveAction,
-            });
+          ) : (
+            (() => {
+              const linkHref = buildTreeConsoleLinkHref({
+                treeId,
+                nodeId: node.id,
+                pageNodeId,
+                holderType: (node as { holderType?: 'draft' | 'archive' }).holderType,
+                holderMetaParentId: (node as { holderMetaParentId?: NodeId }).holderMetaParentId,
+                holderTargetId: (node as { holderTargetId?: NodeId }).holderTargetId,
+                useArchiveColumns,
+                archiveAction,
+              });
 
-            return (
-              <Box
-                sx={{
-                  flex: 1,
-                  cursor: 'pointer',
-                  '&:hover': { textDecoration: 'underline' },
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  flexWrap: 'wrap',
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (rowClickAction === 'Edit') {
-                    handleStartEdit(node, 'name');
-                  }
-                }}
-              >
+              return (
                 <Box
-                  component={RouterLink}
-                  to={linkHref}
                   sx={{
-                    mr: 0.5,
-                    color: 'primary.main',
-                    textDecoration: isVisible ? 'none' : 'line-through',
-                    '&:hover': { textDecoration: isVisible ? 'underline' : 'line-through' },
+                    flex: 1,
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    flexWrap: 'wrap',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (rowClickAction === 'Edit') {
+                      handleStartEdit(node, 'name');
+                    }
                   }}
                 >
-                  {getTreeNodeName(node)}
+                  <Box
+                    component={RouterLink}
+                    to={linkHref}
+                    sx={{
+                      mr: 0.5,
+                      color: 'primary.main',
+                      textDecoration: isVisible ? 'none' : 'line-through',
+                      '&:hover': { textDecoration: isVisible ? 'underline' : 'line-through' },
+                    }}
+                  >
+                    {getTreeNodeName(node)}
+                  </Box>
+                  <SparkleAnimation showSparkle={showSparkle} />
+                  {isBuildRunning ? (
+                    <CircularProgress
+                      size={14}
+                      thickness={5}
+                      color={isBuildActive ? 'primary' : 'inherit'}
+                      sx={{ ml: 0.25 }}
+                    />
+                  ) : null}
+                  {extractTags(node).map((tag, idx) => (
+                    <Chip
+                      key={`${node.id}:tag:${idx}`}
+                      label={tag}
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 20 }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ))}
                 </Box>
-                <SparkleAnimation showSparkle={showSparkle} />
-                {isBuildRunning ? (
-                  <CircularProgress
-                    size={14}
-                    thickness={5}
-                    color={isBuildActive ? 'primary' : 'inherit'}
-                    sx={{ ml: 0.25 }}
-                  />
-                ) : null}
-                {extractTags(node).map((tag, idx) => (
-                  <Chip
-                    key={`${node.id}:tag:${idx}`}
-                    label={tag}
-                    size="small"
-                    variant="outlined"
-                    sx={{ height: 20 }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ))}
-              </Box>
-            );
-          })()}
+              );
+            })()
+          )}
         </NameCell>
       );
     },
@@ -660,12 +690,20 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     },
   };
 
-  const columns: ColumnDef<TreeNode>[] = [selectionColumn, nameColumn, descriptionColumn, createdColumn, updatedColumn];
+  const columns: ColumnDef<TreeNode>[] = [
+    selectionColumn,
+    nameColumn,
+    descriptionColumn,
+    createdColumn,
+    updatedColumn,
+  ];
 
   if (useArchiveColumns) {
     const removedColumn: ColumnDef<TreeNode> = {
       id: 'removedAt',
-      accessorFn: (row) => (row as { removedAt?: number; deletedAt?: number }).removedAt ?? (row as { deletedAt?: number }).deletedAt,
+      accessorFn: (row) =>
+        (row as { removedAt?: number; deletedAt?: number }).removedAt ??
+        (row as { deletedAt?: number }).deletedAt,
       header: archiveRemovedHeader || columnLabels.removed,
       size: columnWidths.removedAt ?? 150,
       enableSorting: true,

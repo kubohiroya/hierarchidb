@@ -1,11 +1,11 @@
 /**
  * Task State Protection Service
- * 
+ *
  * Ensures task state preservation during AbortController termination
  */
 
-import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 
 export interface TaskStateSnapshot {
@@ -130,7 +130,10 @@ export class TaskStateProtectionService {
 
       return false;
     } catch (error) {
-      console.error('[TaskStateProtection] Failed to restore task from snapshot:', { taskId, error });
+      console.error('[TaskStateProtection] Failed to restore task from snapshot:', {
+        taskId,
+        error,
+      });
       throw error;
     }
   }
@@ -194,13 +197,18 @@ export class TaskStateProtectionService {
 
       const validation = this.validateTaskState(updatedTask);
       if (!validation.isValid) {
-        throw new Error(`Task state became invalid after update: ${validation.inconsistencies.join(', ')}`);
+        throw new Error(
+          `Task state became invalid after update: ${validation.inconsistencies.join(', ')}`
+        );
       }
 
       console.debug('[TaskStateProtection] Atomic update successful:', { taskId, updates });
     } catch (error) {
       // Restore from snapshot on failure
-      console.warn('[TaskStateProtection] Update failed, restoring from snapshot:', { taskId, error });
+      console.warn('[TaskStateProtection] Update failed, restoring from snapshot:', {
+        taskId,
+        error,
+      });
       await this.restoreTaskFromSnapshot(taskId);
       throw error;
     }
@@ -234,7 +242,10 @@ export class TaskStateProtectionService {
 
       return results;
     } catch (error) {
-      console.error('[TaskStateProtection] Failed to verify session task states:', { nodeId, error });
+      console.error('[TaskStateProtection] Failed to verify session task states:', {
+        nodeId,
+        error,
+      });
       throw error;
     }
   }

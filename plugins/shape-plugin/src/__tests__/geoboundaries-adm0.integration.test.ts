@@ -4,10 +4,10 @@
  * GeoBoundaries ADM0 feature split inspection (network integration).
  */
 
-import { describe, expect, it } from 'vitest';
-import type { FeatureCollection, Geometry } from 'geojson';
-import { GeoBoundariesStrategy } from '../services/datasources/GeoBoundariesStrategy';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { FeatureCollection, Geometry } from 'geojson';
+import { describe, expect, it } from 'vitest';
+import { GeoBoundariesStrategy } from '../services/datasources/GeoBoundariesStrategy';
 
 const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;

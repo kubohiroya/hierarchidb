@@ -1,4 +1,10 @@
-import React, { type ReactElement } from 'react';
+import type { TabularColumnInfo } from '@hierarchidb/tabular-store';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterAlt as FilterAltIcon,
+} from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -16,18 +22,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  ExpandMore as ExpandMoreIcon,
-  FilterAlt as FilterAltIcon,
-} from '@mui/icons-material';
-import type { TabularColumnInfo } from '@hierarchidb/tabular-store';
+import React, { type ReactElement } from 'react';
 import type { TabularFilterOperator, TabularFilterRule } from '../types/index';
 import {
+  type FilterOperatorOption,
   normalizeType,
   requiresValue,
-  type FilterOperatorOption,
   useTabularDataFilterRulesVirtualLogic,
 } from './useTabularDataFilterRulesVirtualLogic';
 
@@ -137,8 +137,12 @@ export function TabularDataFilterRulesVirtual({
             )}
             {visibleRules.map((rule) => {
               const isEditing = editingRowId === rule.id;
-              const columnType = normalizeType(columns.find((column) => column.name === rule.column)?.type);
-              const availableOps = operatorOptions.filter((operator) => operator.types.includes(columnType));
+              const columnType = normalizeType(
+                columns.find((column) => column.name === rule.column)?.type
+              );
+              const availableOps = operatorOptions.filter((operator) =>
+                operator.types.includes(columnType)
+              );
               const needsValue = requiresValue(rule.operator);
               const valueDraft = draftValuesRef.current[rule.id] ?? String(rule.value ?? '');
 
@@ -158,7 +162,10 @@ export function TabularDataFilterRulesVirtual({
                       disabled={needsValue && valueDraft.trim().length === 0}
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                         const nextEnabled = event.target.checked;
-                        handleUpdateRule(rule.id, (current) => ({ ...current, enabled: nextEnabled }));
+                        handleUpdateRule(rule.id, (current) => ({
+                          ...current,
+                          enabled: nextEnabled,
+                        }));
                       }}
                     />
                   </TableCell>
@@ -173,11 +180,15 @@ export function TabularDataFilterRulesVirtual({
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                           const nextColumn = event.target.value;
-                          const nextType = normalizeType(columns.find((column) => column.name === nextColumn)?.type);
-                          const ops = operatorOptions.filter((operator) => operator.types.includes(nextType));
+                          const nextType = normalizeType(
+                            columns.find((column) => column.name === nextColumn)?.type
+                          );
+                          const ops = operatorOptions.filter((operator) =>
+                            operator.types.includes(nextType)
+                          );
                           const nextOp = ops.some((operator) => operator.value === rule.operator)
                             ? rule.operator
-                            : ops[0]?.value ?? 'equals';
+                            : (ops[0]?.value ?? 'equals');
                           handleUpdateRule(rule.id, (current) => ({
                             ...current,
                             column: nextColumn,
@@ -213,7 +224,9 @@ export function TabularDataFilterRulesVirtual({
                           const nextOp = event.target.value as TabularFilterOperator;
                           const shouldRequireValue = requiresValue(nextOp);
                           const hasValue = valueDraft.trim().length > 0;
-                          const nextEnabled = shouldRequireValue ? rule.enabled && hasValue : rule.enabled;
+                          const nextEnabled = shouldRequireValue
+                            ? rule.enabled && hasValue
+                            : rule.enabled;
                           handleUpdateRule(rule.id, (current) => ({
                             ...current,
                             operator: nextOp,
@@ -328,12 +341,7 @@ export function TabularDataFilterRulesVirtual({
         />
       </Box>
       <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={handleAddRule}
-        >
+        <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={handleAddRule}>
           Add Filter Rule
         </Button>
         <Typography variant="body2" color="text.secondary">

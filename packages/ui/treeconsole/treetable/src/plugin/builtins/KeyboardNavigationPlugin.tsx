@@ -2,8 +2,8 @@
  * Keyboard Navigation Plugin (built-in)
  */
 
-import type { TreeTablePlugin } from '~/plugin/types';
 import type { KeyboardEvent } from 'react';
+import type { TreeTablePlugin } from '~/plugin/types';
 
 export interface KeyboardNavigationPluginConfig {
   /** Enable ArrowUp/ArrowDown navigation (default: true) */
@@ -22,7 +22,9 @@ export interface KeyboardNavigationPluginConfig {
   enableExpandCollapseKeys?: boolean;
 }
 
-export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPluginConfig): TreeTablePlugin {
+export function createKeyboardNavigationPlugin(
+  config?: KeyboardNavigationPluginConfig
+): TreeTablePlugin {
   const {
     enableArrowKeyNavigation = true,
     enableSpaceKeySelection = true,
@@ -145,4 +147,3 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
 }
 
 export const keyboardNavigationPlugin = createKeyboardNavigationPlugin();
-

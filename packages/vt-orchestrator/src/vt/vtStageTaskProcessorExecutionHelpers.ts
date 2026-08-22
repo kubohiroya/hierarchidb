@@ -14,9 +14,7 @@ export type VtTaskProcessorExecutionRunInput = {
   topojsonSimplify: VtTaskRunInput['topojsonSimplify'];
 };
 
-export const buildVtTaskRunInput = (
-  input: VtTaskProcessorExecutionRunInput,
-): VtTaskRunInput => ({
+export const buildVtTaskRunInput = (input: VtTaskProcessorExecutionRunInput): VtTaskRunInput => ({
   context: input.context,
   taskContext: input.taskContext,
   band: input.band,
@@ -32,4 +30,3 @@ export const buildSkippedVtTaskResult = (message: string): StageHandlerResult =>
   status: 'completed',
   message,
 });
-

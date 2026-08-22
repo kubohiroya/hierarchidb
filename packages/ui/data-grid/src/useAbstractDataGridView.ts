@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ColumnDefinition,
   DataChangeEvent,
@@ -146,101 +146,116 @@ export const useAbstractDataGridView = <T extends DataItem>({
     setPage(0);
   }, []);
 
-  const handleSort = useCallback((field: string) => {
-    if (!sortable) return;
+  const handleSort = useCallback(
+    (field: string) => {
+      if (!sortable) return;
 
-    const existingSort = sort.find((entry) => entry.field === field);
-    let newSort: SortParams[];
+      const existingSort = sort.find((entry) => entry.field === field);
+      let newSort: SortParams[];
 
-    if (!existingSort) {
-      newSort = [{ field, direction: 'asc' }];
-    } else if (existingSort.direction === 'asc') {
-      newSort = [{ field, direction: 'desc' }];
-    } else {
-      newSort = [];
-    }
+      if (!existingSort) {
+        newSort = [{ field, direction: 'asc' }];
+      } else if (existingSort.direction === 'asc') {
+        newSort = [{ field, direction: 'desc' }];
+      } else {
+        newSort = [];
+      }
 
-    setSort(newSort);
-    setPage(0);
-  }, [sort, sortable]);
+      setSort(newSort);
+      setPage(0);
+    },
+    [sort, sortable]
+  );
 
-  const handleFilterChange = useCallback((field: string, value: string) => {
-    if (!filterable) return;
+  const handleFilterChange = useCallback(
+    (field: string, value: string) => {
+      if (!filterable) return;
 
-    const newFilters = filters.filter((entry) => entry.field !== field);
-    if (value) {
-      newFilters.push({
-        field,
-        operator: 'contains',
-        value,
-      });
-    }
+      const newFilters = filters.filter((entry) => entry.field !== field);
+      if (value) {
+        newFilters.push({
+          field,
+          operator: 'contains',
+          value,
+        });
+      }
 
-    setFilters(newFilters);
-    setPage(0);
-  }, [filterable, filters]);
+      setFilters(newFilters);
+      setPage(0);
+    },
+    [filterable, filters]
+  );
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
     setPage(0);
   }, []);
 
-  const handleSelectAll = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      setSelectedIds(new Set(data.map((item) => item.id)));
-    } else {
-      setSelectedIds(new Set());
-    }
+  const handleSelectAll = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.checked) {
+        setSelectedIds(new Set(data.map((item) => item.id)));
+      } else {
+        setSelectedIds(new Set());
+      }
 
-    onSelectionChange?.(event.target.checked ? data : []);
-  }, [data, onSelectionChange]);
+      onSelectionChange?.(event.target.checked ? data : []);
+    },
+    [data, onSelectionChange]
+  );
 
-  const handleSelectRow = useCallback((item: T) => {
-    if (!selectable) return;
+  const handleSelectRow = useCallback(
+    (item: T) => {
+      if (!selectable) return;
 
-    const newSelection = new Set(selectedIds);
+      const newSelection = new Set(selectedIds);
 
-    if (selectionMode === 'single') {
-      newSelection.clear();
-      newSelection.add(item.id);
-    } else if (newSelection.has(item.id)) {
-      newSelection.delete(item.id);
-    } else {
-      newSelection.add(item.id);
-    }
+      if (selectionMode === 'single') {
+        newSelection.clear();
+        newSelection.add(item.id);
+      } else if (newSelection.has(item.id)) {
+        newSelection.delete(item.id);
+      } else {
+        newSelection.add(item.id);
+      }
 
-    setSelectedIds(newSelection);
-    onSelectionChange?.(data.filter((row) => newSelection.has(row.id)));
-  }, [data, onSelectionChange, selectable, selectedIds, selectionMode]);
+      setSelectedIds(newSelection);
+      onSelectionChange?.(data.filter((row) => newSelection.has(row.id)));
+    },
+    [data, onSelectionChange, selectable, selectedIds, selectionMode]
+  );
 
-  const handleExport = useCallback(async (format: 'csv' | 'json' | 'excel') => {
-    if (!exportable) return;
+  const handleExport = useCallback(
+    async (format: 'csv' | 'json' | 'excel') => {
+      if (!exportable) return;
 
-    if (onExport) {
-      await onExport(format);
-      return;
-    }
+      if (onExport) {
+        await onExport(format);
+        return;
+      }
 
-    if (!dataProvider.export) return;
+      if (!dataProvider.export) return;
 
-    try {
-      const blob = await dataProvider.export(format, queryParams);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `export.${format}`;
-      anchor.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      const nextError = err instanceof Error ? err : new Error('Export failed');
-      setError(nextError);
-      onError?.(nextError);
-    }
-  }, [dataProvider, exportable, onError, onExport, queryParams]);
+      try {
+        const blob = await dataProvider.export(format, queryParams);
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `export.${format}`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        const nextError = err instanceof Error ? err : new Error('Export failed');
+        setError(nextError);
+        onError?.(nextError);
+      }
+    },
+    [dataProvider, exportable, onError, onExport, queryParams]
+  );
 
   const handleColumnToggle = useCallback((field: string) => {
     setColumns((prev) =>
-      prev.map((col) => (String(col.field) === field ? { ...col, visible: !col.visible } : col)),
+      prev.map((col) => (String(col.field) === field ? { ...col, visible: !col.visible } : col))
     );
   }, []);
 

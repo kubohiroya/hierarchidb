@@ -1,10 +1,12 @@
-import type { RunVectorTileStageOrchestratorParams } from './orchestratorTypes.js';
-import type { ProgressInfo } from '~/ports/sharedTypes';
-
 import { defaultStageControls } from '~/common/defaultStageControls';
-import { buildVectorTileProgressReporter, resolveRunnableVectorTileTasks } from './resolveRunnableVectorTileTasks.js';
-import { runVectorTileAdapter } from './runVectorTileAdapter.js';
+import type { ProgressInfo } from '~/ports/sharedTypes';
+import type { RunVectorTileStageOrchestratorParams } from './orchestratorTypes.js';
 import { postprocessVectorTileStage } from './postprocessVectorTileStage.js';
+import {
+  buildVectorTileProgressReporter,
+  resolveRunnableVectorTileTasks,
+} from './resolveRunnableVectorTileTasks.js';
+import { runVectorTileAdapter } from './runVectorTileAdapter.js';
 
 /**
  * Vectortile ステージの共通 orchestrator。
@@ -15,7 +17,7 @@ import { postprocessVectorTileStage } from './postprocessVectorTileStage.js';
  * - 後処理（postprocess port）
  */
 export async function runVectorTileStageOrchestrator<TTask, TProgress extends ProgressInfo, TInput>(
-  params: RunVectorTileStageOrchestratorParams<TTask, TProgress, TInput>,
+  params: RunVectorTileStageOrchestratorParams<TTask, TProgress, TInput>
 ): Promise<void> {
   const defaults: {
     getSignal: () => AbortSignal;
@@ -48,11 +50,12 @@ export async function runVectorTileStageOrchestrator<TTask, TProgress extends Pr
   // NOTE: registerTasks may include output updates for retry-specific handling.
   await taskRegistry.registerTasks('vectortile', tasks, undefined, inputsByTaskId);
 
-  const { runnableTasks, total, baseCompleted, baseFailed, baseDone } = await resolveRunnableVectorTileTasks({
-    nodeId,
-    taskRegistry,
-    tasks,
-  });
+  const { runnableTasks, total, baseCompleted, baseFailed, baseDone } =
+    await resolveRunnableVectorTileTasks({
+      nodeId,
+      taskRegistry,
+      tasks,
+    });
 
   if (runnableTasks.length === 0) {
     const baseProgress: ProgressInfo = {
@@ -68,7 +71,9 @@ export async function runVectorTileStageOrchestrator<TTask, TProgress extends Pr
     // (Adapter progress is already TProgress, so this affects only synthesized cases.)
     if (progressCallback) {
       if (typeof progressFactory !== 'function') {
-        throw new Error('progressFactory is required when progressCallback is provided (vectortile orchestrator)');
+        throw new Error(
+          'progressFactory is required when progressCallback is provided (vectortile orchestrator)'
+        );
       }
       progressCallback(progressFactory(baseProgress));
     }

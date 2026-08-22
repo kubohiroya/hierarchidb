@@ -2,20 +2,13 @@
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": [
-      "vite/client",
-      "react",
-      "react/jsx-runtime"
-    ],
+    "types": ["vite/client", "react", "react/jsx-runtime"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": [
-    "src",
-    "../../types/**/*.d.ts"
-  ],
+  "include": ["src", "../../types/**/*.d.ts"],
   "exclude": [
     "node_modules",
     "dist",

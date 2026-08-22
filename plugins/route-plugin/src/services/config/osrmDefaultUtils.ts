@@ -1,5 +1,5 @@
-import type { ThrottleOptions } from '~/services/net/ThrottledPort';
 import { readRuntimeEnvValue } from '@hierarchidb/util';
+import type { ThrottleOptions } from '~/services/net/ThrottledPort';
 
 type OsrmProfile = 'car' | 'bike' | 'foot' | 'truck';
 

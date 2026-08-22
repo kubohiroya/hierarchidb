@@ -73,7 +73,7 @@ const mergeStylerDraft = (
 
 const createDraftUpdater = (
   initial: StylerStepData,
-  onChange: PluginStepProps<StylerStepData>['onChange'],
+  onChange: PluginStepProps<StylerStepData>['onChange']
 ) => {
   let latestDraft: StylerStepData = { ...(initial ?? {}) };
   let latestSignature = serializeComparable(latestDraft);
@@ -116,7 +116,9 @@ const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
   const data = dialogData as StylerStepData;
   const dataSource = data.dataSource;
   const size = typeof dataSource?.sizeBytes === 'number' ? dataSource.sizeBytes : 0;
-  const hasUrlLikeSource = typeof dataSource?.source === 'string' && /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(dataSource.source);
+  const hasUrlLikeSource =
+    typeof dataSource?.source === 'string' &&
+    /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(dataSource.source);
   const hasSpreadsheetMetadata = Boolean(data.spreadsheetMetadataId);
   const isUrlMode = dataSource?.type === 'url';
   if (isUrlMode) {
@@ -175,7 +177,13 @@ registry.registerConfigProvider<StylerStepData>({
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => {
           const draft = p.data ?? ({} as StylerStepData);
-          return <DataSourceWithValidation {...p} data={draft} onChange={createDraftUpdater(draft, p.onChange)} />;
+          return (
+            <DataSourceWithValidation
+              {...p}
+              data={draft}
+              onChange={createDraftUpdater(draft, p.onChange)}
+            />
+          );
         },
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {
@@ -188,7 +196,13 @@ registry.registerConfigProvider<StylerStepData>({
         label: t('steps.filtering.label', 'Filtering'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => {
           const draft = p.data ?? ({} as StylerStepData);
-          return <FilterWithValidation {...p} data={draft} onChange={createDraftUpdater(draft, p.onChange)} />;
+          return (
+            <FilterWithValidation
+              {...p}
+              data={draft}
+              onChange={createDraftUpdater(draft, p.onChange)}
+            />
+          );
         },
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {

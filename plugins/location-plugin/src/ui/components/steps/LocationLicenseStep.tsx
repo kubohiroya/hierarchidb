@@ -2,13 +2,13 @@
  * License agreement step for Location dialog.
  */
 
-import type React from 'react';
-import { Box, Typography } from '@mui/material';
-import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { Timestamp } from '@hierarchidb/core-types';
-import type { LocationEntity } from '~/common/types/index';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { LicenseAgreementStep } from '@hierarchidb/ui-license';
+import { Box, Typography } from '@mui/material';
+import type React from 'react';
 import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
+import type { LocationEntity } from '~/common/types/index';
 
 interface LocationLicenseStepProps {
   draft: Partial<LocationEntity>;

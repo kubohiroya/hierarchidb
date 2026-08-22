@@ -1,8 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type {
-  EphemeralDB,
-  EphemeralGeometryCacheRecord,
-} from '@hierarchidb/gis-sdk';
+import type { EphemeralDB, EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import { logDebug } from '~/debug/persistentDebugLog';
 import {
   TASKDEBUG_BUILD_TAG,
@@ -79,18 +76,19 @@ export const finalizeGeometryStageCache = async (params: {
         taskId: params.taskId,
         operation: 'cache-write:geometryCache.put',
         timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
-        promise: params.ephemeralDB.transaction('rw', [
-          params.ephemeralDB.geometryCache,
-          params.ephemeralDB.geometryCacheMeta,
-        ], async () => {
-          if (params.abortSignal?.aborted) {
-            throw new DOMException('Geometry cache write was aborted', 'AbortError');
+        promise: params.ephemeralDB.transaction(
+          'rw',
+          [params.ephemeralDB.geometryCache, params.ephemeralDB.geometryCacheMeta],
+          async () => {
+            if (params.abortSignal?.aborted) {
+              throw new DOMException('Geometry cache write was aborted', 'AbortError');
+            }
+            await params.ephemeralDB.geometryCache.put({
+              ...params.cacheRecord,
+              timestamp: completedAt,
+            });
           }
-          await params.ephemeralDB.geometryCache.put({
-            ...params.cacheRecord,
-            timestamp: completedAt,
-          });
-        }),
+        ),
       });
     } finally {
       clearTimeout(slowWriteLogId);

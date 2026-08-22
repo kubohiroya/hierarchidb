@@ -1,8 +1,8 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { LocationFeatureId, LocationPointId } from '@hierarchidb/location-api';
+import { getLocationDB } from '@hierarchidb/location-store';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getLocationDB } from '@hierarchidb/location-store';
-import type { LocationFeatureId, LocationPointId } from '@hierarchidb/location-api';
 import type { CoreDB } from '../../../services/CoreDB';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager';
 
@@ -44,20 +44,22 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
     addNode(src, locationType);
 
     await db.features.where('nodeId').anyOf([src, dst]).delete();
-    await db.features.bulkPut([{
-      nodeId: src,
-      id: 'loc-1' as LocationFeatureId,
-      type: 'area_centroid',
-      data: {
-        schemaVersion: 2,
-        pointId: 'p1' as LocationPointId,
-        name: 'Point 1',
-        latitude: 0,
-        longitude: 0,
+    await db.features.bulkPut([
+      {
+        nodeId: src,
+        id: 'loc-1' as LocationFeatureId,
         type: 'area_centroid',
+        data: {
+          schemaVersion: 2,
+          pointId: 'p1' as LocationPointId,
+          name: 'Point 1',
+          latitude: 0,
+          longitude: 0,
+          type: 'area_centroid',
+        },
+        updatedAt: Date.now(),
       },
-      updatedAt: Date.now(),
-    }]);
+    ]);
 
     const core: Pick<CoreDB, 'getNode'> = {
       getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),

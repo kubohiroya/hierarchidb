@@ -17,12 +17,15 @@ export const logLayerIndexBuildStart = ({
   if (!debugCollect) {
     return;
   }
-  console.info('[tileEmit][debug] buildLayerIndexes start', JSON.stringify({
-    ...taskContext,
-    ...extra,
-    layerCount,
-    heap: null,
-  }));
+  console.info(
+    '[tileEmit][debug] buildLayerIndexes start',
+    JSON.stringify({
+      ...taskContext,
+      ...extra,
+      layerCount,
+      heap: null,
+    })
+  );
 };
 
 export const logLayerIndexBuildDone = ({
@@ -36,10 +39,13 @@ export const logLayerIndexBuildDone = ({
   if (!debugCollect) {
     return;
   }
-  console.info('[tileEmit][debug] buildLayerIndexes done', JSON.stringify({
-    ...taskContext,
-    ...extra,
-    indexCount,
-    heap: null,
-  }));
+  console.info(
+    '[tileEmit][debug] buildLayerIndexes done',
+    JSON.stringify({
+      ...taskContext,
+      ...extra,
+      indexCount,
+      heap: null,
+    })
+  );
 };

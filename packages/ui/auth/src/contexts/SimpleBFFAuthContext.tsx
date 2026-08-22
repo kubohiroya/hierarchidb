@@ -1,7 +1,7 @@
 import React from 'react';
 import { BffKvWarningDialog } from '~/components/BffKvWarningDialog';
-import { useSimpleBFFAuthProvider } from './useSimpleBFFAuthProvider';
 import type { AuthContextType } from '~/types/AuthContextType';
+import { useSimpleBFFAuthProvider } from './useSimpleBFFAuthProvider';
 
 const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
 

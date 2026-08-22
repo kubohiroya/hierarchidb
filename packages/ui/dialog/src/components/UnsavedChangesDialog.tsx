@@ -2,7 +2,13 @@
  * @fileoverview UnsavedChangesDialog - Confirmation base-dialog for discarding unsaved changes
  */
 
-import type React from 'react';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import {
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
+import type { DialogProps } from '@mui/material';
 import {
   Alert,
   AlertTitle,
@@ -14,9 +20,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import type { DialogProps } from '@mui/material';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { Delete as DeleteIcon, Save as SaveIcon, Warning as WarningIcon } from '@mui/icons-material';
+import type React from 'react';
 import { useUnsavedChangesDialogView } from './useUnsavedChangesDialogView.js';
 
 export interface UnsavedChangesDialogProps {

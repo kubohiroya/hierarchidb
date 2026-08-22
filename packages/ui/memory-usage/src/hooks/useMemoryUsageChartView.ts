@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
 import type { Theme } from '@mui/material';
-import { useMemoryData } from './useMemoryData.js';
+import { useCallback, useEffect, useRef } from 'react';
 import { CanvasRenderer } from '../services/CanvasRenderer.js';
+import { useMemoryData } from './useMemoryData.js';
 
 type MemoryUsageChartVariant = 'simple' | 'detailed' | 'compact';
 

@@ -1,22 +1,29 @@
-import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
-import type { Topology } from 'topojson-specification';
-import { geojson as geojsonApi } from 'flatgeobuf';
 import {
+  type GeometryEngine,
+  type GeometrySimplifyAlgorithm,
   geometryArea,
   geometryBbox,
   geometryBboxClip,
   geometryIsValid,
   geometrySimplify,
-  type GeometryEngine,
-  type GeometrySimplifyAlgorithm,
 } from '@hierarchidb/gis-sdk';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import type {
+  Feature,
+  FeatureCollection,
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPolygon,
+  Polygon,
+} from 'geojson';
+import type { Topology } from 'topojson-specification';
 import { quantizeTopoJsonToGrid } from '~/transform/quantizeTopoJsonToGrid.js';
 import { getTopojsonRuntime } from '~/transform/topojsonRuntimeAdapter.js';
 
 export const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';
-export const isTaskDebugLoggingEnabled = (): boolean => (
-  (globalThis as { __HDB_VT_TASK_DEBUG?: boolean }).__HDB_VT_TASK_DEBUG === true
-);
+export const isTaskDebugLoggingEnabled = (): boolean =>
+  (globalThis as { __HDB_VT_TASK_DEBUG?: boolean }).__HDB_VT_TASK_DEBUG === true;
 export const TRANSFORM_DB_WRITE_TIMEOUT_MS = 30000;
 export const TRANSFORM_TASK_UPDATE_TIMEOUT_MS = 15000;
 
@@ -31,9 +38,11 @@ export const withTimeout = async <T>(params: {
   let timerId: ReturnType<typeof setTimeout> | null = null;
   const timeoutPromise = new Promise<never>((_resolve, reject) => {
     timerId = setTimeout(() => {
-      reject(new Error(
-        `db timeout (operation=${operation}, taskId=${taskId}, timeoutMs=${timeoutMs}, durationMs=${Date.now() - startedAt})`
-      ));
+      reject(
+        new Error(
+          `db timeout (operation=${operation}, taskId=${taskId}, timeoutMs=${timeoutMs}, durationMs=${Date.now() - startedAt})`
+        )
+      );
     }, timeoutMs);
   });
   try {
@@ -45,7 +54,9 @@ export const withTimeout = async <T>(params: {
   }
 };
 
-export const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+export const normalizeFeatureCollection = async (
+  decoded: unknown
+): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
   const collection = decoded as FeatureCollection;
   if (collection.type === 'FeatureCollection') {
@@ -76,7 +87,9 @@ export const resolveTopoJsonObject = (topology: Topology): Topology['objects'][s
   return topology.objects[key] ?? null;
 };
 
-export const normalizeTopoJsonCollection = async (topology: Topology): Promise<FeatureCollection> => {
+export const normalizeTopoJsonCollection = async (
+  topology: Topology
+): Promise<FeatureCollection> => {
   const object = resolveTopoJsonObject(topology);
   if (!object) return { type: 'FeatureCollection', features: [] };
   const runtime = await getTopojsonRuntime();
@@ -99,7 +112,9 @@ export const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> 
   return await new Response(stream.readable).arrayBuffer();
 };
 
-export const describeBuffer = (buffer: ArrayBuffer): {
+export const describeBuffer = (
+  buffer: ArrayBuffer
+): {
   byteLength: number;
   headHex: string;
   headAscii: string;
@@ -107,10 +122,12 @@ export const describeBuffer = (buffer: ArrayBuffer): {
 } => {
   const bytes = new Uint8Array(buffer);
   const head = bytes.slice(0, 16);
-  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
-  const headAscii = Array.from(head).map((value) => (
-    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
-  )).join('');
+  const headHex = Array.from(head)
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
+  const headAscii = Array.from(head)
+    .map((value) => (value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'))
+    .join('');
   let firstNonWhitespace: number | null = null;
   for (let i = 0; i < bytes.length; i += 1) {
     const value = bytes[i];
@@ -139,7 +156,7 @@ export const validateEncodedFlatGeobuf = async (buffer: ArrayBuffer): Promise<vo
     const err = error instanceof Error ? error.message : String(error);
     const debug = describeBuffer(buffer);
     throw new Error(
-      `invalid flatgeobuf: ${err} (byteLength=${debug.byteLength} headHex=${debug.headHex} headAscii=${debug.headAscii} jsonLike=${debug.isJsonLike ? '1' : '0'})`,
+      `invalid flatgeobuf: ${err} (byteLength=${debug.byteLength} headHex=${debug.headHex} headAscii=${debug.headAscii} jsonLike=${debug.isJsonLike ? '1' : '0'})`
     );
   }
 };
@@ -158,9 +175,8 @@ export const decodeTopoJsonSourceCache = async (params: {
   simplifyAlgorithm?: GeometrySimplifyAlgorithm;
   skipSimplification?: boolean;
 }): Promise<FeatureCollection | null> => {
-  const decompressed = params.compression === 'gzip'
-    ? await decompressGzip(params.buffer)
-    : params.buffer;
+  const decompressed =
+    params.compression === 'gzip' ? await decompressGzip(params.buffer) : params.buffer;
   const topology = decodeTopoJson(decompressed);
   if (params.skipSimplification) {
     return normalizeTopoJsonCollection(topology);
@@ -209,9 +225,9 @@ export const resolveRetryVertexLimit = (countryCode?: string): number => {
     : DEFAULT_RETRY_VERTEX_LIMIT;
 };
 
-export const resolveSimplifyAlgorithm = (algorithm?: GeometrySimplifyAlgorithm): GeometrySimplifyAlgorithm => (
-  algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
-);
+export const resolveSimplifyAlgorithm = (
+  algorithm?: GeometrySimplifyAlgorithm
+): GeometrySimplifyAlgorithm => (algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM);
 
 export type TransformTraceLogLevel = 'off' | 'summary' | 'verbose';
 
@@ -280,7 +296,10 @@ const countVerticesFromGeometry = (geometry?: Geometry | null): number => {
   if (!geometry) return 0;
   if (geometry.type === 'GeometryCollection') {
     const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
-    return geometries.reduce((sum: number, child: Geometry) => sum + countVerticesFromGeometry(child), 0);
+    return geometries.reduce(
+      (sum: number, child: Geometry) => sum + countVerticesFromGeometry(child),
+      0
+    );
   }
   return countVertices(geometry.coordinates);
 };
@@ -297,7 +316,11 @@ const maxVerticesInCollection = (collection: FeatureCollection): number => {
 };
 
 export type GeometryOps = {
-  simplifyCollection: (collection: FeatureCollection, zTarget: number, toleranceK: number) => FeatureCollection;
+  simplifyCollection: (
+    collection: FeatureCollection,
+    zTarget: number,
+    toleranceK: number
+  ) => FeatureCollection;
   simplifyFeature: (feature: Feature, zTarget: number, toleranceK: number) => Feature;
   bbox: (feature: Feature<Geometry>) => [number, number, number, number] | null;
   area: (feature: Feature<Geometry>) => number;
@@ -305,12 +328,16 @@ export type GeometryOps = {
   countSelfIntersections: (geometry: Geometry) => number;
   intersectsBBox: (
     feature: Feature<Geometry>,
-    bbox: { minX: number; minY: number; maxX: number; maxY: number },
+    bbox: { minX: number; minY: number; maxX: number; maxY: number }
   ) => boolean;
 };
 
 export const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
-  const simplifyCollection = (collection: FeatureCollection, zTarget: number, toleranceK: number): FeatureCollection => {
+  const simplifyCollection = (
+    collection: FeatureCollection,
+    zTarget: number,
+    toleranceK: number
+  ): FeatureCollection => {
     const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
     if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
     const simplified = geometrySimplify(collection, engine, {
@@ -361,12 +388,12 @@ export const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
 
   const intersectsBBox = (
     feature: Feature<Geometry>,
-    bboxParams: { minX: number; minY: number; maxX: number; maxY: number },
+    bboxParams: { minX: number; minY: number; maxX: number; maxY: number }
   ): boolean => {
     const clipped = geometryBboxClip(
       feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
       [bboxParams.minX, bboxParams.minY, bboxParams.maxX, bboxParams.maxY],
-      engine,
+      engine
     );
     return Boolean(clipped?.geometry && hasCoordinatesFromGeometry(clipped.geometry));
   };
@@ -385,7 +412,7 @@ export const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
 export const resolveTransformTolerance = (
   toleranceByBand: number[] | undefined,
   bandIndex: number,
-  fallback: number,
+  fallback: number
 ): number => {
   if (!Array.isArray(toleranceByBand) || toleranceByBand.length === 0) {
     return fallback;

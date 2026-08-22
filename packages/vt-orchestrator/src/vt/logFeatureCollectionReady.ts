@@ -1,5 +1,5 @@
-import type { VtCollectionResult } from './vtStageTaskTypes.js';
 import { getHeapSnapshot } from './vtStageCoreUtils.js';
+import type { VtCollectionResult } from './vtStageTaskTypes.js';
 
 export type FeatureCollectionBuildContext = {
   taskContext: {
@@ -18,11 +18,17 @@ export const logFeatureCollectionReady = ({
   collection,
   bufferSizes,
 }: FeatureCollectionBuildContext): void => {
-  console.info('[tileEmit] feature collection ready', JSON.stringify({
-    ...taskContext,
-    features: collection.features.length,
-    bufferBytes: Array.from(bufferSizes.values()).reduce((sum, size) => sum + size, 0),
-    maxBufferBytes: Array.from(bufferSizes.values()).reduce((max, size) => (size > max ? size : max), 0),
-    heap: getHeapSnapshot(),
-  }));
+  console.info(
+    '[tileEmit] feature collection ready',
+    JSON.stringify({
+      ...taskContext,
+      features: collection.features.length,
+      bufferBytes: Array.from(bufferSizes.values()).reduce((sum, size) => sum + size, 0),
+      maxBufferBytes: Array.from(bufferSizes.values()).reduce(
+        (max, size) => (size > max ? size : max),
+        0
+      ),
+      heap: getHeapSnapshot(),
+    })
+  );
 };

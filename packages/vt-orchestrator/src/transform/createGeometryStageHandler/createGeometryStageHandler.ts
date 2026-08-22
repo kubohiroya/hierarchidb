@@ -1,19 +1,19 @@
-import type { Feature, FeatureCollection } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
+import { applyFeatureFiltering, type EphemeralGeometryCacheMetaRecord } from '@hierarchidb/gis-sdk';
+import { DEFAULT_MAX_RATIO_VALUE, type ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
+import type { Feature, FeatureCollection } from 'geojson';
+import type { GeometryStageContext } from '~/contextTypes';
+import { updateTask, VtTaskQueueDb } from '~/task/taskQueue';
+import type { GeometryStageTaskInput, StageHandler, StageHandlerResult } from '~/types/types';
 import type { TaskDisplayPayload } from '../../../../build-api';
 import {
-  applyFeatureFiltering,
-  type EphemeralGeometryCacheMetaRecord,
-} from '@hierarchidb/gis-sdk';
-import { DEFAULT_MAX_RATIO_VALUE, type ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
-import type { GeometryStageContext } from '~/contextTypes';
-import type { StageHandler, StageHandlerResult, GeometryStageTaskInput } from '~/types/types';
-import { VtTaskQueueDb, updateTask } from '~/task/taskQueue';
-import { runGeometryStageOutputPhase } from './runGeometryStageOutputPhase.js';
+  analyzeGeometryIssues,
+  buildErrorLineFeatures,
+  filterFeaturesByAspectRatioAndArea,
+  isGeometryBooleanValid,
+  resolveFeatureIdentifier,
+} from './helpers/analysis.js';
 import {
-  TASKDEBUG_BUILD_TAG,
-  TRANSFORM_TASK_UPDATE_TIMEOUT_MS,
-  TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS,
   createGeometryOps,
   emitTransformTrace,
   isTaskDebugLoggingEnabled,
@@ -21,22 +21,12 @@ import {
   resolveRetryVertexLimit,
   resolveSimplifyAlgorithm,
   resolveTransformTolerance,
+  TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS,
+  TASKDEBUG_BUILD_TAG,
+  TRANSFORM_TASK_UPDATE_TIMEOUT_MS,
   withTimeout,
 } from './helpers/core.js';
-import {
-  analyzeGeometryIssues,
-  isGeometryBooleanValid,
-  filterFeaturesByAspectRatioAndArea,
-  buildErrorLineFeatures,
-  resolveFeatureIdentifier,
-} from './helpers/analysis.js';
-import {
-  decodeSourceCacheByFormat,
-  countPolygonsFromGeometry,
-  countVerticesFromGeometry,
-  simplifyOnlyCollection,
-  repairCollectionSelfIntersections,
-} from './helpers/validation.js';
+import { resolveSimplifyToleranceProfile } from './helpers/resolveSimplifyToleranceProfile.js';
 import {
   assertNotAborted,
   buildCollectionDiagnostics,
@@ -47,12 +37,19 @@ import {
   runWithStallTimeout,
 } from './helpers/runtimeUtils.js';
 import {
+  countPolygonsFromGeometry,
+  countVerticesFromGeometry,
+  decodeSourceCacheByFormat,
+  repairCollectionSelfIntersections,
+  simplifyOnlyCollection,
+} from './helpers/validation.js';
+import {
   countVertexLimitOverages,
   findBaseToleranceByBisection,
   retrySimplifyFeatureWithinVertexLimit,
   selectMaxVertexFeature,
 } from './retrySimplifyWithinVertexLimit.js';
-import { resolveSimplifyToleranceProfile } from './helpers/resolveSimplifyToleranceProfile.js';
+import { runGeometryStageOutputPhase } from './runGeometryStageOutputPhase.js';
 
 export const createGeometryStageHandler = (
   context: GeometryStageContext
@@ -93,19 +90,19 @@ export const createGeometryStageHandler = (
     encodeEnd: 99,
     cachePutStart: 99,
   } as const;
-  const normalizeDisplayToken = (value: string): string => (
+  const normalizeDisplayToken = (value: string): string =>
     value
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '')
-  );
+      .replace(/^_+|_+$/g, '');
   const resolvePhaseDisplay = (phase: string): TaskDisplayPayload => {
     const separator = phase.lastIndexOf(':');
     const rawState = separator >= 0 ? phase.slice(separator + 1) : 'progress';
-    const phaseState = rawState === 'start' || rawState === 'done' || rawState === 'progress'
-      ? rawState
-      : 'progress';
+    const phaseState =
+      rawState === 'start' || rawState === 'done' || rawState === 'progress'
+        ? rawState
+        : 'progress';
     const phaseCode = separator >= 0 ? phase.slice(0, separator) : phase;
     const normalizedPhaseCode = normalizeDisplayToken(phaseCode);
     return {
@@ -123,7 +120,7 @@ export const createGeometryStageHandler = (
   const updateTaskStrict = async (
     taskId: string,
     updates: Parameters<typeof updateTask>[2],
-    operation: string,
+    operation: string
   ): Promise<void> => {
     try {
       assertNotAborted(abortSignal);
@@ -142,17 +139,21 @@ export const createGeometryStageHandler = (
     taskId: string,
     processedPolygons: number,
     totalPolygons: number,
-    message?: string,
+    message?: string
   ): Promise<void> => {
     const total = Math.max(0, Math.round(totalPolygons));
     const processed = Math.max(0, Math.round(processedPolygons));
-    await updateTaskStrict(taskId, {
-      ...(message ? { message } : {}),
-      outputData: {
-        processedPolygons: processed,
-        totalPolygons: total,
+    await updateTaskStrict(
+      taskId,
+      {
+        ...(message ? { message } : {}),
+        outputData: {
+          processedPolygons: processed,
+          totalPolygons: total,
+        },
       },
-    }, 'progress:update');
+      'progress:update'
+    );
   };
   const updateTaskPhase = async (
     taskId: string,
@@ -161,7 +162,7 @@ export const createGeometryStageHandler = (
     options?: {
       key?: string;
       params?: TaskDisplayPayload['params'];
-    },
+    }
   ): Promise<void> => {
     const display = resolvePhaseDisplay(phase);
     if (options?.key) {
@@ -170,10 +171,14 @@ export const createGeometryStageHandler = (
     if (options?.params) {
       display.params = options.params;
     }
-    await updateTaskStrict(taskId, {
-      display,
-      ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
-    }, `phase:update:${phase}`);
+    await updateTaskStrict(
+      taskId,
+      {
+        display,
+        ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
+      },
+      `phase:update:${phase}`
+    );
   };
   const updateTaskRetryAttempt = async (taskId: string, retryAttempt: number): Promise<void> => {
     if (!Number.isFinite(retryAttempt) || retryAttempt < 0) return;
@@ -182,15 +187,20 @@ export const createGeometryStageHandler = (
       const currentTask = await taskQueue.tasks.get(taskId);
       assertNotAborted(abortSignal);
       const currentMetadata = currentTask?.metadata;
-      const baseMetadata = typeof currentMetadata === 'object' && currentMetadata !== null
-        ? (currentMetadata as Record<string, unknown>)
-        : {};
-      await updateTaskStrict(taskId, {
-        metadata: {
-          ...baseMetadata,
-          retryAttempt: Math.max(0, Math.floor(retryAttempt)),
+      const baseMetadata =
+        typeof currentMetadata === 'object' && currentMetadata !== null
+          ? (currentMetadata as Record<string, unknown>)
+          : {};
+      await updateTaskStrict(
+        taskId,
+        {
+          metadata: {
+            ...baseMetadata,
+            retryAttempt: Math.max(0, Math.floor(retryAttempt)),
+          },
         },
-      }, 'metadata:update:retry-attempt');
+        'metadata:update:retry-attempt'
+      );
     } catch (error) {
       if (abortSignal?.aborted) throw error;
       console.warn('[ShapeGeometry] failed to update task retryAttempt', {
@@ -213,14 +223,20 @@ export const createGeometryStageHandler = (
         effectiveTolerance: number;
         updatedAt: number;
       };
-    },
+    }
   ): Promise<void> => {
     try {
-      await updateTaskStrict(taskId, {
-        metadata: {
-          ...(payload.vertexLimitValidation ? { vertexLimitValidation: payload.vertexLimitValidation } : {}),
+      await updateTaskStrict(
+        taskId,
+        {
+          metadata: {
+            ...(payload.vertexLimitValidation
+              ? { vertexLimitValidation: payload.vertexLimitValidation }
+              : {}),
+          },
         },
-      }, 'metadata:update:status-message');
+        'metadata:update:status-message'
+      );
     } catch (error) {
       console.warn('[ShapeGeometry] failed to update task status metadata', {
         taskId,
@@ -235,21 +251,27 @@ export const createGeometryStageHandler = (
       tolerance: number;
       progress?: number;
       phaseState?: 'start' | 'progress' | 'done';
-    },
+    }
   ): Promise<void> => {
-    await updateTaskStrict(taskId, {
-      display: {
-        kind: 'phase',
-        key: 'stage.taskPhase.simplifyAttempt',
-        phaseCode: 'simplify-attempt',
-        phaseState: params.phaseState ?? 'progress',
-        params: {
-          attempt: params.attempt,
-          tolerance: formatToleranceForDisplay(params.tolerance),
+    await updateTaskStrict(
+      taskId,
+      {
+        display: {
+          kind: 'phase',
+          key: 'stage.taskPhase.simplifyAttempt',
+          phaseCode: 'simplify-attempt',
+          phaseState: params.phaseState ?? 'progress',
+          params: {
+            attempt: params.attempt,
+            tolerance: formatToleranceForDisplay(params.tolerance),
+          },
         },
+        ...(params.progress !== undefined
+          ? { progress: normalizePhaseProgress(params.progress) }
+          : {}),
       },
-      ...(params.progress !== undefined ? { progress: normalizePhaseProgress(params.progress) } : {}),
-    }, 'phase:update:simplify-attempt');
+      'phase:update:simplify-attempt'
+    );
   };
   const updateRetrySimplifyAttemptPhase = async (
     taskId: string,
@@ -260,24 +282,30 @@ export const createGeometryStageHandler = (
       attemptTotal: number;
       tolerance: number;
       progress?: number;
-    },
+    }
   ): Promise<void> => {
-    await updateTaskStrict(taskId, {
-      display: {
-        kind: 'phase',
-        key: 'stage.taskPhase.retrySimplifyFeature',
-        phaseCode: 'retry-simplify-feature',
-        phaseState: 'progress',
-        params: {
-          featureIndex: params.featureIndex,
-          featureTotal: params.featureTotal,
-          attempt: params.attempt,
-          attemptTotal: params.attemptTotal,
-          tolerance: formatToleranceForDisplay(params.tolerance),
+    await updateTaskStrict(
+      taskId,
+      {
+        display: {
+          kind: 'phase',
+          key: 'stage.taskPhase.retrySimplifyFeature',
+          phaseCode: 'retry-simplify-feature',
+          phaseState: 'progress',
+          params: {
+            featureIndex: params.featureIndex,
+            featureTotal: params.featureTotal,
+            attempt: params.attempt,
+            attemptTotal: params.attemptTotal,
+            tolerance: formatToleranceForDisplay(params.tolerance),
+          },
         },
+        ...(params.progress !== undefined
+          ? { progress: normalizePhaseProgress(params.progress) }
+          : {}),
       },
-      ...(params.progress !== undefined ? { progress: normalizePhaseProgress(params.progress) } : {}),
-    }, 'phase:update:retry-simplify-feature');
+      'phase:update:retry-simplify-feature'
+    );
     await updateTaskRetryAttempt(taskId, params.attempt);
   };
   const computeRetrySimplifyProgress = (attempt: number, attemptTotal: number): number => {
@@ -314,14 +342,16 @@ export const createGeometryStageHandler = (
   const MAX_TOLERANCE_SEARCH_ITERATIONS = 64;
   const debugResetAfterMs = 30000;
   const readHeapUsageRatio = (): number | null => {
-    const performance = (globalThis as {
-      performance?: {
-        memory?: {
-          usedJSHeapSize?: number;
-          jsHeapSizeLimit?: number;
+    const performance = (
+      globalThis as {
+        performance?: {
+          memory?: {
+            usedJSHeapSize?: number;
+            jsHeapSizeLimit?: number;
+          };
         };
-      };
-    }).performance;
+      }
+    ).performance;
     const memory = performance?.memory;
     const used = memory?.usedJSHeapSize;
     const limit = memory?.jsHeapSizeLimit;
@@ -331,7 +361,7 @@ export const createGeometryStageHandler = (
   };
   const buildTransformPreviewMetadata = (
     nodeId: NodeId,
-    input: GeometryStageTaskInput | null,
+    input: GeometryStageTaskInput | null
   ): Record<string, unknown> | null => {
     if (!input) return null;
     const geometryCacheId = `${nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
@@ -375,7 +405,7 @@ export const createGeometryStageHandler = (
       status: 'completed' | 'failed' | 'skipped',
       effectiveTolerance: number,
       extractionRatio: number,
-      retryAttempt: number,
+      retryAttempt: number
     ): { metadata: Record<string, unknown> } => {
       const metadata: Record<string, unknown> = {
         status: `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
@@ -423,10 +453,9 @@ export const createGeometryStageHandler = (
     const resolveResultMetadata = (
       status: 'completed' | 'failed' | 'skipped',
       effectiveTolerance: number,
-      extractionRatio = Number.NaN,
-    ): ReturnType<typeof toResultMetadata> => (
-      toResultMetadata(status, effectiveTolerance, extractionRatio, retryAttemptForTask)
-    );
+      extractionRatio = Number.NaN
+    ): ReturnType<typeof toResultMetadata> =>
+      toResultMetadata(status, effectiveTolerance, extractionRatio, retryAttemptForTask);
     const persistGeometryCacheMetadata = async (
       status: 'completed' | 'failed' | 'skipped',
       metadata: Record<string, unknown>,
@@ -435,7 +464,7 @@ export const createGeometryStageHandler = (
         featureCount?: number;
         vertexCount?: number;
         polygonCount?: number;
-      },
+      }
     ): Promise<void> => {
       if (!input) return;
       assertNotAborted(abortSignal);
@@ -454,9 +483,10 @@ export const createGeometryStageHandler = (
         extractionRatio: Number.isFinite(extractionRatio) ? extractionRatio : undefined,
         metadata: {
           ...metadata,
-          status: (typeof metadata.status === 'string' && metadata.status.length > 0)
-            ? metadata.status
-            : `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
+          status:
+            typeof metadata.status === 'string' && metadata.status.length > 0
+              ? metadata.status
+              : `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
         },
         timestamp: Date.now(),
       };
@@ -481,9 +511,13 @@ export const createGeometryStageHandler = (
         featureCount?: number;
         vertexCount?: number;
         polygonCount?: number;
-      },
+      }
     ): Promise<ReturnType<typeof resolveResultMetadata>> => {
-      const resultMetadata = resolveResultMetadata(status, finalEffectiveToleranceForTask, extractionRatio);
+      const resultMetadata = resolveResultMetadata(
+        status,
+        finalEffectiveToleranceForTask,
+        extractionRatio
+      );
       await persistGeometryCacheMetadata(status, resultMetadata.metadata, extractionRatio, counts);
       return resultMetadata;
     };
@@ -527,7 +561,10 @@ export const createGeometryStageHandler = (
       };
     }
     const simplifyProfile = resolveSimplifyToleranceProfile(geometryConfig, input.adminLevel);
-    if (!Array.isArray(simplifyProfile.multiplierByBand) || simplifyProfile.multiplierByBand.length === 0) {
+    if (
+      !Array.isArray(simplifyProfile.multiplierByBand) ||
+      simplifyProfile.multiplierByBand.length === 0
+    ) {
       const resultMetadata = await persistResultMetadata('failed');
       return {
         status: 'failed',
@@ -537,16 +574,34 @@ export const createGeometryStageHandler = (
     }
     const fallbackTolerance = 0.1;
     const toleranceSearchMaxIterations = simplifyProfile.toleranceSearchMaxIterations;
-    retryMaxForTask = Math.max(1, Math.min(MAX_TOLERANCE_SEARCH_ITERATIONS, toleranceSearchMaxIterations));
+    retryMaxForTask = Math.max(
+      1,
+      Math.min(MAX_TOLERANCE_SEARCH_ITERATIONS, toleranceSearchMaxIterations)
+    );
     const clampRatioValue = (value: number, fallback: number): number => {
       const candidate = Number.isFinite(value) ? value : fallback;
       return Math.max(0, Math.min(DEFAULT_MAX_RATIO_VALUE, candidate));
     };
-    const rawMultiplier = resolveTransformTolerance(simplifyProfile.multiplierByBand, band.bandIndex, 1);
-    const rawMinRatio = resolveTransformTolerance(simplifyProfile.minRatioByBand, band.bandIndex, 0);
-    const rawMaxRatio = resolveTransformTolerance(simplifyProfile.maxRatioByBand, band.bandIndex, DEFAULT_MAX_RATIO_VALUE);
+    const rawMultiplier = resolveTransformTolerance(
+      simplifyProfile.multiplierByBand,
+      band.bandIndex,
+      1
+    );
+    const rawMinRatio = resolveTransformTolerance(
+      simplifyProfile.minRatioByBand,
+      band.bandIndex,
+      0
+    );
+    const rawMaxRatio = resolveTransformTolerance(
+      simplifyProfile.maxRatioByBand,
+      band.bandIndex,
+      DEFAULT_MAX_RATIO_VALUE
+    );
     const resolvedMinRatio = clampRatioValue(Math.min(rawMinRatio, rawMaxRatio), 0);
-    const resolvedMaxRatio = clampRatioValue(Math.max(rawMinRatio, rawMaxRatio), DEFAULT_MAX_RATIO_VALUE);
+    const resolvedMaxRatio = clampRatioValue(
+      Math.max(rawMinRatio, rawMaxRatio),
+      DEFAULT_MAX_RATIO_VALUE
+    );
     const resolvedMultiplier = clampRatioValue(rawMultiplier, 1);
     const resolveAppliedTolerance = (baseTolerance: number): number => {
       const candidate = baseTolerance * resolvedMultiplier;
@@ -587,8 +642,11 @@ export const createGeometryStageHandler = (
     const now = Date.now();
     const debugTaskLoggingEnabled = isTaskDebugLoggingEnabled();
     if (
-      debugTaskLoggingEnabled
-      && (!debugTaskId || !debugTaskStartedAt || now - debugTaskStartedAt > debugResetAfterMs || debugNodeId !== task.nodeId)
+      debugTaskLoggingEnabled &&
+      (!debugTaskId ||
+        !debugTaskStartedAt ||
+        now - debugTaskStartedAt > debugResetAfterMs ||
+        debugNodeId !== task.nodeId)
     ) {
       debugTaskId = taskId;
       debugTaskStartedAt = now;
@@ -655,9 +713,10 @@ export const createGeometryStageHandler = (
             durationMs,
             db: {
               name: (ephemeralDB as { name?: string }).name ?? null,
-              isOpen: typeof (ephemeralDB as { isOpen?: () => boolean }).isOpen === 'function'
-                ? (ephemeralDB as { isOpen: () => boolean }).isOpen()
-                : null,
+              isOpen:
+                typeof (ephemeralDB as { isOpen?: () => boolean }).isOpen === 'function'
+                  ? (ephemeralDB as { isOpen: () => boolean }).isOpen()
+                  : null,
             },
           });
         }, 5000);
@@ -675,17 +734,24 @@ export const createGeometryStageHandler = (
           errorMessage: 'geometry failed: source cache not found',
         };
       }
-      const noOpBand0Topojson = input.bandIndex === 0 && band.zMin <= 2
-        && sourceCache.format === 'topojson'
-        && simplifyAlgorithm === 'topojson';
+      const noOpBand0Topojson =
+        input.bandIndex === 0 &&
+        band.zMin <= 2 &&
+        sourceCache.format === 'topojson' &&
+        simplifyAlgorithm === 'topojson';
       if (noOpBand0Topojson) {
         const fallbackPolygonCount = (() => {
-          if (typeof input.inputPolygonCount === 'number' && Number.isFinite(input.inputPolygonCount)) {
+          if (
+            typeof input.inputPolygonCount === 'number' &&
+            Number.isFinite(input.inputPolygonCount)
+          ) {
             return input.inputPolygonCount > 0 ? Math.round(input.inputPolygonCount) : 0;
           }
-          const sourceCachePolygonCount = typeof sourceCache.polygonCount === 'number' && Number.isFinite(sourceCache.polygonCount)
-            ? Math.round(sourceCache.polygonCount)
-            : 0;
+          const sourceCachePolygonCount =
+            typeof sourceCache.polygonCount === 'number' &&
+            Number.isFinite(sourceCache.polygonCount)
+              ? Math.round(sourceCache.polygonCount)
+              : 0;
           return sourceCachePolygonCount > 0 ? sourceCachePolygonCount : 0;
         })();
         const resultMetadata = await persistResultMetadata('completed', 1, {
@@ -744,17 +810,20 @@ export const createGeometryStageHandler = (
       }, TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS);
       let collection: FeatureCollection | null = null;
       try {
-        const skipDecodeTopojsonSimplify = sourceCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
-        collection = await runStageWithLabel('decode', () => decodeSourceCacheByFormat({
-          buffer: sourceCache.data,
-          format: sourceCache.format,
-          compression: sourceCache.compression,
-          zTarget: band.zMax,
-          toleranceK: tolerance,
-          quantize: geometryConfig.quantize,
-          simplifyAlgorithm,
-          skipSimplification: skipDecodeTopojsonSimplify,
-        }));
+        const skipDecodeTopojsonSimplify =
+          sourceCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
+        collection = await runStageWithLabel('decode', () =>
+          decodeSourceCacheByFormat({
+            buffer: sourceCache.data,
+            format: sourceCache.format,
+            compression: sourceCache.compression,
+            zTarget: band.zMax,
+            toleranceK: tolerance,
+            quantize: geometryConfig.quantize,
+            simplifyAlgorithm,
+            skipSimplification: skipDecodeTopojsonSimplify,
+          })
+        );
       } finally {
         decodeProgressActive = false;
         clearInterval(decodeProgressTimer);
@@ -787,7 +856,8 @@ export const createGeometryStageHandler = (
         } else {
           const filteredFeatures = collection.features.filter((feature) => {
             const props = feature?.properties as Record<string, unknown> | undefined;
-            const featureId = typeof props?.__hdbFeatureId === 'string' ? props.__hdbFeatureId : null;
+            const featureId =
+              typeof props?.__hdbFeatureId === 'string' ? props.__hdbFeatureId : null;
             return featureId ? featureIdAllowlist.has(featureId) : false;
           });
           if (filteredFeatures.length === 0) {
@@ -818,17 +888,23 @@ export const createGeometryStageHandler = (
         stageLabel = 'filter:featureFiltering';
         await updateTaskPhase(taskId, 'filtering:start', taskProgressRange.decodeEnd);
         assertNotAborted(abortSignal);
-        const filtered = await runStageWithLabel('filter:featureFiltering', () => applyFeatureFiltering(
-          workingCollection,
-          {
-            minArea: geometryConfig.featureAreaThreshold,
-            featureFilterMethod: geometryConfig.featureFilterMethod,
-            minVertexCountForAreaFilter: geometryConfig.minVertexCountForAreaFilter,
-            hybridFilterConfig: geometryConfig.hybridFilterConfig,
-          },
-          geometryEngine,
-        ));
-        if (filtered && typeof filtered === 'object' && (filtered as FeatureCollection).type === 'FeatureCollection') {
+        const filtered = await runStageWithLabel('filter:featureFiltering', () =>
+          applyFeatureFiltering(
+            workingCollection,
+            {
+              minArea: geometryConfig.featureAreaThreshold,
+              featureFilterMethod: geometryConfig.featureFilterMethod,
+              minVertexCountForAreaFilter: geometryConfig.minVertexCountForAreaFilter,
+              hybridFilterConfig: geometryConfig.hybridFilterConfig,
+            },
+            geometryEngine
+          )
+        );
+        if (
+          filtered &&
+          typeof filtered === 'object' &&
+          (filtered as FeatureCollection).type === 'FeatureCollection'
+        ) {
           workingCollection = filtered as FeatureCollection;
         }
         const filterTarget = workingCollection;
@@ -841,12 +917,14 @@ export const createGeometryStageHandler = (
           };
         }
         stageLabel = 'filter:aspectArea';
-        const filteredFeatures = await runStageWithLabel('filter:aspectArea', () => filterFeaturesByAspectRatioAndArea(
-          filterTarget.features,
-          geometryConfig.aspectRatioThreshold,
-          geometryConfig.areaThreshold,
-          geometryOps,
-        ));
+        const filteredFeatures = await runStageWithLabel('filter:aspectArea', () =>
+          filterFeaturesByAspectRatioAndArea(
+            filterTarget.features,
+            geometryConfig.aspectRatioThreshold,
+            geometryConfig.areaThreshold,
+            geometryOps
+          )
+        );
         workingCollection = { ...filterTarget, features: filteredFeatures };
         await updateTaskPhase(taskId, 'filtering:done', taskProgressRange.decodeEnd);
       }
@@ -862,7 +940,9 @@ export const createGeometryStageHandler = (
         };
       }
       inputFeatureCount = inputCollection.features.length;
-      const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
+      const inputMissingGeometry = inputCollection.features.filter(
+        (feature) => !feature?.geometry
+      ).length;
       const readNonNegativeCount = (value: unknown): number | null => {
         if (typeof value !== 'number' || !Number.isFinite(value)) return null;
         if (value < 0) return null;
@@ -870,26 +950,28 @@ export const createGeometryStageHandler = (
       };
       const readFeaturePrecomputedCount = (
         feature: Feature | null | undefined,
-        key: '__hdbFetchPolygonCount' | '__hdbFetchVertexCount',
+        key: '__hdbFetchPolygonCount' | '__hdbFetchVertexCount'
       ): number => {
         const properties = feature?.properties as Record<string, unknown> | undefined;
         const raw = properties?.[key];
         return typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? raw : 0;
       };
-      inputPolygonCount = readNonNegativeCount(input.inputPolygonCount)
-        ?? readNonNegativeCount(sourceCache.polygonCount)
-        ?? 0;
-      inputVertexCount = readNonNegativeCount(input.inputVertexCount)
-        ?? readNonNegativeCount(sourceCache.vertexCount)
-        ?? 0;
+      inputPolygonCount =
+        readNonNegativeCount(input.inputPolygonCount) ??
+        readNonNegativeCount(sourceCache.polygonCount) ??
+        0;
+      inputVertexCount =
+        readNonNegativeCount(input.inputVertexCount) ??
+        readNonNegativeCount(sourceCache.vertexCount) ??
+        0;
       if (featureIdAllowlist && featureIdAllowlist.size > 0) {
         const allowlistPolygonCount = inputCollection.features.reduce(
           (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchPolygonCount'),
-          0,
+          0
         );
         const allowlistVertexCount = inputCollection.features.reduce(
           (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchVertexCount'),
-          0,
+          0
         );
         inputPolygonCount = allowlistPolygonCount;
         inputVertexCount = allowlistVertexCount;
@@ -902,13 +984,14 @@ export const createGeometryStageHandler = (
       if (input.adminLevel === 0 && band.zMax >= 6) {
         const samples = inputCollection.features.slice(0, 5).map((feature, index) => {
           const props = feature?.properties as Record<string, unknown> | undefined;
-          const id = feature?.id
-            ?? props?.id
-            ?? props?.boundaryID
-            ?? props?.boundaryISO
-            ?? props?.ISO
-            ?? props?.code
-            ?? `${input.sourceKey}:${index}`;
+          const id =
+            feature?.id ??
+            props?.id ??
+            props?.boundaryID ??
+            props?.boundaryISO ??
+            props?.ISO ??
+            props?.code ??
+            `${input.sourceKey}:${index}`;
           return {
             index,
             id,
@@ -917,27 +1000,32 @@ export const createGeometryStageHandler = (
             polygons: countPolygonsFromGeometry(feature?.geometry ?? null),
           };
         });
-        console.info('[ShapeGeometry][Admin0FeatureSample]', JSON.stringify({
-          nodeId: task.nodeId,
-          taskId,
-          sourceKey: input.sourceKey,
-          adminLevel: input.adminLevel,
-          bandIndex: input.bandIndex,
-          zTarget: band.zMax,
-          featureCount: inputFeatureCount,
-          samples,
-        }));
+        console.info(
+          '[ShapeGeometry][Admin0FeatureSample]',
+          JSON.stringify({
+            nodeId: task.nodeId,
+            taskId,
+            sourceKey: input.sourceKey,
+            adminLevel: input.adminLevel,
+            bandIndex: input.bandIndex,
+            zTarget: band.zMax,
+            featureCount: inputFeatureCount,
+            samples,
+          })
+        );
       }
       const readHeapSnapshot = () => {
-        const performance = (globalThis as {
-          performance?: {
-            memory?: {
-              usedJSHeapSize?: number;
-              totalJSHeapSize?: number;
-              jsHeapSizeLimit?: number;
+        const performance = (
+          globalThis as {
+            performance?: {
+              memory?: {
+                usedJSHeapSize?: number;
+                totalJSHeapSize?: number;
+                jsHeapSizeLimit?: number;
+              };
             };
-          };
-        }).performance;
+          }
+        ).performance;
         const memory = performance?.memory;
         if (!memory) return null;
         return {
@@ -946,12 +1034,14 @@ export const createGeometryStageHandler = (
           limit: memory.jsHeapSizeLimit ?? null,
         };
       };
-      const inputBaseTolerance = Number.isFinite(input.sourceBaseTolerance) && (input.sourceBaseTolerance ?? 0) >= 0
-        ? input.sourceBaseTolerance ?? undefined
-        : undefined;
-      const contextBaseTolerance = Number.isFinite(sourceBaseTolerance) && (sourceBaseTolerance ?? 0) >= 0
-        ? sourceBaseTolerance ?? undefined
-        : undefined;
+      const inputBaseTolerance =
+        Number.isFinite(input.sourceBaseTolerance) && (input.sourceBaseTolerance ?? 0) >= 0
+          ? (input.sourceBaseTolerance ?? undefined)
+          : undefined;
+      const contextBaseTolerance =
+        Number.isFinite(sourceBaseTolerance) && (sourceBaseTolerance ?? 0) >= 0
+          ? (sourceBaseTolerance ?? undefined)
+          : undefined;
       const resolvedBaseTolerance = inputBaseTolerance ?? contextBaseTolerance;
       if (resolvedBaseTolerance !== undefined) {
         baseToleranceSummary = resolvedBaseTolerance;
@@ -961,33 +1051,39 @@ export const createGeometryStageHandler = (
         initialToleranceSummary = tolerance;
         finalToleranceSummary = tolerance;
         updateFinalEffectiveTolerance(tolerance);
-        console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
-          nodeId: task.nodeId,
-          taskId,
-          sourceKey: input.sourceKey,
-          adminLevel: input.adminLevel,
-          bandIndex: input.bandIndex,
-          zTarget: band.zMax,
-          baseTolerance: baseToleranceSummary,
-          appliedTolerance: tolerance,
-          fallbackTolerance,
-          multiplier: resolvedMultiplier,
-          minRatio: resolvedMinRatio,
-          maxRatio: resolvedMaxRatio,
-          source: inputBaseTolerance !== undefined ? 'task-input' : 'session',
-        }));
+        console.info(
+          '[ShapeGeometry][Tolerance]',
+          JSON.stringify({
+            nodeId: task.nodeId,
+            taskId,
+            sourceKey: input.sourceKey,
+            adminLevel: input.adminLevel,
+            bandIndex: input.bandIndex,
+            zTarget: band.zMax,
+            baseTolerance: baseToleranceSummary,
+            appliedTolerance: tolerance,
+            fallbackTolerance,
+            multiplier: resolvedMultiplier,
+            minRatio: resolvedMinRatio,
+            maxRatio: resolvedMaxRatio,
+            source: inputBaseTolerance !== undefined ? 'task-input' : 'session',
+          })
+        );
       } else {
-        const representativeFeature = selectMaxVertexFeature(inputCollection, countVerticesFromGeometry);
+        const representativeFeature = selectMaxVertexFeature(
+          inputCollection,
+          countVerticesFromGeometry
+        );
         if (representativeFeature) {
           const runBaseSimplifyAttempt = async (nextTolerance: number): Promise<Feature | null> => {
-            const retryCollection = await runStageWithLabel('simplify-only:base-search', () => (
+            const retryCollection = await runStageWithLabel('simplify-only:base-search', () =>
               simplifyOnlyCollection(
                 { type: 'FeatureCollection', features: [representativeFeature.feature] },
                 band.zMax,
                 nextTolerance,
-                geometryOps,
+                geometryOps
               )
-            ));
+            );
             const firstFeature = retryCollection.features[0];
             return firstFeature ?? null;
           };
@@ -1012,26 +1108,29 @@ export const createGeometryStageHandler = (
           initialToleranceSummary = tolerance;
           finalToleranceSummary = tolerance;
           updateFinalEffectiveTolerance(tolerance);
-          console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
-            nodeId: task.nodeId,
-            taskId,
-            sourceKey: input.sourceKey,
-            adminLevel: input.adminLevel,
-            bandIndex: input.bandIndex,
-            zTarget: band.zMax,
-            baseTolerance: baseToleranceSummary,
-            appliedTolerance: tolerance,
-            fallbackTolerance,
-            multiplier: resolvedMultiplier,
-            minRatio: resolvedMinRatio,
-            maxRatio: resolvedMaxRatio,
-            searchIterations: baseSearch.iterations,
-            searchConverged: baseSearch.converged,
-            representativeVertexCount: representativeFeature.vertexCount,
-            representativeFeatureIndex: representativeFeature.featureIndex + 1,
-            representativeFinalVertexCount: baseSearch.finalVertexCount,
-            source: 'task',
-          }));
+          console.info(
+            '[ShapeGeometry][Tolerance]',
+            JSON.stringify({
+              nodeId: task.nodeId,
+              taskId,
+              sourceKey: input.sourceKey,
+              adminLevel: input.adminLevel,
+              bandIndex: input.bandIndex,
+              zTarget: band.zMax,
+              baseTolerance: baseToleranceSummary,
+              appliedTolerance: tolerance,
+              fallbackTolerance,
+              multiplier: resolvedMultiplier,
+              minRatio: resolvedMinRatio,
+              maxRatio: resolvedMaxRatio,
+              searchIterations: baseSearch.iterations,
+              searchConverged: baseSearch.converged,
+              representativeVertexCount: representativeFeature.vertexCount,
+              representativeFeatureIndex: representativeFeature.featureIndex + 1,
+              representativeFinalVertexCount: baseSearch.finalVertexCount,
+              source: 'task',
+            })
+          );
         } else {
           tolerance = fallbackTolerance;
           initialToleranceSummary = tolerance;
@@ -1039,7 +1138,9 @@ export const createGeometryStageHandler = (
           updateFinalEffectiveTolerance(tolerance);
         }
       }
-      const summarizeVertexLimit = (collection: FeatureCollection | null): {
+      const summarizeVertexLimit = (
+        collection: FeatureCollection | null
+      ): {
         featureCount: number;
         overLimitFeatureCount: number;
         maxVertexCount: number;
@@ -1061,7 +1162,8 @@ export const createGeometryStageHandler = (
           maxVertexCount,
         };
       };
-      const shouldDeferSimplifyToVt = sourceCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
+      const shouldDeferSimplifyToVt =
+        sourceCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
       const simplifyAttempt = 1;
       try {
         assertNotAborted(abortSignal);
@@ -1124,9 +1226,9 @@ export const createGeometryStageHandler = (
             progress: taskProgressRange.simplifyMainEnd,
           });
         } else {
-          const simplifyPromise = runStageWithLabel('simplify-only', () => (
+          const simplifyPromise = runStageWithLabel('simplify-only', () =>
             simplifyOnlyCollection(inputCollection, band.zMax, tolerance, geometryOps)
-          ));
+          );
           simplified = await runWithStallTimeout({
             promise: simplifyPromise,
             stage: 'simplify-only',
@@ -1163,12 +1265,17 @@ export const createGeometryStageHandler = (
           for (const [featureIndex, feature] of inputCollection.features.entries()) {
             if (errorRecords.length >= recordLimit) break;
             if (!feature?.geometry) continue;
-            const rawFeatureId = feature.id
-              ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
-            const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
+            const rawFeatureId =
+              feature.id ??
+              (feature.properties && 'id' in feature.properties
+                ? String(feature.properties.id)
+                : undefined);
+            const featureId = rawFeatureId
+              ? String(rawFeatureId)
+              : `${input.sourceKey}:${featureIndex}`;
             const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
-            const recordPolygonCount = lineFeaturesCandidate?.polygonCount
-              ?? countPolygonsFromGeometry(feature.geometry);
+            const recordPolygonCount =
+              lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(feature.geometry);
             const recordRingCount = lineFeaturesCandidate?.ringCount ?? 0;
             errorRecords.push({
               id: `${task.taskId}:empty:${featureIndex}`,
@@ -1206,11 +1313,17 @@ export const createGeometryStageHandler = (
                 });
               }
             } catch (storageError) {
-              console.warn('[ShapeGeometry] failed to persist empty simplify error records', storageError);
+              console.warn(
+                '[ShapeGeometry] failed to persist empty simplify error records',
+                storageError
+              );
             }
           }
           await reportPolygonProgress(task.taskId, inputPolygonCount, inputPolygonCount);
-          const extractionRatio = inputFeatureCount > 0 ? inputCollection.features.length / inputFeatureCount : Number.NaN;
+          const extractionRatio =
+            inputFeatureCount > 0
+              ? inputCollection.features.length / inputFeatureCount
+              : Number.NaN;
           const resultMetadata = await persistResultMetadata('completed', extractionRatio, {
             featureCount: inputCollection.features.length,
             polygonCount: inputCollection.features.length,
@@ -1265,31 +1378,34 @@ export const createGeometryStageHandler = (
               { type: 'FeatureCollection', features: [feature] },
               band.zMax,
               tolerance,
-              geometryOps,
+              geometryOps
             );
           } catch (featureError) {
             errorFeatureCount += 1;
-            const featureMessage = featureError instanceof Error ? featureError.message : String(featureError);
-            const rawFeatureId = feature.id
-              ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
-            const recordFeatureId = rawFeatureId != null
-              ? String(rawFeatureId)
-              : `${input.sourceKey}:${featureIndex}`;
+            const featureMessage =
+              featureError instanceof Error ? featureError.message : String(featureError);
+            const rawFeatureId =
+              feature.id ??
+              (feature.properties && 'id' in feature.properties
+                ? String(feature.properties.id)
+                : undefined);
+            const recordFeatureId =
+              rawFeatureId != null ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
             const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, recordFeatureId);
             const recordId = `${task.taskId}:${recordFeatureId}`;
             const fallbackGeometryType = feature.geometry?.type ?? 'unknown';
             const summary = analyzeGeometryIssues(feature.geometry, geometryOps);
             const recordPolygonCount = summary.polygonCount;
             const recordRingCount = summary.ringCount;
-            const recordPolygonErrorCount = summary.errorPolygonCount > 0
-              ? summary.errorPolygonCount
-              : recordPolygonCount;
-            const recordRingErrorCount = summary.errorRingCount > 0
-              ? summary.errorRingCount
-              : recordRingCount;
+            const recordPolygonErrorCount =
+              summary.errorPolygonCount > 0 ? summary.errorPolygonCount : recordPolygonCount;
+            const recordRingErrorCount =
+              summary.errorRingCount > 0 ? summary.errorRingCount : recordRingCount;
             try {
               stageLabel = 'counts:error-polygons';
-              errorPolygonCount += await runStageWithLabel('counts:error-polygons', () => countPolygonsFromGeometry(feature.geometry));
+              errorPolygonCount += await runStageWithLabel('counts:error-polygons', () =>
+                countPolygonsFromGeometry(feature.geometry)
+              );
               stageLabel = 'analysis:geometry-issues';
               invalidRingCount += summary.invalidRingCount;
               openRingCount += summary.openRingCount;
@@ -1303,39 +1419,47 @@ export const createGeometryStageHandler = (
                 invalidFeatureCount += 1;
               }
               if (sampleDetails.length < 3) {
-                const featureId = feature.id
-                  ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined)
-                  ?? `${input.sourceKey}:${sampleDetails.length}`;
+                const featureId =
+                  feature.id ??
+                  (feature.properties && 'id' in feature.properties
+                    ? String(feature.properties.id)
+                    : undefined) ??
+                  `${input.sourceKey}:${sampleDetails.length}`;
                 sampleDetails.push(
-                  `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'}`,
+                  `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'}`
                 );
               }
               if (summary.minRingVertices !== null) {
-                minRingVertices = minRingVertices === null
-                  ? summary.minRingVertices
-                  : Math.min(minRingVertices, summary.minRingVertices);
+                minRingVertices =
+                  minRingVertices === null
+                    ? summary.minRingVertices
+                    : Math.min(minRingVertices, summary.minRingVertices);
               }
               if (summary.maxRingVertices !== null) {
-                maxRingVertices = maxRingVertices === null
-                  ? summary.maxRingVertices
-                  : Math.max(maxRingVertices, summary.maxRingVertices);
+                maxRingVertices =
+                  maxRingVertices === null
+                    ? summary.maxRingVertices
+                    : Math.max(maxRingVertices, summary.maxRingVertices);
               }
               if (summary.minRingArea !== null) {
-                minRingArea = minRingArea === null
-                  ? summary.minRingArea
-                  : Math.min(minRingArea, summary.minRingArea);
+                minRingArea =
+                  minRingArea === null
+                    ? summary.minRingArea
+                    : Math.min(minRingArea, summary.minRingArea);
               }
               if (summary.maxRingArea !== null) {
-                maxRingArea = maxRingArea === null
-                  ? summary.maxRingArea
-                  : Math.max(maxRingArea, summary.maxRingArea);
+                maxRingArea =
+                  maxRingArea === null
+                    ? summary.maxRingArea
+                    : Math.max(maxRingArea, summary.maxRingArea);
               }
               if (summary.avgRingVertices !== null && summary.ringCount > 0) {
                 ringVertexTotal += summary.avgRingVertices * summary.ringCount;
                 ringCount += summary.ringCount;
               }
             } catch (analysisError) {
-              const analysisMessage = analysisError instanceof Error ? analysisError.message : String(analysisError);
+              const analysisMessage =
+                analysisError instanceof Error ? analysisError.message : String(analysisError);
               if (analysisErrors.length < 3) {
                 analysisErrors.push(`analysisFailed stage=${stageLabel} ${analysisMessage}`);
               }
@@ -1373,7 +1497,9 @@ export const createGeometryStageHandler = (
           }
         }
         const avgRingVertices = ringCount > 0 ? ringVertexTotal / ringCount : null;
-        const analysisNote = analysisErrors.length ? ` (analysisErrors=${analysisErrors.join(' | ')})` : '';
+        const analysisNote = analysisErrors.length
+          ? ` (analysisErrors=${analysisErrors.join(' | ')})`
+          : '';
         const vertexLimitSnapshot = summarizeVertexLimit(simplified);
         const simplifySummary = vertexLimitSnapshot
           ? ` (finalVertexCount=${vertexLimitSnapshot.maxVertexCount}, overLimit=${vertexLimitSnapshot.overLimitFeatureCount}/${vertexLimitSnapshot.featureCount}, finalRetryAttempts=0, finalTolerance=${formatToleranceForMessage(tolerance)})`
@@ -1389,16 +1515,18 @@ export const createGeometryStageHandler = (
       if (!shouldDeferSimplifyToVt) {
         await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.retryStart);
         const maxRetryAttempts = retryMaxForTask;
-        const maxToleranceForRetry = Math.max(tolerance + 1e-9, (baseToleranceSummary ?? tolerance) * resolvedMaxRatio);
+        const maxToleranceForRetry = Math.max(
+          tolerance + 1e-9,
+          (baseToleranceSummary ?? tolerance) * resolvedMaxRatio
+        );
 
-        const runRetrySimplifyAttempt = async (feature: Feature, nextToleranceValue: number): Promise<Feature | null> => {
-          const retrySimplifyPromise = runStageWithLabel('simplify-only:retry', () => (
-            geometryOps.simplifyFeature(
-              feature,
-              band.zMax,
-              nextToleranceValue,
-            )
-          ));
+        const runRetrySimplifyAttempt = async (
+          feature: Feature,
+          nextToleranceValue: number
+        ): Promise<Feature | null> => {
+          const retrySimplifyPromise = runStageWithLabel('simplify-only:retry', () =>
+            geometryOps.simplifyFeature(feature, band.zMax, nextToleranceValue)
+          );
           return await runWithStallTimeout({
             promise: retrySimplifyPromise,
             stage: 'simplify-only:retry',
@@ -1412,42 +1540,47 @@ export const createGeometryStageHandler = (
         let vertexLimitStats = countVertexLimitOverages(
           adjustedSimplified,
           retryVertexLimit,
-          countVerticesFromGeometry,
+          countVerticesFromGeometry
         );
-        const retryDiagnosticsByFeatureIndex = new Map<number, {
-          retryAttempts: number;
-          finalTolerance: number;
-          finalVertexCount: number;
-        }>();
+        const retryDiagnosticsByFeatureIndex = new Map<
+          number,
+          {
+            retryAttempts: number;
+            finalTolerance: number;
+            finalVertexCount: number;
+          }
+        >();
         let retryAttemptsTotal = 0;
         let retryAttemptedFeatureCount = 0;
         let maxRetryAttemptsPerFeature = 0;
         let minFinalTolerance = Number.POSITIVE_INFINITY;
         let maxFinalTolerance = Number.NEGATIVE_INFINITY;
-            if (vertexLimitStats.overLimitFeatureCount > 0) {
-              const nextFeatures: Feature[] = [];
+        if (vertexLimitStats.overLimitFeatureCount > 0) {
+          const nextFeatures: Feature[] = [];
           let maxVertexCount = 0;
           let overLimitFeatureCount = 0;
-              for (const [featureIndex, feature] of adjustedSimplified.features.entries()) {
-                if (!feature?.geometry) {
-                  nextFeatures.push(feature);
-                  continue;
-                }
-                const result = await retrySimplifyFeatureWithinVertexLimit({
-                  feature,
-                  baseTolerance: tolerance,
-                  retryVertexLimit,
-                  maxRetryAttempts,
-                  maxTolerance: maxToleranceForRetry,
-                  minTolerance: tolerance,
-                  featureIndex: featureIndex + 1,
-                  featureTotal: adjustedSimplified.features.length,
-                  runRetrySimplifyAttempt: (nextTolerance) => runRetrySimplifyAttempt(feature, nextTolerance),
+          for (const [featureIndex, feature] of adjustedSimplified.features.entries()) {
+            if (!feature?.geometry) {
+              nextFeatures.push(feature);
+              continue;
+            }
+            const result = await retrySimplifyFeatureWithinVertexLimit({
+              feature,
+              baseTolerance: tolerance,
+              retryVertexLimit,
+              maxRetryAttempts,
+              maxTolerance: maxToleranceForRetry,
+              minTolerance: tolerance,
+              featureIndex: featureIndex + 1,
+              featureTotal: adjustedSimplified.features.length,
+              runRetrySimplifyAttempt: (nextTolerance) =>
+                runRetrySimplifyAttempt(feature, nextTolerance),
               countVerticesFromGeometry,
-              updateRetrySimplifyAttemptPhase: (params) => updateRetrySimplifyAttemptPhase(taskId, {
-                ...params,
-                progress: computeRetrySimplifyProgress(params.attempt, params.attemptTotal),
-              }),
+              updateRetrySimplifyAttemptPhase: (params) =>
+                updateRetrySimplifyAttemptPhase(taskId, {
+                  ...params,
+                  progress: computeRetrySimplifyProgress(params.attempt, params.attemptTotal),
+                }),
             });
             retryDiagnosticsByFeatureIndex.set(featureIndex, {
               retryAttempts: result.retryAttempts,
@@ -1463,7 +1596,10 @@ export const createGeometryStageHandler = (
             retryAttemptsTotal += result.retryAttempts;
             retryAttemptsTotalForTask = Math.max(retryAttemptsTotalForTask, retryAttemptsTotal);
             if (result.retryAttempts > 0) {
-              maxRetryAttemptsPerFeature = Math.max(maxRetryAttemptsPerFeature, result.retryAttempts);
+              maxRetryAttemptsPerFeature = Math.max(
+                maxRetryAttemptsPerFeature,
+                result.retryAttempts
+              );
               const displayedRetryAttempt = Math.max(0, Math.floor(maxRetryAttemptsPerFeature));
               await updateTaskRetryAttempt(taskId, displayedRetryAttempt);
               retryAttemptForTask = Math.max(retryAttemptForTask, displayedRetryAttempt);
@@ -1475,7 +1611,10 @@ export const createGeometryStageHandler = (
               maxFinalTolerance = Math.max(maxFinalTolerance, result.finalTolerance);
             }
           }
-          retryAttemptForTask = Math.max(retryAttemptForTask, Math.max(0, Math.floor(maxRetryAttemptsPerFeature)));
+          retryAttemptForTask = Math.max(
+            retryAttemptForTask,
+            Math.max(0, Math.floor(maxRetryAttemptsPerFeature))
+          );
           retryAttemptsTotalForTask = Math.max(retryAttemptsTotalForTask, retryAttemptsTotal);
           adjustedSimplified = {
             ...adjustedSimplified,
@@ -1486,20 +1625,27 @@ export const createGeometryStageHandler = (
         const repairedSimplified = repairCollectionSelfIntersections(
           adjustedSimplified,
           geometryOps,
-          geometryEngine,
+          geometryEngine
         );
         if (repairedSimplified.repairedFeatureCount > 0) {
-          console.info('[ShapeGeometry][SimplifyOnlyMetrics] repaired self-intersections after simplify', {
-            nodeId: task.nodeId,
-            taskId,
-            bandIndex: input.bandIndex,
-            zTarget: band.zMax,
-            repairedFeatures: repairedSimplified.repairedFeatureCount,
-          });
+          console.info(
+            '[ShapeGeometry][SimplifyOnlyMetrics] repaired self-intersections after simplify',
+            {
+              nodeId: task.nodeId,
+              taskId,
+              bandIndex: input.bandIndex,
+              zTarget: band.zMax,
+              repairedFeatures: repairedSimplified.repairedFeatureCount,
+            }
+          );
         }
         simplified = repairedSimplified.collection;
 
-        await updateTaskPhase(taskId, 'vertex-limit-validate:start', taskProgressRange.validateStart);
+        await updateTaskPhase(
+          taskId,
+          'vertex-limit-validate:start',
+          taskProgressRange.validateStart
+        );
         const simplifiedFeatureCountForLimit = simplified.features.length;
         stageLabel = 'validate:vertex-limit';
         let maxVertexCount = 0;
@@ -1596,11 +1742,19 @@ export const createGeometryStageHandler = (
         }
         await publishVertexValidationMetadata(true);
         if (overLimitFeatureCount > 0) {
-          const finalToleranceMinValue = Number.isFinite(minFinalTolerance) ? minFinalTolerance : tolerance;
-          const finalToleranceMaxValue = Number.isFinite(maxFinalTolerance) ? maxFinalTolerance : tolerance;
-          const finalVertexCount = finalVertexCountSummary > 0 ? finalVertexCountSummary : maxVertexCount;
-          const finalRetryAttempts = finalVertexCountSummary > 0 ? finalRetryAttemptsSummary : maxRetryAttemptsPerFeature;
-          const finalTolerance = Number.isFinite(finalToleranceSummary) ? finalToleranceSummary : finalEffectiveToleranceForTask;
+          const finalToleranceMinValue = Number.isFinite(minFinalTolerance)
+            ? minFinalTolerance
+            : tolerance;
+          const finalToleranceMaxValue = Number.isFinite(maxFinalTolerance)
+            ? maxFinalTolerance
+            : tolerance;
+          const finalVertexCount =
+            finalVertexCountSummary > 0 ? finalVertexCountSummary : maxVertexCount;
+          const finalRetryAttempts =
+            finalVertexCountSummary > 0 ? finalRetryAttemptsSummary : maxRetryAttemptsPerFeature;
+          const finalTolerance = Number.isFinite(finalToleranceSummary)
+            ? finalToleranceSummary
+            : finalEffectiveToleranceForTask;
           const retrySummary = [
             `retryAttemptsTotal=${retryAttemptsTotal}`,
             `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCountForLimit}`,
@@ -1620,18 +1774,21 @@ export const createGeometryStageHandler = (
                 });
               }
             } catch (storageError) {
-              console.warn('[ShapeGeometry] failed to persist vertex limit error records', storageError);
+              console.warn(
+                '[ShapeGeometry] failed to persist vertex limit error records',
+                storageError
+              );
             }
           }
           await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
           const simplifiedFeatureCountForCache = simplified.features.length;
           const simplifiedVertexCountForCache = simplified.features.reduce(
             (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
-            0,
+            0
           );
           const simplifiedPolygonCountForCache = simplified.features.reduce(
             (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
-            0,
+            0
           );
           const resultMetadata = await persistResultMetadata(
             'failed',
@@ -1640,7 +1797,7 @@ export const createGeometryStageHandler = (
               featureCount: simplifiedFeatureCountForCache,
               vertexCount: simplifiedVertexCountForCache,
               polygonCount: simplifiedPolygonCountForCache,
-            },
+            }
           );
           return {
             status: 'failed',
@@ -1687,14 +1844,8 @@ export const createGeometryStageHandler = (
           cachePutStart: taskProgressRange.cachePutStart,
         },
         abortSignal,
-        updateTaskPhase: (
-          outputTaskId,
-          phase,
-          progress,
-          options,
-        ) => (
-          updateTaskPhase(outputTaskId, phase, progress, options)
-        ),
+        updateTaskPhase: (outputTaskId, phase, progress, options) =>
+          updateTaskPhase(outputTaskId, phase, progress, options),
         reportPolygonProgress,
         setStageLabel,
         logDebugPhase,
@@ -1706,31 +1857,32 @@ export const createGeometryStageHandler = (
         resultMetadata: resolveResultMetadata(
           'completed',
           finalEffectiveToleranceForTask,
-          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
+          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN
         ).metadata,
-        persistGeometryCacheMetadata: (metadata) => persistGeometryCacheMetadata(
-          'completed',
-          metadata,
-          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
-          {
-            featureCount: outputCollection?.features.length,
-            vertexCount: (outputCollection?.features ?? []).reduce<number>(
-              (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
-              0,
-            ),
-            polygonCount: (outputCollection?.features ?? []).reduce<number>(
-              (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
-              0,
-            ),
-          },
-        ),
+        persistGeometryCacheMetadata: (metadata) =>
+          persistGeometryCacheMetadata(
+            'completed',
+            metadata,
+            simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
+            {
+              featureCount: outputCollection?.features.length,
+              vertexCount: (outputCollection?.features ?? []).reduce<number>(
+                (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+                0
+              ),
+              polygonCount: (outputCollection?.features ?? []).reduce<number>(
+                (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
+                0
+              ),
+            }
+          ),
       });
       return {
         ...outputResult,
         ...resolveResultMetadata(
           'completed',
           finalEffectiveToleranceForTask,
-          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
+          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN
         ),
       };
     } catch (error) {
@@ -1744,12 +1896,15 @@ export const createGeometryStageHandler = (
         buildCollectionDiagnostics(workingCollection, 'input', geometryOps),
         buildCollectionDiagnostics(simplified, 'simplified', geometryOps),
         buildCollectionDiagnostics(outputCollection, 'output', geometryOps),
-      ].filter((value): value is string => Boolean(value)).join(' ');
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(' ');
       let progressUpdateError: string | null = null;
       try {
         await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
       } catch (progressError) {
-        progressUpdateError = progressError instanceof Error ? progressError.message : String(progressError);
+        progressUpdateError =
+          progressError instanceof Error ? progressError.message : String(progressError);
         console.error('[ShapeGeometry] failed to update progress during error handling', {
           taskId: task.taskId,
           progressUpdateError,
@@ -1760,15 +1915,13 @@ export const createGeometryStageHandler = (
         inputFeatureCount > 0 ? (simplified?.features.length ?? 0) / inputFeatureCount : Number.NaN,
         {
           featureCount: ((outputCollection as FeatureCollection | null)?.features ?? []).length,
-          vertexCount: ((outputCollection as FeatureCollection | null)?.features ?? []).reduce<number>(
-            (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
-            0,
-          ),
-          polygonCount: ((outputCollection as FeatureCollection | null)?.features ?? []).reduce<number>(
-            (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
-            0,
-          ),
-        },
+          vertexCount: (
+            (outputCollection as FeatureCollection | null)?.features ?? []
+          ).reduce<number>((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0),
+          polygonCount: (
+            (outputCollection as FeatureCollection | null)?.features ?? []
+          ).reduce<number>((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0),
+        }
       );
       return {
         status: 'failed',

@@ -9,7 +9,7 @@ export const useGuidedTourDemo = () => {
       buttonTarget: `#${buttonId}`,
       contentTarget: `#${contentId}`,
     }),
-    [buttonId, contentId],
+    [buttonId, contentId]
   );
 
   return {

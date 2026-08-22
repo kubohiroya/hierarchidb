@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Suspense, lazy, useMemo } from 'react';
-import type { Feature, Polygon } from 'geojson';
-import { TileLayer } from '@deck.gl/geo-layers';
 import type { TileLayerProps } from '@deck.gl/geo-layers';
-import { GeoJsonLayer } from '@deck.gl/layers';
+import { TileLayer } from '@deck.gl/geo-layers';
 import type { GeoJsonLayerProps } from '@deck.gl/layers';
+import { GeoJsonLayer } from '@deck.gl/layers';
+import type { Meta, StoryObj } from '@storybook/react';
+import type { Feature, Polygon } from 'geojson';
+import { lazy, Suspense, useMemo } from 'react';
 import { DEFAULT_MAP_CONFIG, loadMapWithDeckGL } from '~/index';
 
 const LazyMapWithDeckGL = lazy(async () => {
@@ -108,7 +108,9 @@ const PREFECTURE_FEATURES: PrefectureFeature[] = [
 ];
 
 const PREFECTURE_IDS = PREFECTURE_FEATURES.map((feature) => feature.id as string);
-const PREFECTURE_NAMES = Array.from(new Set(PREFECTURE_FEATURES.map((feature) => feature.properties.prefecture)));
+const PREFECTURE_NAMES = Array.from(
+  new Set(PREFECTURE_FEATURES.map((feature) => feature.properties.prefecture))
+);
 
 type PrefectureTileProps = TileLayerProps<PrefectureFeature[]>;
 type PrefectureGeoJsonProps = GeoJsonLayerProps<PrefectureFeatureProperties>;
@@ -124,9 +126,8 @@ const createVectorTileLayer = ({ highlightId, matchProperty, matchValue }: Highl
       const fillColorResolver: NonNullable<PrefectureGeoJsonProps['getFillColor']> = (feature) => {
         const featureId = feature.id != null ? String(feature.id) : undefined;
         const matchesId = highlightId ? featureId === highlightId : false;
-        const matchesProperty = matchProperty && matchValue
-          ? feature.properties?.[matchProperty] === matchValue
-          : false;
+        const matchesProperty =
+          matchProperty && matchValue ? feature.properties?.[matchProperty] === matchValue : false;
         return matchesId || matchesProperty ? HIGHLIGHT_FILL_COLOR : BASE_FILL_COLOR;
       };
 
@@ -151,7 +152,7 @@ const createVectorTileLayer = ({ highlightId, matchProperty, matchValue }: Highl
 const VectorTileHighlightDemo = ({ highlightId, matchProperty, matchValue }: HighlightArgs) => {
   const layers = useMemo(
     () => [createVectorTileLayer({ highlightId, matchProperty, matchValue })],
-    [highlightId, matchProperty, matchValue],
+    [highlightId, matchProperty, matchValue]
   );
 
   return (
@@ -188,7 +189,12 @@ const VectorTileHighlightDemo = ({ highlightId, matchProperty, matchValue }: Hig
                 }
               : null,
         }}
-        style={{ minHeight: '520px', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.18)' }}
+        style={{
+          minHeight: '520px',
+          borderRadius: 12,
+          overflow: 'hidden',
+          boxShadow: '0 12px 30px rgba(15, 23, 42, 0.18)',
+        }}
       />
     </Suspense>
   );

@@ -1,14 +1,19 @@
-import type {NodeId} from "@hierarchidb/core-types";
-import type {Geometry} from "geojson";
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   FeatureFilterMethod,
   GeometryConfig,
   HybridFilterConfig,
   SourceConfig,
-  TileEmitConfig
-} from "@hierarchidb/gis-sdk";
+  TileEmitConfig,
+} from '@hierarchidb/gis-sdk';
+import type { Geometry } from 'geojson';
 
-export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
+export type DataSourceName =
+  | 'naturalearth'
+  | 'geoboundaries'
+  | 'geoboundaries-topojson'
+  | 'gadm'
+  | 'openstreetmap';
 
 export interface CommonSessionConfig {
   dataSource?: DataSourceName;
@@ -145,11 +150,11 @@ export type SourceTaskPayload = {
   tags?: Array<
     | string
     | {
-    key: string;
-    value?: string;
-    operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
-    includeNodes?: boolean;
-  }
+        key: string;
+        value?: string;
+        operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
+        includeNodes?: boolean;
+      }
   >;
   timeoutMs?: number;
   retryAttempts?: number;

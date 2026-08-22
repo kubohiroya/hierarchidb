@@ -100,8 +100,7 @@ export function useDialogUIStateSync(params: {
     if (!windowRestoredRef.current && windowState) {
       const rawMode = windowState.mode as DialogDisplayMode | undefined;
       const requestedMode = hasUrlMode ? urlMode : rawMode;
-      const mode =
-        !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
+      const mode = !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
       if (mode) {
         void restoreDeps.transitionDisplayMode(mode, { source: 'restore' }).catch(() => void 0);
       }
@@ -127,7 +126,15 @@ export function useDialogUIStateSync(params: {
       }
       progressRestoredRef.current = true;
     }
-  }, [dialogUIState, forceInitialStep, restoreDeps, restoreKey, toInternalStepIndex, urlMode, urlStep]);
+  }, [
+    dialogUIState,
+    forceInitialStep,
+    restoreDeps,
+    restoreKey,
+    toInternalStepIndex,
+    urlMode,
+    urlStep,
+  ]);
 
   const updateDialogUIState = useCallback((patch: Partial<DialogUIState>) => {
     const prev = dialogUIStateRef.current ?? null;
@@ -157,8 +164,7 @@ export function useDialogUIStateSync(params: {
       typeof currentProgress.activeStepIndex === 'number' && currentProgress.activeStepIndex >= 1
         ? currentProgress.activeStepIndex
         : toPersistedStepIndex(activeStepIndexRef.current ?? activeStepIndex);
-    const resolvedMode =
-      !allowFullScreen && displayMode === 'full-screen' ? 'normal' : displayMode;
+    const resolvedMode = !allowFullScreen && displayMode === 'full-screen' ? 'normal' : displayMode;
     return {
       dialogWindow: {
         mode: currentWindow.mode ?? resolvedMode,
@@ -176,8 +182,7 @@ export function useDialogUIStateSync(params: {
   const dialogStateSnapshot: DialogState | null = useMemo(() => {
     const windowState = dialogUIStateRef.current?.dialogWindow;
     if (!windowState) return null;
-    const resolvedMode =
-      !allowFullScreen && displayMode === 'full-screen' ? 'normal' : displayMode;
+    const resolvedMode = !allowFullScreen && displayMode === 'full-screen' ? 'normal' : displayMode;
     return {
       activeStepIndex:
         dialogUIStateRef.current?.dialogProgress?.activeStepIndex ??
@@ -187,7 +192,14 @@ export function useDialogUIStateSync(params: {
       displayMode: (windowState.mode as DialogDisplayMode | undefined) ?? resolvedMode,
       updatedAt: Date.now(),
     };
-  }, [activeStepIndex, allowFullScreen, dialogPosition, dialogSize, displayMode, toPersistedStepIndex]);
+  }, [
+    activeStepIndex,
+    allowFullScreen,
+    dialogPosition,
+    dialogSize,
+    displayMode,
+    toPersistedStepIndex,
+  ]);
 
   const updateDialogState = useCallback(
     (patch: Partial<DialogState>) => {

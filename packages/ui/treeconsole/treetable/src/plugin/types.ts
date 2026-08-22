@@ -1,10 +1,10 @@
 /**
-  * Plugin System Types for TreeTable
-  * TreeTable
-   */
+ * Plugin System Types for TreeTable
+ * TreeTable
+ */
 
-import type { KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import type { CellContext } from '@tanstack/react-table';
+import type { KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import type { TreeNodeInUI } from '~/types';
 
 // =============================================================================
@@ -12,40 +12,40 @@ import type { TreeNodeInUI } from '~/types';
 // =============================================================================
 
 /**
-  * TreeTable
-  */
+ * TreeTable
+ */
 export interface TreeTablePlugin {
   /**
-      */
+   */
   name: string;
   /**
-      */
+   */
   version: string;
   /**
-      */
+   */
   hooks: TreeTableHooks;
   /**
-      */
+   */
   components?: TreeTableComponentOverrides;
   /**
-      */
+   */
   dependencies?: string[];
   /**
-      */
+   */
   config?: Record<string, unknown>;
 }
 
 /**
-  * TreeTable
-  */
+ * TreeTable
+ */
 export interface TreeTableHooks {
   // Cell rendering extensions
   onBeforeCellRender?: (
-    cell: CellContext<TreeNodeInUI, unknown>,
+    cell: CellContext<TreeNodeInUI, unknown>
   ) => CellContext<TreeNodeInUI, unknown>;
   onAfterCellRender?: (
     element: ReactElement,
-    cell: CellContext<TreeNodeInUI, unknown>,
+    cell: CellContext<TreeNodeInUI, unknown>
   ) => ReactElement;
 
   // Row interaction extensions
@@ -66,14 +66,14 @@ export interface TreeTableHooks {
   // Toolbar extensions
   onToolbarRender?: (
     toolbar: ToolbarContext,
-    context: TreeTableContext,
+    context: TreeTableContext
   ) => Promise<{ toolbar: ToolbarContext; context: TreeTableContext }>;
 
   // Context menu extensions
   onContextMenu?: (
     node: TreeNodeInUI,
     event: MouseEvent,
-    context: TreeTableContext,
+    context: TreeTableContext
   ) => Promise<void>;
 
   // Plugin lifecycle
@@ -82,7 +82,7 @@ export interface TreeTableHooks {
 }
 
 /**
-    */
+ */
 export interface TreeTableComponentOverrides {
   CellEditor?: React.ComponentType<CellEditorProps>;
   RowDecorator?: React.ComponentType<RowDecoratorProps>;
@@ -231,25 +231,25 @@ export interface PluginRegistry {
 
 export interface PluginConfig {
   /**
-      */
+   */
   enabled: boolean;
   /**
-      */
+   */
   settings?: Record<string, unknown>;
 }
 
 export interface TreeTablePluginConfig {
   /**
-      */
+   */
   plugins: Record<string, PluginConfig>;
   /**
-      */
+   */
   global?: {
     /**
-          */
+     */
     loadOrder?: string[];
     /**
-          */
+     */
     debug?: boolean;
   };
 }
@@ -278,7 +278,7 @@ export interface HookExecutionResult<T = unknown> {
 // =============================================================================
 
 /**
-    */
+ */
 export type PluginLifecycleState =
   | 'unregistered'
   | 'registered'
@@ -288,11 +288,10 @@ export type PluginLifecycleState =
   | 'destroyed';
 
 /**
-    */
-export type HookExecutionMode =
-  | 'sequential' | 'parallel' | 'first-match' | 'accumulate';
+ */
+export type HookExecutionMode = 'sequential' | 'parallel' | 'first-match' | 'accumulate';
 /**
-    */
+ */
 export type PluginPriority = 'high' | 'normal' | 'low';
 
 // =============================================================================
@@ -303,7 +302,7 @@ export class PluginError extends Error {
   constructor(
     message: string,
     public pluginName: string,
-    public hookName?: string,
+    public hookName?: string
   ) {
     super(`[Plugin: ${pluginName}] ${message}`);
     this.name = 'PluginError';

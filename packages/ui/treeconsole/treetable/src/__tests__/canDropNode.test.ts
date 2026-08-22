@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { type NodeType, toNodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { toNodeId } from '@hierarchidb/core-types';
-import { type NodeType } from '@hierarchidb/core-types';
+import { describe, expect, it } from 'vitest';
 
 const ROOT_PARENT_ID = toNodeId('__root__');
+
 import { canDropNode } from '../utils/index';
 
 const N = (id: string, parentId?: string): TreeNode => ({
@@ -18,7 +18,7 @@ const N = (id: string, parentId?: string): TreeNode => ({
 });
 
 describe('canDropNode', () => {
-  const nodes: TreeNode[] = [ N('a'), N('b','a'), N('c','a'), N('d','b') ];
+  const nodes: TreeNode[] = [N('a'), N('b', 'a'), N('c', 'a'), N('d', 'b')];
 
   it('denies dropping onto itself', () => {
     expect(canDropNode(toNodeId('a'), toNodeId('a'), 'into', nodes)).toBe(false);

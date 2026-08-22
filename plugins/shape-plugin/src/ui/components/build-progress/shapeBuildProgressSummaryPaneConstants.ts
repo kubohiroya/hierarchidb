@@ -1,14 +1,16 @@
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildSessionDisplayStatus } from './shapeBuildProgressTypes.js';
-import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
-import { resolveMostAdvancedStageId } from './stagePriorityConstants.js';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
+import type { BuildSessionDisplayStatus } from './shapeBuildProgressTypes.js';
 import { resolveStageAliasArray } from './stageIdAliases';
+import { resolveMostAdvancedStageId } from './stagePriorityConstants.js';
 
 type TaskStageCarrier = BuildTaskSummary & { stage: TaskStage };
 
-const normalizePaneStatus = (status: BuildStatus | BuildSessionDisplayStatus['status']): BuildSessionDisplayStatus['status'] => {
+const normalizePaneStatus = (
+  status: BuildStatus | BuildSessionDisplayStatus['status']
+): BuildSessionDisplayStatus['status'] => {
   if (status === 'running') {
     return 'running';
   }
@@ -45,56 +47,71 @@ export const makePaneProgress = ({
   completedCount: number;
   status: BuildSessionDisplayStatus['status'];
   summary: { total: number; success: number; error: number; skip: number };
-}> => stages.map((stage) => {
-  const base = paneProgress.find((entry) => entry.paneId === stage.id);
-  const stageCounts = stageCountsWithPlan[stage.id]?.counts
-    ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
+}> =>
+  stages.map((stage) => {
+    const base = paneProgress.find((entry) => entry.paneId === stage.id);
+    const stageCounts = stageCountsWithPlan[stage.id]?.counts ?? {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+    };
 
-  const hasSummaryData = stageCounts.total > 0 || stageCounts.completed > 0 || stageCounts.failed > 0 || stageCounts.skipped > 0;
-  let total = hasSummaryData ? stageCounts.total : (base?.taskCount ?? 0);
-  const success = hasSummaryData ? stageCounts.completed : (base?.completedCount ?? 0);
-  let error = hasSummaryData ? stageCounts.failed : 0;
-  const skip = hasSummaryData ? stageCounts.skipped : 0;
-  const completionProgress = total > 0 ? Math.round((success + error + skip) / total * 100) : 0;
-  const runtimeProgress = typeof base?.progress === 'number'
-    ? Math.min(100, Math.max(0, Math.round(base.progress)))
-    : null;
-  const shouldUseTaskProgress = (buildStatus === 'running' || buildStatus === 'paused')
-    && base !== undefined
-    && (base.taskCount ?? 0) > 0;
+    const hasSummaryData =
+      stageCounts.total > 0 ||
+      stageCounts.completed > 0 ||
+      stageCounts.failed > 0 ||
+      stageCounts.skipped > 0;
+    let total = hasSummaryData ? stageCounts.total : (base?.taskCount ?? 0);
+    const success = hasSummaryData ? stageCounts.completed : (base?.completedCount ?? 0);
+    let error = hasSummaryData ? stageCounts.failed : 0;
+    const skip = hasSummaryData ? stageCounts.skipped : 0;
+    const completionProgress = total > 0 ? Math.round(((success + error + skip) / total) * 100) : 0;
+    const runtimeProgress =
+      typeof base?.progress === 'number'
+        ? Math.min(100, Math.max(0, Math.round(base.progress)))
+        : null;
+    const shouldUseTaskProgress =
+      (buildStatus === 'running' || buildStatus === 'paused') &&
+      base !== undefined &&
+      (base.taskCount ?? 0) > 0;
 
-  const shouldForceFailure = buildStatus === 'failed'
-    && failureStageId
-    && stage.id === failureStageId
-    && (stageCounts.total > 0 || hasFailureData);
-  if (shouldForceFailure) {
-    error = Math.max(error, 1);
-    total = Math.max(total, error + success + skip);
-  }
+    const shouldForceFailure =
+      buildStatus === 'failed' &&
+      failureStageId &&
+      stage.id === failureStageId &&
+      (stageCounts.total > 0 || hasFailureData);
+    if (shouldForceFailure) {
+      error = Math.max(error, 1);
+      total = Math.max(total, error + success + skip);
+    }
 
-  const baseStatus = base ? normalizePaneStatus(base.status) : undefined;
-  const normalizedBuildStatus = normalizePaneStatus(buildStatus);
-  const progress = hasSummaryData
-    ? shouldUseTaskProgress ? Math.max(completionProgress, runtimeProgress ?? 0) : completionProgress
-    : runtimeProgress ?? 0;
+    const baseStatus = base ? normalizePaneStatus(base.status) : undefined;
+    const normalizedBuildStatus = normalizePaneStatus(buildStatus);
+    const progress = hasSummaryData
+      ? shouldUseTaskProgress
+        ? Math.max(completionProgress, runtimeProgress ?? 0)
+        : completionProgress
+      : (runtimeProgress ?? 0);
 
-  return {
-    paneId: stage.id,
-    progress,
-    taskCount: total,
-    completedCount: success,
-    status: error > 0
-      ? 'failed'
-      : total > 0 && success + skip >= total
-        ? 'completed'
-        : buildStatus === 'paused'
-          ? 'paused'
-          : total > 0
-            ? 'running'
-            : baseStatus ?? normalizedBuildStatus,
-    summary: { total, success, error, skip },
-  };
-});
+    return {
+      paneId: stage.id,
+      progress,
+      taskCount: total,
+      completedCount: success,
+      status:
+        error > 0
+          ? 'failed'
+          : total > 0 && success + skip >= total
+            ? 'completed'
+            : buildStatus === 'paused'
+              ? 'paused'
+              : total > 0
+                ? 'running'
+                : (baseStatus ?? normalizedBuildStatus),
+      summary: { total, success, error, skip },
+    };
+  });
 
 export const chooseInFlightStage = ({
   stages,
@@ -126,7 +143,9 @@ export const chooseInFlightStage = ({
 
   const runningStageIds = stages
     .filter((stage) =>
-      resolveStageAliasArray(tasksByStage, stage.id).some((task) => task.status === 'running' || task.status === 'queued'),
+      resolveStageAliasArray(tasksByStage, stage.id).some(
+        (task) => task.status === 'running' || task.status === 'queued'
+      )
     )
     .map((stage) => stage.id);
 

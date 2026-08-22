@@ -1,16 +1,21 @@
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { Provider, useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import { buildSessionLifecycleAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
-
-import { useBuildProgressStepState } from './useBuildProgressStepState.js';
-import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { Provider, useAtomValue } from 'jotai';
+import { buildSessionLifecycleAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { ShapeBuildProgressPanel } from '~/ui/components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
+import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { useBuildProgressStepState } from './useBuildProgressStepState.js';
 
 const toBuildStatus = (phase: string): BuildStatus => {
-  if (phase === 'running' || phase === 'starting' || phase === 'resuming' || phase === 'pausing' || phase === 'finalizing') {
+  if (
+    phase === 'running' ||
+    phase === 'starting' ||
+    phase === 'resuming' ||
+    phase === 'pausing' ||
+    phase === 'finalizing'
+  ) {
     return 'running';
   }
   if (phase === 'paused') return 'paused';
@@ -23,7 +28,8 @@ export const ShapeBuildStep: React.FC<ShapeDialogStepProps> = (props) => {
   const { t } = useTranslation('shape-plugin');
   const runtime = useAtomValue(buildSessionLifecycleAtom);
   const buildStatus = toBuildStatus(runtime.phase);
-  const { store, heapDialogOpen, heapEvent, handleHeapDialogClose } = useBuildProgressStepState(buildStatus);
+  const { store, heapDialogOpen, heapEvent, handleHeapDialogClose } =
+    useBuildProgressStepState(buildStatus);
 
   return (
     <Provider store={store}>
@@ -38,7 +44,12 @@ export const ShapeBuildStep: React.FC<ShapeDialogStepProps> = (props) => {
         onClose={handleHeapDialogClose}
         title={t('stage.heap.pauseTitle', 'Memory pressure detected') ?? ''}
         confirmLabel={t('stage.heap.pauseConfirm', 'OK') ?? ''}
-        description={t('stage.heap.pauseHint', 'Reduce concurrency and try again if the build becomes unstable.') ?? ''}
+        description={
+          t(
+            'stage.heap.pauseHint',
+            'Reduce concurrency and try again if the build becomes unstable.'
+          ) ?? ''
+        }
       />
     </Provider>
   );

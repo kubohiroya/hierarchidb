@@ -1,4 +1,4 @@
-/** 
+/**
  * Unified progress event types for build processing.
  */
 export type BuildStage = 'source' | 'geometry' | 'tileEmit' | 'completed' | string;

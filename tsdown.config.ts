@@ -1,16 +1,19 @@
-import { defineConfig, type Options, type OutExtensionFactory, type UserConfig } from 'tsdown';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
+import { defineConfig, type Options, type OutExtensionFactory, type UserConfig } from 'tsdown';
 
 const originalWarn = console.warn;
 console.warn = (...args) => {
   if (typeof args[0] === 'string') {
     const msg = args[0];
-    if (msg.includes('top-level "define" option is deprecated') || msg.includes('top-level "inject" option is deprecated')) {
+    if (
+      msg.includes('top-level "define" option is deprecated') ||
+      msg.includes('top-level "inject" option is deprecated')
+    ) {
       return;
     }
   }
-  originalWarn(...args as Parameters<typeof console.warn>);
+  originalWarn(...(args as Parameters<typeof console.warn>));
 };
 
 type PackageJson = {
@@ -57,11 +60,7 @@ try {
 }
 
 const dependencyNames = new Set<string>(DEFAULT_EXTERNAL);
-for (const group of [
-  pkg.dependencies,
-  pkg.peerDependencies,
-  pkg.optionalDependencies,
-]) {
+for (const group of [pkg.dependencies, pkg.peerDependencies, pkg.optionalDependencies]) {
   if (!group) continue;
   for (const name of Object.keys(group)) {
     dependencyNames.add(name);
@@ -74,14 +73,20 @@ const baseExternal = Array.from(dependencyNames);
 let mergedExternal: string[] = baseExternal;
 
 const userConfigValues = userConfig;
-const userExternal = userConfigValues.external as string[] | string | Record<string, unknown> | undefined;
+const userExternal = userConfigValues.external as
+  | string[]
+  | string
+  | Record<string, unknown>
+  | undefined;
 if (Array.isArray(userExternal)) {
   const extended = new Set<string>([...baseExternal, ...userExternal]);
   mergedExternal = Array.from(extended);
 } else if (typeof userExternal === 'string') {
   mergedExternal = [userExternal];
 } else if (userExternal && typeof userExternal === 'object') {
-  mergedExternal = Object.keys(userExternal).filter((key): key is string => typeof key === 'string');
+  mergedExternal = Object.keys(userExternal).filter(
+    (key): key is string => typeof key === 'string'
+  );
 }
 
 const {
@@ -93,7 +98,9 @@ const {
   ...restUserConfig
 }: Partial<TsdownWorkspaceConfig> & Record<string, unknown> = userConfig;
 
-const toOutExtension = (value: OutExtensionFactory | string | undefined): OutExtensionFactory | undefined => {
+const toOutExtension = (
+  value: OutExtensionFactory | string | undefined
+): OutExtensionFactory | undefined => {
   if (typeof value === 'undefined') {
     return undefined;
   }
@@ -112,7 +119,7 @@ const defaultOutExtension = () => ({
 
 const defaultAlias: Record<string, string> = {
   '~': path.resolve(cwd, 'src'),
-  '~/' : path.resolve(cwd, 'src'),
+  '~/': path.resolve(cwd, 'src'),
 };
 const defaultPublicAliasPath = path.resolve(cwd, 'public');
 if (existsSync(defaultPublicAliasPath)) {
@@ -179,15 +186,17 @@ const resolvedUserPlugins = (() => {
   if (!userPlugins) {
     return [packageWorkspaceAliasPlugin];
   }
-  return [...(Array.isArray(userPlugins) ? userPlugins : [userPlugins]), packageWorkspaceAliasPlugin];
+  return [
+    ...(Array.isArray(userPlugins) ? userPlugins : [userPlugins]),
+    packageWorkspaceAliasPlugin,
+  ];
 })();
 
 const finalConfig: TsdownWorkspaceConfig = {
   ...baseConfig,
   ...restUserConfig,
-  tsconfig: typeof userTsconfig === 'string' || typeof userTsconfig === 'boolean'
-    ? userTsconfig
-    : true,
+  tsconfig:
+    typeof userTsconfig === 'string' || typeof userTsconfig === 'boolean' ? userTsconfig : true,
   alias: mergedAlias,
   plugins: resolvedUserPlugins as Options['plugins'],
 };
@@ -219,9 +228,8 @@ const proxiedConfig = new Proxy(finalConfig, {
   set(target, prop, value) {
     if (prop === 'define' || prop === 'inject') {
       const currentTransform = target.transform;
-      const transform = currentTransform && typeof currentTransform === 'object'
-        ? currentTransform
-        : {};
+      const transform =
+        currentTransform && typeof currentTransform === 'object' ? currentTransform : {};
       target.transform = transform as Record<string, unknown>;
       (transform as Record<string, unknown>)[prop as string] = value;
       return true;

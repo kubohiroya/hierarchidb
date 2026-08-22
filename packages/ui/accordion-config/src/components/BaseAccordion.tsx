@@ -1,6 +1,14 @@
-import React from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Box, type SxProps, type Theme, Typography } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  type SxProps,
+  type Theme,
+  Typography,
+} from '@mui/material';
+import React from 'react';
 import { useBaseAccordion } from './useBaseAccordion.js';
 
 export interface BaseAccordionProps {
@@ -47,25 +55,25 @@ export interface BaseAccordionProps {
  * Can be used directly or extended by more specific accordion components
  */
 export const BaseAccordion: React.FC<BaseAccordionProps> = ({
-                                                              id,
-                                                              icon,
-                                                              title,
-                                                              subtitle,
-                                                              defaultExpanded = false,
-                                                              disabled = false,
-                                                              onExpansionChange,
-                                                              sx,
-                                                              headerSx,
-                                                              contentSx,
-                                                              headerBackgroundColor,
-                                                              headerTextColor,
-                                                              expandIcon = <ExpandMore />,
-                                                              expandIconPosition = 'end',
-                                                              children,
-                                                            headerActions,
-                                                            showDivider = false,
-                                                            elevation = 1,
-                                                            }) => {
+  id,
+  icon,
+  title,
+  subtitle,
+  defaultExpanded = false,
+  disabled = false,
+  onExpansionChange,
+  sx,
+  headerSx,
+  contentSx,
+  headerBackgroundColor,
+  headerTextColor,
+  expandIcon = <ExpandMore />,
+  expandIconPosition = 'end',
+  children,
+  headerActions,
+  showDivider = false,
+  elevation = 1,
+}) => {
   const { expanded, handleChange } = useBaseAccordion({
     defaultExpanded,
     onExpansionChange,
@@ -74,11 +82,7 @@ export const BaseAccordion: React.FC<BaseAccordionProps> = ({
   const headerContent = (
     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
       {expandIconPosition === 'start' && expandIcon}
-      {icon && (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {icon}
-        </Box>
-      )}
+      {icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{icon}</Box>}
       <Box sx={{ flexGrow: 1 }}>
         <Typography variant="h6" component="div">
           {title}
@@ -90,9 +94,7 @@ export const BaseAccordion: React.FC<BaseAccordionProps> = ({
         )}
       </Box>
       {headerActions && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {headerActions}
-        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{headerActions}</Box>
       )}
       {expandIconPosition === 'end' && expandIcon}
     </Box>
@@ -132,9 +134,7 @@ export const BaseAccordion: React.FC<BaseAccordionProps> = ({
           }}
         />
       )}
-      <AccordionDetails sx={contentSx}>
-        {children}
-      </AccordionDetails>
+      <AccordionDetails sx={contentSx}>{children}</AccordionDetails>
     </Accordion>
   );
 };

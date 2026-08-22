@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
 import {
   GitHub as GitHubIcon,
   Google as GoogleIcon,
   Microsoft as MicrosoftIcon,
 } from '@mui/icons-material';
 import type React from 'react';
+import { useMemo } from 'react';
 import type { AuthProvider } from '../hooks/useAuthRequiredDialog';
 
 interface AuthProviderInfo {
@@ -58,27 +58,33 @@ export const useAuthRequiredDialogView = ({
   isAuthenticating,
   isMicrosoftProviderDisabled,
 }: UseAuthRequiredDialogViewArgs) => {
-  const providerEntries = useMemo(() => (
-    (Object.keys(AUTH_PROVIDERS) as AuthProvider[]).map((provider) => {
-      const info = AUTH_PROVIDERS[provider];
-      const isSelected = selectedProvider === provider;
-      const isDisabled = isMicrosoftProviderDisabled(provider) || (isAuthenticating && !isSelected);
-      return {
-        provider,
-        info,
-        isSelected,
-        isDisabled,
-      };
-    })
-  ), [isAuthenticating, isMicrosoftProviderDisabled, selectedProvider]);
+  const providerEntries = useMemo(
+    () =>
+      (Object.keys(AUTH_PROVIDERS) as AuthProvider[]).map((provider) => {
+        const info = AUTH_PROVIDERS[provider];
+        const isSelected = selectedProvider === provider;
+        const isDisabled =
+          isMicrosoftProviderDisabled(provider) || (isAuthenticating && !isSelected);
+        return {
+          provider,
+          info,
+          isSelected,
+          isDisabled,
+        };
+      }),
+    [isAuthenticating, isMicrosoftProviderDisabled, selectedProvider]
+  );
 
-  const pluginLabel = useMemo(() => (
-    pluginType.charAt(0).toUpperCase() + pluginType.slice(1)
-  ), [pluginType]);
+  const pluginLabel = useMemo(
+    () => pluginType.charAt(0).toUpperCase() + pluginType.slice(1),
+    [pluginType]
+  );
 
-  const resolvedMessage = useMemo(() => (
-    message || `The ${pluginType} plugin requires authentication to continue batch processing.`
-  ), [message, pluginType]);
+  const resolvedMessage = useMemo(
+    () =>
+      message || `The ${pluginType} plugin requires authentication to continue batch processing.`,
+    [message, pluginType]
+  );
 
   const retryMessage = useMemo(() => {
     if (retryCount <= 0) return null;

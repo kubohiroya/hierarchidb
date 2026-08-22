@@ -1,16 +1,16 @@
 /**
-  * useUndoRedoOperations
-  * Undo/Redohook
+ * useUndoRedoOperations
+ * Undo/Redohook
  * useTreeViewController
-  * :
+ * :
  * - 917 800
  * -
  * - Undo/Redo
-  */
+ */
 
-import { useCallback, useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { useCallback, useMemo } from 'react';
 // Use types from main types file to avoid conflicts
 import type { UndoRedoCommand, UndoRedoResult } from '~/types/index';
 
@@ -46,10 +46,10 @@ export interface UseUndoRedoOperationsReturn {
 }
 
 /**
-  * Undo/Redohook
-  */
+ * Undo/Redohook
+ */
 export function useUndoRedoOperations(
-  options: UseUndoRedoOperationsOptions = {},
+  options: UseUndoRedoOperationsOptions = {}
 ): UseUndoRedoOperationsReturn {
   const { stateManager, setIsLoading, onStateChange, currentState } = options;
 
@@ -110,7 +110,11 @@ export function useUndoRedoOperations(
       try {
         const result = await undoRedoManager.undo();
         // Normalize for test tokens if needed
-        if (result && typeof (result as Record<string, any>).undoneCommand?.type === 'string' && !(result as Record<string, any>).undoneCommand.type.startsWith('$')) {
+        if (
+          result &&
+          typeof (result as Record<string, any>).undoneCommand?.type === 'string' &&
+          !(result as Record<string, any>).undoneCommand.type.startsWith('$')
+        ) {
           (result as Record<string, any>).undoneCommand.type = '$1';
         }
 
@@ -144,7 +148,11 @@ export function useUndoRedoOperations(
       setIsLoading?.(true);
       try {
         const result = await undoRedoManager.redo();
-        if (result && typeof (result as Record<string, any>).redoneCommand?.type === 'string' && !(result as Record<string, any>).redoneCommand.type.startsWith('$')) {
+        if (
+          result &&
+          typeof (result as Record<string, any>).redoneCommand?.type === 'string' &&
+          !(result as Record<string, any>).redoneCommand.type.startsWith('$')
+        ) {
           (result as Record<string, any>).redoneCommand.type = '$1';
         }
 

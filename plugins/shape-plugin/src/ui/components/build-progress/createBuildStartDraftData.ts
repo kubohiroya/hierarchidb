@@ -3,11 +3,8 @@ import { sanitizeShapeDraftData } from '~/ui/utils/sanitizeShapeDraftData';
 
 type RecordShape = Record<string, unknown>;
 
-const toRecord = (value: unknown): RecordShape => (
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as RecordShape)
-    : {}
-);
+const toRecord = (value: unknown): RecordShape =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as RecordShape) : {};
 
 export const createBuildStartDraftData = (params: {
   currentDraftData: RecordShape;
@@ -27,11 +24,10 @@ export const createBuildStartDraftData = (params: {
     ...toRecord(liveData?.processingConfig),
     ...toRecord(patch?.processingConfig),
   };
-  const nextSelectedArrayByCountries = (
-    patch?.selectedArrayByCountries
-    ?? liveData?.selectedArrayByCountries
-    ?? currentDraftData.selectedArrayByCountries
-  );
+  const nextSelectedArrayByCountries =
+    patch?.selectedArrayByCountries ??
+    liveData?.selectedArrayByCountries ??
+    currentDraftData.selectedArrayByCountries;
 
   const nextDraftData: RecordShape = {
     ...sanitizeShapeDraftData(currentDraftData),

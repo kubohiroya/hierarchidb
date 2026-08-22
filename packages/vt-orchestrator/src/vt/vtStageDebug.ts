@@ -64,7 +64,7 @@ export const resolveVtDebugFocusConfig = (value: unknown): VtDebugFocusConfig =>
 export const resolveVtDebugFocusMatch = (
   config: VtDebugFocusConfig,
   tileKey: string,
-  featureIds: string[],
+  featureIds: string[]
 ): VtDebugFocusMatch => {
   if (!config.enabled) {
     return {
@@ -75,9 +75,10 @@ export const resolveVtDebugFocusMatch = (
     };
   }
   const tileMatched = config.tileKeys.size > 0 && config.tileKeys.has(tileKey);
-  const matchedFeatureIds = config.featureIds.size > 0
-    ? featureIds.filter((featureId) => config.featureIds.has(featureId))
-    : [];
+  const matchedFeatureIds =
+    config.featureIds.size > 0
+      ? featureIds.filter((featureId) => config.featureIds.has(featureId))
+      : [];
   const featureMatched = matchedFeatureIds.length > 0;
   const shouldLog = config.logAll || tileMatched || featureMatched;
   return {

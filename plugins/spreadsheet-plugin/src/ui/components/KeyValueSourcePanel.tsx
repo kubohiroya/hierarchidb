@@ -1,14 +1,14 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { ModalSelect } from '@hierarchidb/ui-modal-select';
 import {
   Box,
   FormControl,
   FormHelperText,
   InputLabel,
   MenuItem,
-  Typography,
   type SelectChangeEvent,
+  Typography,
 } from '@mui/material';
-import { ModalSelect } from '@hierarchidb/ui-modal-select';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface KeyValueSourcePanelProps {
   keyColumn?: string;
@@ -46,7 +46,7 @@ export const KeyValueSourcePanel = ({
           value={keyColumn ?? ''}
           label={t('styleSettings.keyColumn.label', 'Column as property key source')}
           onChange={(event: SelectChangeEvent<string>) => onKeyColumnChange(event.target.value)}
-          >
+        >
           <MenuItem value="">
             <em>{t('styleSettings.keyColumn.none', 'Select a column')}</em>
           </MenuItem>
@@ -56,7 +56,9 @@ export const KeyValueSourcePanel = ({
             </MenuItem>
           ))}
         </ModalSelect>
-        <FormHelperText>{t('styleSettings.keyColumn.help', 'Select the column that contains the key')}</FormHelperText>
+        <FormHelperText>
+          {t('styleSettings.keyColumn.help', 'Select the column that contains the key')}
+        </FormHelperText>
       </FormControl>
 
       <FormControl required>
@@ -78,7 +80,9 @@ export const KeyValueSourcePanel = ({
             </MenuItem>
           ))}
         </ModalSelect>
-        <FormHelperText>{t('styleSettings.valueColumn.help', 'Select the column that contains the value')}</FormHelperText>
+        <FormHelperText>
+          {t('styleSettings.valueColumn.help', 'Select the column that contains the value')}
+        </FormHelperText>
       </FormControl>
     </Box>
   );

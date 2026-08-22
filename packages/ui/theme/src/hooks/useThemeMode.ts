@@ -6,12 +6,15 @@ import type { ThemeContextType } from '~/types';
 export const useThemeMode = (): ThemeContextType => {
   const context = useContext(ThemeContext);
   if (!context) {
-    const systemPrefersDark = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia('(prefers-color-scheme: dark)').matches
-      : false;
+    const systemPrefersDark =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        : false;
 
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[ui-theme] useThemeMode invoked outside ThemeProvider; using system preference fallback.');
+      console.warn(
+        '[ui-theme] useThemeMode invoked outside ThemeProvider; using system preference fallback.'
+      );
     }
 
     return {

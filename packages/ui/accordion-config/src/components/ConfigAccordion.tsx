@@ -1,5 +1,13 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Stack, Typography, useTheme } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Stack,
+  Typography,
+  useTheme,
+} from '@mui/material';
 
 export interface ConfigAccordionProps {
   /** Unique identifier for the accordion */
@@ -25,26 +33,24 @@ export interface ConfigAccordionProps {
 }
 
 export const ConfigAccordion: React.FC<ConfigAccordionProps> = ({
-                                                                  id,
-                                                                  icon,
-                                                                  title,
-                                                                  description,
-                                                                  defaultExpanded = true,
-                                                                  disabled = false,
-                                                                  headerColor,
-                                                                  sx = {},
-                                                                  children,
-                                                                  onExpansionChange,
-                                                                }) => {
+  id,
+  icon,
+  title,
+  description,
+  defaultExpanded = true,
+  disabled = false,
+  headerColor,
+  sx = {},
+  children,
+  onExpansionChange,
+}) => {
   const theme = useTheme();
 
   const getHeaderBackgroundColor = () => {
     if (headerColor) return headerColor;
 
     // Default theme-aware background
-    return theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.05)'
-      : theme.palette.grey[50];
+    return theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : theme.palette.grey[50];
   };
 
   const handleExpansionChange = (_event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -79,7 +85,9 @@ export const ConfigAccordion: React.FC<ConfigAccordionProps> = ({
             {icon && (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {typeof icon === 'string' ? (
-                  <Typography component="span" sx={{ fontSize: '1.2em' }}>{icon}</Typography>
+                  <Typography component="span" sx={{ fontSize: '1.2em' }}>
+                    {icon}
+                  </Typography>
                 ) : (
                   icon
                 )}
@@ -97,9 +105,7 @@ export const ConfigAccordion: React.FC<ConfigAccordionProps> = ({
         </Box>
       </AccordionSummary>
       <AccordionDetails sx={{ px: 3, py: 2 }}>
-        <Stack spacing={2}>
-          {children}
-        </Stack>
+        <Stack spacing={2}>{children}</Stack>
       </AccordionDetails>
     </Accordion>
   );

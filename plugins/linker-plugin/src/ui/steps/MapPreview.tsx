@@ -1,9 +1,9 @@
-import type React from 'react';
-import { Suspense, lazy, useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
-import { loadMapLibreMap } from '@hierarchidb/ui-map';
-import type { ResourceSummary } from './ResourcePicker.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { loadMapLibreMap } from '@hierarchidb/ui-map';
+import { Box, Typography } from '@mui/material';
+import type React from 'react';
+import { lazy, Suspense, useMemo } from 'react';
+import type { ResourceSummary } from './ResourcePicker.js';
 
 export interface MapPreviewProps {
   items: ResourceSummary[];
@@ -24,7 +24,9 @@ export const MapPreview: React.FC<MapPreviewProps> = ({ items: _items }) => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         {t('preview.description', 'Preview of aggregated resources on the map (generalized).')}
       </Typography>
-      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Box
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}
+      >
         <Suspense
           fallback={
             <Box

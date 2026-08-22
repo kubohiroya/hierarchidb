@@ -28,5 +28,5 @@ export const PillButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
         {...rest}
       />
     );
-  },
+  }
 );

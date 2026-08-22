@@ -1,8 +1,7 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { TreeChangeEvent } from '@hierarchidb/tree-api';
-import type { TreeNode } from '@hierarchidb/tree-api';
-import { describe, expect, it } from 'vitest';
+import type { TreeChangeEvent, TreeNode } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
+import { describe, expect, it } from 'vitest';
 import type { CoreDB } from '../../CoreDB';
 
 // fulltext tables removed; core stub only

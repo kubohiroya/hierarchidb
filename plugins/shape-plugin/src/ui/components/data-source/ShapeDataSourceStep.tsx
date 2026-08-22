@@ -1,17 +1,25 @@
-import type React from 'react';
-import { Box, Button } from '@mui/material';
 import { DataSourceSelectionStep } from '@hierarchidb/ui-datasource';
-import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Box, Button } from '@mui/material';
+import type React from 'react';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
 import { useShapeDataSourceStepView } from './useShapeDataSourceStepView.js';
 
 /**
  * Data Source Selection step for Shape plugin
  */
-export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId, disabled }) => {
+export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({
+  data,
+  onChange,
+  nodeId,
+  disabled,
+}) => {
   const draftData = data ?? {};
-  const { options, dataSourceId, handleChange } = useShapeDataSourceStep({ data: draftData, onChange });
+  const { options, dataSourceId, handleChange } = useShapeDataSourceStep({
+    data: draftData,
+    onChange,
+  });
   const { t } = useTranslation('shape-plugin');
   const { isClearing, handleClearCache } = useShapeDataSourceStepView({ dataSourceId, nodeId, t });
 
@@ -29,7 +37,7 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
         licenseRequired={false}
         description={t(
           'dataSource.description',
-          'Choose a geographic data provider. Each source has different coverage, accuracy, and licensing requirements.',
+          'Choose a geographic data provider. Each source has different coverage, accuracy, and licensing requirements.'
         )}
         createAgreedAt={() => new Date().toISOString()}
         selectionTitle={String(t('dataSource.selectionTitle', 'Data Source'))}

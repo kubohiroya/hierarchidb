@@ -62,7 +62,7 @@ const DEFAULT_MAX_HIGH = 12;
 export const countVertexLimitOverages = (
   collection: FeatureCollection,
   retryVertexLimit: number,
-  countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number,
+  countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number
 ): VertexLimitStats => {
   let maxVertexCount = 0;
   let overLimitFeatureCount = 0;
@@ -81,7 +81,7 @@ export const countVertexLimitOverages = (
 
 export const selectMaxVertexFeature = (
   collection: FeatureCollection,
-  countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number,
+  countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number
 ): { feature: Feature; featureIndex: number; vertexCount: number } | null => {
   let bestFeature: Feature | null = null;
   let bestVertexCount = -1;
@@ -103,7 +103,7 @@ export const selectMaxVertexFeature = (
 };
 
 export const findBaseToleranceByBisection = async (
-  params: BaseToleranceSearchParams,
+  params: BaseToleranceSearchParams
 ): Promise<BaseToleranceSearchResult> => {
   const {
     feature,
@@ -117,12 +117,14 @@ export const findBaseToleranceByBisection = async (
   const boundedMaxIterations = Math.max(1, Math.min(64, Math.round(maxIterations)));
   const lowStart = Number.isFinite(params.initialLow) ? Math.max(0, params.initialLow ?? 0) : 0;
   let low = lowStart;
-  let high = Number.isFinite(params.initialHigh) && (params.initialHigh ?? 0) > low
-    ? (params.initialHigh as number)
-    : DEFAULT_INITIAL_HIGH;
-  const highCap = Number.isFinite(params.highCap) && (params.highCap ?? 0) > 0
-    ? (params.highCap as number)
-    : DEFAULT_MAX_HIGH;
+  let high =
+    Number.isFinite(params.initialHigh) && (params.initialHigh ?? 0) > low
+      ? (params.initialHigh as number)
+      : DEFAULT_INITIAL_HIGH;
+  const highCap =
+    Number.isFinite(params.highCap) && (params.highCap ?? 0) > 0
+      ? (params.highCap as number)
+      : DEFAULT_MAX_HIGH;
 
   const baseVertexCount = countVerticesFromGeometry(feature.geometry);
   if (baseVertexCount < retryVertexLimit) {
@@ -195,7 +197,7 @@ export const findBaseToleranceByBisection = async (
 };
 
 export const retrySimplifyFeatureWithinVertexLimit = async (
-  params: RetryFeatureParams,
+  params: RetryFeatureParams
 ): Promise<RetrySimplifyFeatureResult> => {
   const {
     feature,

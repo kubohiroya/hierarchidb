@@ -1,10 +1,12 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
-export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
-export type ShapeBuildStage =
-  | 'source'
-  | 'geometry'
-  | 'tileEmit';
+export type ShapeDataSourceName =
+  | 'naturalearth'
+  | 'geoboundaries'
+  | 'geoboundaries-topojson'
+  | 'gadm'
+  | 'openstreetmap';
+export type ShapeBuildStage = 'source' | 'geometry' | 'tileEmit';
 export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
 export type ShapeSourceTaskPayload = {
@@ -18,11 +20,11 @@ export type ShapeSourceTaskPayload = {
   tags?: Array<
     | string
     | {
-      key: string;
-      value?: string;
-      operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
-      includeNodes?: boolean;
-    }
+        key: string;
+        value?: string;
+        operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
+        includeNodes?: boolean;
+      }
   >;
   timeoutMs?: number;
   retryAttempts?: number;
@@ -141,7 +143,7 @@ export type ShapeBuildTaskResult =
 
 export interface ShapeBuildTaskRecord<
   TInput = ShapeBuildTaskPayload,
-  TOutput = ShapeBuildTaskResult
+  TOutput = ShapeBuildTaskResult,
 > {
   taskId: string;
   nodeId: NodeId;
@@ -166,7 +168,6 @@ export type ShapeBuildTaskRecordInput = Omit<ShapeBuildTaskRecord, 'taskType'> &
 export type ShapeBuildTaskRecordUpdate = Partial<Omit<ShapeBuildTaskRecord, 'taskType'>> & {
   taskType?: never;
 };
-
 
 export interface ShapeSourceCache {
   id: string;

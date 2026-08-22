@@ -23,10 +23,7 @@ export type StepValidationFn = () => boolean | Promise<boolean>;
 /**
  * Step transition hook signature
  */
-export type StepTransitionHook = (
-  fromStep: number,
-  toStep: number,
-) => boolean | Promise<boolean>;
+export type StepTransitionHook = (fromStep: number, toStep: number) => boolean | Promise<boolean>;
 
 /**
  * External step atoms evaluator supplied by plugin-loader/hosts.

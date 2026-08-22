@@ -1,6 +1,6 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
 import { createBuildQueue, createBuildQueueKey } from './buildQueueConstants.ts';

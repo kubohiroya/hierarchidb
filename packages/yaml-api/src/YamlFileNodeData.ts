@@ -10,7 +10,7 @@ export const YAML_NODE_TYPE = 'yaml-file' as NodeType;
  * - content:  YAML text produced by the schema editor (empty string when not yet edited)
  */
 export interface YamlFileNodeData {
-    name: string;
-    schemaId: string;
-    content: string;
+  name: string;
+  schemaId: string;
+  content: string;
 }

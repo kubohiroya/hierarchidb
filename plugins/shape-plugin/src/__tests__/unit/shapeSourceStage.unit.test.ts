@@ -1,11 +1,10 @@
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ShapeFeaturePayload } from '../../common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { CountryMetadata } from '../../common/types/index';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { listTasksByStageAndStatus, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { listTasksByStageAndStatus, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
+import type { CountryMetadata, ShapeFeaturePayload } from '../../common/types/index';
 
 const { mockFetchData, mockProcessData, mockPutFeatureMetadata } = vi.hoisted(() => ({
   mockFetchData: vi.fn(),
@@ -32,7 +31,10 @@ vi.mock('~/services/datasources/DataSourceStrategyFactory', () => {
 });
 
 vi.mock('~/services/vt/filterFetchCollectionByZoom.ts', () => ({
-  filterFetchCollectionByZoom: (collection: { type: 'FeatureCollection'; features: unknown[] }) => ({
+  filterFetchCollectionByZoom: (collection: {
+    type: 'FeatureCollection';
+    features: unknown[];
+  }) => ({
     ...collection,
     features: [],
   }),
@@ -60,7 +62,15 @@ const METADATA: CountryMetadata = {
 const FEATURE_PAYLOAD: ShapeFeaturePayload = {
   geometry: {
     type: 'Polygon',
-    coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [0, 0],
+      ],
+    ],
   },
   properties: {
     shapeName: 'Mock',
@@ -102,12 +112,14 @@ describe('runShapeSourceStage message', () => {
       buildConfig: DEFAULT_BUILD_CONFIG,
       taskQueue: db,
       metadata: [METADATA],
-      downloadTaskPayloads: [{
-        url: 'https://example.test/mock.geojson',
-        countryCode: 'ID',
-        adminLevel: 0,
-        dataSource: 'geoboundaries',
-      }],
+      downloadTaskPayloads: [
+        {
+          url: 'https://example.test/mock.geojson',
+          countryCode: 'ID',
+          adminLevel: 0,
+          dataSource: 'geoboundaries',
+        },
+      ],
       resumeExistingTasks: false,
       failureHandling: 'continue',
     });
@@ -115,7 +127,7 @@ describe('runShapeSourceStage message', () => {
     const completed = await listTasksByStageAndStatus(db, nodeId, 'source', 'completed');
     expect(completed).toHaveLength(1);
     expect(completed[0]?.message).toBe(
-      'features: 1 -> 0 (-100.0%), polygons: 1 -> 0 (-100.0%), vertices: 5 -> 0 (-100.0%)',
+      'features: 1 -> 0 (-100.0%), polygons: 1 -> 0 (-100.0%), vertices: 5 -> 0 (-100.0%)'
     );
   });
 
@@ -160,12 +172,14 @@ describe('runShapeSourceStage message', () => {
       buildConfig: DEFAULT_BUILD_CONFIG,
       taskQueue: db,
       metadata: [METADATA],
-      downloadTaskPayloads: [{
-        url: 'https://example.test/mock.geojson',
-        countryCode: 'ID',
-        adminLevel: 0,
-        dataSource: 'geoboundaries',
-      }],
+      downloadTaskPayloads: [
+        {
+          url: 'https://example.test/mock.geojson',
+          countryCode: 'ID',
+          adminLevel: 0,
+          dataSource: 'geoboundaries',
+        },
+      ],
       resumeExistingTasks: false,
       failureHandling: 'continue',
     });

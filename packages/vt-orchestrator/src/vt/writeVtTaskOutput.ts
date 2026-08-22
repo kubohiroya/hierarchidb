@@ -1,7 +1,10 @@
 import type { StageHandlerResult } from '~/types/types';
+import {
+  buildTileOutputWriteContext,
+  type VtTaskOutputWriteInput,
+} from './buildTileOutputWriteContext.js';
 import { loadTileEmitPbfWithTiming } from './loadTileEmitPbfWithTiming.js';
 import { runVtTileOutputFlow } from './runVtTileOutputFlow.js';
-import { buildTileOutputWriteContext, type VtTaskOutputWriteInput } from './buildTileOutputWriteContext.js';
 
 export const writeVtTaskOutput = async ({
   context,

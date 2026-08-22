@@ -1,12 +1,12 @@
-import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSObject, SxProps, Theme } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
-import { FRAME_CONSTANTS } from './frameHelpers.js';
-import type { HeadlessDialogProps } from './types.js';
-import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
+import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
+import { FRAME_CONSTANTS } from './frameHelpers.js';
 import type { PluginDialogFrameComponentProps } from './PluginDialogFrame.types.js';
+import type { HeadlessDialogProps } from './types.js';
 
 const DEFAULT_DIALOG_SIZE = { width: 960, height: 640 } as const;
 const EDGE_HANDLE_THICKNESS = 12;
@@ -45,7 +45,10 @@ type PluginDialogFrameState<TData> = {
   handleContextMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
   handleBackdropPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
   handleWheelCapture: (event: React.WheelEvent<HTMLDivElement>) => void;
-  handleResizePointerDown: (direction: ResizeDirection, event: React.PointerEvent<HTMLElement>) => void;
+  handleResizePointerDown: (
+    direction: ResizeDirection,
+    event: React.PointerEvent<HTMLElement>
+  ) => void;
   portalTarget: Element | DocumentFragment | null;
   shouldAnimateBackdrop: boolean;
   backdropTimeout: number;
@@ -110,13 +113,16 @@ export function usePluginDialogFrame<TData>(
   const [isInteracting, setIsInteracting] = useState(false);
   const dialogOpenRegisteredRef = useRef(false);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!open) return;
-    if (event.key !== 'Escape') return;
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!open) return;
+      if (event.key !== 'Escape') return;
 
-    event.stopPropagation();
-    onRequestClose?.('close');
-  }, [onRequestClose, open]);
+      event.stopPropagation();
+      onRequestClose?.('close');
+    },
+    [onRequestClose, open]
+  );
 
   useEffect(() => {
     if (!isBrowser || !open) return;
@@ -233,170 +239,182 @@ export function usePluginDialogFrame<TData>(
     resetInteractionState();
   }, [displayMode, resetInteractionState]);
 
-  const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (fullScreen) return;
-    if (!headlessProps.onPositionChange) return;
-    const isPrimaryButton = event.button === 0;
-    const isSecondaryButton = frameless && event.button === 2;
-    if (!isPrimaryButton && !isSecondaryButton) return;
+  const handleDragPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      if (fullScreen) return;
+      if (!headlessProps.onPositionChange) return;
+      const isPrimaryButton = event.button === 0;
+      const isSecondaryButton = frameless && event.button === 2;
+      if (!isPrimaryButton && !isSecondaryButton) return;
 
-    if (event.detail > 1) {
+      if (event.detail > 1) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
       event.preventDefault();
       event.stopPropagation();
-      return;
-    }
 
-    event.preventDefault();
-    event.stopPropagation();
-
-    dragStateRef.current = {
-      pointerId: event.pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      start: { x: position.x, y: position.y },
-    };
-
-    setIsInteracting(true);
-    guards.registerDragStart();
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = dragStateRef.current;
-      if (!state || moveEvent.pointerId !== state.pointerId) return;
-      const next = {
-        x: state.start.x + (moveEvent.clientX - state.originX),
-        y: state.start.y + (moveEvent.clientY - state.originY),
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        originX: event.clientX,
+        originY: event.clientY,
+        start: { x: position.x, y: position.y },
       };
-      headlessProps.onPositionChange?.(next);
-    };
 
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      const state = dragStateRef.current;
-      if (!state || state.pointerId !== endEvent.pointerId) return;
-      const cleanup = dragCleanupRef.current;
-      if (cleanup) {
-        cleanup();
-      }
-      dragStateRef.current = null;
-      dragCleanupRef.current = null;
-      setIsInteracting(false);
-      guards.registerDragEnd();
-    };
+      setIsInteracting(true);
+      guards.registerDragStart();
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-    dragCleanupRef.current = () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-    };
-  }, [frameless, fullScreen, guards, headlessProps, position.x, position.y]);
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const state = dragStateRef.current;
+        if (!state || moveEvent.pointerId !== state.pointerId) return;
+        const next = {
+          x: state.start.x + (moveEvent.clientX - state.originX),
+          y: state.start.y + (moveEvent.clientY - state.originY),
+        };
+        headlessProps.onPositionChange?.(next);
+      };
 
-  const handleResizePointerDown = useCallback((direction: ResizeDirection, event: React.PointerEvent<HTMLElement>) => {
-    if (fullScreen) return;
-    if (!headlessProps.onSizeChange) return;
-    if (event.button !== 0) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    resizeStateRef.current = {
-      pointerId: event.pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      startSize: { width: size.width, height: size.height },
-      startPosition: { x: position.x, y: position.y },
-      direction,
-    };
-
-    setIsInteracting(true);
-    guards.registerDragStart();
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = resizeStateRef.current;
-      if (!state || moveEvent.pointerId !== state.pointerId) return;
-
-      const deltaX = moveEvent.clientX - state.originX;
-      const deltaY = moveEvent.clientY - state.originY;
-
-      const minWidth = FRAME_CONSTANTS.MIN_DIALOG_WIDTH;
-      const minHeight = FRAME_CONSTANTS.MIN_DIALOG_HEIGHT;
-
-      let nextWidth = state.startSize.width;
-      let nextHeight = state.startSize.height;
-      let nextX = state.startPosition.x;
-      let nextY = state.startPosition.y;
-
-      if (state.direction.horizontal === 'right') {
-        nextWidth = Math.max(minWidth, state.startSize.width + deltaX);
-      } else if (state.direction.horizontal === 'left') {
-        const proposedWidth = state.startSize.width - deltaX;
-        if (proposedWidth < minWidth) {
-          nextWidth = minWidth;
-          nextX = state.startPosition.x + (state.startSize.width - minWidth);
-        } else {
-          nextWidth = proposedWidth;
-          nextX = state.startPosition.x + deltaX;
+      const handlePointerEnd = (endEvent: PointerEvent) => {
+        const state = dragStateRef.current;
+        if (!state || state.pointerId !== endEvent.pointerId) return;
+        const cleanup = dragCleanupRef.current;
+        if (cleanup) {
+          cleanup();
         }
-      }
+        dragStateRef.current = null;
+        dragCleanupRef.current = null;
+        setIsInteracting(false);
+        guards.registerDragEnd();
+      };
 
-      if (state.direction.vertical === 'bottom') {
-        nextHeight = Math.max(minHeight, state.startSize.height + deltaY);
-      } else if (state.direction.vertical === 'top') {
-        const proposedHeight = state.startSize.height - deltaY;
-        if (proposedHeight < minHeight) {
-          nextHeight = minHeight;
-          nextY = state.startPosition.y + (state.startSize.height - minHeight);
-        } else {
-          nextHeight = proposedHeight;
-          nextY = state.startPosition.y + deltaY;
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerEnd);
+      window.addEventListener('pointercancel', handlePointerEnd);
+      dragCleanupRef.current = () => {
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerEnd);
+        window.removeEventListener('pointercancel', handlePointerEnd);
+      };
+    },
+    [frameless, fullScreen, guards, headlessProps, position.x, position.y]
+  );
+
+  const handleResizePointerDown = useCallback(
+    (direction: ResizeDirection, event: React.PointerEvent<HTMLElement>) => {
+      if (fullScreen) return;
+      if (!headlessProps.onSizeChange) return;
+      if (event.button !== 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      resizeStateRef.current = {
+        pointerId: event.pointerId,
+        originX: event.clientX,
+        originY: event.clientY,
+        startSize: { width: size.width, height: size.height },
+        startPosition: { x: position.x, y: position.y },
+        direction,
+      };
+
+      setIsInteracting(true);
+      guards.registerDragStart();
+
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const state = resizeStateRef.current;
+        if (!state || moveEvent.pointerId !== state.pointerId) return;
+
+        const deltaX = moveEvent.clientX - state.originX;
+        const deltaY = moveEvent.clientY - state.originY;
+
+        const minWidth = FRAME_CONSTANTS.MIN_DIALOG_WIDTH;
+        const minHeight = FRAME_CONSTANTS.MIN_DIALOG_HEIGHT;
+
+        let nextWidth = state.startSize.width;
+        let nextHeight = state.startSize.height;
+        let nextX = state.startPosition.x;
+        let nextY = state.startPosition.y;
+
+        if (state.direction.horizontal === 'right') {
+          nextWidth = Math.max(minWidth, state.startSize.width + deltaX);
+        } else if (state.direction.horizontal === 'left') {
+          const proposedWidth = state.startSize.width - deltaX;
+          if (proposedWidth < minWidth) {
+            nextWidth = minWidth;
+            nextX = state.startPosition.x + (state.startSize.width - minWidth);
+          } else {
+            nextWidth = proposedWidth;
+            nextX = state.startPosition.x + deltaX;
+          }
         }
-      }
 
-      headlessProps.onSizeChange?.({ width: nextWidth, height: nextHeight });
-      if (headlessProps.onPositionChange && (nextX !== state.startPosition.x || nextY !== state.startPosition.y)) {
-        headlessProps.onPositionChange({ x: nextX, y: nextY });
-      }
-    };
+        if (state.direction.vertical === 'bottom') {
+          nextHeight = Math.max(minHeight, state.startSize.height + deltaY);
+        } else if (state.direction.vertical === 'top') {
+          const proposedHeight = state.startSize.height - deltaY;
+          if (proposedHeight < minHeight) {
+            nextHeight = minHeight;
+            nextY = state.startPosition.y + (state.startSize.height - minHeight);
+          } else {
+            nextHeight = proposedHeight;
+            nextY = state.startPosition.y + deltaY;
+          }
+        }
 
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      const state = resizeStateRef.current;
-      if (!state || state.pointerId !== endEvent.pointerId) return;
-      const cleanup = resizeCleanupRef.current;
-      if (cleanup) {
-        cleanup();
-      }
-      resizeStateRef.current = null;
-      resizeCleanupRef.current = null;
-      setIsInteracting(false);
-      guards.registerDragEnd();
-    };
+        headlessProps.onSizeChange?.({ width: nextWidth, height: nextHeight });
+        if (
+          headlessProps.onPositionChange &&
+          (nextX !== state.startPosition.x || nextY !== state.startPosition.y)
+        ) {
+          headlessProps.onPositionChange({ x: nextX, y: nextY });
+        }
+      };
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-    resizeCleanupRef.current = () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-    };
-  }, [fullScreen, guards, headlessProps, position.x, position.y, size.height, size.width]);
+      const handlePointerEnd = (endEvent: PointerEvent) => {
+        const state = resizeStateRef.current;
+        if (!state || state.pointerId !== endEvent.pointerId) return;
+        const cleanup = resizeCleanupRef.current;
+        if (cleanup) {
+          cleanup();
+        }
+        resizeStateRef.current = null;
+        resizeCleanupRef.current = null;
+        setIsInteracting(false);
+        guards.registerDragEnd();
+      };
 
-  const augmentedHeadlessProps = useMemo(() => ({
-    ...headlessProps,
-    frameless,
-    transparent,
-    onDragHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
-      handleDragPointerDown(event);
-      headlessProps.onDragHandlePointerDown?.(event);
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerEnd);
+      window.addEventListener('pointercancel', handlePointerEnd);
+      resizeCleanupRef.current = () => {
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerEnd);
+        window.removeEventListener('pointercancel', handlePointerEnd);
+      };
     },
-    onResizeHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
-      headlessProps.onResizeHandlePointerDown?.(event);
-    },
-  }), [headlessProps, frameless, transparent, handleDragPointerDown]);
+    [fullScreen, guards, headlessProps, position.x, position.y, size.height, size.width]
+  );
 
-  const defaultFrameSx = useMemo(() => (
-    (theme: Theme) => ({
+  const augmentedHeadlessProps = useMemo(
+    () => ({
+      ...headlessProps,
+      frameless,
+      transparent,
+      onDragHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
+        handleDragPointerDown(event);
+        headlessProps.onDragHandlePointerDown?.(event);
+      },
+      onResizeHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
+        headlessProps.onResizeHandlePointerDown?.(event);
+      },
+    }),
+    [headlessProps, frameless, transparent, handleDragPointerDown]
+  );
+
+  const defaultFrameSx = useMemo(
+    () => (theme: Theme) => ({
       position: 'absolute',
       top: fullScreen ? 0 : position.y,
       left: fullScreen ? 0 : position.x,
@@ -412,16 +430,26 @@ export function usePluginDialogFrame<TData>(
       backgroundColor: transparent ? 'transparent' : getDialogSurfaceColor(theme),
       ...(isInteracting
         ? {
-          transition: 'none',
-          willChange: 'top, left, width, height',
-        }
+            transition: 'none',
+            willChange: 'top, left, width, height',
+          }
         : {
-          transition: theme.transitions.create(['top', 'left', 'width', 'height'], {
-            duration: theme.transitions.duration.shortest,
+            transition: theme.transitions.create(['top', 'left', 'width', 'height'], {
+              duration: theme.transitions.duration.shortest,
+            }),
           }),
-        }),
-    })
-  ), [fullScreen, frameless, isInteracting, position.x, position.y, size.height, size.width, transparent]);
+    }),
+    [
+      fullScreen,
+      frameless,
+      isInteracting,
+      position.x,
+      position.y,
+      size.height,
+      size.width,
+      transparent,
+    ]
+  );
 
   const combinedFrameSx = useMemo<SxProps<Theme>>(() => {
     if (!frameSx) return defaultFrameSx;
@@ -429,16 +457,17 @@ export function usePluginDialogFrame<TData>(
     return [defaultFrameSx, ...extra] as SxProps<Theme>;
   }, [defaultFrameSx, frameSx]);
 
-  const defaultBackdropSx = useMemo(() => (
-    (theme: Theme) => ({
+  const defaultBackdropSx = useMemo(
+    () => (theme: Theme) => ({
       position: 'fixed',
       inset: 0,
       zIndex: zIndex ?? theme.zIndex.modal,
       backgroundColor: 'rgba(9, 12, 28, 0.15)',
       backdropFilter: 'blur(1px)',
       pointerEvents: open ? 'auto' : 'none',
-    })
-  ), [open, zIndex]);
+    }),
+    [open, zIndex]
+  );
 
   const combinedBackdropSx = useMemo<SxProps<Theme>>(() => {
     if (!backdropSx) return defaultBackdropSx;
@@ -446,126 +475,138 @@ export function usePluginDialogFrame<TData>(
     return [defaultBackdropSx, ...extra] as SxProps<Theme>;
   }, [defaultBackdropSx, backdropSx]);
 
-  const resizeHandles = useMemo<ResizeHandleConfig[]>(() => ([
-    {
-      key: 'top',
-      direction: { horizontal: null, vertical: 'top' },
-      sx: {
-        top: -EDGE_HANDLE_OFFSET,
-        left: 0,
-        right: 0,
-        height: EDGE_HANDLE_THICKNESS,
-        cursor: 'ns-resize',
+  const resizeHandles = useMemo<ResizeHandleConfig[]>(
+    () => [
+      {
+        key: 'top',
+        direction: { horizontal: null, vertical: 'top' },
+        sx: {
+          top: -EDGE_HANDLE_OFFSET,
+          left: 0,
+          right: 0,
+          height: EDGE_HANDLE_THICKNESS,
+          cursor: 'ns-resize',
+        },
       },
-    },
-    {
-      key: 'bottom',
-      direction: { horizontal: null, vertical: 'bottom' },
-      sx: {
-        bottom: -EDGE_HANDLE_OFFSET,
-        left: 0,
-        right: 0,
-        height: EDGE_HANDLE_THICKNESS,
-        cursor: 'ns-resize',
+      {
+        key: 'bottom',
+        direction: { horizontal: null, vertical: 'bottom' },
+        sx: {
+          bottom: -EDGE_HANDLE_OFFSET,
+          left: 0,
+          right: 0,
+          height: EDGE_HANDLE_THICKNESS,
+          cursor: 'ns-resize',
+        },
       },
-    },
-    {
-      key: 'left',
-      direction: { horizontal: 'left', vertical: null },
-      sx: {
-        top: 0,
-        bottom: 0,
-        left: -EDGE_HANDLE_OFFSET,
-        width: EDGE_HANDLE_THICKNESS,
-        cursor: 'ew-resize',
+      {
+        key: 'left',
+        direction: { horizontal: 'left', vertical: null },
+        sx: {
+          top: 0,
+          bottom: 0,
+          left: -EDGE_HANDLE_OFFSET,
+          width: EDGE_HANDLE_THICKNESS,
+          cursor: 'ew-resize',
+        },
       },
-    },
-    {
-      key: 'right',
-      direction: { horizontal: 'right', vertical: null },
-      sx: {
-        top: 0,
-        bottom: 0,
-        right: -EDGE_HANDLE_OFFSET,
-        width: EDGE_HANDLE_THICKNESS,
-        cursor: 'ew-resize',
+      {
+        key: 'right',
+        direction: { horizontal: 'right', vertical: null },
+        sx: {
+          top: 0,
+          bottom: 0,
+          right: -EDGE_HANDLE_OFFSET,
+          width: EDGE_HANDLE_THICKNESS,
+          cursor: 'ew-resize',
+        },
       },
-    },
-    {
-      key: 'top-left',
-      direction: { horizontal: 'left', vertical: 'top' },
-      sx: {
-        top: -CORNER_HANDLE_OFFSET,
-        left: -CORNER_HANDLE_OFFSET,
-        width: CORNER_HANDLE_SIZE,
-        height: CORNER_HANDLE_SIZE,
-        cursor: 'nwse-resize',
+      {
+        key: 'top-left',
+        direction: { horizontal: 'left', vertical: 'top' },
+        sx: {
+          top: -CORNER_HANDLE_OFFSET,
+          left: -CORNER_HANDLE_OFFSET,
+          width: CORNER_HANDLE_SIZE,
+          height: CORNER_HANDLE_SIZE,
+          cursor: 'nwse-resize',
+        },
       },
-    },
-    {
-      key: 'top-right',
-      direction: { horizontal: 'right', vertical: 'top' },
-      sx: {
-        top: -CORNER_HANDLE_OFFSET,
-        right: -CORNER_HANDLE_OFFSET,
-        width: CORNER_HANDLE_SIZE,
-        height: CORNER_HANDLE_SIZE,
-        cursor: 'nesw-resize',
+      {
+        key: 'top-right',
+        direction: { horizontal: 'right', vertical: 'top' },
+        sx: {
+          top: -CORNER_HANDLE_OFFSET,
+          right: -CORNER_HANDLE_OFFSET,
+          width: CORNER_HANDLE_SIZE,
+          height: CORNER_HANDLE_SIZE,
+          cursor: 'nesw-resize',
+        },
       },
-    },
-    {
-      key: 'bottom-left',
-      direction: { horizontal: 'left', vertical: 'bottom' },
-      sx: {
-        bottom: -CORNER_HANDLE_OFFSET,
-        left: -CORNER_HANDLE_OFFSET,
-        width: CORNER_HANDLE_SIZE,
-        height: CORNER_HANDLE_SIZE,
-        cursor: 'nesw-resize',
+      {
+        key: 'bottom-left',
+        direction: { horizontal: 'left', vertical: 'bottom' },
+        sx: {
+          bottom: -CORNER_HANDLE_OFFSET,
+          left: -CORNER_HANDLE_OFFSET,
+          width: CORNER_HANDLE_SIZE,
+          height: CORNER_HANDLE_SIZE,
+          cursor: 'nesw-resize',
+        },
       },
-    },
-    {
-      key: 'bottom-right',
-      direction: { horizontal: 'right', vertical: 'bottom' },
-      sx: {
-        bottom: -CORNER_HANDLE_OFFSET,
-        right: -CORNER_HANDLE_OFFSET,
-        width: CORNER_HANDLE_SIZE,
-        height: CORNER_HANDLE_SIZE,
-        cursor: 'nwse-resize',
+      {
+        key: 'bottom-right',
+        direction: { horizontal: 'right', vertical: 'bottom' },
+        sx: {
+          bottom: -CORNER_HANDLE_OFFSET,
+          right: -CORNER_HANDLE_OFFSET,
+          width: CORNER_HANDLE_SIZE,
+          height: CORNER_HANDLE_SIZE,
+          cursor: 'nwse-resize',
+        },
       },
-    },
-  ]), []);
+    ],
+    []
+  );
 
-  const handleContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (frameless) {
-      event.preventDefault();
-    }
-  }, [frameless]);
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (frameless) {
+        event.preventDefault();
+      }
+    },
+    [frameless]
+  );
 
-  const handleFramePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const textEditableTarget = resolveTextEditableTarget(event);
-    if (textEditableTarget && !isInteracting) {
-      queueMicrotask(() => {
-        if (!textEditableTarget.isConnected) return;
-        if (document.activeElement === textEditableTarget) return;
-        try {
-          textEditableTarget.focus({ preventScroll: true });
-        } catch {
-          textEditableTarget.focus();
-        }
-      });
-    }
+  const handleFramePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const textEditableTarget = resolveTextEditableTarget(event);
+      if (textEditableTarget && !isInteracting) {
+        queueMicrotask(() => {
+          if (!textEditableTarget.isConnected) return;
+          if (document.activeElement === textEditableTarget) return;
+          try {
+            textEditableTarget.focus({ preventScroll: true });
+          } catch {
+            textEditableTarget.focus();
+          }
+        });
+      }
 
-    if (frameless && event.button === 2) {
-      handleDragPointerDown(event);
-    }
-  }, [frameless, handleDragPointerDown, isInteracting]);
+      if (frameless && event.button === 2) {
+        handleDragPointerDown(event);
+      }
+    },
+    [frameless, handleDragPointerDown, isInteracting]
+  );
 
-  const handleBackdropPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return;
-    guards.handleBackdropClick();
-  }, [guards]);
+  const handleBackdropPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.target !== event.currentTarget) return;
+      guards.handleBackdropClick();
+    },
+    [guards]
+  );
 
   const portalTarget = portalContainer ?? (isBrowser ? document.body : null);
 

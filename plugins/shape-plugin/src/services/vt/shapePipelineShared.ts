@@ -1,35 +1,46 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, Point, MultiPoint, Polygon, MultiPolygon } from 'geojson';
-import type { Tile } from 'geojson-vt';
-import { geojson as geojsonApi } from 'flatgeobuf';
 import {
   buildStableJsonSignature,
+  type EphemeralDB,
+  ephemeralDB,
+  type GeometryEngine,
   geometryBboxClip,
   latToTileY,
   lonToTileX,
   pickAdminLevel,
   pickCountryCode,
   pickCountryName,
-  type GeometryEngine,
 } from '@hierarchidb/gis-sdk';
-import {
-  buildZoomBandRanges,
-  ZOOM_BAND_MAX_ZOOM,
-  ZOOM_BAND_MIN_ZOOM,
-} from '@hierarchidb/util';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
-import { extractGeometryStats } from './featureMetadataUtils.ts';
+import { buildZoomBandRanges, ZOOM_BAND_MAX_ZOOM, ZOOM_BAND_MIN_ZOOM } from '@hierarchidb/util';
 import { deleteTasksByIds, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import type {
+  Feature,
+  FeatureCollection,
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPoint,
+  MultiPolygon,
+  Point,
+  Polygon,
+} from 'geojson';
+import type { Tile } from 'geojson-vt';
+import type {
+  CountryMetadata,
+  SelectedArrayByCountries,
+  ShapeRuntimeBuildConfig,
+  SourceTaskPayload,
+} from '~/common/types/index';
+import { extractGeometryStats } from './featureMetadataUtils.ts';
+import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 import {
   buildGeometryTaskCacheIdentity,
   buildTileEmitTaskCacheIdentity,
   requireShapeSourceBaseTolerance,
 } from './shapeTaskCacheIdentity.ts';
-import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 
 export type ShapeGeometryByBandTaskInput = {
   sourceCacheId: string;
@@ -81,9 +92,7 @@ const FETCH_CACHE_META_CHUNK_SIZE = 500;
 /**
  * @deprecated Use reconcileStageTasksByMetadata instead of legacy signature filtering.
  */
-const buildTaskInputSignature = (input: unknown): string => (
-  buildStableJsonSignature(input ?? null)
-);
+const buildTaskInputSignature = (input: unknown): string => buildStableJsonSignature(input ?? null);
 
 /**
  * @deprecated Use reconcileStageTasksByMetadata to align with metadata-based reconciliation.
@@ -91,10 +100,10 @@ const buildTaskInputSignature = (input: unknown): string => (
 export const filterObsoleteTasks = async (
   taskQueue: VtTaskQueueDb,
   existingTasks: TaskQueueRecord[],
-  desiredTasks: TaskQueueRecord[],
+  desiredTasks: TaskQueueRecord[]
 ): Promise<TaskQueueRecord[]> => {
   const desiredSignatures = new Map(
-    desiredTasks.map((task) => [task.taskId, buildTaskInputSignature(task.inputData)] as const),
+    desiredTasks.map((task) => [task.taskId, buildTaskInputSignature(task.inputData)] as const)
   );
   const obsoleteTaskIds: string[] = [];
   const validExistingTasks: TaskQueueRecord[] = [];
@@ -152,7 +161,9 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   return null;
 };
 
-export const decodeGeometryCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+export const decodeGeometryCache = async (
+  buffer: ArrayBuffer
+): Promise<FeatureCollection | null> => {
   try {
     const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
     return await normalizeFeatureCollection(decoded);
@@ -161,7 +172,10 @@ export const decodeGeometryCache = async (buffer: ArrayBuffer): Promise<FeatureC
   }
 };
 
-export const readNumericProperty = (properties: Record<string, unknown>, key: string): number | undefined => {
+export const readNumericProperty = (
+  properties: Record<string, unknown>,
+  key: string
+): number | undefined => {
   const value = properties[key];
   if (typeof value !== 'number') return undefined;
   return Number.isFinite(value) ? value : undefined;
@@ -182,9 +196,12 @@ const parseOriginKey = (originKey: string): { countryCode?: string; adminLevel?:
 
 export const resolveFeatureOriginInfo = (
   properties: Record<string, unknown>,
-  lookup?: Map<string, CountryMetadata>,
+  lookup?: Map<string, CountryMetadata>
 ): { countryCode?: string; countryName?: string; adminLevel?: number } => {
-  const originKey = typeof properties[ORIGIN_KEY_PROP] === 'string' ? properties[ORIGIN_KEY_PROP] as string : undefined;
+  const originKey =
+    typeof properties[ORIGIN_KEY_PROP] === 'string'
+      ? (properties[ORIGIN_KEY_PROP] as string)
+      : undefined;
   const originInfo = originKey ? parseOriginKey(originKey) : {};
   const rawCountryCode = originInfo.countryCode ?? pickCountryCode(properties);
   const rawAdminLevel = originInfo.adminLevel ?? pickAdminLevel(properties);
@@ -198,7 +215,9 @@ export const resolveFeatureOriginInfo = (
   };
 };
 
-export const describeBuffer = (buffer: ArrayBuffer): {
+export const describeBuffer = (
+  buffer: ArrayBuffer
+): {
   byteLength: number;
   headHex: string;
   headAscii: string;
@@ -206,10 +225,12 @@ export const describeBuffer = (buffer: ArrayBuffer): {
 } => {
   const bytes = new Uint8Array(buffer);
   const head = bytes.slice(0, 16);
-  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
-  const headAscii = Array.from(head).map((value) => (
-    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
-  )).join('');
+  const headHex = Array.from(head)
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
+  const headAscii = Array.from(head)
+    .map((value) => (value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'))
+    .join('');
   let firstNonWhitespace: number | null = null;
   for (let i = 0; i < bytes.length; i += 1) {
     const value = bytes[i];
@@ -227,43 +248,51 @@ export const describeBuffer = (buffer: ArrayBuffer): {
   };
 };
 
-export const isGeometryCacheComplete = (record: { timestamp: number } | null | undefined): record is { timestamp: number } => (
-  Boolean(record && record.timestamp > 0)
-);
+export const isGeometryCacheComplete = (
+  record: { timestamp: number } | null | undefined
+): record is { timestamp: number } => Boolean(record && record.timestamp > 0);
 
 // Keep in sync with @hierarchidb/vt-orchestrator tileId encoding.
 const TILE_INDEX_BITS = 22;
 const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
 const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
 
-const packTileId = (x: number, y: number, z: number): number => (
-  (z * TILE_INDEX_STRIDE) + (x * TILE_INDEX_SCALE) + y
-);
+const packTileId = (x: number, y: number, z: number): number =>
+  z * TILE_INDEX_STRIDE + x * TILE_INDEX_SCALE + y;
 
-const clampTileIndex = (value: number, maxIndex: number): number => (
-  Math.min(maxIndex, Math.max(0, value))
-);
+const clampTileIndex = (value: number, maxIndex: number): number =>
+  Math.min(maxIndex, Math.max(0, value));
 
-const toDeg = (radians: number): number => radians * 180 / Math.PI;
+const toDeg = (radians: number): number => (radians * 180) / Math.PI;
 
-const tileToBBox = (z: number, x: number, y: number): { minX: number; minY: number; maxX: number; maxY: number } => {
+const tileToBBox = (
+  z: number,
+  x: number,
+  y: number
+): { minX: number; minY: number; maxX: number; maxY: number } => {
   const n = 2 ** z;
-  const lon1 = x / n * 360 - 180;
-  const lon2 = (x + 1) / n * 360 - 180;
-  const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))));
-  const lat2 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))));
+  const lon1 = (x / n) * 360 - 180;
+  const lon2 = ((x + 1) / n) * 360 - 180;
+  const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))));
+  const lat2 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))));
   return { minX: lon1, minY: lat2, maxX: lon2, maxY: lat1 };
 };
 
-const isPointInBBox = (x: number, y: number, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => (
-  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY
-);
+const isPointInBBox = (
+  x: number,
+  y: number,
+  bbox: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean => x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY;
 
 const isPointGeometry = (geometry: Geometry): geometry is Point => geometry.type === 'Point';
 
-const isMultiPointGeometry = (geometry: Geometry): geometry is MultiPoint => geometry.type === 'MultiPoint';
+const isMultiPointGeometry = (geometry: Geometry): geometry is MultiPoint =>
+  geometry.type === 'MultiPoint';
 
-const isAnyPointInBBox = (geometry: Geometry | null | undefined, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+const isAnyPointInBBox = (
+  geometry: Geometry | null | undefined,
+  bbox: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean => {
   if (!geometry) return false;
   if (isPointGeometry(geometry)) {
     const [x, y] = geometry.coordinates ?? [];
@@ -289,26 +318,28 @@ const hasCoordinates = (coords: unknown): boolean => {
 };
 
 const isLineOrPolygonFeature = (
-  feature: Feature,
+  feature: Feature
 ): feature is Feature<LineString | MultiLineString | Polygon | MultiPolygon> => {
   const type = feature.geometry?.type;
-  return type === 'LineString'
-    || type === 'MultiLineString'
-    || type === 'Polygon'
-    || type === 'MultiPolygon';
+  return (
+    type === 'LineString' ||
+    type === 'MultiLineString' ||
+    type === 'Polygon' ||
+    type === 'MultiPolygon'
+  );
 };
 
 const featureIntersectsTileBBox = (
   feature: Feature,
   bbox: { minX: number; minY: number; maxX: number; maxY: number },
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): boolean => {
   if (isAnyPointInBBox(feature.geometry ?? null, bbox)) return true;
   if (!isLineOrPolygonFeature(feature)) return false;
   const clipped = geometryBboxClip(
     feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
     [bbox.minX, bbox.minY, bbox.maxX, bbox.maxY],
-    geometryEngine,
+    geometryEngine
   ) as Feature<LineString | MultiLineString | Polygon | MultiPolygon> | null;
   return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
 };
@@ -316,7 +347,7 @@ const featureIntersectsTileBBox = (
 const collectTileIdsForCollection = (
   collection: FeatureCollection,
   zBase: number,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): number[] => {
   if (!Number.isFinite(zBase) || zBase < 0) return [];
   const maxIndex = (1 << zBase) - 1;
@@ -352,7 +383,11 @@ export const backfillTileRelationsFromGeometryCache = async (params: {
   zBase: number;
   geometryEngine: GeometryEngine;
   ephemeralStore: EphemeralDB;
-}): Promise<{ relationCount: number; tileBuffers: Map<number, string[]>; bufferFeatureCounts: Map<string, number> }> => {
+}): Promise<{
+  relationCount: number;
+  tileBuffers: Map<number, string[]>;
+  bufferFeatureCounts: Map<string, number>;
+}> => {
   const { nodeId, bandIndex, zBase, geometryEngine, ephemeralStore } = params;
   const idsRaw = await ephemeralStore.geometryCacheMeta
     .where('[nodeId+bandIndex]')
@@ -363,10 +398,11 @@ export const backfillTileRelationsFromGeometryCache = async (params: {
   }
   const ids = idsRaw.map((id) => String(id));
   const buffers = await ephemeralStore.geometryCache.bulkGet(ids);
-  const completedBuffers = buffers.filter((buffer): buffer is NonNullable<typeof buffer> => (
+  const completedBuffers = buffers.filter((buffer): buffer is NonNullable<typeof buffer> =>
     Boolean(buffer && isGeometryCacheComplete(buffer))
-  ));
-  if (completedBuffers.length === 0) return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
+  );
+  if (completedBuffers.length === 0)
+    return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
   const createdAt = Date.now();
   const bufferIds = completedBuffers.map((buffer) => buffer.id);
   await ephemeralStore.tileEmitBufferRelations.where('bufferId').anyOf(bufferIds).delete();
@@ -436,11 +472,13 @@ export const backfillTileRelationsFromGeometryCache = async (params: {
 
 export const hasHighDetailSelection = (
   selection?: SelectedArrayByCountries,
-  payloads?: SourceTaskPayload[],
+  payloads?: SourceTaskPayload[]
 ): boolean => {
   if (payloads?.some((payload) => payload.adminLevel >= 2)) return true;
   if (!selection) return false;
-  return Object.values(selection).some((row) => row?.some((selected, index) => selected && index >= 2));
+  return Object.values(selection).some((row) =>
+    row?.some((selected, index) => selected && index >= 2)
+  );
 };
 
 export const buildGeometryByBandTasks = async (
@@ -448,7 +486,7 @@ export const buildGeometryByBandTasks = async (
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   countryLookup: Map<string, CountryMetadata>,
-  configSignature: string,
+  configSignature: string
 ): Promise<Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>> => {
   const tasks: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>> = [];
   let index = 0;
@@ -465,12 +503,12 @@ export const buildGeometryByBandTasks = async (
     }
     offset += sourceBufferChunk.length;
     const fullBufferChunk = await ephemeralDB.sourceCache.bulkGet(
-      sourceBufferChunk.map((buffer) => buffer.id),
+      sourceBufferChunk.map((buffer) => buffer.id)
     );
     const fullBufferById = new Map(
       fullBufferChunk
         .filter((buffer): buffer is NonNullable<typeof buffer> => buffer != null)
-        .map((buffer) => [buffer.id, buffer] as const),
+        .map((buffer) => [buffer.id, buffer] as const)
     );
 
     for (const buffer of sourceBufferChunk) {
@@ -479,7 +517,7 @@ export const buildGeometryByBandTasks = async (
       if (!fullBuffer) continue;
       const sourceArtifactHash = await resolveSourceArtifactHashFromRecord(
         ephemeralDB.sourceCache,
-        fullBuffer,
+        fullBuffer
       );
       const adminLevel = buffer.adminLevel;
       const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
@@ -487,7 +525,7 @@ export const buildGeometryByBandTasks = async (
       const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
       const bufferMetadata = (buffer.metadata ?? {}) as Record<string, unknown>;
       const sourceBaseTolerance = requireShapeSourceBaseTolerance(
-        readNumericProperty(bufferMetadata, 'baseTolerance'),
+        readNumericProperty(bufferMetadata, 'baseTolerance')
       );
       for (const band of bands) {
         if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
@@ -572,7 +610,7 @@ export const buildTileEmitTasks = async (
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Promise<Array<TaskQueueRecord<ShapeTileEmitTaskInput>>> => {
   const tasks: Array<TaskQueueRecord<ShapeTileEmitTaskInput>> = [];
   let index = 0;
@@ -591,9 +629,10 @@ export const buildTileEmitTasks = async (
           relationCount += 1;
           const tileId = Number(row.tileId);
           if (!Number.isFinite(tileId)) return;
-          const featureCount = typeof row.featureCount === 'number' && Number.isFinite(row.featureCount)
-            ? row.featureCount
-            : undefined;
+          const featureCount =
+            typeof row.featureCount === 'number' && Number.isFinite(row.featureCount)
+              ? row.featureCount
+              : undefined;
           if (featureCount !== undefined && !bufferFeatureCounts.has(row.bufferId)) {
             bufferFeatureCounts.set(row.bufferId, featureCount);
           }
@@ -644,7 +683,10 @@ export const buildTileEmitTasks = async (
       if (bufferIds.length === 0) continue;
       const usableBufferIds = [...new Set(bufferIds)];
       if (usableBufferIds.length === 0) continue;
-      const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (bufferFeatureCounts.get(bufferId) ?? 0), 0);
+      const featureCount = usableBufferIds.reduce(
+        (sum, bufferId) => sum + (bufferFeatureCounts.get(bufferId) ?? 0),
+        0
+      );
       const cacheIdentity = buildTileEmitTaskCacheIdentity({
         nodeId,
         bandIndex: band.bandIndex,
@@ -689,15 +731,14 @@ export const resolveGeometryConfig = (config: ShapeRuntimeBuildConfig) => config
 
 export const resolveTileEmitConfig = (config: ShapeRuntimeBuildConfig) => config.tileEmitConfig;
 
-const buildTileLayerInfo = (layers: Record<string, Tile>, z: number): ShapeTileLayerInfo[] => (
+const buildTileLayerInfo = (layers: Record<string, Tile>, z: number): ShapeTileLayerInfo[] =>
   Object.entries(layers).map(([name, tile]) => ({
     name,
     featureCount: Array.isArray(tile.features) ? tile.features.length : 0,
     minZoom: typeof tile.z === 'number' ? tile.z : z,
     maxZoom: typeof tile.z === 'number' ? tile.z : z,
     fields: [],
-  }))
-);
+  }));
 
 export const buildShapeVectorTileRecord = (params: {
   nodeId: NodeId;
@@ -710,9 +751,10 @@ export const buildShapeVectorTileRecord = (params: {
   layers: Record<string, Tile>;
 }): ShapeVectorTileRecord => {
   const bytes = new Uint8Array(params.data);
-  const features = Object.values(params.layers).reduce((sum, tile) => (
-    sum + (Array.isArray(tile.features) ? tile.features.length : 0)
-  ), 0);
+  const features = Object.values(params.layers).reduce(
+    (sum, tile) => sum + (Array.isArray(tile.features) ? tile.features.length : 0),
+    0
+  );
   return {
     tileId: `${params.tileId}|${params.bufferSetHash}`,
     nodeId: params.nodeId,

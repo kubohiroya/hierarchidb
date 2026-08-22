@@ -1,10 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import type { RouteUpdaterPayload } from '@hierarchidb/route-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  getRouteUpdaterPayload,
-  toRouteUpdaterPayload,
-} from '../draftUtils';
+import type { RouteUpdaterPayload } from '@hierarchidb/route-api';
+import { describe, expect, it } from 'vitest';
+import { getRouteUpdaterPayload, toRouteUpdaterPayload } from '../draftUtils';
 
 describe('route draft utilities', () => {
   it('returns only draftData from updater payload', () => {

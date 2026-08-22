@@ -7,10 +7,10 @@
 
 /** Layout dimensions derived from a zoom level. */
 export interface ZoomLayout {
-    /** Icon size in pixels, strictly monotonically increasing with zoomLevel. */
-    iconSize: number;
-    /** Cell size for grid layout and free positioning coordinate scaling. */
-    cellSize: { width: number; height: number };
+  /** Icon size in pixels, strictly monotonically increasing with zoomLevel. */
+  iconSize: number;
+  /** Cell size for grid layout and free positioning coordinate scaling. */
+  cellSize: { width: number; height: number };
 }
 
 /** Gap between cells in pixels (fixed). */
@@ -36,26 +36,26 @@ export const NAME_MIN_HEIGHT_PX = 2 * 16; // 2em * 16px base font = 32px
  * @throws Error if zoomLevel is not a finite number in [0, 100]
  */
 export function computeZoomLayout(zoomLevel: number): ZoomLayout {
-    if (!Number.isFinite(zoomLevel) || zoomLevel < 0 || zoomLevel > 100) {
-        throw new Error(`zoomLevel must be a finite number in [0, 100], got: ${zoomLevel}`);
-    }
+  if (!Number.isFinite(zoomLevel) || zoomLevel < 0 || zoomLevel > 100) {
+    throw new Error(`zoomLevel must be a finite number in [0, 100], got: ${zoomLevel}`);
+  }
 
-    const iconSize = Math.round(16 + zoomLevel * 1.12);
+  const iconSize = Math.round(16 + zoomLevel * 1.12);
 
-    return {
-        iconSize,
-        cellSize: {
-            width: Math.max(iconSize + CELL_GAP_PX * 4, NAME_MIN_WIDTH_PX) + CELL_GAP_PX,
-            height: iconSize + NAME_MIN_HEIGHT_PX + CELL_GAP_PX,
-        },
-    };
+  return {
+    iconSize,
+    cellSize: {
+      width: Math.max(iconSize + CELL_GAP_PX * 4, NAME_MIN_WIDTH_PX) + CELL_GAP_PX,
+      height: iconSize + NAME_MIN_HEIGHT_PX + CELL_GAP_PX,
+    },
+  };
 }
 
 /** Position assignment for a single node after reorganization. */
 export interface ReorganizedPosition {
-    nodeId: string;
-    col: number;
-    row: number;
+  nodeId: string;
+  col: number;
+  row: number;
 }
 
 /**
@@ -73,19 +73,19 @@ export interface ReorganizedPosition {
  * @returns Array of positions, one per input node
  */
 export function computeReorganizedPositions(
-    nodes: ReadonlyArray<{ id: string; metadata: { name: string } }>,
-    viewportWidth: number,
-    cellSize: { width: number; height: number },
+  nodes: ReadonlyArray<{ id: string; metadata: { name: string } }>,
+  viewportWidth: number,
+  cellSize: { width: number; height: number }
 ): ReorganizedPosition[] {
-    if (nodes.length === 0) return [];
+  if (nodes.length === 0) return [];
 
-    const columns = Math.max(1, Math.floor(viewportWidth / (cellSize.width + CELL_GAP_PX)));
+  const columns = Math.max(1, Math.floor(viewportWidth / (cellSize.width + CELL_GAP_PX)));
 
-    const sorted = [...nodes].sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
+  const sorted = [...nodes].sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
 
-    return sorted.map((node, i) => ({
-        nodeId: node.id,
-        col: i % columns,
-        row: Math.floor(i / columns),
-    }));
+  return sorted.map((node, i) => ({
+    nodeId: node.id,
+    col: i % columns,
+    row: Math.floor(i / columns),
+  }));
 }

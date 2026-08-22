@@ -230,11 +230,13 @@ const requireGenerationResult = (value: unknown): RouteGenerationResult => {
     throw new Error('Route engine result lineGeometry must contain at least two coordinates');
   }
   const lineGeometry = candidate.lineGeometry.map((coordinate, index) =>
-    requireCoordinate(coordinate, index));
+    requireCoordinate(coordinate, index)
+  );
   const distance = requireFiniteNonNegative('distance', candidate.distance);
-  const duration = candidate.duration === undefined
-    ? undefined
-    : requireFiniteNonNegative('duration', candidate.duration);
+  const duration =
+    candidate.duration === undefined
+      ? undefined
+      : requireFiniteNonNegative('duration', candidate.duration);
   return {
     lineGeometry,
     distance,

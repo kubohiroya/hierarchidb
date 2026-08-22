@@ -1,8 +1,8 @@
 /**
-  * DraftCommands Adapter
-  * TreeConsoleWorking CopyWorkerAPICommandEnvelope
+ * DraftCommands Adapter
+ * TreeConsoleWorking CopyWorkerAPICommandEnvelope
  * Working Copy
-  */
+ */
 
 import type { NodeId, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
@@ -28,17 +28,18 @@ export interface DraftEditSession {
 }
 
 export class DraftCommandsAdapter<T> {
-  constructor(private workerAPI: WorkerAPI<T>) {
-  }
+  constructor(private workerAPI: WorkerAPI<T>) {}
 
   private resolveCommitOptions(options: CommandAdapterOptions): CommitDraftOptions<T> | undefined {
-    const policy = options.context?.onNameConflict as CommitDraftOptions<T>['onNameConflict'] | undefined;
+    const policy = options.context?.onNameConflict as
+      | CommitDraftOptions<T>['onNameConflict']
+      | undefined;
     return policy ? { onNameConflict: policy } : undefined;
   }
 
   async startNodeEdit(
     sourceNodeId: NodeId,
-    options: CommandAdapterOptions,
+    options: CommandAdapterOptions
   ): Promise<DraftEditSession> {
     try {
       const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
@@ -50,7 +51,10 @@ export class DraftCommandsAdapter<T> {
         await updaterAPI.updateTreeNodeDraftMetadata(sourceNodeId, currentNodeData.metadata);
       }
       if (currentNodeData?.data) {
-        await updaterAPI.updateTreeNodeDraftData(sourceNodeId, currentNodeData.data as Partial<PeerEntity<T>>);
+        await updaterAPI.updateTreeNodeDraftData(
+          sourceNodeId,
+          currentNodeData.data as Partial<PeerEntity<T>>
+        );
       }
 
       return {
@@ -63,33 +67,31 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Failed to start editing node ${sourceNodeId}`,
         'START_NODE_EDIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-      * Working Copy
-      * @param parentId ID
+   * Working Copy
+   * @param parentId ID
    * @param name
    * @param description
    * @param options
    * @returns
-      */
+   */
   async startNodeCreate(
     parentId: NodeId,
     name: string,
     _description: string | undefined,
     nodeType: string,
-    _options: CommandAdapterOptions,
+    _options: CommandAdapterOptions
   ): Promise<DraftEditSession> {
     try {
       const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
-      const draft = await updaterAPI.initTreeNode(
-        toNodeType(nodeType),
-        parentId,
-        { metadata: { name } } as Partial<TreeNode>,
-      );
+      const draft = await updaterAPI.initTreeNode(toNodeType(nodeType), parentId, {
+        metadata: { name },
+      } as Partial<TreeNode>);
 
       return {
         draftId: (draft as { id?: string }).id as string,
@@ -100,25 +102,25 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Failed to start creating node in parent ${parentId}`,
         'START_NODE_CREATE_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-      * Draft
-      * @param editSession
+   * Draft
+   * @param editSession
    * @param options
    * @returns Promise<void>
-      */
+   */
   async commitNodeEdit(
     editSession: DraftEditSession,
-    options: CommandAdapterOptions,
+    options: CommandAdapterOptions
   ): Promise<void> {
     if (editSession.isCreate) {
       throw new TreeConsoleAdapterError(
         'Use commitNodeCreate for new node creation',
-        'INVALID_COMMIT_OPERATION',
+        'INVALID_COMMIT_OPERATION'
       );
     }
 
@@ -133,15 +135,12 @@ export class DraftCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
       const commitOptions = this.resolveCommitOptions(options);
-      const result = await updaterAPI.commitDraft(
-        command.payload.draftId as NodeId,
-        commitOptions,
-      );
+      const result = await updaterAPI.commitDraft(command.payload.draftId as NodeId, commitOptions);
 
       if (result.status === 'ok') return;
 
@@ -153,7 +152,7 @@ export class DraftCommandsAdapter<T> {
             status: result.status,
             suggestedName: result.suggestedName,
             onNameConflict: commitOptions?.onNameConflict,
-          },
+          }
         );
       }
 
@@ -168,7 +167,7 @@ export class DraftCommandsAdapter<T> {
             originalVersion: result.originalVersion,
             wcVersion: result.wcVersion,
             onNameConflict: commitOptions?.onNameConflict,
-          },
+          }
         );
       }
 
@@ -176,7 +175,7 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         'Commit edit operation failed: unexpected status',
         'COMMIT_NODE_EDIT_FAILED',
-        { status: unexpectedResult.status, onNameConflict: commitOptions?.onNameConflict },
+        { status: unexpectedResult.status, onNameConflict: commitOptions?.onNameConflict }
       );
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -185,25 +184,25 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Commit edit operation failed for draft ${editSession.draftId}`,
         'COMMIT_NODE_EDIT_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-      * Working Copy
-      * @param editSession
+   * Working Copy
+   * @param editSession
    * @param options
    * @returns Promise<void>
-      */
+   */
   async commitNodeCreate(
     editSession: DraftEditSession,
-    options: CommandAdapterOptions,
+    options: CommandAdapterOptions
   ): Promise<void> {
     if (!editSession.isCreate) {
       throw new TreeConsoleAdapterError(
         'Use commitNodeEdit for existing node editing',
-        'INVALID_COMMIT_OPERATION',
+        'INVALID_COMMIT_OPERATION'
       );
     }
 
@@ -217,15 +216,12 @@ export class DraftCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
       const commitOptions = this.resolveCommitOptions(options);
-      const result = await updaterAPI.commitDraft(
-        command.payload.draftId as NodeId,
-        commitOptions,
-      );
+      const result = await updaterAPI.commitDraft(command.payload.draftId as NodeId, commitOptions);
 
       if (result.status === 'ok') return;
 
@@ -237,7 +233,7 @@ export class DraftCommandsAdapter<T> {
             status: result.status,
             suggestedName: result.suggestedName,
             onNameConflict: commitOptions?.onNameConflict,
-          },
+          }
         );
       }
 
@@ -250,7 +246,7 @@ export class DraftCommandsAdapter<T> {
             originalVersion: result.originalVersion,
             wcVersion: result.wcVersion,
             onNameConflict: commitOptions?.onNameConflict,
-          },
+          }
         );
       }
 
@@ -258,7 +254,7 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         'Commit create operation failed: unexpected status',
         'COMMIT_NODE_CREATE_FAILED',
-        { status: unexpectedResult.status, onNameConflict: commitOptions?.onNameConflict },
+        { status: unexpectedResult.status, onNameConflict: commitOptions?.onNameConflict }
       );
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -267,25 +263,20 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Commit create operation failed for draft ${editSession.draftId}`,
         'COMMIT_NODE_CREATE_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-      * Working Copy
-      * @param editSession
+   * Working Copy
+   * @param editSession
    * @param options
    * @returns Promise<void>
-      */
-  async discardDraft(
-    editSession: DraftEditSession,
-    options: CommandAdapterOptions,
-  ): Promise<void> {
+   */
+  async discardDraft(editSession: DraftEditSession, options: CommandAdapterOptions): Promise<void> {
     try {
-      const commandKind = editSession.isCreate
-        ? 'discardDraftForCreate'
-        : 'discardDraft';
+      const commandKind = editSession.isCreate ? 'discardDraftForCreate' : 'discardDraft';
 
       const command = createCommand(
         commandKind,
@@ -295,7 +286,7 @@ export class DraftCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
@@ -304,16 +295,16 @@ export class DraftCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Failed to discard draft ${editSession.draftId}`,
         'DISCARD_WORKING_COPY_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-      * Working CopyexpectedUpdatedAt
-      * TODO: API
+   * Working CopyexpectedUpdatedAt
+   * TODO: API
    * TreeQueryService
-      */
+   */
   async getCurrentNodeData(nodeId: NodeId): Promise<TreeNode | undefined> {
     try {
       return (await this.workerAPI.getQueryAPI()).getNode(nodeId);

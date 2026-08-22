@@ -1,16 +1,24 @@
-import { memo } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,
   ChevronRight,
   Clear as ClearIcon,
-  Edit as EditIcon,
   FileCopy as DuplicateIcon,
+  Edit as EditIcon,
   Folder as FolderIcon,
   PlayArrow as PlayArrowIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
+import {
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Switch,
+  Tooltip,
+} from '@mui/material';
+import { memo } from 'react';
 import { useRowContextMenu } from './useRowContextMenu.js';
 
 // Defer resolving ui-core to runtime-worker to avoid stage-time type resolution issues
@@ -76,9 +84,9 @@ export const RowContextMenu = memo(
     return (
       <>
         <Menu
-        anchorEl={safeAnchorEl}
-        open={Boolean(props.parentElem)}
-        onClose={handleMainMenuClose}
+          anchorEl={safeAnchorEl}
+          open={Boolean(props.parentElem)}
+          onClose={handleMainMenuClose}
           disablePortal={false} // Enable portal to display outside scroll container
           keepMounted={false} // Don't keep mounted to avoid stale handlers
           disableScrollLock={true} // Disable scroll lock to prevent issues with virtual scroll
@@ -110,7 +118,10 @@ export const RowContextMenu = memo(
             },
           }}
         >
-          <MenuItem onClick={handleAddMenuClick} aria-label={t('treeConsole.contextMenu.create', 'Create')}>
+          <MenuItem
+            onClick={handleAddMenuClick}
+            aria-label={t('treeConsole.contextMenu.create', 'Create')}
+          >
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
@@ -131,7 +142,10 @@ export const RowContextMenu = memo(
               <ListItemText>{t('treeConsole.contextMenu.openFolder', 'Open folder')}</ListItemText>
             </MenuItem>
           ) : (
-            <MenuItem onClick={handleOpenClick} aria-label={t('treeConsole.contextMenu.open', 'Open')}>
+            <MenuItem
+              onClick={handleOpenClick}
+              aria-label={t('treeConsole.contextMenu.open', 'Open')}
+            >
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
@@ -169,20 +183,22 @@ export const RowContextMenu = memo(
             <ListItemIcon>
               <ClearIcon color="error" />
             </ListItemIcon>
-            <ListItemText>{t('treeConsole.contextMenu.moveToArchive', 'Move to Archive')}</ListItemText>
+            <ListItemText>
+              {t('treeConsole.contextMenu.moveToArchive', 'Move to Archive')}
+            </ListItemText>
           </MenuItem>
 
           <Divider />
 
-            <MenuItem
-              onClick={handleToggleVisible}
-              aria-label={
+          <MenuItem
+            onClick={handleToggleVisible}
+            aria-label={
               effectiveInvisible
                 ? t('treeConsole.contextMenu.hidden', 'Hidden')
                 : t('treeConsole.contextMenu.visible', 'Visible')
-              }
-              sx={{ minWidth: 200 }}
-            >
+            }
+            sx={{ minWidth: 200 }}
+          >
             <ListItemIcon>
               {effectiveInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
             </ListItemIcon>
@@ -264,37 +280,42 @@ export const RowContextMenu = memo(
                 {t('treeConsole.contextMenu.createUnavailable', 'Create menu unavailable')}
               </ListItemText>
             </MenuItem>
-          ) : localizedCreateMenuEntries.map((entry) => {
-            if (entry.description.length === 0) {
-              return (
-                <MenuItem
-                  key={`${entry.key}-${language}`}
-                  onClick={() => handleCreateClick(entry.nodeType)}
-                  aria-label={entry.label}
-                >
-                  <ListItemIcon>{entry.icon}</ListItemIcon>
-                  <ListItemText primary={entry.label} />
-                </MenuItem>
-              );
-            }
-
-            return (
-              <Tooltip
-                key={`${entry.key}-${language}`}
-                title={formatCreateTooltip(entry.label, entry.description)}
-                placement="right"
-                enterDelay={300}
-                arrow
-              >
-                <span style={{ display: 'block' }}>
-                  <MenuItem onClick={() => handleCreateClick(entry.nodeType)} aria-label={entry.label}>
+          ) : (
+            localizedCreateMenuEntries.map((entry) => {
+              if (entry.description.length === 0) {
+                return (
+                  <MenuItem
+                    key={`${entry.key}-${language}`}
+                    onClick={() => handleCreateClick(entry.nodeType)}
+                    aria-label={entry.label}
+                  >
                     <ListItemIcon>{entry.icon}</ListItemIcon>
                     <ListItemText primary={entry.label} />
                   </MenuItem>
-                </span>
-              </Tooltip>
-            );
-          })}
+                );
+              }
+
+              return (
+                <Tooltip
+                  key={`${entry.key}-${language}`}
+                  title={formatCreateTooltip(entry.label, entry.description)}
+                  placement="right"
+                  enterDelay={300}
+                  arrow
+                >
+                  <span style={{ display: 'block' }}>
+                    <MenuItem
+                      onClick={() => handleCreateClick(entry.nodeType)}
+                      aria-label={entry.label}
+                    >
+                      <ListItemIcon>{entry.icon}</ListItemIcon>
+                      <ListItemText primary={entry.label} />
+                    </MenuItem>
+                  </span>
+                </Tooltip>
+              );
+            })
+          )}
         </Menu>
       </>
     );
@@ -314,5 +335,5 @@ export const RowContextMenu = memo(
       prevProps.addMenuNodeTypes.length === nextProps.addMenuNodeTypes.length &&
       prevProps.addMenuNodeTypes.every((type, index) => type === nextProps.addMenuNodeTypes[index])
     );
-  },
+  }
 );

@@ -1,5 +1,12 @@
+import type {
+  BoxProps,
+  SxProps,
+  TableHeadProps,
+  TableProps,
+  TableRowProps,
+  Theme,
+} from '@mui/material';
 import { Box, Table, TableHead, TableRow } from '@mui/material';
-import type { BoxProps, SxProps, TableHeadProps, TableProps, TableRowProps, Theme } from '@mui/material';
 import { forwardRef } from 'react';
 
 type WithSx<T> = T & { sx?: SxProps<Theme> };
@@ -12,40 +19,39 @@ const mergeSx = (base: SxProps<Theme>, incoming?: SxProps<Theme>): SxProps<Theme
   return [base, ...parts] as SxProps<Theme>;
 };
 
-export const StyledTableContainer = forwardRef<HTMLDivElement, BoxProps>(function StyledTableContainer(
-  { sx, ...props },
-  ref,
-) {
-  return (
-    <Box
-      ref={ref}
-      {...props}
-      sx={mergeSx(
-        {
-          width: '100%',
-          height: '100%',
-          overflow: 'auto',
-          position: 'relative',
-          '&::-webkit-scrollbar': {
-            width: 12,
-            height: 12,
-          },
-          '&::-webkit-scrollbar-track': {
-            background: 'rgba(0, 0, 0, 0.05)',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(0, 0, 0, 0.2)',
-            borderRadius: 6,
-            '&:hover': {
-              background: 'rgba(0, 0, 0, 0.3)',
+export const StyledTableContainer = forwardRef<HTMLDivElement, BoxProps>(
+  function StyledTableContainer({ sx, ...props }, ref) {
+    return (
+      <Box
+        ref={ref}
+        {...props}
+        sx={mergeSx(
+          {
+            width: '100%',
+            height: '100%',
+            overflow: 'auto',
+            position: 'relative',
+            '&::-webkit-scrollbar': {
+              width: 12,
+              height: 12,
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(0, 0, 0, 0.05)',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(0, 0, 0, 0.2)',
+              borderRadius: 6,
+              '&:hover': {
+                background: 'rgba(0, 0, 0, 0.3)',
+              },
             },
           },
-        },
-        sx,
-      )}
-    />
-  );
-});
+          sx
+        )}
+      />
+    );
+  }
+);
 
 export const StyledTable = ({ sx, ...props }: TableProps) => (
   <Table
@@ -58,7 +64,7 @@ export const StyledTable = ({ sx, ...props }: TableProps) => (
         tableLayout: 'fixed',
         minWidth: '100%',
       },
-      sx,
+      sx
     )}
   />
 );
@@ -85,7 +91,7 @@ export const StyledTableHead = ({ sx, ...props }: TableHeadProps) => (
           },
         },
       },
-      sx,
+      sx
     )}
   />
 );
@@ -111,7 +117,7 @@ export const ResizeHandle = ({ sx, ...props }: BoxProps) => (
           backgroundColor: 'rgba(25, 118, 210, 0.5)',
         },
       },
-      sx,
+      sx
     )}
   />
 );
@@ -140,7 +146,7 @@ export const StyledTableRow = ({ sx, selected, ...props }: StyledRowProps) => (
           },
         },
       },
-      sx,
+      sx
     )}
   />
 );
@@ -156,7 +162,7 @@ export const NameCell = ({ sx, ...props }: WithSx<BoxProps>) => (
         minHeight: 24,
         paddingLeft: 0,
       },
-      sx,
+      sx
     )}
   />
 );

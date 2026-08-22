@@ -1,7 +1,7 @@
+import { useFloatingWindow } from '@hierarchidb/components';
+import type { GridColumn } from '@hierarchidb/ui-grid';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { GridColumn } from '@hierarchidb/ui-grid';
-import { useFloatingWindow } from '@hierarchidb/components';
 
 const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:location:metadata';
 
@@ -33,7 +33,10 @@ type UseLocationPreviewListViewArgs = {
   title: string;
   rows?: Array<Record<string, unknown>>;
   columns?: string[];
-  columnFormatters?: Record<string, (value: unknown, row: Record<string, unknown>) => React.ReactNode>;
+  columnFormatters?: Record<
+    string,
+    (value: unknown, row: Record<string, unknown>) => React.ReactNode
+  >;
   rowFilterConfig?: RowFilterConfig;
 };
 
@@ -76,13 +79,13 @@ export const useLocationPreviewListView = ({
     if (!searchOnly) return normalizedRows;
     const query = searchValue.trim().toLowerCase();
     if (!query) return normalizedRows;
-    return normalizedRows.filter((row) => (
+    return normalizedRows.filter((row) =>
       resolvedColumns.some((column) => {
         const value = row[column];
         if (value == null) return false;
         return String(value).toLowerCase().includes(query);
       })
-    ));
+    );
   }, [normalizedRows, resolvedColumns, searchOnly, searchValue]);
 
   const resolvedTitle = useMemo(() => {
@@ -97,28 +100,34 @@ export const useLocationPreviewListView = ({
     return `${title} (${totalLabel} rows)`;
   }, [filteredRows.length, normalizedRows.length, searchOnly, searchValue, title]);
 
-  const gridColumns = useMemo<GridColumn<(typeof normalizedRows)[number]>[]>(() => (
-    resolvedColumns.map((column) => ({
-      id: column,
-      label: column,
-      width: column === 'metadata' ? 240 : 140,
-      sortable: true,
-      format: (value, row) => columnFormatters?.[column]?.(value, row) ?? formatCellValue(value),
-    }))
-  ), [columnFormatters, resolvedColumns]);
+  const gridColumns = useMemo<GridColumn<(typeof normalizedRows)[number]>[]>(
+    () =>
+      resolvedColumns.map((column) => ({
+        id: column,
+        label: column,
+        width: column === 'metadata' ? 240 : 140,
+        sortable: true,
+        format: (value, row) => columnFormatters?.[column]?.(value, row) ?? formatCellValue(value),
+      })),
+    [columnFormatters, resolvedColumns]
+  );
 
-  const handleCellClick = useCallback((params: { row: Record<string, unknown>; columnId: string }) => {
-    if (params.columnId !== 'metadata') return;
-    const value = params.row.metadata;
-    setJsonDialogValue(value ?? null);
-    const name = typeof params.row.name === 'string' && params.row.name.length > 0
-      ? params.row.name
-      : params.row.id != null
-        ? String(params.row.id)
-        : 'Metadata';
-    setJsonDialogTitle(`Metadata: ${name}`);
-    setJsonDialogOpen(true);
-  }, []);
+  const handleCellClick = useCallback(
+    (params: { row: Record<string, unknown>; columnId: string }) => {
+      if (params.columnId !== 'metadata') return;
+      const value = params.row.metadata;
+      setJsonDialogValue(value ?? null);
+      const name =
+        typeof params.row.name === 'string' && params.row.name.length > 0
+          ? params.row.name
+          : params.row.id != null
+            ? String(params.row.id)
+            : 'Metadata';
+      setJsonDialogTitle(`Metadata: ${name}`);
+      setJsonDialogOpen(true);
+    },
+    []
+  );
 
   const closeJsonDialog = useCallback(() => {
     setJsonDialogOpen(false);

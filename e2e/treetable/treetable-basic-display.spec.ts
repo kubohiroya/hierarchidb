@@ -1,10 +1,10 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import {
-  dismissGuidedTour,
-  waitForTreeTableLoad,
-  setupConsoleErrorTracking,
-  clearTestData,
   buildAppUrl,
+  clearTestData,
+  dismissGuidedTour,
+  setupConsoleErrorTracking,
+  waitForTreeTableLoad,
 } from '../utils/test-helpers';
 
 type PerformanceWithMemory = Performance & {
@@ -13,11 +13,9 @@ type PerformanceWithMemory = Performance & {
   };
 };
 
-const treeTableContainer = (page: Page) =>
-  page.locator('[data-tour-id="tree-table"]').first();
+const treeTableContainer = (page: Page) => page.locator('[data-tour-id="tree-table"]').first();
 
-const treeTable = (page: Page) =>
-  treeTableContainer(page).locator('table').first();
+const treeTable = (page: Page) => treeTableContainer(page).locator('table').first();
 
 /**
  * TreeTable Basic Display E2E Tests
@@ -124,7 +122,9 @@ test.describe('TreeTable Basic Display', () => {
     await waitForTreeTableLoad(page);
 
     // 空状態メッセージの確認
-    await expect(treeTable(page).locator('tbody')).toContainText(/No data|No items to display|データがありません/);
+    await expect(treeTable(page).locator('tbody')).toContainText(
+      /No data|No items to display|データがありません/
+    );
   });
 
   test('レスポンシブデザインの確認', async ({ page }) => {

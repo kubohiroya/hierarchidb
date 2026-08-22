@@ -61,7 +61,9 @@ export const FeaturePreviewLauncherButtonGroupCard = ({
                       color: isSelected ? 'primary.contrastText' : 'text.primary',
                     }}
                   >
-                    <span aria-hidden style={{ fontSize: '20.3px', lineHeight: 1 }}>{flag ?? '?'}</span>
+                    <span aria-hidden style={{ fontSize: '20.3px', lineHeight: 1 }}>
+                      {flag ?? '?'}
+                    </span>
                   </IconButton>
                 </Tooltip>
               );

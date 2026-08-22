@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
-import { emitShapeProgressStepTrace, isShapeProgressStepDebugEnabled } from '../useShapeBuildSessionHelpers/debug';
-import type { ShapeProgressStepTracePayload } from '../useShapeBuildSessionHelpers/startupTrace';
-import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
+import {
+  emitShapeProgressStepTrace,
+  isShapeProgressStepDebugEnabled,
+} from '../useShapeBuildSessionHelpers/debug';
+import type { ShapeProgressStepTracePayload } from '../useShapeBuildSessionHelpers/startupTrace';
 
 type UseShapeBuildSessionStartupTraceArgs = {
   activeNodeId: string | null;

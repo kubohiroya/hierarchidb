@@ -2,7 +2,7 @@ import type { SxProps, Theme } from '@mui/material';
 
 export const getBuildConfigHoverCardSx = (
   disabled?: boolean,
-  disableLift = false,
+  disableLift = false
 ): SxProps<Theme> => {
   if (disabled) return {};
   if (disableLift) return {};

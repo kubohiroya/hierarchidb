@@ -1,7 +1,6 @@
-import { useCallback, useEffect, type ChangeEvent, type MouseEvent } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { SearchResult } from '~/types/index';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { type ChangeEvent, type MouseEvent, useCallback, useEffect } from 'react';
 import {
   clearSelectionAtom,
   isAllSelectedAtom,
@@ -12,6 +11,7 @@ import {
   selectRangeAtom,
   toggleNodeSelectionAtom,
 } from '~/state/index';
+import type { SearchResult } from '~/types/index';
 
 export interface SearchResultChipData {
   key: string;
@@ -67,14 +67,14 @@ export function useSearchResultTable({
       }
       onResultSelect(result, isMultiSelect);
     },
-    [onResultSelect, selectNode, selectRange, toggleNodeSelection],
+    [onResultSelect, selectNode, selectRange, toggleNodeSelection]
   );
 
   const handleRowDoubleClick = useCallback(
     (result: SearchResult) => {
       onMapFocus(result);
     },
-    [onMapFocus],
+    [onMapFocus]
   );
 
   const handleSelectAll = useCallback(
@@ -91,7 +91,7 @@ export function useSearchResultTable({
         }
       });
     },
-    [clearSelection, onResultSelect, results, selectAll, selectedResults],
+    [clearSelection, onResultSelect, results, selectAll, selectedResults]
   );
 
   const getRowChips = useCallback((result: SearchResult): SearchResultChipData[] => {

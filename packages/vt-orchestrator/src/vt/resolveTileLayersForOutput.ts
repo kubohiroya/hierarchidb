@@ -1,7 +1,7 @@
-import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
-import { packTileId } from '~/tiles/tileId';
-import { collectLayersForTileFromIndexes } from './vtStageTaskOutputHelpers.js';
 import type { Tile } from 'geojson-vt';
+import { packTileId } from '~/tiles/tileId';
+import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
+import { collectLayersForTileFromIndexes } from './vtStageTaskOutputHelpers.js';
 
 type TileLayersById = Map<number, Record<string, Tile>>;
 
@@ -13,11 +13,12 @@ type TileLayerSourceInput = {
   indexes: Map<string, GeojsonVtIndex> | null;
 };
 
-export const resolveTileLayersForOutput = (input: TileLayerSourceInput): Record<string, Tile> | null => {
+export const resolveTileLayersForOutput = (
+  input: TileLayerSourceInput
+): Record<string, Tile> | null => {
   const { z, x, y, aggregatedLayersByTileId, indexes } = input;
   if (aggregatedLayersByTileId) {
     return aggregatedLayersByTileId.get(packTileId(x, y, z)) ?? null;
   }
   return indexes ? collectLayersForTileFromIndexes(indexes, z, x, y) : null;
 };
-

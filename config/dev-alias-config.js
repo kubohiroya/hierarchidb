@@ -258,7 +258,9 @@ function traverseForPackages(repoRoot, relativeBase, category) {
       if (fs.existsSync(packageJsonPath)) {
         const pkg = readJsonFile(packageJsonPath) ?? {};
         const name = typeof pkg.name === 'string' ? pkg.name : entry.name;
-        const srcDir = fs.existsSync(path.join(absoluteDir, 'src')) ? path.join(absoluteDir, 'src') : null;
+        const srcDir = fs.existsSync(path.join(absoluteDir, 'src'))
+          ? path.join(absoluteDir, 'src')
+          : null;
         const srcEntry = srcDir ? resolveFirstExisting(absoluteDir, SRC_ENTRY_CANDIDATES) : null;
 
         const exportEntries = extractExportEntries(pkg.exports);
@@ -269,17 +271,18 @@ function traverseForPackages(repoRoot, relativeBase, category) {
           ...DIST_ENTRY_CANDIDATES,
         ];
         const distEntry = resolveFirstExisting(absoluteDir, distCandidates);
-        const distDir = fs.existsSync(path.join(absoluteDir, 'dist')) ? path.join(absoluteDir, 'dist') : null;
-        const typesEntry = typeof pkg.types === 'string'
-          ? path.resolve(absoluteDir, pkg.types)
-          : typeof pkg.typings === 'string'
-            ? path.resolve(absoluteDir, pkg.typings)
-            : null;
+        const distDir = fs.existsSync(path.join(absoluteDir, 'dist'))
+          ? path.join(absoluteDir, 'dist')
+          : null;
+        const typesEntry =
+          typeof pkg.types === 'string'
+            ? path.resolve(absoluteDir, pkg.types)
+            : typeof pkg.typings === 'string'
+              ? path.resolve(absoluteDir, pkg.typings)
+              : null;
 
         const relativeParts = relativeDir.split(path.sep).filter(Boolean);
-        const group = category === 'packages'
-          ? relativeParts.slice(1, 2)[0] ?? ''
-          : 'plugins';
+        const group = category === 'packages' ? (relativeParts.slice(1, 2)[0] ?? '') : 'plugins';
 
         results.push({
           name,

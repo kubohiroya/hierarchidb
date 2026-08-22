@@ -81,8 +81,12 @@ export const useSchemaSelectionStep = ({
   const [targetInputMethod, setTargetInputMethod] = useState<string>('sample');
   const [sourceInput, setSourceInput] = useState<string>('');
   const [targetInput, setTargetInput] = useState<string>('');
-  const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(draftData.sourceSchema ?? null);
-  const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(draftData.targetSchema ?? null);
+  const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(
+    draftData.sourceSchema ?? null
+  );
+  const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(
+    draftData.targetSchema ?? null
+  );
   const [sourceError, setSourceError] = useState<string>('');
   const [targetError, setTargetError] = useState<string>('');
 

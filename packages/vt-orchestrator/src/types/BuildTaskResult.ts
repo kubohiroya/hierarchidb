@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ExtractionMode as CommonExtractionMode,
-  SourceConfig as CommonSourceConfig,
   FeatureFilterMethod as CommonFeatureFilterMethod,
-  HybridFilterConfig as CommonHybridFilterConfig,
   GeometryConfig as CommonGeometryConfig,
+  HybridFilterConfig as CommonHybridFilterConfig,
+  SourceConfig as CommonSourceConfig,
   TileEmitConfig as CommonTileEmitConfig,
 } from '@hierarchidb/gis-sdk';
 export type ZIP_TYPE = 'gzip' | 'bz';
@@ -23,9 +23,9 @@ export type BuildTaskResultType = (typeof BuildTaskResult)[keyof typeof BuildTas
 export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 export interface BuildTaskBase {
   taskId: string;
-  type: BuildTaskType,
+  type: BuildTaskType;
   nodeId: NodeId;
-  stage: BuildTaskResultType|undefined;
+  stage: BuildTaskResultType | undefined;
   status: BuildTaskStatus;
   index: number;
   progress?: number;
@@ -45,11 +45,11 @@ export interface SourceTaskInput<DataSourceName> {
   tags?: Array<
     | string
     | {
-    key: string;
-    value?: string;
-    operator?: FILTER_OPERATOR;
-    includeNodes?: boolean;
-  }
+        key: string;
+        value?: string;
+        operator?: FILTER_OPERATOR;
+        includeNodes?: boolean;
+      }
   >;
   timeoutMs?: number;
   retryAttempts?: number;

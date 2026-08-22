@@ -1,9 +1,9 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { TabularDataFilterStep } from '@hierarchidb/spreadsheet-plugin/ui';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { Suspense } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { StylerStepData } from '~/common/types/StylerEntity';
 
 export const StylerFilterStep: React.FC<PluginStepProps<StylerStepData>> = (props) => {

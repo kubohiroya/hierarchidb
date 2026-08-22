@@ -1,3 +1,4 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
@@ -9,7 +10,6 @@ import {
 } from '@mui/icons-material';
 import { IconButton, Tooltip } from '@mui/material';
 import type React from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type CommonProps = {
   disabled?: boolean;
@@ -120,9 +120,12 @@ export const PluginDialogCloseButton: React.FC<CloseButtonProps> = ({
   iconVariant = 'close',
 }) => {
   const tooltips = useDialogTooltips();
-  const icon = iconVariant === 'back'
-    ? <ArrowBackIcon fontSize={size === 'large' ? 'large' : 'small'} />
-    : <CloseIcon fontSize="small" />;
+  const icon =
+    iconVariant === 'back' ? (
+      <ArrowBackIcon fontSize={size === 'large' ? 'large' : 'small'} />
+    ) : (
+      <CloseIcon fontSize="small" />
+    );
   return (
     <Tooltip title={tooltips.close}>
       <IconButton

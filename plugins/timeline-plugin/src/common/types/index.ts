@@ -1,7 +1,7 @@
 export type {
+  TimelineDraft,
+  TimelineDraftPatch,
   TimelineEntity,
   TimelineFrame,
   TimelineFrameViewState,
-  TimelineDraft,
-  TimelineDraftPatch,
 } from '~/common/entities/TimelineEntity';

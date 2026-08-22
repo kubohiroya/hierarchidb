@@ -24,22 +24,17 @@ export const useUrlDownloadSectionView = ({
   const controlId = useId();
   const urlInputId = `${controlId}-download-url`;
   const hasUrlNotDownloaded = Boolean(
-    downloadUrl.trim() && !downloadSuccess && !isDownloading && !downloadError,
+    downloadUrl.trim() && !downloadSuccess && !isDownloading && !downloadError
   );
 
   const downloadBlockedByAuth = Boolean(
-    (isAuthError && !isAuthenticated)
-    || (downloadError?.includes('Authentication required') && !isAuthenticated),
+    (isAuthError && !isAuthenticated) ||
+      (downloadError?.includes('Authentication required') && !isAuthenticated)
   );
 
   const isDownloadDisabled = useMemo(
-    () =>
-      !downloadUrl.trim()
-      || disabled
-      || loading
-      || isDownloading
-      || downloadBlockedByAuth,
-    [disabled, downloadBlockedByAuth, downloadUrl, isDownloading, loading],
+    () => !downloadUrl.trim() || disabled || loading || isDownloading || downloadBlockedByAuth,
+    [disabled, downloadBlockedByAuth, downloadUrl, isDownloading, loading]
   );
 
   return {

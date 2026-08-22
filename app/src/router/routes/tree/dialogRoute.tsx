@@ -9,18 +9,18 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import type {
-  ArchiveDialogData,
-  ArchiveDialogRouteParams,
-} from '~/router/pages/tree/archive/ArchiveDialog';
 import {
   type LoadNodeActionReturn,
   loadNodeAction,
   loadWorkerAPIClient,
 } from '~/router/loaders/treeLoaders';
+import type {
+  ArchiveDialogData,
+  ArchiveDialogRouteParams,
+} from '~/router/pages/tree/archive/ArchiveDialog';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
-import { PluginDialogRoute } from './PluginDialogRoute.js';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.js';
+import { PluginDialogRoute } from './PluginDialogRoute.js';
 
 export type TreeDialogLoaderResult =
   | {

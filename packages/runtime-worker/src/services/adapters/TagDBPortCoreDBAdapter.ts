@@ -1,11 +1,11 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TagDBPort } from '@hierarchidb/tag';
 import type {
   NodeTagAssociation,
   TagAssociationScope,
   TagEntity,
   TagId,
 } from '@hierarchidb/tag-api';
-import type { TagDBPort } from '@hierarchidb/tag';
 import type { CoreDB } from '~/services/CoreDB';
 
 export class TagDBPortCoreDBAdapter implements TagDBPort {

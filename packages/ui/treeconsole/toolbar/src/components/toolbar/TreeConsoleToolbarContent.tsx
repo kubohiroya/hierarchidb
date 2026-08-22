@@ -1,19 +1,27 @@
-import { useCallback, useRef, useState } from 'react';
-import { Box, ClickAwayListener, Grow, IconButton, Paper, Popper, useMediaQuery } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import { TreeTableSearchInput } from '@hierarchidb/components';
 import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
+import { Search as SearchIcon } from '@mui/icons-material';
+import {
+  Box,
+  ClickAwayListener,
+  Grow,
+  IconButton,
+  Paper,
+  Popper,
+  useMediaQuery,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { useCallback, useRef, useState } from 'react';
 import type { TreeConsoleToolbarProps } from '~/types';
 import { ActionButtons } from './ActionButtons.js';
-import { TreeTableSearchInput } from '@hierarchidb/components';
+import { ArchiveMenu } from './ArchiveMenu.js';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
 import { SettingsMenu } from './SettingsMenu.js';
-import { ArchiveMenu } from './ArchiveMenu.js';
-import { SortModeSelector } from './SortModeSelector.js';
 import type { SortMode } from './SortModeSelector.js';
-import { ViewModeSelector } from './ViewModeSelector.js';
-import type { ViewMode } from './ViewModeSelector.js';
+import { SortModeSelector } from './SortModeSelector.js';
 import { useTreeConsoleToolbarContent } from './useTreeConsoleToolbarContent.js';
+import type { ViewMode } from './ViewModeSelector.js';
+import { ViewModeSelector } from './ViewModeSelector.js';
 
 /**
  * Responsive toolbar layout tiers (aligned with MUI breakpoints):
@@ -100,7 +108,13 @@ export function TreeConsoleToolbarContent({
   const isXl = useMediaQuery(`(min-width:${BP_XL}px)`);
   const isLg = useMediaQuery(`(min-width:${BP_LG}px)`);
   const isMd = useMediaQuery(`(min-width:${BP_MD}px)`);
-  const tier: ToolbarTier = isXl ? 'full' : isLg ? 'compact-actions' : isMd ? 'compact-search' : 'minimal';
+  const tier: ToolbarTier = isXl
+    ? 'full'
+    : isLg
+      ? 'compact-actions'
+      : isMd
+        ? 'compact-search'
+        : 'minimal';
 
   const {
     portalContainer,
@@ -163,7 +177,9 @@ export function TreeConsoleToolbarContent({
         emptyLabel={labels.emptyLabel}
       />
 
-      <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+      <Box
+        sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
+      >
         {onViewModeChange && (
           <ViewModeSelector
             value={viewMode}
@@ -294,9 +310,13 @@ function SearchArea({
         placeholder={searchStrings.placeholder}
         ariaLabel={searchStrings.ariaLabel}
         searchMode={currentSearchMode}
-        sx={isCompact ? {
-          '& .MuiInputBase-root': { width: '180px !important' },
-        } : undefined}
+        sx={
+          isCompact
+            ? {
+                '& .MuiInputBase-root': { width: '180px !important' },
+              }
+            : undefined
+        }
       />
     </Box>
   );

@@ -1,28 +1,18 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "experimentalDecorators": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": [
-      "vite/client",
-      "node"
-    ],
+    "types": ["vite/client", "node"],
     "baseUrl": "."
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "UI transitive types (MUI/Emotion) — tracked to remove."
   },
-  "include": [
-    "src",
-    "../../global.d.ts"
-  ],
+  "include": ["src", "../../global.d.ts"],
   "exclude": [
     "dist",
     "node_modules",

@@ -1,8 +1,8 @@
-import type React from 'react';
 import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { ResourceLayerMap } from '~/components/ResourceLayerMap';
+import type React from 'react';
 import type { ResourceLayerMapProps } from '~/components/ResourceLayerMap';
+import { ResourceLayerMap } from '~/components/ResourceLayerMap';
 import { useMonochromeBasemapStyleUrl } from './useMonochromeBasemapStyleUrl.js';
 
 export type MapPreviewShellProps = {
@@ -22,16 +22,17 @@ export const MapPreviewShell: React.FC<MapPreviewShellProps> = ({
   const resolvedMapStyleUrl = mapProps.mapStyleUrl ?? fallbackStyleUrl;
   const resolvedBasemapStyles = mapProps.basemapStyles ?? [];
 
-  const resolvedMapProps = ('mapStyleObject' in mapProps && mapProps.mapStyleObject)
-    ? {
-      ...mapProps,
-      basemapStyles: resolvedBasemapStyles,
-    }
-    : {
-      ...mapProps,
-      mapStyleUrl: resolvedMapStyleUrl,
-      basemapStyles: resolvedBasemapStyles,
-    };
+  const resolvedMapProps =
+    'mapStyleObject' in mapProps && mapProps.mapStyleObject
+      ? {
+          ...mapProps,
+          basemapStyles: resolvedBasemapStyles,
+        }
+      : {
+          ...mapProps,
+          mapStyleUrl: resolvedMapStyleUrl,
+          basemapStyles: resolvedBasemapStyles,
+        };
 
   return (
     <Box
@@ -44,9 +45,7 @@ export const MapPreviewShell: React.FC<MapPreviewShellProps> = ({
       position="relative"
       sx={{ overscrollBehavior: 'contain', p: 0, ...containerSx }}
     >
-      <ResourceLayerMap
-        {...resolvedMapProps}
-      />
+      <ResourceLayerMap {...resolvedMapProps} />
       {overlay}
     </Box>
   );

@@ -1,11 +1,23 @@
-import React from 'react';
-import { Box, Alert, Button, CircularProgress, FormControlLabel, LinearProgress, Stack, Switch } from '@mui/material';
-import { Hexagon as HexagonIcon, Layers as LayersIcon } from '@mui/icons-material';
-import { MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { FloatingWindow } from '@hierarchidb/components';
-import { useShapePreviewStepView } from './useShapePreviewStepView.js';
+import { MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
+import { Hexagon as HexagonIcon, Layers as LayersIcon } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  FormControlLabel,
+  LinearProgress,
+  Stack,
+  Switch,
+} from '@mui/material';
+import React from 'react';
 import type { ShapeEntity } from '~/common/types/index';
-import { isShapeLayerParentToggle, useShapePreviewStepSceneView } from './useShapePreviewStepSceneView.js';
+import {
+  isShapeLayerParentToggle,
+  useShapePreviewStepSceneView,
+} from './useShapePreviewStepSceneView.js';
+import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 
 export type ShapeDialogStepProps = {
   nodeId: string;
@@ -106,7 +118,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     return (
       <MapPreviewShell
         containerRef={mapContainerRef}
-        overlay={(
+        overlay={
           <>
             {showMapLoading ? (
               <Box position="absolute" top={0} left={0} right={0} zIndex={5}>
@@ -129,21 +141,21 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                     <FormControlLabel
                       key={item.id}
                       sx={{ ml: 0, mr: 0 }}
-                      control={(
+                      control={
                         <Switch
                           size="small"
                           sx={{ ml: isShapeLayerParentToggle(item.id) ? 0 : '16px' }}
                           checked={shapePreviewLayerVisibility[item.id]}
                           onChange={() => toggleShapePreviewLayerVisibility(item.id)}
                         />
-                      )}
+                      }
                       label={renderLayerToggleLabel(item)}
                     />
                   ))}
                 </Stack>
               </FloatingWindow>
             ) : null}
-            {(showMetadataReopenButton || showLayerSetsReopenButton) ? (
+            {showMetadataReopenButton || showLayerSetsReopenButton ? (
               <Stack position="absolute" top={8} left={8} zIndex={3} spacing={1}>
                 {showMetadataReopenButton ? (
                   <Button
@@ -190,7 +202,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
               containerSx={{ zIndex: 4 }}
             />
           </>
-        )}
+        }
         mapProps={{
           initialViewState: defaultView,
           width: '100%',
@@ -208,7 +220,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
             disableDefaultSnackbar: true,
             getFeatureId: (feature) => {
               const candidate = feature.id ?? feature.properties?.id;
-              return typeof candidate === 'string' || typeof candidate === 'number' ? candidate : null;
+              return typeof candidate === 'string' || typeof candidate === 'number'
+                ? candidate
+                : null;
             },
             onIdentify: handleMapIdentify,
           },
@@ -219,7 +233,11 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
             hover: { enabled: true },
             selection: { enabled: false },
             fitSelection: { enabled: true, padding: 24 },
-            snackbar: { enabled: true, position: 'bottom-center', renderContent: hoverSnackbarContent },
+            snackbar: {
+              enabled: true,
+              position: 'bottom-center',
+              renderContent: hoverSnackbarContent,
+            },
           },
           mapOptions: {
             interactive: true,
@@ -243,11 +261,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     );
   };
 
-
   const renderFeatureDialog = () => {
     if (!featureWindowOpen) return null;
     return (
-        <ShapePreviewList
+      <ShapePreviewList
         title={t('preview.metadata.title', 'Shape: metadata')}
         onClose={() => {
           setFeatureWindowOpen(false);
@@ -294,17 +311,23 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           }
           return `${featureListRows.length} ${t('preview.metadata.rows', 'Rows')}`;
         })()}
-        emptyContent={!nodeId ? (
-          <Alert severity="info" sx={{ m: 2 }}>
-            {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
-          </Alert>
-        ) : (
-          <Alert severity="info" icon={!featureMetadataLoaded ? <CircularProgress size={16} /> : undefined} sx={{ m: 2, alignItems: 'center' }}>
-            {featureMetadataLoaded
-              ? t('preview.metadata.empty', 'No metadata entries have been generated yet.')
-              : t('preview.metadata.loading', 'Loading metadata...')}
-          </Alert>
-        )}
+        emptyContent={
+          !nodeId ? (
+            <Alert severity="info" sx={{ m: 2 }}>
+              {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
+            </Alert>
+          ) : (
+            <Alert
+              severity="info"
+              icon={!featureMetadataLoaded ? <CircularProgress size={16} /> : undefined}
+              sx={{ m: 2, alignItems: 'center' }}
+            >
+              {featureMetadataLoaded
+                ? t('preview.metadata.empty', 'No metadata entries have been generated yet.')
+                : t('preview.metadata.loading', 'Loading metadata...')}
+            </Alert>
+          )
+        }
         errorSummaryById={errorSummaryById}
         errorColumnLabels={{
           status: t('preview.metadata.columns.status', 'Status'),

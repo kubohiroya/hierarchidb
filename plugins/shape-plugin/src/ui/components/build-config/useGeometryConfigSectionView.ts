@@ -1,6 +1,6 @@
-import { useCallback, type ChangeEvent } from 'react';
-import type { ShapeBuildConfig } from '~/common/types/index';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { type ChangeEvent, useCallback } from 'react';
+import type { ShapeBuildConfig } from '~/common/types/index';
 
 type Args = {
   simplifyAlgorithm: 'geojson' | 'topojson';
@@ -15,28 +15,36 @@ export const useGeometryConfigSectionView = ({
 }: Args) => {
   const { t } = useTranslation('shape-plugin');
 
-  const summaryHelp = simplifyAlgorithm === 'topojson'
-    ? t(
-      'processing.geometry.summaryHelpTopojson',
-      'Geometry uses topojson simplify first, then runs topology repair checks.',
-    )
-    : t(
-      'processing.geometry.summaryHelpGeojson',
-      'Geometry runs turf.simplify with the configured tolerance.',
-    );
+  const summaryHelp =
+    simplifyAlgorithm === 'topojson'
+      ? t(
+          'processing.geometry.summaryHelpTopojson',
+          'Geometry uses topojson simplify first, then runs topology repair checks.'
+        )
+      : t(
+          'processing.geometry.summaryHelpGeojson',
+          'Geometry runs turf.simplify with the configured tolerance.'
+        );
 
-  const updateGeometryConfig = useCallback((partial: Partial<ShapeBuildConfig['geometryConfig']>) => (
-    update(partial)
-  ), [update]);
+  const updateGeometryConfig = useCallback(
+    (partial: Partial<ShapeBuildConfig['geometryConfig']>) => update(partial),
+    [update]
+  );
 
-  const handleSimplifyAlgorithmChange = useCallback((_event: unknown, value: string) => {
-    if (value !== 'geojson' && value !== 'topojson') return;
-    updateGeometryConfig({ simplifyAlgorithm: value });
-  }, [updateGeometryConfig]);
+  const handleSimplifyAlgorithmChange = useCallback(
+    (_event: unknown, value: string) => {
+      if (value !== 'geojson' && value !== 'topojson') return;
+      updateGeometryConfig({ simplifyAlgorithm: value });
+    },
+    [updateGeometryConfig]
+  );
 
-  const handlePreserveTopologyChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    updateGeometryConfig({ preserveTopology: event.target.checked });
-  }, [updateGeometryConfig]);
+  const handlePreserveTopologyChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      updateGeometryConfig({ preserveTopology: event.target.checked });
+    },
+    [updateGeometryConfig]
+  );
 
   return {
     preserveTopology,

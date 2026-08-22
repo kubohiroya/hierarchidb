@@ -1,5 +1,5 @@
-import React from 'react';
 import { Box, Divider, type SxProps, type Theme, Typography } from '@mui/material';
+import React from 'react';
 import { BaseAccordion, type BaseAccordionProps } from './BaseAccordion.js';
 
 export interface AccordionGroupItem extends Omit<BaseAccordionProps, 'children'> {
@@ -36,23 +36,21 @@ export interface GroupedAccordionProps {
  * A group of related accordions with optional exclusive expansion
  */
 export const GroupedAccordion: React.FC<GroupedAccordionProps> = ({
-                                                                    title,
-                                                                    description,
-                                                                    items,
-                                                                    exclusive = false,
-                                                                    defaultExpanded = [],
-                                                                    onExpansionChange,
-                                                                    sx,
-                                                                    headerSx,
-                                                                    showDividers = false,
-                                                                    spacing = 2,
-                                                                  }) => {
-  const [expandedKeys, setExpandedKeys] = React.useState<Set<string>>(
-    new Set(defaultExpanded),
-  );
+  title,
+  description,
+  items,
+  exclusive = false,
+  defaultExpanded = [],
+  onExpansionChange,
+  sx,
+  headerSx,
+  showDividers = false,
+  spacing = 2,
+}) => {
+  const [expandedKeys, setExpandedKeys] = React.useState<Set<string>>(new Set(defaultExpanded));
 
   const handleAccordionChange = (key: string, expanded: boolean) => {
-    setExpandedKeys(prev => {
+    setExpandedKeys((prev) => {
       const newSet = new Set(prev);
 
       if (exclusive && expanded) {

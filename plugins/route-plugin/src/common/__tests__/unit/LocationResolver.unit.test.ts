@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
+import { describe, expect, it } from 'vitest';
 import { LocationResolver } from '../../../services/LocationResolver';
 
 type LocationFeatureRecord = {
@@ -153,7 +153,10 @@ describe('LocationResolver', () => {
 
     const hits = await resolver.searchLocations({
       name: 'center',
-      bounds: [[134.5, 33.0], [136.5, 36.0]],
+      bounds: [
+        [134.5, 33.0],
+        [136.5, 36.0],
+      ],
     });
 
     expect(hits).toHaveLength(1);
@@ -233,7 +236,10 @@ describe('LocationResolver', () => {
     const resolver = new LocationResolver({ db });
 
     const hits = await resolver.searchLocations({
-      bounds: [[135, 35], [136, 36]],
+      bounds: [
+        [135, 35],
+        [136, 36],
+      ],
     });
 
     expect(hits).toHaveLength(1);

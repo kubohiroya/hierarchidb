@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import type { ShapeBuildTaskSummary } from '@hierarchidb/build-api';
+import { describe, expect, it } from 'vitest';
 import {
   replaceSnapshotTasks,
-  shouldPreferNextTask,
   resolveTaskSummaryFromRaw,
+  shouldPreferNextTask,
 } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils';
 import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncTypes';
 
@@ -46,17 +46,21 @@ describe('reconcileSnapshotWithCurrentTasks', () => {
 
 describe('shouldPreferNextTask', () => {
   it('accepts same-version update even when progress regresses', () => {
-    expect(shouldPreferNextTask(
-      makeTask({ status: 'running', progress: 80 }),
-      makeTask({ status: 'running', progress: 50 }),
-    )).toBe(true);
+    expect(
+      shouldPreferNextTask(
+        makeTask({ status: 'running', progress: 80 }),
+        makeTask({ status: 'running', progress: 50 })
+      )
+    ).toBe(true);
   });
 
   it('accepts progress advancement', () => {
-    expect(shouldPreferNextTask(
-      makeTask({ status: 'running', progress: 80 }),
-      makeTask({ status: 'running', progress: 90 }),
-    )).toBe(true);
+    expect(
+      shouldPreferNextTask(
+        makeTask({ status: 'running', progress: 80 }),
+        makeTask({ status: 'running', progress: 90 })
+      )
+    ).toBe(true);
   });
 });
 
@@ -73,7 +77,9 @@ describe('resolveTaskSummaryFromRaw', () => {
   });
 
   it('throws for invalid stage', () => {
-    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ stage: 'invalid' as never }))).toThrow('invalid task stage');
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ stage: 'invalid' as never }))).toThrow(
+      'invalid task stage'
+    );
   });
 
   it('keeps canonical stage', () => {
@@ -82,32 +88,42 @@ describe('resolveTaskSummaryFromRaw', () => {
   });
 
   it('normalizes stage from canonical stageId when stage is legacy-incompatible', () => {
-    const task = resolveTaskSummaryFromRaw(buildRawTask({
-      stage: 'invalid' as never,
-      stageId: 'source-stage',
-      progress: 10,
-    }));
+    const task = resolveTaskSummaryFromRaw(
+      buildRawTask({
+        stage: 'invalid' as never,
+        stageId: 'source-stage',
+        progress: 10,
+      })
+    );
     expect(task.stage).toBe('source');
   });
 
   it('prioritizes stageId over stage when both are present', () => {
-    const task = resolveTaskSummaryFromRaw(buildRawTask({
-      stage: 'tileEmit',
-      stageId: 'geometry-stage',
-      progress: 25,
-    }));
+    const task = resolveTaskSummaryFromRaw(
+      buildRawTask({
+        stage: 'tileEmit',
+        stageId: 'geometry-stage',
+        progress: 25,
+      })
+    );
     expect(task.stage).toBe('geometry');
   });
 
   it('throws when progress is undefined', () => {
-    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: undefined }))).toThrow('invalid progress');
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: undefined }))).toThrow(
+      'invalid progress'
+    );
   });
 
   it('throws when progress is negative', () => {
-    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: -1 }))).toThrow('invalid progress');
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: -1 }))).toThrow(
+      'invalid progress'
+    );
   });
 
   it('throws when progress is greater than 100', () => {
-    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: 101 }))).toThrow('invalid progress');
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: 101 }))).toThrow(
+      'invalid progress'
+    );
   });
 });

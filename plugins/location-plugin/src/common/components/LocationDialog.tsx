@@ -3,59 +3,61 @@
  * (Temporarily reverted to original implementation; _obsolate_common hook migration pending)
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { notify } from '@hierarchidb/components';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
-import { Box, Button, Typography } from '@mui/material';
-import { LocationOn } from '@mui/icons-material';
-import type {
-  LocationDialogProps,
-  LocationDraft,
-  LocationEntity,
-} from '~/common/types/index';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { LocationSelectionStep } from '~/ui/components/steps/LocationSelectionStep';
-import { LocationBuildParametersStep } from '~/ui/components/steps/LocationBuildParametersStep';
-import { LocationMapPreviewStep } from '~/ui/components/steps/LocationMapPreviewStep';
-import { listLocationPoints } from '~/services/pointRepository';
-import { runLocationTabularBuild } from '~/worker/tabular/runLocationTabularBuild';
 import {
-  TabularProvider,
-  TabularDataFilter,
-  TabularColumnSelect,
-  TabularDataImport,
-  type TabularFilterRule,
-  type TabularSelectionConfig,
-  type TabularColumnMapping,
-} from '@hierarchidb/ui-tabular';
+  createTreeNodeUpdaterActions,
+  type TreeNodeUpdaterState,
+  useDialogViewState,
+  useTreeNodeUpdater,
+} from '@hierarchidb/plugin-ui-sdk';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
+import type {
+  DialogDisplayMode,
+  DialogPosition as PluginDialogPosition,
+  DialogSize as PluginDialogSize,
+  TreeNodeMetadata,
+} from '@hierarchidb/tree-api';
 import {
   FRAME_CONSTANTS,
-  getViewportSize,
   getPresetSize,
-  normalizeDialogState,
-  initialPosition,
-  sizesEqual,
-  positionsEqual,
-  PluginDialogFrame,
+  getViewportSize,
+  type HeadlessDialogProps,
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
-  type HeadlessDialogProps,
-  type StepNavigationEvent,
+  initialPosition,
+  normalizeDialogState,
+  PluginDialogFrame,
+  positionsEqual,
   type StepComponentDescriptor,
+  type StepNavigationEvent,
+  sizesEqual,
 } from '@hierarchidb/ui-dialog';
-import type { DialogDisplayMode, DialogPosition as PluginDialogPosition, DialogSize as PluginDialogSize } from '@hierarchidb/tree-api';
-import { notify } from '@hierarchidb/components';
-
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
-  useTreeNodeUpdater,
-  type TreeNodeUpdaterState,
-  createTreeNodeUpdaterActions,
-} from '@hierarchidb/plugin-ui-sdk';
+  type BasicInfoData,
+  BasicInfoStep as SharedBasicInfoStep,
+} from '@hierarchidb/ui-plugin-basic-info';
+import {
+  type TabularColumnMapping,
+  TabularColumnSelect,
+  TabularDataFilter,
+  TabularDataImport,
+  type TabularFilterRule,
+  TabularProvider,
+  type TabularSelectionConfig,
+} from '@hierarchidb/ui-tabular';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogViewState } from '@hierarchidb/plugin-ui-sdk';
+import { LocationOn } from '@mui/icons-material';
+import { Box, Button, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
+import type { LocationDialogProps, LocationDraft, LocationEntity } from '~/common/types/index';
+import { listLocationPoints } from '~/services/pointRepository';
+import { LocationBuildParametersStep } from '~/ui/components/steps/LocationBuildParametersStep';
+import { LocationMapPreviewStep } from '~/ui/components/steps/LocationMapPreviewStep';
+import { LocationSelectionStep } from '~/ui/components/steps/LocationSelectionStep';
+import { runLocationTabularBuild } from '~/worker/tabular/runLocationTabularBuild';
 
 const buildDefaultFrame = (): { size: PluginDialogSize; position: PluginDialogPosition } => {
   const viewport = getViewportSize();
@@ -63,7 +65,6 @@ const buildDefaultFrame = (): { size: PluginDialogSize; position: PluginDialogPo
   const position = initialPosition(size, viewport);
   return { size, position };
 };
-
 
 type LocationDraftPayload = Partial<LocationEntity>;
 
@@ -93,7 +94,10 @@ const normalizeLocationDraft = (
   };
 };
 
-const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft>): LocationDraft => {
+const mergeLocationDraft = (
+  current: LocationDraft,
+  patch: Partial<LocationDraft>
+): LocationDraft => {
   const patchDraft = (patch.draft ?? patch) as LocationDraftPayload;
   const mergedDraft: LocationDraftPayload = {
     ...(current.draft ?? {}),
@@ -104,7 +108,8 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
   };
 
   const nextDataSource = patch.dataSource ?? mergedDraft.dataSource ?? current.dataSource;
-  const nextTabularSourceId = patch.tabularSourceId ?? mergedDraft.tabularSourceId ?? current.tabularSourceId;
+  const nextTabularSourceId =
+    patch.tabularSourceId ?? mergedDraft.tabularSourceId ?? current.tabularSourceId;
 
   return {
     ...current,
@@ -117,9 +122,7 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
   };
 };
 
-const toDraftDataPayload = (
-  value: LocationDraft
-): TreeNodeUpdaterState<LocationEntity> => ({
+const toDraftDataPayload = (value: LocationDraft): TreeNodeUpdaterState<LocationEntity> => ({
   treeNodeId: value.treeNodeId ?? ('' as NodeId),
   draftMetadata: {
     name: value.draft?.name ?? '',
@@ -158,9 +161,10 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, []);
 
-  const effectiveTreeId = useMemo<TreeId>(() => (
-    treeId ?? ((parentId ?? nodeId ?? '') as TreeId)
-  ), [nodeId, parentId, treeId]);
+  const effectiveTreeId = useMemo<TreeId>(
+    () => treeId ?? ((parentId ?? nodeId ?? '') as TreeId),
+    [nodeId, parentId, treeId]
+  );
 
   const {
     draft: rawDraft,
@@ -176,11 +180,21 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     workerClient,
   });
 
-  useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
+  useEffect(
+    () => () => {
+      void discardDraft().catch(() => {});
+    },
+    [discardDraft]
+  );
 
   const dialogSizeRef = useRef<PluginDialogSize>(dialogViewState.size);
   const dialogPositionRef = useRef<PluginDialogPosition>(dialogViewState.position);
-  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogViewState;
+  const {
+    size: dialogSize,
+    position: dialogPosition,
+    displayMode,
+    activeStepIndex,
+  } = dialogViewState;
   const [isStartingBuild, setIsStartingBuild] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
@@ -188,42 +202,51 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     () => normalizeLocationDraft(rawDraft, mode),
     [mode, rawDraft]
   );
-  const emptyTableMetadata = useMemo<TabularTableMetadata>(() => ({
-    id: dialogData.tabularSourceId ?? 'temp-table',
-    filename: dialogData.tabularSourceId ?? 'temp',
-    contentHash: '',
-    fileSizeBytes: 0,
-    totalRows: 0,
-    columns: [],
-    createdAt: Date.now(),
-    referenceCount: 0,
-    referencingPlugins: [],
-  }), [dialogData.tabularSourceId]);
+  const emptyTableMetadata = useMemo<TabularTableMetadata>(
+    () => ({
+      id: dialogData.tabularSourceId ?? 'temp-table',
+      filename: dialogData.tabularSourceId ?? 'temp',
+      contentHash: '',
+      fileSizeBytes: 0,
+      totalRows: 0,
+      columns: [],
+      createdAt: Date.now(),
+      referenceCount: 0,
+      referencingPlugins: [],
+    }),
+    [dialogData.tabularSourceId]
+  );
 
-  const applyNormalizedState = useCallback((size: PluginDialogSize, position: PluginDialogPosition) => {
-    dialogSizeRef.current = size;
-    dialogPositionRef.current = position;
-    updateDialogViewState({ size, position });
-  }, [updateDialogViewState]);
+  const applyNormalizedState = useCallback(
+    (size: PluginDialogSize, position: PluginDialogPosition) => {
+      dialogSizeRef.current = size;
+      dialogPositionRef.current = position;
+      updateDialogViewState({ size, position });
+    },
+    [updateDialogViewState]
+  );
 
   const { updatePayload, updateMetadata } = useMemo(
     () => createTreeNodeUpdaterActions<LocationEntity>(updateDraft),
-    [updateDraft],
+    [updateDraft]
   );
 
-  const handleDraftPatch = useCallback((patch: Partial<LocationDraft>) => {
-    const merged = mergeLocationDraft(dialogData, patch);
-    const payload = toDraftDataPayload(merged);
-    updatePayload(payload.draftData ?? {});
-    updateMetadata(
-      {
-        name: merged.draft?.name ?? '',
-        description: merged.draft?.description ?? '',
-        tags: merged.tags ?? [],
-      } as TreeNodeMetadata,
-      { name: '', description: '', tags: [] },
-    );
-  }, [dialogData, updateMetadata, updatePayload]);
+  const handleDraftPatch = useCallback(
+    (patch: Partial<LocationDraft>) => {
+      const merged = mergeLocationDraft(dialogData, patch);
+      const payload = toDraftDataPayload(merged);
+      updatePayload(payload.draftData ?? {});
+      updateMetadata(
+        {
+          name: merged.draft?.name ?? '',
+          description: merged.draft?.description ?? '',
+          tags: merged.tags ?? [],
+        } as TreeNodeMetadata,
+        { name: '', description: '', tags: [] }
+      );
+    },
+    [dialogData, updateMetadata, updatePayload]
+  );
 
   const handleStartBuild = useCallback(async () => {
     if (isStartingBuild) return;
@@ -249,199 +272,261 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, [dialogData, isStartingBuild]);
 
-  const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationDraft>>>(() => ([
-    {
-      id: 'basic-info',
-      label: t('basicInfo.title', 'Basic Information'),
-      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <SharedBasicInfoStep
-          name={data.draft?.name ?? ''}
-          description={data.draft?.description ?? ''}
-          tags={data.tags ?? []}
-          mode={mode}
-          tagSuggestions={[]}
-          validate={({ name }) => (name.trim().length ? null : t('errors.nameRequired', 'Name is required.'))}
-          onChange={(value: BasicInfoData) => {
-            onChange({
-              draft: {
-                ...data.draft,
-                name: value.name,
-                description: value.description,
-              },
-              tags: value.tags,
-            });
-          }}
-        />
-      ),
-    },
-    {
-      id: 'data-source',
-      label: t('dialog.dataSourceLabel', 'Data Source'),
-      component: ({ onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <TabularProvider tabularApi={createLocationTabularApi()}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box>
-              <Typography variant="subtitle1">{t('dialog.dataSourceLabel', 'Data Source')}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {t('dialog.dataSourceDescription', 'Choose openstreetmap for OSRM/Overpass or custom for tabular import')}
-              </Typography>
+  const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationDraft>>>(
+    () => [
+      {
+        id: 'basic-info',
+        label: t('basicInfo.title', 'Basic Information'),
+        component: ({
+          data,
+          onChange,
+        }: {
+          data: LocationDraft;
+          onChange: (patch: Partial<LocationDraft>) => void;
+        }) => (
+          <SharedBasicInfoStep
+            name={data.draft?.name ?? ''}
+            description={data.draft?.description ?? ''}
+            tags={data.tags ?? []}
+            mode={mode}
+            tagSuggestions={[]}
+            validate={({ name }) =>
+              name.trim().length ? null : t('errors.nameRequired', 'Name is required.')
+            }
+            onChange={(value: BasicInfoData) => {
+              onChange({
+                draft: {
+                  ...data.draft,
+                  name: value.name,
+                  description: value.description,
+                },
+                tags: value.tags,
+              });
+            }}
+          />
+        ),
+      },
+      {
+        id: 'data-source',
+        label: t('dialog.dataSourceLabel', 'Data Source'),
+        component: ({
+          onChange,
+        }: {
+          data: LocationDraft;
+          onChange: (patch: Partial<LocationDraft>) => void;
+        }) => (
+          <TabularProvider tabularApi={createLocationTabularApi()}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle1">
+                  {t('dialog.dataSourceLabel', 'Data Source')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'dialog.dataSourceDescription',
+                    'Choose openstreetmap for OSRM/Overpass or custom for tabular import'
+                  )}
+                </Typography>
+              </Box>
+              <TabularDataImport
+                pluginId="location"
+                onFileImported={(meta: TabularTableMetadata) =>
+                  onChange({ tabularSourceId: meta.id, dataSource: 'custom' })
+                }
+                onError={(msg: string) => notify.error(msg)}
+              />
             </Box>
-            <TabularDataImport
-              pluginId="location"
-              onFileImported={(meta: TabularTableMetadata) =>
-                onChange({ tabularSourceId: meta.id, dataSource: 'custom' })
-              }
-              onError={(msg: string) => notify.error(msg)}
-            />
-          </Box>
-        </TabularProvider>
-      ),
-    },
-    {
-      id: 'selection',
-      label: t('selection.title', 'Location Selection'),
-      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <LocationSelectionStep draft={data} onUpdate={onChange} />
-      ),
-    },
-    {
-      id: 'build-parameters',
-      label: t('panel.processingSettings', 'Settings'),
-      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <LocationBuildParametersStep draft={data} onUpdate={onChange} />
-      ),
-    },
-    {
-      id: 'extract',
-      label: t('selection.filterTitle', 'Filter & Preview'),
-      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <TabularProvider tabularApi={createLocationTabularApi()}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TabularDataFilter
-              tableMetadata={emptyTableMetadata}
-              pluginId="location"
-              onFiltersChanged={(filters: TabularFilterRule[]) =>
-                onChange({
-                  extractConfig: {
-                    ...(data.extractConfig ?? {}),
-                    filterRules: filters,
-                    selection: data.extractConfig?.selection,
-                  },
-                })
-              }
-              onPreviewData={() => {}}
-            />
-            <TabularColumnSelect
-              tableMetadata={emptyTableMetadata}
-              onSelectionChanged={(selection: TabularColumnMapping[]) => {
-                const mapped: TabularSelectionConfig = {
-                  keyColumn: selection.find((m) => m.included)?.targetColumn,
-                  valueColumns: selection.filter((m) => m.included).map((m) => m.targetColumn),
-                  filterRules: data.extractConfig?.filterRules ?? [],
-                  customMappings: selection.map((m) => ({
-                    key: m.sourceColumn,
-                    value: m.targetColumn,
-                    label: m.targetColumn,
-                  })),
-                };
-                onChange({
-                  extractConfig: {
-                    ...(data.extractConfig ?? {}),
-                    selection: mapped,
-                  },
-                });
-              }}
-            />
-            <Button
-              variant="contained"
-              onClick={async () => {
-                if (!data.tabularSourceId) {
-                  notify.error('No tabular source to build. Download/Upload first.');
-                  return;
+          </TabularProvider>
+        ),
+      },
+      {
+        id: 'selection',
+        label: t('selection.title', 'Location Selection'),
+        component: ({
+          data,
+          onChange,
+        }: {
+          data: LocationDraft;
+          onChange: (patch: Partial<LocationDraft>) => void;
+        }) => <LocationSelectionStep draft={data} onUpdate={onChange} />,
+      },
+      {
+        id: 'build-parameters',
+        label: t('panel.processingSettings', 'Settings'),
+        component: ({
+          data,
+          onChange,
+        }: {
+          data: LocationDraft;
+          onChange: (patch: Partial<LocationDraft>) => void;
+        }) => <LocationBuildParametersStep draft={data} onUpdate={onChange} />,
+      },
+      {
+        id: 'extract',
+        label: t('selection.filterTitle', 'Filter & Preview'),
+        component: ({
+          data,
+          onChange,
+        }: {
+          data: LocationDraft;
+          onChange: (patch: Partial<LocationDraft>) => void;
+        }) => (
+          <TabularProvider tabularApi={createLocationTabularApi()}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TabularDataFilter
+                tableMetadata={emptyTableMetadata}
+                pluginId="location"
+                onFiltersChanged={(filters: TabularFilterRule[]) =>
+                  onChange({
+                    extractConfig: {
+                      ...(data.extractConfig ?? {}),
+                      filterRules: filters,
+                      selection: data.extractConfig?.selection,
+                    },
+                  })
                 }
-                setIsStartingBuild(true);
-                setBuildStatus('extracting');
-                try {
-                  const filters = data.extractConfig?.filterRules ?? [];
-                  const selection = data.extractConfig?.selection;
-                  const tabularApi = createLocationTabularApi();
-                  await runLocationTabularBuild(
-                    tabularApi,
-                    data.tabularSourceId as string,
-                    filters,
-                    selection,
-                    nodeId as NodeId,
-                    (progress) => {
-                      setBuildStatus(`${progress.stage ?? 'building'} ${progress.completed ?? 0}/${progress.total ?? ''}`);
-                    }
-                  );
-                  notify.success('Build completed');
-                } catch (err) {
-                  notify.error(`Build failed: ${(err as Error).message}`);
-                  setBuildStatus(null);
-                } finally {
-                  setIsStartingBuild(false);
-                  setBuildStatus(null);
-                }
-              }}
-            >
-              {t('selection.buildLabel', 'Build')}
-            </Button>
-            {buildStatus ? (
-              <Typography variant="caption" color="text.secondary">{buildStatus}</Typography>
-            ) : null}
-          </Box>
-        </TabularProvider>
-      ),
+                onPreviewData={() => {}}
+              />
+              <TabularColumnSelect
+                tableMetadata={emptyTableMetadata}
+                onSelectionChanged={(selection: TabularColumnMapping[]) => {
+                  const mapped: TabularSelectionConfig = {
+                    keyColumn: selection.find((m) => m.included)?.targetColumn,
+                    valueColumns: selection.filter((m) => m.included).map((m) => m.targetColumn),
+                    filterRules: data.extractConfig?.filterRules ?? [],
+                    customMappings: selection.map((m) => ({
+                      key: m.sourceColumn,
+                      value: m.targetColumn,
+                      label: m.targetColumn,
+                    })),
+                  };
+                  onChange({
+                    extractConfig: {
+                      ...(data.extractConfig ?? {}),
+                      selection: mapped,
+                    },
+                  });
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={async () => {
+                  if (!data.tabularSourceId) {
+                    notify.error('No tabular source to build. Download/Upload first.');
+                    return;
+                  }
+                  setIsStartingBuild(true);
+                  setBuildStatus('extracting');
+                  try {
+                    const filters = data.extractConfig?.filterRules ?? [];
+                    const selection = data.extractConfig?.selection;
+                    const tabularApi = createLocationTabularApi();
+                    await runLocationTabularBuild(
+                      tabularApi,
+                      data.tabularSourceId as string,
+                      filters,
+                      selection,
+                      nodeId as NodeId,
+                      (progress) => {
+                        setBuildStatus(
+                          `${progress.stage ?? 'building'} ${progress.completed ?? 0}/${progress.total ?? ''}`
+                        );
+                      }
+                    );
+                    notify.success('Build completed');
+                  } catch (err) {
+                    notify.error(`Build failed: ${(err as Error).message}`);
+                    setBuildStatus(null);
+                  } finally {
+                    setIsStartingBuild(false);
+                    setBuildStatus(null);
+                  }
+                }}
+              >
+                {t('selection.buildLabel', 'Build')}
+              </Button>
+              {buildStatus ? (
+                <Typography variant="caption" color="text.secondary">
+                  {buildStatus}
+                </Typography>
+              ) : null}
+            </Box>
+          </TabularProvider>
+        ),
+      },
+      {
+        id: 'map-preview',
+        label: t('mapPreview.title', 'Map Preview'),
+        component: ({ data }: { data: LocationDraft }) => (
+          <LocationMapPreviewStep
+            draft={data}
+            nodeId={data.treeNodeId as NodeId}
+            onUpdate={(updates) =>
+              handleDraftPatch({ draft: { ...(data.draft ?? {}), ...updates } })
+            }
+          />
+        ),
+      },
+    ],
+    [t, mode, emptyTableMetadata, buildStatus, nodeId, handleDraftPatch]
+  );
+
+  const enabledStepIndices = useMemo(
+    () => stepComponents.map((_, index) => index),
+    [stepComponents]
+  );
+  const committableStepIndices = useMemo(
+    () => [stepComponents.length - 1],
+    [stepComponents.length]
+  );
+
+  const canStartBuild = Boolean(
+    dialogData.treeNodeId && dialogData.draft?.licenseAgreement && dialogData.draft?.dataSource
+  );
+
+  const transitionDisplayMode = useCallback(
+    (mode: DialogDisplayMode) => {
+      const viewport = getViewportSize();
+
+      if (mode === 'full-screen') {
+        const size: PluginDialogSize = {
+          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        };
+        applyNormalizedState(size, { x: 0, y: 0 });
+      } else if (mode === 'maximize') {
+        const preset = getPresetSize('maximize', viewport);
+        const normalized = normalizeDialogState(
+          preset,
+          {
+            x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+            y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          },
+          viewport,
+          {
+            enforceTopLeftMargin: false,
+            minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+            clampSizeToViewport: true,
+          }
+        );
+        applyNormalizedState(normalized.size, normalized.position);
+      } else {
+        const preset = getPresetSize('normal', viewport);
+        const normalized = normalizeDialogState(
+          preset,
+          initialPosition(preset, viewport),
+          viewport,
+          {
+            enforceTopLeftMargin: true,
+          }
+        );
+        applyNormalizedState(normalized.size, normalized.position);
+      }
+
+      updateDialogViewState({ displayMode: mode });
     },
-    {
-      id: 'map-preview',
-      label: t('mapPreview.title', 'Map Preview'),
-      component: ({ data }: { data: LocationDraft }) => (
-        <LocationMapPreviewStep
-          draft={data}
-          nodeId={data.treeNodeId as NodeId}
-          onUpdate={(updates) => handleDraftPatch({ draft: { ...(data.draft ?? {}), ...updates } })}
-        />
-      ),
-    },
-  ]), [t, mode, emptyTableMetadata, buildStatus, nodeId, handleDraftPatch]);
-
-  const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
-  const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
-
-  const canStartBuild = Boolean(dialogData.treeNodeId && dialogData.draft?.licenseAgreement && dialogData.draft?.dataSource);
-
-  const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
-    const viewport = getViewportSize();
-
-    if (mode === 'full-screen') {
-      const size: PluginDialogSize = {
-        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
-      };
-      applyNormalizedState(size, { x: 0, y: 0 });
-    } else if (mode === 'maximize') {
-      const preset = getPresetSize('maximize', viewport);
-      const normalized = normalizeDialogState(preset, {
-        x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-      }, viewport, {
-        enforceTopLeftMargin: false,
-        minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      });
-      applyNormalizedState(normalized.size, normalized.position);
-    } else {
-      const preset = getPresetSize('normal', viewport);
-      const normalized = normalizeDialogState(preset, initialPosition(preset, viewport), viewport, {
-        enforceTopLeftMargin: true,
-      });
-      applyNormalizedState(normalized.size, normalized.position);
-    }
-
-    updateDialogViewState({ displayMode: mode });
-  }, [applyNormalizedState, updateDialogViewState]);
+    [applyNormalizedState, updateDialogViewState]
+  );
 
   const handleSave = useCallback(async () => {
     try {
@@ -462,118 +547,160 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     onClose();
   }, [discardDraft, onClose]);
 
-  const handleSizeChange = useCallback((next?: PluginDialogSize) => {
-    if (!next) return;
-    const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
-      enforceTopLeftMargin: displayMode === 'normal',
-      minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-      clampSizeToViewport: true,
-    });
-    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
-      applyNormalizedState(normalized.size, normalized.position);
-    }
-  }, [applyNormalizedState, displayMode]);
+  const handleSizeChange = useCallback(
+    (next?: PluginDialogSize) => {
+      if (!next) return;
+      const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      if (
+        !sizesEqual(dialogSizeRef.current, normalized.size) ||
+        !positionsEqual(dialogPositionRef.current, normalized.position)
+      ) {
+        applyNormalizedState(normalized.size, normalized.position);
+      }
+    },
+    [applyNormalizedState, displayMode]
+  );
 
-  const handlePositionChange = useCallback((next?: PluginDialogPosition) => {
-    if (!next) return;
-    const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
-      enforceTopLeftMargin: displayMode === 'normal',
-      minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-      clampSizeToViewport: true,
-    });
-    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
-      applyNormalizedState(normalized.size, normalized.position);
-    }
-  }, [applyNormalizedState, displayMode]);
+  const handlePositionChange = useCallback(
+    (next?: PluginDialogPosition) => {
+      if (!next) return;
+      const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      if (
+        !sizesEqual(dialogSizeRef.current, normalized.size) ||
+        !positionsEqual(dialogPositionRef.current, normalized.position)
+      ) {
+        applyNormalizedState(normalized.size, normalized.position);
+      }
+    },
+    [applyNormalizedState, displayMode]
+  );
 
-  const handleStepNavigate = useCallback((event: StepNavigationEvent) => {
-    switch (event.type) {
-      case 'direct':
-        updateDialogViewState({ activeStepIndex: event.targetIndex });
-        break;
-      case 'next':
-        updateDialogViewState({
-          activeStepIndex: Math.min(activeStepIndex + 1, stepComponents.length - 1),
-        });
-        break;
-      case 'back':
-        updateDialogViewState({
-          activeStepIndex: Math.max(activeStepIndex - 1, 0),
-        });
-        break;
-      default:
-        break;
-    }
-  }, [activeStepIndex, stepComponents.length, updateDialogViewState]);
+  const handleStepNavigate = useCallback(
+    (event: StepNavigationEvent) => {
+      switch (event.type) {
+        case 'direct':
+          updateDialogViewState({ activeStepIndex: event.targetIndex });
+          break;
+        case 'next':
+          updateDialogViewState({
+            activeStepIndex: Math.min(activeStepIndex + 1, stepComponents.length - 1),
+          });
+          break;
+        case 'back':
+          updateDialogViewState({
+            activeStepIndex: Math.max(activeStepIndex - 1, 0),
+          });
+          break;
+        default:
+          break;
+      }
+    },
+    [activeStepIndex, stepComponents.length, updateDialogViewState]
+  );
 
-  const renderHeader: HeadlessDialogProps<LocationDraft>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
-    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}>
-      <Box display="flex" alignItems="center" gap={1.5}>
-        <LocationOn color="primary" />
-        <Box>
-          <Typography variant="h6" component="div">
-            {mode === 'create' ? t('dialog.createTitle', 'Create Location') : t('dialog.editTitle', 'Edit Location')}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t('dialog.datasetDescription', 'Define the location dataset.')}
-          </Typography>
+  const renderHeader: HeadlessDialogProps<LocationDraft>['renderHeader'] = useCallback(
+    (propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}
+      >
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <LocationOn color="primary" />
+          <Box>
+            <Typography variant="h6" component="div">
+              {mode === 'create'
+                ? t('dialog.createTitle', 'Create Location')
+                : t('dialog.editTitle', 'Edit Location')}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {t('dialog.datasetDescription', 'Define the location dataset.')}
+            </Typography>
+          </Box>
         </Box>
+        <Button
+          size="small"
+          onClick={() => propsHeader.stepNavigation({ type: 'back' })}
+          disabled={propsHeader.activeStepIndex === 0}
+        >
+          Back
+        </Button>
       </Box>
-      <Button size="small" onClick={() => propsHeader.stepNavigation({ type: 'back' })} disabled={propsHeader.activeStepIndex === 0}>
-        Back
-      </Button>
-    </Box>
-  ), [mode, t]);
+    ),
+    [mode, t]
+  );
 
-  const renderFooter: HeadlessDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
-    const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
-    const startBuildLabel = 'Start Build';
+  const renderFooter: HeadlessDialogProps<LocationDraft>['renderFooter'] = useCallback(
+    (propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
+      const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
+      const startBuildLabel = 'Start Build';
 
-    return (
-      <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
-        <Box display="flex" gap={1}>
-          <Button size="small" onClick={() => transitionDisplayMode('normal')} disabled={displayMode === 'normal'}>
-            {t('dialog.displayNormal', 'Normal')}
-          </Button>
-          <Button size="small" onClick={() => transitionDisplayMode('maximize')} disabled={displayMode === 'maximize'}>
-            {t('dialog.displayMaximize', 'Maximize')}
-          </Button>
-          <Button size="small" onClick={() => transitionDisplayMode('full-screen')} disabled={displayMode === 'full-screen'}>
-            {t('dialog.displayFullscreen', 'Fullscreen')}
-          </Button>
+      return (
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}
+        >
+          <Box display="flex" gap={1}>
+            <Button
+              size="small"
+              onClick={() => transitionDisplayMode('normal')}
+              disabled={displayMode === 'normal'}
+            >
+              {t('dialog.displayNormal', 'Normal')}
+            </Button>
+            <Button
+              size="small"
+              onClick={() => transitionDisplayMode('maximize')}
+              disabled={displayMode === 'maximize'}
+            >
+              {t('dialog.displayMaximize', 'Maximize')}
+            </Button>
+            <Button
+              size="small"
+              onClick={() => transitionDisplayMode('full-screen')}
+              disabled={displayMode === 'full-screen'}
+            >
+              {t('dialog.displayFullscreen', 'Fullscreen')}
+            </Button>
+          </Box>
+          <Box display="flex" gap={1}>
+            <Button variant="outlined" onClick={() => propsFooter.onRequestClose('close')}>
+              {t('dialog.cancel', 'Cancel')}
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              disabled={!canStartBuild || isStartingBuild}
+              onClick={() => {
+                void handleStartBuild();
+              }}
+            >
+              {isStartingBuild ? 'Starting…' : startBuildLabel}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => propsFooter.onRequestCommit?.()}
+              disabled={!canCommit}
+            >
+              {t('dialog.save', 'Save')}
+            </Button>
+          </Box>
         </Box>
-        <Box display="flex" gap={1}>
-          <Button variant="outlined" onClick={() => propsFooter.onRequestClose('close')}>
-            {t('dialog.cancel', 'Cancel')}
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            disabled={!canStartBuild || isStartingBuild}
-            onClick={() => {
-              void handleStartBuild();
-            }}
-          >
-            {isStartingBuild ? 'Starting…' : startBuildLabel}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => propsFooter.onRequestCommit?.()}
-            disabled={!canCommit}
-          >
-            {t('dialog.save', 'Save')}
-          </Button>
-        </Box>
-      </Box>
-    );
-  }, [
-    canStartBuild,
-    displayMode,
-    handleStartBuild,
-    isStartingBuild,
-    transitionDisplayMode,
-    t,
-  ]);
+      );
+    },
+    [canStartBuild, displayMode, handleStartBuild, isStartingBuild, transitionDisplayMode, t]
+  );
 
   const dialogProps: HeadlessDialogProps<LocationDraft> = {
     open,
@@ -587,8 +714,12 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     invalidMessageMap: {},
     isDirty: true,
     onStepNavigate: handleStepNavigate,
-    onRequestClose: () => { void handleCancel(); },
-    onRequestCommit: () => { void handleSave(); },
+    onRequestClose: () => {
+      void handleCancel();
+    },
+    onRequestCommit: () => {
+      void handleSave();
+    },
     renderHeader,
     renderFooter,
     size: dialogSize,
@@ -599,7 +730,5 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     onDisplayModeChange: transitionDisplayMode,
   };
 
-  return (
-    <PluginDialogFrame<LocationDraft> headlessProps={dialogProps} />
-  );
+  return <PluginDialogFrame<LocationDraft> headlessProps={dialogProps} />;
 };

@@ -3,9 +3,9 @@
  * @description Shared MapLibre GL map component for HierarchiDB
  */
 
+import { MapProvider, Map as ReactMapLibreMap } from '@vis.gl/react-maplibre';
 import type React from 'react';
-import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
-import { useMapLibreMap, type MapLibreMapProps } from './useMapLibreMap.js';
+import { type MapLibreMapProps, useMapLibreMap } from './useMapLibreMap.js';
 
 // Load MapLibre CSS as a static import for bundler (rolldown-vite) compatibility.
 // Dynamic CSS imports are not supported by rolldown; a static import is used instead.
@@ -13,7 +13,7 @@ import { useMapLibreMap, type MapLibreMapProps } from './useMapLibreMap.js';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Re-export types for backward compatibility
-export type { MapViewState, MapInteractionOptions } from '~/types/unified-map-props';
+export type { MapInteractionOptions, MapViewState } from '~/types/unified-map-props';
 export type { MapLibreMapProps };
 
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({ children, ...props }) => {

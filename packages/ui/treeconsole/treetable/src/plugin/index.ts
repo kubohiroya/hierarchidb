@@ -1,49 +1,48 @@
 /**
-  * Plugin System Exports
-  * TreeTableAPI
-  */
+ * Plugin System Exports
+ * TreeTableAPI
+ */
 
-// Core plugin system
-export { PluginRegistry } from './PluginRegistry.js';
 export {
   PluginProvider,
-  usePluginContext,
-  usePluginRegistry,
   usePlugin,
-  usePluginHooks,
+  usePluginContext,
   usePluginEnabled,
+  usePluginHooks,
+  usePluginRegistry,
   withPlugins,
 } from './PluginProvider.js';
+// Core plugin system
+export { PluginRegistry } from './PluginRegistry.js';
+// Type definitions
+export type {
+  CellEditorProps,
+  ColumnHeaderProps,
+  ErrorBoundaryProps,
+  HookExecutionError,
+  HookExecutionMode,
+  HookExecutionResult,
+  KeyboardContext,
+  LoadingIndicatorProps,
+  PluginConfig,
+  PluginContext,
+  PluginError,
+  PluginEvent,
+  PluginLifecycleState,
+  PluginPriority,
+  PluginRegistrationError,
+  PluginRegistry as IPluginRegistry,
+  RowDecoratorProps,
+  TreeTableComponentOverrides,
+  TreeTableHooks,
+  TreeTablePlugin,
+  TreeTablePluginConfig,
+} from './types.js';
 export {
   useOptionalPluginContext,
   usePluginsEnabled,
   useSafePluginHook,
 } from './useOptionalPluginContext.js';
-
-// Type definitions
-export type {
-  TreeTablePlugin,
-  TreeTableHooks,
-  TreeTableComponentOverrides,
-  PluginRegistry as IPluginRegistry,
-  PluginContext,
-  CellEditorProps,
-  RowDecoratorProps,
-  ColumnHeaderProps,
-  LoadingIndicatorProps,
-  ErrorBoundaryProps,
-  KeyboardContext,
-  PluginConfig,
-  TreeTablePluginConfig,
-  PluginEvent,
-  HookExecutionResult,
-  PluginLifecycleState,
-  HookExecutionMode,
-  PluginPriority,
-  PluginError,
-  PluginRegistrationError,
-  HookExecutionError,
-} from './types.js';
 
 //  Plugin-enhanced components ()
 // Thin wrapper components removed; use TreeTableCoreWithPlugins directly.
@@ -57,7 +56,7 @@ export function createPlugin(
     components?: import('./types.js').TreeTableComponentOverrides;
     dependencies?: string[];
     config?: Record<string, unknown>;
-  },
+  }
 ): import('./types.js').TreeTablePlugin {
   return {
     name,
@@ -70,28 +69,28 @@ export function createPlugin(
 }
 
 /**
-    */
+ */
 export const PluginHelpers = {
   /**
-            */
+   */
   createSimplePlugin: createPlugin,
 
   /**
-            */
+   */
   createHook<T extends keyof import('./types.js').TreeTableHooks>(
     hookName: T,
-    implementation: NonNullable<import('./types.js').TreeTableHooks[T]>,
+    implementation: NonNullable<import('./types.js').TreeTableHooks[T]>
   ) {
     return { [hookName]: implementation } as Pick<import('./types.js').TreeTableHooks, T>;
   },
 
   /**
-            */
+   */
   validateDependencies(
     plugin: import('./types.js').TreeTablePlugin,
-    availablePlugins: string[],
+    availablePlugins: string[]
   ): { isValid: boolean; missingDependencies: string[] } {
-    const missing = plugin.dependencies?.filter(dep => !availablePlugins.includes(dep)) || [];
+    const missing = plugin.dependencies?.filter((dep) => !availablePlugins.includes(dep)) || [];
     return {
       isValid: missing.length === 0,
       missingDependencies: missing,
@@ -99,11 +98,8 @@ export const PluginHelpers = {
   },
 
   /**
-            */
-  checkCompatibility(
-    plugin: import('./types.js').TreeTablePlugin,
-    targetVersion: string,
-  ): boolean {
+   */
+  checkCompatibility(plugin: import('./types.js').TreeTablePlugin, targetVersion: string): boolean {
     //  semver
     const [major] = plugin.version.split('.');
     const [targetMajor] = targetVersion.split('.');

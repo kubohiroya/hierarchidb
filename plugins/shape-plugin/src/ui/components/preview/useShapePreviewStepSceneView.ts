@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { MapViewState } from '@hierarchidb/ui-map';
-import type { ShapePreviewMapView } from '~/common/types/index';
 import { useFloatingWindow } from '@hierarchidb/components';
+import type { MapViewState } from '@hierarchidb/ui-map';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ShapePreviewMapView } from '~/common/types/index';
 
 type ShapePreviewDebugFlags = {
   hideLayerSetsFloatingWindow: boolean;
@@ -33,7 +33,10 @@ const getShapePreviewDebugFlags = (): ShapePreviewDebugFlags => {
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const arePreviewViewsClose = (a?: ShapePreviewMapView | null, b?: ShapePreviewMapView | null): boolean => {
+const arePreviewViewsClose = (
+  a?: ShapePreviewMapView | null,
+  b?: ShapePreviewMapView | null
+): boolean => {
   if (!a || !b) return false;
   const eps = 1e-6;
   return (
@@ -51,9 +54,8 @@ const toPreviewMapView = (viewState: MapViewState): ShapePreviewMapView | null =
   return { longitude, latitude, zoom };
 };
 
-export const isShapeLayerParentToggle = (toggleId: string): boolean => (
-  toggleId === 'adm0' || toggleId === 'adm1' || toggleId === 'adm2'
-);
+export const isShapeLayerParentToggle = (toggleId: string): boolean =>
+  toggleId === 'adm0' || toggleId === 'adm1' || toggleId === 'adm2';
 
 type Args = {
   previewMapView: ShapePreviewMapView | undefined;
@@ -94,18 +96,23 @@ export const useShapePreviewStepSceneView = ({
       lastPersistedViewRef.current = next;
       onChange({ previewMapView: next });
     },
-    [onChange],
+    [onChange]
   );
 
-  const resolveLayerToggleCountLabel = useCallback((id: string): string => {
-    const count = shapePreviewLayerFeatureCounts[id];
-    return typeof count === 'number'
-      ? count.toLocaleString()
-      : t('preview.layerSets.counts.unavailable', '—');
-  }, [shapePreviewLayerFeatureCounts, t]);
+  const resolveLayerToggleCountLabel = useCallback(
+    (id: string): string => {
+      const count = shapePreviewLayerFeatureCounts[id];
+      return typeof count === 'number'
+        ? count.toLocaleString()
+        : t('preview.layerSets.counts.unavailable', '—');
+    },
+    [shapePreviewLayerFeatureCounts, t]
+  );
 
-  const showLayerSetsWindow = !debugFlags.hideLayerSetsFloatingWindow && layerSetsWindow.windowState.isVisible;
-  const showLayerSetsReopenButton = !debugFlags.hideLayerSetsFloatingWindow && !layerSetsWindow.windowState.isVisible;
+  const showLayerSetsWindow =
+    !debugFlags.hideLayerSetsFloatingWindow && layerSetsWindow.windowState.isVisible;
+  const showLayerSetsReopenButton =
+    !debugFlags.hideLayerSetsFloatingWindow && !layerSetsWindow.windowState.isVisible;
   const showMetadataReopenButton = !featureWindowOpen;
   const reserveMetadataReopenSlot = showLayerSetsReopenButton && !showMetadataReopenButton;
 

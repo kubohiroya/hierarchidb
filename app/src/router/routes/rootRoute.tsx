@@ -7,10 +7,10 @@
  * - App providers wrapper
  */
 
-import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { setupUIPlugins } from '~/router/loaders/uiPlugins';
 import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { useAuthRequiredDialogHost } from '~/contexts/useAuthRequiredDialogHost';
+import { setupUIPlugins } from '~/router/loaders/uiPlugins';
 
 const AuthRequiredDialogHost = () => {
   const { notification, handleSuccess, handleCancel } = useAuthRequiredDialogHost();

@@ -92,10 +92,7 @@ const buildChildMap = (nodeById: Map<string, TreeNodeLike>): Map<string, string[
   return childMap;
 };
 
-const collectDescendantIds = (
-  rootId: string,
-  childMap: Map<string, string[]>
-): string[] => {
+const collectDescendantIds = (rootId: string, childMap: Map<string, string[]>): string[] => {
   const ids: string[] = [];
   const queue = [rootId];
   const seen = new Set<string>();

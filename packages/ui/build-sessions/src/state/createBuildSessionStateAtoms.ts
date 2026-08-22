@@ -196,7 +196,9 @@ export const createBuildSessionStateAtoms = <
   StageId extends string,
   SessionPhase extends string = BuildSessionLifecyclePhase,
   TaskSummary extends BaseTaskSummary = BaseTaskSummary,
->(config: Config<StageId, SessionPhase, TaskSummary>) => {
+>(
+  config: Config<StageId, SessionPhase, TaskSummary>
+) => {
   const createEmptyStage = (stageId: StageId): StageExecutionState<StageId, TaskSummary> => ({
     stageId,
     tasksById: {},
@@ -214,7 +216,10 @@ export const createBuildSessionStateAtoms = <
     timing: null,
   });
 
-  const buildCounters = (tasksById: Record<string, TaskSummary>, taskOrder: string[]): StageCounters => {
+  const buildCounters = (
+    tasksById: Record<string, TaskSummary>,
+    taskOrder: string[]
+  ): StageCounters => {
     let running = 0;
     let queued = 0;
     let terminal = 0;
@@ -237,10 +242,13 @@ export const createBuildSessionStateAtoms = <
   };
 
   const initialState = (): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
-    const stages = config.stages.reduce<Record<StageId, StageExecutionState<StageId, TaskSummary>>>((acc, stageId) => {
-      acc[stageId] = createEmptyStage(stageId);
-      return acc;
-    }, {} as Record<StageId, StageExecutionState<StageId, TaskSummary>>);
+    const stages = config.stages.reduce<Record<StageId, StageExecutionState<StageId, TaskSummary>>>(
+      (acc, stageId) => {
+        acc[stageId] = createEmptyStage(stageId);
+        return acc;
+      },
+      {} as Record<StageId, StageExecutionState<StageId, TaskSummary>>
+    );
 
     return {
       lifecycle: {
@@ -263,14 +271,14 @@ export const createBuildSessionStateAtoms = <
     state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
     stageId: StageId,
     tasks: TaskSummary[],
-    timing: StageTiming,
+    timing: StageTiming
   ): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
     const nextTasksById: Record<string, TaskSummary> = {};
     const nextOrder: string[] = [];
     for (const task of tasks) {
       if (config.resolveTaskStageId(task) !== stageId) {
         throw new Error(
-          `[buildSessionStateAtoms] task.stage (${String(task.stage)}) does not match target stage (${String(stageId)})`,
+          `[buildSessionStateAtoms] task.stage (${String(task.stage)}) does not match target stage (${String(stageId)})`
         );
       }
       assertProgressRange(task.progress);
@@ -299,7 +307,7 @@ export const createBuildSessionStateAtoms = <
 
   const reduceBuildSessionState = (
     state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
-    event: BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>,
+    event: BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>
   ): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
     switch (event.type) {
       case 'reset':
@@ -315,11 +323,12 @@ export const createBuildSessionStateAtoms = <
         if (event.payload.completedAt !== undefined) {
           assertFiniteNonNegativeNumber(event.payload.completedAt, 'completedAt');
           if (event.payload.startedAt !== undefined) {
-            const inactiveMs = event.payload.inactiveMs === undefined ? 0 : event.payload.inactiveMs;
+            const inactiveMs =
+              event.payload.inactiveMs === undefined ? 0 : event.payload.inactiveMs;
             const durationMs = event.payload.completedAt - event.payload.startedAt - inactiveMs;
             if (!Number.isFinite(durationMs) || durationMs < 0) {
               throw new Error(
-                `[buildSessionStateAtoms] session duration must be finite and non-negative, received ${durationMs}`,
+                `[buildSessionStateAtoms] session duration must be finite and non-negative, received ${durationMs}`
               );
             }
           }
@@ -327,11 +336,12 @@ export const createBuildSessionStateAtoms = <
         if (event.payload.pausedAt !== undefined) {
           assertFiniteNonNegativeNumber(event.payload.pausedAt, 'pausedAt');
           if (event.payload.startedAt !== undefined) {
-            const inactiveMs = event.payload.inactiveMs === undefined ? 0 : event.payload.inactiveMs;
+            const inactiveMs =
+              event.payload.inactiveMs === undefined ? 0 : event.payload.inactiveMs;
             const durationMs = event.payload.pausedAt - event.payload.startedAt - inactiveMs;
             if (!Number.isFinite(durationMs) || durationMs < 0) {
               throw new Error(
-                `[buildSessionStateAtoms] paused session duration must be finite and non-negative, received ${durationMs}`,
+                `[buildSessionStateAtoms] paused session duration must be finite and non-negative, received ${durationMs}`
               );
             }
           }
@@ -341,7 +351,7 @@ export const createBuildSessionStateAtoms = <
         }
         if (String(event.payload.phase) !== 'paused' && event.payload.pausedAt !== undefined) {
           throw new Error(
-            `[buildSessionStateAtoms] pausedAt must be absent for phase ${String(event.payload.phase)}`,
+            `[buildSessionStateAtoms] pausedAt must be absent for phase ${String(event.payload.phase)}`
           );
         }
         return {
@@ -375,14 +385,13 @@ export const createBuildSessionStateAtoms = <
         assertFiniteNonNegativeNumber(event.payload.stageInactiveMs, 'stageInactiveMs');
         if (event.payload.stageCompletedAt !== undefined) {
           assertFiniteNonNegativeNumber(event.payload.stageCompletedAt, 'stageCompletedAt');
-          const durationMs = (
-            event.payload.stageCompletedAt
-            - event.payload.stageStartedAt
-            - event.payload.stageInactiveMs
-          );
+          const durationMs =
+            event.payload.stageCompletedAt -
+            event.payload.stageStartedAt -
+            event.payload.stageInactiveMs;
           if (!Number.isFinite(durationMs) || durationMs < 0) {
             throw new Error(
-              `[buildSessionStateAtoms] stage duration must be finite and non-negative, received ${durationMs}`,
+              `[buildSessionStateAtoms] stage duration must be finite and non-negative, received ${durationMs}`
             );
           }
         }
@@ -437,21 +446,19 @@ export const createBuildSessionStateAtoms = <
     }
   };
 
-  const buildSessionStateAtom = atom<BuildSessionState<StageId, SessionPhase, TaskSummary>>(initialState());
+  const buildSessionStateAtom = atom<BuildSessionState<StageId, SessionPhase, TaskSummary>>(
+    initialState()
+  );
 
   const dispatchBuildSessionEventAtom = atom(
     null,
-    (
-      get,
-      set,
-      event: BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>,
-    ) => {
+    (get, set, event: BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>) => {
       const current = get(buildSessionStateAtom);
       const next = reduceBuildSessionState(current, event);
       if (next !== current) {
         set(buildSessionStateAtom, next);
       }
-    },
+    }
   );
 
   const buildSessionStartButtonLoadingAtom = atom((get) => {
@@ -462,15 +469,20 @@ export const createBuildSessionStateAtoms = <
 
   const buildSessionStageCountersAtom = atom((get) => {
     const state = get(buildSessionStateAtom);
-    return config.stages.reduce<Record<StageId, StageCounters>>((acc, stageId) => {
-      acc[stageId] = state.execution.stages[stageId].counters;
-      return acc;
-    }, {} as Record<StageId, StageCounters>);
+    return config.stages.reduce<Record<StageId, StageCounters>>(
+      (acc, stageId) => {
+        acc[stageId] = state.execution.stages[stageId].counters;
+        return acc;
+      },
+      {} as Record<StageId, StageCounters>
+    );
   });
 
-  const createInitialBuildSessionStateForTest = (): BuildSessionState<StageId, SessionPhase, TaskSummary> => (
-    initialState()
-  );
+  const createInitialBuildSessionStateForTest = (): BuildSessionState<
+    StageId,
+    SessionPhase,
+    TaskSummary
+  > => initialState();
 
   return {
     buildSessionStateAtom,

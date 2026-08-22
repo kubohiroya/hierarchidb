@@ -1,22 +1,22 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { createStore } from 'jotai/vanilla';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
+import { createStore } from 'jotai/vanilla';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   buildSessionLifecycleAtom,
+  buildSessionRecoveryRevisionAtom,
+  buildSessionSnapshotHandshakeReceivedAtom,
   buildSessionStageCountersAtom,
+  buildSessionStageProgressAtom,
   buildSessionStartButtonLoadingAtom,
   buildSessionTaskListViewPhaseAtom,
-  buildSessionStageProgressAtom,
   buildSessionTasksByStageAtom,
-  buildSessionSnapshotHandshakeReceivedAtom,
-  stageDurationMsByStageAtom,
-  pendingUserActionAtom,
-  isStopRequestedInFlightAtom,
-  completionSnapshotAtom,
-  completionDialogOpenAtom,
-  buildSessionRecoveryRevisionAtom,
   completeBuildSessionRecoveryAtom,
+  completionDialogOpenAtom,
+  completionSnapshotAtom,
   dispatchBuildSessionEventAtom,
+  isStopRequestedInFlightAtom,
+  pendingUserActionAtom,
+  stageDurationMsByStageAtom,
 } from '../../../atoms/buildSessionStateAtoms';
 
 const createTask = (overrides: Partial<BuildTaskSummary> = {}): BuildTaskSummary => ({
@@ -96,16 +96,18 @@ describe('buildSessionStateAtoms write atom', () => {
   });
 
   it('rejects a reversed completed stage interval', () => {
-    expect(() => store.set(dispatchBuildSessionEventAtom, {
-      type: 'stageSnapshotUpdated',
-      payload: {
-        stageId: 'source',
-        tasks: [],
-        stageStartedAt: 1_000,
-        stageInactiveMs: 100,
-        stageCompletedAt: 1_050,
-      },
-    })).toThrowError('stage duration must be finite and non-negative');
+    expect(() =>
+      store.set(dispatchBuildSessionEventAtom, {
+        type: 'stageSnapshotUpdated',
+        payload: {
+          stageId: 'source',
+          tasks: [],
+          stageStartedAt: 1_000,
+          stageInactiveMs: 100,
+          stageCompletedAt: 1_050,
+        },
+      })
+    ).toThrowError('stage duration must be finite and non-negative');
   });
 
   it('rejects out-of-range progress instead of normalizing it', () => {
@@ -138,7 +140,9 @@ describe('buildSessionStateAtoms write atom', () => {
       },
     });
 
-    const sourceTasks = store.get(buildSessionTasksByStageAtom).source as Array<BuildTaskSummary & { title?: string }>;
+    const sourceTasks = store.get(buildSessionTasksByStageAtom).source as Array<
+      BuildTaskSummary & { title?: string }
+    >;
     expect(sourceTasks).toHaveLength(1);
     expect(sourceTasks[0]?.title).toBe('Japan (JP) 0');
   });

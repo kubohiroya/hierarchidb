@@ -5,15 +5,14 @@
  * exposed by the Worker command processor.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
-import type { TreeSubscriptionAPI } from '@hierarchidb/tree-api';
-import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/tree-api';
+import type { SubscriptionId, TreeSubscriptionAPI, UndoStateEvent } from '@hierarchidb/tree-api';
 import { proxy, type Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
-import type { MaybeCP, TreeConsoleState } from './types.js';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
+import type { MaybeCP, TreeConsoleState } from './types.js';
 
 interface Params {
   client: Remote<BuildWorkerAPI> | undefined;

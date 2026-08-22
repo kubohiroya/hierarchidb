@@ -1,5 +1,10 @@
 import type { NodeId, ValidationResult } from '@hierarchidb/core-types';
-import type { PluginDialogAPI, StepCapabilities, TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
+import type {
+  PluginDialogAPI,
+  StepCapabilities,
+  TreeNodeUpdater,
+  TreeNodeUpdaterPayload,
+} from '@hierarchidb/tree-api';
 
 type ValidationResultDetail = ValidationResult & {
   errors?: string[];

@@ -6,8 +6,11 @@ export interface ColumnRenameRule {
   to: string;
 }
 
-export function createColumnRenameProcessor(id: string, rules: ColumnRenameRule[]): TabularProcessor {
-  const map = new Map(rules.map(r => [r.from, r.to]));
+export function createColumnRenameProcessor(
+  id: string,
+  rules: ColumnRenameRule[]
+): TabularProcessor {
+  const map = new Map(rules.map((r) => [r.from, r.to]));
   return {
     id,
     mapSchema(schema: TabularSchema) {

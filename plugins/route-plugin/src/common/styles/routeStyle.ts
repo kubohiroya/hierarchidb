@@ -1,4 +1,9 @@
-import { ROUTE_MODES, type RouteLineStyle, type RouteMode, type RouteStyleConfig } from '@hierarchidb/route-api';
+import {
+  ROUTE_MODES,
+  type RouteLineStyle,
+  type RouteMode,
+  type RouteStyleConfig,
+} from '@hierarchidb/route-api';
 
 export const DEFAULT_ROUTE_MODE_COLORS: Record<RouteMode, string> = {
   [ROUTE_MODES.AIRWAY]: '#1f77b4',
@@ -18,9 +23,7 @@ export const buildDefaultRouteStyleConfig = (): RouteStyleConfig => ({
   lineStyle: DEFAULT_ROUTE_LINE_STYLE,
 });
 
-export const mergeRouteStyleConfig = (
-  overrides?: Partial<RouteStyleConfig>
-): RouteStyleConfig => {
+export const mergeRouteStyleConfig = (overrides?: Partial<RouteStyleConfig>): RouteStyleConfig => {
   const base = buildDefaultRouteStyleConfig();
   if (!overrides) return base;
   return {
@@ -30,7 +33,7 @@ export const mergeRouteStyleConfig = (
   };
 };
 
-export const buildRouteColorExpression = (config: RouteStyleConfig): unknown => ([
+export const buildRouteColorExpression = (config: RouteStyleConfig): unknown => [
   'match',
   ['get', 'routeMode'],
   ROUTE_MODES.AIRWAY,
@@ -46,7 +49,7 @@ export const buildRouteColorExpression = (config: RouteStyleConfig): unknown => 
   ROUTE_MODES.ROAD,
   config.modeColors[ROUTE_MODES.ROAD],
   config.modeColors[ROUTE_MODES.ROAD],
-]);
+];
 
 export const resolveLineDashArray = (style: RouteLineStyle): number[] | undefined => {
   switch (style) {

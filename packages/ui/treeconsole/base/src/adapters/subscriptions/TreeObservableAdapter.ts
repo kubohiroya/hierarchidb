@@ -1,17 +1,17 @@
 /**
-  * TreeObservableAdapter
-  * ObservableWorkerAPI
+ * TreeObservableAdapter
+ * ObservableWorkerAPI
  * TreeConsoleAPI
-  */
+ */
 
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNodeEvent } from '@hierarchidb/tree-api';
 // import { Observable } from 'rxjs'; // TODO: will be used when implementing actual Observable subscriptions
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import * as Comlink from 'comlink';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNodeEvent } from '@hierarchidb/tree-api';
+import { createCommand } from '~/adapters/commandEnvelopeFactories';
 import type { AdapterContext, UnsubscribeFunction } from '~/types/index';
 import { TreeConsoleAdapterError } from '~/types/index';
-import { createCommand } from '~/adapters/commandEnvelopeFactories';
 import { sanitizeForComlink } from './comlinkSanitizer';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
@@ -23,21 +23,20 @@ export class TreeObservableAdapter<T> {
   private subscriptions = new Map<string, () => void>();
   private proxiedCallbacks = new Map<string, unknown>();
 
-  constructor(private workerAPI: WorkerAPI<T>) {
-  }
+  constructor(private workerAPI: WorkerAPI<T>) {}
 
   /**
-      * subscribeSubTree
-      * @param nodeId ID
+   * subscribeSubTree
+   * @param nodeId ID
    * @param expandedChangesCallback
    * @param subtreeChangesCallback
    * @param context
    * @returns
-      */
+   */
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext,
+    context: AdapterContext
   ): Promise<UnsubscribeFunction> {
     try {
       console.log('[TreeObservableAdapter] subscribeToSubtree called', {
@@ -45,19 +44,24 @@ export class TreeObservableAdapter<T> {
         viewId: context.viewId,
       });
       // Prefer legacy observable-style API if present (for tests)
-      const workerRecord = this.workerAPI as WorkerAPI<T> & { observeSubtree?: LegacyObserveSubtree };
+      const workerRecord = this.workerAPI as WorkerAPI<T> & {
+        observeSubtree?: LegacyObserveSubtree;
+      };
       const observeCandidate = workerRecord.observeSubtree;
-      const maybeObserve = typeof observeCandidate === 'function'
-        ? (observeCandidate.bind(workerRecord))
-        : undefined;
+      const maybeObserve =
+        typeof observeCandidate === 'function' ? observeCandidate.bind(workerRecord) : undefined;
 
       const internalSubscriptionId = `subtree_${nodeId}_${context.viewId}`;
 
       if (typeof maybeObserve === 'function') {
-        const envelope = createCommand('observeSubtree', {
-          rootNodeId: nodeId,
-          includeInitialSnapshot: true,
-        }, { groupId: context.groupId, sourceViewId: context.viewId });
+        const envelope = createCommand(
+          'observeSubtree',
+          {
+            rootNodeId: nodeId,
+            includeInitialSnapshot: true,
+          },
+          { groupId: context.groupId, sourceViewId: context.viewId }
+        );
 
         const observable = await maybeObserve(envelope);
         const sub = observable.subscribe((event: TreeNodeEvent) => {
@@ -66,7 +70,11 @@ export class TreeObservableAdapter<T> {
         });
 
         const wrappedUnsubscribe = () => {
-          try { sub.unsubscribe?.(); } finally { this.subscriptions.delete(internalSubscriptionId); }
+          try {
+            sub.unsubscribe?.();
+          } finally {
+            this.subscriptions.delete(internalSubscriptionId);
+          }
         };
         this.subscriptions.set(internalSubscriptionId, wrappedUnsubscribe);
         return wrappedUnsubscribe;
@@ -84,13 +92,9 @@ export class TreeObservableAdapter<T> {
         setTimeout(() => callback(safeEvent), 0);
       });
       const prefetchDepth = context.prefetchDepth ?? 2;
-      const subscriptionId = await subscriptionAPI.subscribeSubtree(
-        nodeId,
-        proxied,
-        {
-          prefetch: { depth: prefetchDepth },
-        },
-      );
+      const subscriptionId = await subscriptionAPI.subscribeSubtree(nodeId, proxied, {
+        prefetch: { depth: prefetchDepth },
+      });
       console.log('[TreeObservableAdapter] subscribeSubtree success', {
         nodeId: String(nodeId),
         subscriptionId,
@@ -109,21 +113,21 @@ export class TreeObservableAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Failed to subscribe to subtree for node ${nodeId}`,
         'SUBTREE_SUBSCRIPTION_INIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param nodeId ID
+   * @param nodeId ID
    * @param callback
    * @param context
    * @returns
-      */
+   */
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext,
+    context: AdapterContext
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
@@ -147,21 +151,21 @@ export class TreeObservableAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Failed to subscribe to node ${nodeId}`,
         'NODE_SUBSCRIPTION_INIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param parentId ID
+   * @param parentId ID
    * @param callback
    * @param context
    * @returns
-      */
+   */
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext,
+    context: AdapterContext
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
@@ -186,13 +190,13 @@ export class TreeObservableAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Failed to subscribe to children of node ${parentId}`,
         'CHILDREN_SUBSCRIPTION_INIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            */
+   */
   cleanupAllSubscriptions(): void {
     this.subscriptions.forEach((unsubscribe) => {
       try {
@@ -205,7 +209,7 @@ export class TreeObservableAdapter<T> {
   }
 
   /**
-            */
+   */
   getActiveSubscriptionCount(): number {
     return this.subscriptions.size;
   }

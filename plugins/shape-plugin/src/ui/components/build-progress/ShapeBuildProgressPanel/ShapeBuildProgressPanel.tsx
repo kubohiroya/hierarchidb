@@ -1,9 +1,9 @@
 import { type NodeId } from '@hierarchidb/core-types';
-import { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
-import { useShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.js';
 import { BuildSessionProgressPanel } from '@hierarchidb/ui-build-progress';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { ShapeBuildProgressPanelLegacySessionRecoveryDialogView } from './ShapeBuildProgressPanelLegacySessionRecoveryDialogView.js';
+import { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
+import { useShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.js';
 
 type ShapeBuildProgressPanelProps = {
   data?: Partial<ShapeEntity>;

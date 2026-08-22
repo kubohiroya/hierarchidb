@@ -5,8 +5,8 @@
  * node information, and performing searches without modifying data.
  */
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
-import type { Tree } from './tree-types.js';
 import type { TreeNode } from './NODE_TYPES.js';
+import type { Tree } from './tree-types.js';
 
 /**
  * Read-only data access API for console and node queries

@@ -5,7 +5,6 @@
  * when change events stream in from the runtime-worker.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -13,9 +12,10 @@ import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useRef } from 'react';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
-import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
 import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.deriveUtils';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 import type { LoadChildrenOf } from './types.js';
 
 interface Params {
@@ -101,8 +101,7 @@ export function useTreeConsoleSubscription({
           const safeEvent = sanitizeForComlink(event);
           if (
             typeof import.meta !== 'undefined' &&
-            (import.meta as { env?: Record<string, string> }).env
-              ?.VITE_SUBSCRIPTION_DEBUG === '1'
+            (import.meta as { env?: Record<string, string> }).env?.VITE_SUBSCRIPTION_DEBUG === '1'
           ) {
             console.log('[Subscription][page] event', safeEvent);
           }

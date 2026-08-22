@@ -1,7 +1,7 @@
 /**
-  * i18n Types for Route Plugin
+ * i18n Types for Route Plugin
  * i18n
-  */
+ */
 
 export type SupportedLocale = 'ja' | 'en';
 

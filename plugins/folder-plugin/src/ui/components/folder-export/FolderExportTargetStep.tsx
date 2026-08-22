@@ -1,18 +1,12 @@
-import { FormControlLabel, Radio, RadioGroup, Stack, Typography } from '@mui/material';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import { FormControlLabel, Radio, RadioGroup, Stack, Typography } from '@mui/material';
 import { useEffect } from 'react';
 import type { FolderExportDraftData } from './types.js';
 import { normalizeFolderExportDraft } from './types.js';
 
 type Props = PluginStepProps<FolderExportDraftData>;
 
-export const FolderExportTargetStep = ({
-  data,
-  onChange,
-  setValid,
-  setError,
-  disabled,
-}: Props) => {
+export const FolderExportTargetStep = ({ data, onChange, setValid, setError, disabled }: Props) => {
   const draft = normalizeFolderExportDraft(data);
   const updateDraft = (next: Partial<FolderExportDraftData>) => {
     onChange({

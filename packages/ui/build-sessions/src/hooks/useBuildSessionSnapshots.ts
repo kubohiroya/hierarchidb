@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { BuildSessionRuntimeRecord } from '../../../../build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import { proxy } from 'comlink';
 import type { Remote } from 'comlink';
-import { useWorkerQueryAPI } from './useWorkerQueryAPI.js';
+import { proxy } from 'comlink';
+import { useEffect, useMemo, useState } from 'react';
+import type { BuildSessionRuntimeRecord } from '../../../../build-api';
 import { sanitizeForComlink } from '../utils/comlinkSanitizer.js';
+import { useWorkerQueryAPI } from './useWorkerQueryAPI.js';
 
 export type BuildSessionSnapshot = {
   nodeId: NodeId;
@@ -164,10 +164,7 @@ class SharedBuildSessionSubscription {
   }
 }
 
-const sharedSubscriptionsByApi = new WeakMap<
-  object,
-  Map<string, SharedBuildSessionSubscription>
->();
+const sharedSubscriptionsByApi = new WeakMap<object, Map<string, SharedBuildSessionSubscription>>();
 
 const getSharedBuildSessionSubscription = (
   api: WorkerApiRemote,

@@ -2,10 +2,10 @@
  * Inline Edit Plugin (built-in)
  */
 
-import type { TreeTablePlugin } from '~/plugin/types';
-import type { TreeNodeInUI } from '~/types';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { KeyboardEvent } from 'react';
+import type { TreeTablePlugin } from '~/plugin/types';
+import type { TreeNodeInUI } from '~/types';
 
 export interface InlineEditPluginConfig {
   /** Key to start editing (default: F2) */

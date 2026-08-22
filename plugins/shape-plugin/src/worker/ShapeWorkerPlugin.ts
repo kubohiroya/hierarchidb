@@ -3,9 +3,9 @@
  * Worker environment plugin registration
  */
 
-import { ShapeMetadata } from '~/common/types/ShapeMetadata';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '~/common/types/index';
+import { ShapeMetadata } from '~/common/types/ShapeMetadata';
 import { shapeBuildAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
@@ -26,7 +26,7 @@ type ShapeWorkerPluginType = {
   };
   validation: {
     validateEntity: (
-      entity: Partial<ShapeEntity>,
+      entity: Partial<ShapeEntity>
     ) => Promise<ShapeWorkerPluginValidationResult> | ShapeWorkerPluginValidationResult;
   };
   lifecycle: {
@@ -35,7 +35,7 @@ type ShapeWorkerPluginType = {
     afterUpdate: (
       _nodeId: NodeId,
       _entity: ShapeEntity,
-      _changes: Partial<ShapeEntity>,
+      _changes: Partial<ShapeEntity>
     ) => Promise<void> | void;
   };
 };

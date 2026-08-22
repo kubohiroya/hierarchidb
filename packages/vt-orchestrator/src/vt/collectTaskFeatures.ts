@@ -1,6 +1,6 @@
 import type { VTStageContext } from '~/contextTypes';
-import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
 import { runFeatureCollectionCoordinator } from './runFeatureCollectionCoordinator.js';
+import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
 import { getCollectTimeoutMs, withCollectTimeout } from './vtStageTaskCollectorTimeoutUtils.js';
 import type { CollectedVtFeatures } from './vtStageTaskTypes.js';
 
@@ -11,7 +11,7 @@ export const collectTaskFeatures = async (
     bufferIds: string[];
     groupByContinent: boolean;
     taskId: string;
-  },
+  }
 ): Promise<CollectedVtFeatures | null> => {
   const { testTimeoutMs } = getCollectDebugSettings();
   const collectPromise = runFeatureCollectionCoordinator({

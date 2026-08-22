@@ -23,10 +23,7 @@ export type DynamicSpeedDialMenuItem = {
 export type DynamicSpeedDialTranslator = (key: string, fallback: string) => string;
 
 export interface DynamicSpeedDialIconResolver {
-  (params: {
-    nodeType: string;
-    icon?: DynamicSpeedDialIconInput;
-  }): ReactNode;
+  (params: { nodeType: string; icon?: DynamicSpeedDialIconInput }): ReactNode;
 }
 
 export interface UseDynamicSpeedDialParams<TNode = DynamicSpeedDialNode> {

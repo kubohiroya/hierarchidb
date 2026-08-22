@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
+import { type RefObject, useCallback, useMemo, useRef } from 'react';
 import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { createSpreadsheetTabularApi } from '~/services/spreadsheetTabularApiFactory';
 
 const coerceDialogData = <T extends SpreadsheetDraft>(value: unknown): T =>
-  (typeof value === 'object' && value !== null ? (value as T) : ({} as T));
+  typeof value === 'object' && value !== null ? (value as T) : ({} as T);
 
 const shallowEqualFilters = (a?: TabularFilterRule[], b?: TabularFilterRule[]): boolean => {
   if (a === b) return true;
@@ -90,7 +90,7 @@ export const useTabularDataFilter = <T extends SpreadsheetDraft>({
         filters,
       });
     },
-    [dialogData, onChange],
+    [dialogData, onChange]
   );
 
   const handlePreviewData = useCallback(
@@ -109,7 +109,7 @@ export const useTabularDataFilter = <T extends SpreadsheetDraft>({
         },
       });
     },
-    [dialogData, onChange],
+    [dialogData, onChange]
   );
 
   return {

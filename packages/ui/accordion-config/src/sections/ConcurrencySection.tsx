@@ -1,5 +1,13 @@
-import { Box, FormControlLabel, IconButton, Slider, Switch, Tooltip, Typography } from '@mui/material';
 import { Info } from '@mui/icons-material';
+import {
+  Box,
+  FormControlLabel,
+  IconButton,
+  Slider,
+  Switch,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import type { ChangeEvent } from 'react';
 import { useConcurrencySection } from './useConcurrencySection.js';
 import { useConcurrencySectionView } from './useConcurrencySectionView.js';
@@ -37,13 +45,13 @@ export interface ConcurrencySectionProps {
 }
 
 export const ConcurrencySection = ({
-                                     value,
-                                     useDefault,
-                                     config,
-                                     onValueChange,
-                                   onUseDefaultChange,
-                                   sx = {},
-                                 }: ConcurrencySectionProps) => {
+  value,
+  useDefault,
+  config,
+  onValueChange,
+  onUseDefaultChange,
+  sx = {},
+}: ConcurrencySectionProps) => {
   const { resolvedConfig, sliderMarks } = useConcurrencySectionView({ config });
   const { icon, switchInputProps } = useConcurrencySection({ config });
   const { label, tooltipText, defaultLabel, min, max, defaultConcurrency } = resolvedConfig;

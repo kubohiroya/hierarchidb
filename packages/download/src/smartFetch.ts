@@ -1,7 +1,7 @@
-import type { AuthContext, AuthScope } from '@hierarchidb/auth-api';
 import { AuthService } from '@hierarchidb/auth';
-import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
+import type { AuthContext, AuthScope } from '@hierarchidb/auth-api';
 import { sleep } from '@hierarchidb/util';
+import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
 
 export type SmartFetchAuthOptions = {
   enabled?: boolean;
@@ -61,7 +61,8 @@ const backoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): numb
   return Math.round(delay + jitter);
 };
 
-const shouldRetryStatus = (status: number, retryOnStatuses: number[]) => retryOnStatuses.includes(status);
+const shouldRetryStatus = (status: number, retryOnStatuses: number[]) =>
+  retryOnStatuses.includes(status);
 type InFlightEntry = { authKey: string; promise: Promise<Response> };
 const inFlightMap = new Map<string, InFlightEntry[]>();
 const inFlightGetAccept = (request?: RequestInit): string => {
@@ -69,24 +70,18 @@ const inFlightGetAccept = (request?: RequestInit): string => {
   const headers = new Headers(request.headers);
   return headers.get('accept') ?? '';
 };
-const inFlightKeyDefault = (method: string, resolvedUrl: string, accept: string): string => (
-  `${method}:${resolvedUrl}:${accept}`
-);
-const isInFlightMethod = (method: string): boolean => (
-  method === 'GET' || method === 'HEAD'
-);
-const shouldShareInFlight = (opts: SmartFetchOptions): boolean => (
-  opts.inFlight?.enabled === true
-);
-const buildAuthKey = (auth: { enabled: boolean; scope?: string; sessionId?: string }): string => (
-  `${auth.enabled ? '1' : '0'}:${auth.scope ?? ''}:${auth.sessionId ?? ''}`
-);
+const inFlightKeyDefault = (method: string, resolvedUrl: string, accept: string): string =>
+  `${method}:${resolvedUrl}:${accept}`;
+const isInFlightMethod = (method: string): boolean => method === 'GET' || method === 'HEAD';
+const shouldShareInFlight = (opts: SmartFetchOptions): boolean => opts.inFlight?.enabled === true;
+const buildAuthKey = (auth: { enabled: boolean; scope?: string; sessionId?: string }): string =>
+  `${auth.enabled ? '1' : '0'}:${auth.scope ?? ''}:${auth.sessionId ?? ''}`;
 const resolveInFlightKey = (
   opts: SmartFetchOptions,
   method: string,
   resolvedUrl: string,
   accept: string,
-  auth: { enabled: boolean; scope?: string; sessionId?: string },
+  auth: { enabled: boolean; scope?: string; sessionId?: string }
 ): string | null => {
   const builder = opts.inFlight?.keyBuilder;
   if (builder) {
@@ -104,16 +99,18 @@ const registerInFlight = (key: string, authKey: string, promise: Promise<Respons
   const entries = inFlightMap.get(key) ?? [];
   entries.push(entry);
   inFlightMap.set(key, entries);
-  void promise.finally(() => {
-    const current = inFlightMap.get(key);
-    if (!current) return;
-    const next = current.filter((item) => item !== entry);
-    if (next.length === 0) {
-      inFlightMap.delete(key);
-    } else {
-      inFlightMap.set(key, next);
-    }
-  }).catch(() => { });
+  void promise
+    .finally(() => {
+      const current = inFlightMap.get(key);
+      if (!current) return;
+      const next = current.filter((item) => item !== entry);
+      if (next.length === 0) {
+        inFlightMap.delete(key);
+      } else {
+        inFlightMap.set(key, next);
+      }
+    })
+    .catch(() => {});
 };
 
 /**
@@ -123,7 +120,10 @@ const registerInFlight = (key: string, authKey: string, promise: Promise<Respons
  * - 認証は AuthService.fetchWithAuth に一本化
  * - URL解決（CORS proxy）は resolveNetworkUrl に一本化
  */
-export async function smartFetch(input: string, options: SmartFetchOptions = {}): Promise<Response> {
+export async function smartFetch(
+  input: string,
+  options: SmartFetchOptions = {}
+): Promise<Response> {
   const request = options.request ?? {};
   const method = (request.method ?? 'GET').toUpperCase();
 
@@ -186,13 +186,14 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
   const retryOnStatuses = options.retry?.retryOnStatuses ?? [408, 429, 500, 502, 503, 504];
   const shouldRetry = options.retry?.shouldRetry;
   const accept = inFlightGetAccept(request);
-  const inFlightKey = (shouldShareInFlight(options) && isInFlightMethod(method))
-    ? resolveInFlightKey(options, method, target, accept, {
-      enabled: authEnabled,
-      scope,
-      sessionId: options.auth?.sessionId,
-    })
-    : null;
+  const inFlightKey =
+    shouldShareInFlight(options) && isInFlightMethod(method)
+      ? resolveInFlightKey(options, method, target, accept, {
+          enabled: authEnabled,
+          scope,
+          sessionId: options.auth?.sessionId,
+        })
+      : null;
   const authKey = buildAuthKey({
     enabled: authEnabled,
     scope,
@@ -276,7 +277,7 @@ const mergeChunks = (chunks: Uint8Array[], totalBytes: number): Uint8Array => {
 
 const attachDownloadProgress = async (
   response: Response,
-  onDownloadProgress: NonNullable<SmartFetchOptions['onDownloadProgress']>,
+  onDownloadProgress: NonNullable<SmartFetchOptions['onDownloadProgress']>
 ): Promise<Response> => {
   if (!response.ok) {
     return response;

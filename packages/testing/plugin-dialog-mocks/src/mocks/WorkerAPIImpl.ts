@@ -1,5 +1,10 @@
 import type { NodeId, ValidationResult } from '@hierarchidb/core-types';
-import type { PluginDialogAPI, StepCapabilities, TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
+import type {
+  PluginDialogAPI,
+  StepCapabilities,
+  TreeNodeUpdater,
+  TreeNodeUpdaterPayload,
+} from '@hierarchidb/tree-api';
 
 type DraftData = {
   name?: unknown;
@@ -12,7 +17,12 @@ type DraftData = {
   viewport?: { center?: [number, number]; zoom?: number };
 };
 
-type ValidationResultWithDetails = { valid: boolean; message?: string; errors?: string[]; warnings?: string[] };
+type ValidationResultWithDetails = {
+  valid: boolean;
+  message?: string;
+  errors?: string[];
+  warnings?: string[];
+};
 
 const getDraftData = (input: unknown): DraftData => {
   if (input && typeof input === 'object') return input as DraftData;
@@ -97,10 +107,10 @@ export class WorkerAPIImpl<T> {
           treeNodeId: wc.payload.treeNodeId ?? draftId,
           draftMetadata: updates.payload?.draftMetadata
             ? { ...(wc.payload.draftMetadata ?? {}), ...updates.payload.draftMetadata }
-            : wc.payload.draftMetadata ?? null,
+            : (wc.payload.draftMetadata ?? null),
           draftData: updates.payload?.draftData
             ? { ...(wc.payload.draftData ?? {}), ...updates.payload.draftData }
-            : wc.payload.draftData ?? {},
+            : (wc.payload.draftData ?? {}),
         };
         const next: TreeNodeUpdater<T> & { nodeType?: string } = {
           ...wc,
@@ -157,18 +167,22 @@ export class WorkerAPIImpl<T> {
         }
 
         if (nodeType.startsWith('location')) {
-          const hasLocationType = typeof data.locationType === 'string'
-            ? data.locationType.trim().length > 0
-            : Boolean(data.locationType);
+          const hasLocationType =
+            typeof data.locationType === 'string'
+              ? data.locationType.trim().length > 0
+              : Boolean(data.locationType);
           if (step === 0) {
             result.canProceedToNext = Boolean(hasLocationType && namePresent);
           } else if (step === 1) {
             const latitude = data.latitude;
             const longitude = data.longitude;
-            const coordsOk = typeof latitude === 'number'
-              && typeof longitude === 'number'
-              && latitude >= -90 && latitude <= 90
-              && longitude >= -180 && longitude <= 180;
+            const coordsOk =
+              typeof latitude === 'number' &&
+              typeof longitude === 'number' &&
+              latitude >= -90 &&
+              latitude <= 90 &&
+              longitude >= -180 &&
+              longitude <= 180;
             result.canProceedToNext = coordsOk;
             result.canSave = coordsOk;
             result.canStartBuild = coordsOk;
@@ -188,7 +202,8 @@ export class WorkerAPIImpl<T> {
           }
           if (step === 1) {
             const style = data.mapStyle;
-            const styleOk = !!style?.style && (style.style !== 'custom' || Boolean(style?.customStyleUrl));
+            const styleOk =
+              !!style?.style && (style.style !== 'custom' || Boolean(style?.customStyleUrl));
             result.canNavigateTo = true;
             result.canProceedToNext = namePresent && styleOk;
             result.canSave = namePresent && styleOk;
@@ -197,10 +212,12 @@ export class WorkerAPIImpl<T> {
           }
           if (step === 2) {
             const viewport = data.viewport;
-            const coordsOk = Array.isArray(viewport?.center)
-              && typeof viewport.center[0] === 'number'
-              && typeof viewport.center[1] === 'number';
-            const zoomOk = typeof viewport?.zoom === 'number' && viewport.zoom >= 0 && viewport.zoom <= 24;
+            const coordsOk =
+              Array.isArray(viewport?.center) &&
+              typeof viewport.center[0] === 'number' &&
+              typeof viewport.center[1] === 'number';
+            const zoomOk =
+              typeof viewport?.zoom === 'number' && viewport.zoom >= 0 && viewport.zoom <= 24;
             result.canNavigateTo = true;
             result.canProceedToNext = namePresent && coordsOk && zoomOk;
             result.canSave = namePresent && coordsOk && zoomOk;
@@ -243,9 +260,10 @@ export class WorkerAPIImpl<T> {
               }
               const permissions = data.permissions;
               if (
-                permissions !== undefined
-                && permissions !== null
-                && (typeof permissions !== 'string' || !['read-only', 'read-write'].includes(permissions))
+                permissions !== undefined &&
+                permissions !== null &&
+                (typeof permissions !== 'string' ||
+                  !['read-only', 'read-write'].includes(permissions))
               ) {
                 pushError('権限設定の形式が正しくありません');
               }
@@ -270,9 +288,10 @@ export class WorkerAPIImpl<T> {
           } catch (error) {
             errors.push(error instanceof Error ? error.message : String(error));
           }
-          const baseValidation = errors.length === 0
-            ? { valid: true }
-            : { valid: false, message: errors[0] ?? 'validation failed' };
+          const baseValidation =
+            errors.length === 0
+              ? { valid: true }
+              : { valid: false, message: errors[0] ?? 'validation failed' };
           const validation: ValidationResultWithDetails = {
             ...baseValidation,
             ...(errors.length ? { errors } : {}),

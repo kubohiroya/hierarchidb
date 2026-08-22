@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assertCommandFailure } from '../../../test-utils/assertions';
 import { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';

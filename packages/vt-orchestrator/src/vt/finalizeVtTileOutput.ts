@@ -1,11 +1,16 @@
 import type { VTStageContext } from '~/contextTypes';
-import { assertNotAborted } from './vtStageCoreUtils.js';
-import { logVtTaskOutputCompletion } from './logVtTaskOutputCompletion.js';
+import type { StageHandlerResult } from '~/types/types';
 import { buildFinalTileCompletionSummary } from './buildFinalTileCompletionSummary.js';
 import { buildTileOutputResult } from './buildTileOutputResult.js';
-import type { VtTileBandRange, VtTileParent, VtTileProgressReporter, VtTileTaskContext } from './vtStageTaskOutputTypes.js';
-import type { StageHandlerResult } from '~/types/types';
+import { logVtTaskOutputCompletion } from './logVtTaskOutputCompletion.js';
+import { assertNotAborted } from './vtStageCoreUtils.js';
 import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
+import type {
+  VtTileBandRange,
+  VtTileParent,
+  VtTileProgressReporter,
+  VtTileTaskContext,
+} from './vtStageTaskOutputTypes.js';
 
 type VtTileOutputFinalizeInput = {
   context: VTStageContext;

@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const reconcileRunningBuildSessionsMock = vi.hoisted(() => vi.fn(async () => ({
-  checkedNodeIds: [],
-  activeNodeIds: [],
-  repairedNodeIds: [],
-})));
+const reconcileRunningBuildSessionsMock = vi.hoisted(() =>
+  vi.fn(async () => ({
+    checkedNodeIds: [],
+    activeNodeIds: [],
+    repairedNodeIds: [],
+  }))
+);
 
 vi.mock('../../utils/reconcileStaleBuildSessions.js', () => ({
   reconcileRunningBuildSessions: (...args: Parameters<typeof reconcileRunningBuildSessionsMock>) =>
@@ -37,8 +39,9 @@ describe('WorkerService warm-start build session recovery', () => {
       repairedNodeIds: ['shape-2' as never],
     });
 
-    await (WorkerService as unknown as WorkerServiceWithRecovery)
-      .recoverBuildSessionRuntimeRecordsOnWarmStart();
+    await (
+      WorkerService as unknown as WorkerServiceWithRecovery
+    ).recoverBuildSessionRuntimeRecordsOnWarmStart();
 
     expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
@@ -46,7 +49,7 @@ describe('WorkerService warm-start build session recovery', () => {
       expect.objectContaining({
         repairedNodeIds: ['shape-2'],
         checkedCount: 2,
-      }),
+      })
     );
     expect(errorSpy).not.toHaveBeenCalled();
   });
@@ -55,13 +58,14 @@ describe('WorkerService warm-start build session recovery', () => {
     const failure = new Error('reconcile failed');
     reconcileRunningBuildSessionsMock.mockRejectedValueOnce(failure);
 
-    await (WorkerService as unknown as WorkerServiceWithRecovery)
-      .recoverBuildSessionRuntimeRecordsOnWarmStart();
+    await (
+      WorkerService as unknown as WorkerServiceWithRecovery
+    ).recoverBuildSessionRuntimeRecordsOnWarmStart();
 
     expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith(
       '[WorkerService] Failed to recover persisted build sessions',
-      failure,
+      failure
     );
   });
 });

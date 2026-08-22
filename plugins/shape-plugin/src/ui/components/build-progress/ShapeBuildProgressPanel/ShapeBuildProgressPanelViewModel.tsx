@@ -1,8 +1,8 @@
-import { type ReactNode } from 'react';
-import { Box } from '@mui/material';
-import ConstructionIcon from '@mui/icons-material/Construction';
-import { BuildSessionLauncherPanel } from '@hierarchidb/ui-build-sessions';
 import { toNodeType } from '@hierarchidb/core-types';
+import { BuildSessionLauncherPanel } from '@hierarchidb/ui-build-sessions';
+import ConstructionIcon from '@mui/icons-material/Construction';
+import { Box } from '@mui/material';
+import { type ReactNode } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 
 export const ShapeBuildProgressPanelStartIcon = (): ReactNode => (
@@ -23,7 +23,15 @@ export const ShapeBuildProgressPanelControlRightContent = ({
   controlRightContent,
 }: ShapeBuildProgressPanelControlRightContentProps): ReactNode => {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        justifyContent: 'flex-end',
+        flexWrap: 'nowrap',
+      }}
+    >
       <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
       {controlRightContent}
     </Box>

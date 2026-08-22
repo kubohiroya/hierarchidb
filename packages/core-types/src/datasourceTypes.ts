@@ -94,4 +94,3 @@ export type LocationType =
  * Route types for route plugin
  */
 export type RouteType = 'airway' | 'seaway' | 'road' | 'railway' | 'high_speed_rail';
-

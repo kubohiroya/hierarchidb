@@ -12,8 +12,8 @@ import {
 } from '@hierarchidb/origin-coordinator';
 import { getRouteDB } from '@hierarchidb/route-store';
 import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
-import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { VectorTileItemBase } from '../entity/storeTypes.js';
 import type {
   GeometryWorkerAPI,

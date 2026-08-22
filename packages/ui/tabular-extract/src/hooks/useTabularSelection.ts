@@ -48,7 +48,9 @@ export interface UseTabularSelectionResult {
 /**
  * Hook for managing CSV column selection
  */
-export const useTabularSelection = (options: UseTabularSelectionOptions): UseTabularSelectionResult => {
+export const useTabularSelection = (
+  options: UseTabularSelectionOptions
+): UseTabularSelectionResult => {
   const { tableMetadataId, filterRules, initialSelection = {}, previewRowCount = 10 } = options;
 
   const tabularApi = useTabularApi();
@@ -75,7 +77,7 @@ export const useTabularSelection = (options: UseTabularSelectionOptions): UseTab
       const data = await tabularApi.getFilteredPreview(
         tableMetadataId,
         filterRules.filter((rule) => rule.enabled !== false),
-        previewRowCount,
+        previewRowCount
       );
 
       setPreviewData(data);

@@ -1,3 +1,5 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import {
   Box,
   Checkbox,
@@ -14,11 +16,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
-import { GenericDataGrid } from './GenericDataGrid.js';
-import { CrossViewSnackbar } from './CrossViewSnackbar.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ReactNode } from 'react';
+import { CrossViewSnackbar } from './CrossViewSnackbar.js';
+import { GenericDataGrid } from './GenericDataGrid.js';
 import type { DataGridPreviewOp } from './hooks/useDataGridPreview.js';
 import { useDataGridPreviewView } from './useDataGridPreviewView.js';
 
@@ -81,60 +81,123 @@ export function DataGridPreview({
   // Minimal column type compatible with GenericDataGrid
 
   return (
-    <Box sx={{ p: 2, height, minHeight: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-      {(showTitle || showColumnSelector) ? (
+    <Box
+      sx={{
+        p: 2,
+        height,
+        minHeight: 0,
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {showTitle || showColumnSelector ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-        {showTitle ? (
-          <Typography variant="subtitle1" sx={{ flex: 1 }}>{t('dataGrid.preview.title', 'Data table')}</Typography>
-        ) : (
-          <Box sx={{ flex: 1 }} />
-        )}
-        {/* Visible columns selector */}
-        {showColumnSelector ? (
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel htmlFor="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />{t('dataGrid.preview.visibleColumns', 'Visible columns')}</InputLabel>
-          <Select<string[]> multiple labelId="tp-cols-label" input={<OutlinedInput label={t('dataGrid.preview.visibleColumns', 'Visible columns')} />} value={visibleCols || []}
-                  onChange={handleVisibleColsChange}
-                  renderValue={renderVisibleColsValue}>
-            {columns.map((name) => (
-              <MenuItem key={name} value={name}>
-                <Checkbox checked={(visibleCols || []).indexOf(name) > -1} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-          </FormControl>
-        ) : null}
-      </Box>
+          {showTitle ? (
+            <Typography variant="subtitle1" sx={{ flex: 1 }}>
+              {t('dataGrid.preview.title', 'Data table')}
+            </Typography>
+          ) : (
+            <Box sx={{ flex: 1 }} />
+          )}
+          {/* Visible columns selector */}
+          {showColumnSelector ? (
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel htmlFor="tp-cols-label">
+                <ViewColumn fontSize="small" sx={{ mr: 0.5 }} />
+                {t('dataGrid.preview.visibleColumns', 'Visible columns')}
+              </InputLabel>
+              <Select<string[]>
+                multiple
+                labelId="tp-cols-label"
+                input={
+                  <OutlinedInput label={t('dataGrid.preview.visibleColumns', 'Visible columns')} />
+                }
+                value={visibleCols || []}
+                onChange={handleVisibleColsChange}
+                renderValue={renderVisibleColsValue}
+              >
+                {columns.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    <Checkbox checked={(visibleCols || []).indexOf(name) > -1} />
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : null}
+        </Box>
       ) : null}
 
       {/* Filters */}
       {showFilterControls ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-          <Tooltip title={t('dataGrid.preview.addFilter', 'Add filter')}><IconButton size="small" onClick={addFilter}><Add /></IconButton></Tooltip>
-          {filters.length === 0 && <Chip icon={<FilterAlt />} label={t('dataGrid.preview.noFilters', 'No filters (all rows)')} size="small" />}
+          <Tooltip title={t('dataGrid.preview.addFilter', 'Add filter')}>
+            <IconButton size="small" onClick={addFilter}>
+              <Add />
+            </IconButton>
+          </Tooltip>
+          {filters.length === 0 && (
+            <Chip
+              icon={<FilterAlt />}
+              label={t('dataGrid.preview.noFilters', 'No filters (all rows)')}
+              size="small"
+            />
+          )}
           {filters.map((f, i) => (
             <Box key={`filters-${f}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel id={`${controlId}-col-${i}`} htmlFor={`${controlId}-col-select-${i}`}>{t('dataGrid.preview.column', 'Column')}</InputLabel>
-                <Select labelId={`${controlId}-col-${i}`} id={`${controlId}-col-select-${i}`} label={t('dataGrid.preview.column', 'Column')} value={f.column}
-                        onChange={(e) => updateFilter(i, { column: String(e.target.value) })}>
-                  <MenuItem value=""><em>{t('dataGrid.preview.select', 'Select')}</em></MenuItem>
-                  {columns.map((c) => (<MenuItem key={c} value={c}>{c}</MenuItem>))}
+                <InputLabel id={`${controlId}-col-${i}`} htmlFor={`${controlId}-col-select-${i}`}>
+                  {t('dataGrid.preview.column', 'Column')}
+                </InputLabel>
+                <Select
+                  labelId={`${controlId}-col-${i}`}
+                  id={`${controlId}-col-select-${i}`}
+                  label={t('dataGrid.preview.column', 'Column')}
+                  value={f.column}
+                  onChange={(e) => updateFilter(i, { column: String(e.target.value) })}
+                >
+                  <MenuItem value="">
+                    <em>{t('dataGrid.preview.select', 'Select')}</em>
+                  </MenuItem>
+                  {columns.map((c) => (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>{t('dataGrid.preview.operator', 'Operator')}</InputLabel>
-                <Select labelId={`${controlId}-op-${i}`} id={`${controlId}-op-select-${i}`} label={t('dataGrid.preview.operator', 'Operator')} value={f.op}
-                        onChange={(e) => updateFilter(i, { op: e.target.value as DataGridPreviewOp })}>
+                <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>
+                  {t('dataGrid.preview.operator', 'Operator')}
+                </InputLabel>
+                <Select
+                  labelId={`${controlId}-op-${i}`}
+                  id={`${controlId}-op-select-${i}`}
+                  label={t('dataGrid.preview.operator', 'Operator')}
+                  value={f.op}
+                  onChange={(e) => updateFilter(i, { op: e.target.value as DataGridPreviewOp })}
+                >
                   {operatorOptions.map((op) => (
-                    <MenuItem key={op} value={op}>{op}</MenuItem>))}
+                    <MenuItem key={op} value={op}>
+                      {op}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
-              <TextField size="small" label={t('dataGrid.preview.value', 'Value')} id={`${controlId}-value-${i}`} name={`value-${i}`} value={f.value}
-                         onChange={(e) => updateFilter(i, { value: e.target.value })} />
-              <Tooltip title={t('dataGrid.preview.remove', 'Remove')}><IconButton size="small" onClick={() => removeFilter(i)}><Delete
-                fontSize="small" /></IconButton></Tooltip>
+              <TextField
+                size="small"
+                label={t('dataGrid.preview.value', 'Value')}
+                id={`${controlId}-value-${i}`}
+                name={`value-${i}`}
+                value={f.value}
+                onChange={(e) => updateFilter(i, { value: e.target.value })}
+              />
+              <Tooltip title={t('dataGrid.preview.remove', 'Remove')}>
+                <IconButton size="small" onClick={() => removeFilter(i)}>
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
           ))}
         </Box>
@@ -142,7 +205,9 @@ export function DataGridPreview({
 
       {shouldShowTablePlaceholder ? (
         <Paper sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">{t('dataGrid.preview.noTable', 'Table not created yet')}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t('dataGrid.preview.noTable', 'Table not created yet')}
+          </Typography>
         </Paper>
       ) : (
         <GenericDataGrid

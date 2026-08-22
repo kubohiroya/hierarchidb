@@ -1,8 +1,5 @@
+import type { BaseBuildConfig, DynamicConcurrencyConfig } from '@hierarchidb/gis-sdk';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type {
-  BaseBuildConfig,
-  DynamicConcurrencyConfig,
-} from '@hierarchidb/gis-sdk';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 export type UseTileEmitConfigSectionParams<TDataSourceName> = {
@@ -29,9 +26,7 @@ export type UseTileEmitConfigSectionResult = {
   onWatermarkRangeChange: (value: number | number[]) => void;
 };
 
-const createDefaultDynamicConcurrency = (
-  maxConcurrent: number,
-): DynamicConcurrencyConfig => ({
+const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
   enabled: false,
   minConcurrent: maxConcurrent,
   maxConcurrent,
@@ -56,9 +51,8 @@ export function useTileEmitConfigSection<TDataSourceName>({
 
   const dynamicConcurrency = useMemo(
     () =>
-      tileEmitConfig.dynamicConcurrency ??
-      createDefaultDynamicConcurrency(resolvedMaxConcurrent),
-    [tileEmitConfig.dynamicConcurrency, resolvedMaxConcurrent],
+      tileEmitConfig.dynamicConcurrency ?? createDefaultDynamicConcurrency(resolvedMaxConcurrent),
+    [tileEmitConfig.dynamicConcurrency, resolvedMaxConcurrent]
   );
   const tileEmitConfigRef = useRef(tileEmitConfig);
   const dynamicConcurrencyRef = useRef(dynamicConcurrency);
@@ -68,8 +62,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
     dynamicConcurrencyRef.current = dynamicConcurrency;
   }, [dynamicConcurrency, tileEmitConfig]);
 
-  const dynamicConcurrencyActive =
-    showConcurrencyCard && resolvedMaxConcurrent >= 2;
+  const dynamicConcurrencyActive = showConcurrencyCard && resolvedMaxConcurrent >= 2;
   const tileToleranceMax = Math.max(10, tileEmitConfig.tolerance);
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
@@ -92,12 +85,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       },
     });
-  }, [
-    dynamicConcurrency,
-    dynamicConcurrencyActive,
-    showConcurrencyCard,
-    update,
-  ]);
+  }, [dynamicConcurrency, dynamicConcurrencyActive, showConcurrencyCard, update]);
 
   const onExtentChange = useCallback(
     (value: string) => {
@@ -110,7 +98,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onToleranceChange = useCallback(
@@ -130,7 +118,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onBufferChange = useCallback(
@@ -145,7 +133,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onIndexMaxPointsChange = useCallback(
@@ -159,7 +147,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onMaxConcurrentChange = useCallback(
@@ -177,7 +165,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onWatermarkRangeChange = useCallback(
@@ -209,7 +197,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onAdjustStepChange = useCallback(
@@ -229,7 +217,7 @@ export function useTileEmitConfigSection<TDataSourceName>({
         },
       });
     },
-    [update],
+    [update]
   );
 
   const onSampleMsChange = useCallback(
@@ -242,14 +230,12 @@ export function useTileEmitConfigSection<TDataSourceName>({
           ...currentTileEmitConfig,
           dynamicConcurrency: {
             ...currentDynamicConcurrency,
-            sampleMs: Number.isFinite(sampleMs)
-              ? sampleMs
-              : currentDynamicConcurrency.sampleMs,
+            sampleMs: Number.isFinite(sampleMs) ? sampleMs : currentDynamicConcurrency.sampleMs,
           },
         },
       });
     },
-    [update],
+    [update]
   );
 
   return {

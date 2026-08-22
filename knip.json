@@ -22,14 +22,7 @@
     "vite-plugin-checker",
     "vite-tsconfig-paths"
   ],
-  "ignoreBinaries": [
-    "4.2.0",
-    "attw",
-    "only-allow",
-    "publint",
-    "syncpack",
-    "vibe-kanban"
-  ],
+  "ignoreBinaries": ["4.2.0", "attw", "only-allow", "publint", "syncpack", "vibe-kanban"],
   "ignoreExportsUsedInFile": true,
   "rules": {
     "duplicates": "off"
@@ -86,78 +79,35 @@
         "reports/**",
         ".turbo/**",
         "storybook-static/**"
-      ],
+      ]
     },
     "app": {
-      "entry": [
-        "src/**/*.{ts,tsx,js,jsx}"
-      ],
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"],
       "paths": {
-        "~/*": [
-          "./src/*"
-        ]
+        "~/*": ["./src/*"]
       },
-      "ignore": [
-        "build/**",
-        ".debug/**",
-        ".generated/**",
-        "docs/**",
-        "node_modules/**"
-      ]
+      "ignore": ["build/**", ".debug/**", ".generated/**", "docs/**", "node_modules/**"]
     },
     "packages/*": {
-      "entry": [
-        "src/**/*.{ts,tsx,js,jsx}"
-      ],
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"],
       "paths": {
-        "~/*": [
-          "./src/*"
-        ]
+        "~/*": ["./src/*"]
       },
-      "ignore": [
-        "dist/**",
-        "build/**",
-        ".turbo/**",
-        "coverage/**",
-        "docs/**",
-        "node_modules/**"
-      ]
+      "ignore": ["dist/**", "build/**", ".turbo/**", "coverage/**", "docs/**", "node_modules/**"]
     },
     "packages/*/*": {
-      "entry": [
-        "src/**/*.{ts,tsx,js,jsx}"
-      ],
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"],
       "paths": {
-        "~/*": [
-          "./src/*"
-        ]
+        "~/*": ["./src/*"]
       },
-      "ignore": [
-        "dist/**",
-        "build/**",
-        ".turbo/**",
-        "coverage/**",
-        "docs/**",
-        "node_modules/**"
-      ]
+      "ignore": ["dist/**", "build/**", ".turbo/**", "coverage/**", "docs/**", "node_modules/**"]
     },
     "packages/*/*/*": {
-      "entry": [
-        "src/**/*.{ts,tsx,js,jsx}"
-      ],
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"],
       "paths": {
-        "~/*": [
-          "./src/*"
-        ]
+        "~/*": ["./src/*"]
       },
-      "ignore": [
-        "dist/**",
-        "build/**",
-        ".turbo/**",
-        "coverage/**",
-        "docs/**",
-        "node_modules/**"
-      ]
+      "ignore": ["dist/**", "build/**", ".turbo/**", "coverage/**", "docs/**", "node_modules/**"]
     }
   }
 }

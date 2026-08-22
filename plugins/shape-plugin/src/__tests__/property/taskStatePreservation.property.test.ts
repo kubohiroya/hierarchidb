@@ -3,17 +3,17 @@
  * Validates Requirements 1.4
  */
 
-import fc from 'fast-check';
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
-import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskStatus } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { taskStateProtection } from '../../worker/api/taskStateProtection.js';
+import fc from 'fast-check';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  ensureSessionTaskConsistency,
   updateBuildTaskProtected,
   updateTaskProgress,
-  ensureSessionTaskConsistency,
 } from '../../worker/api/protectedTaskMutationUtils.js';
+import { taskStateProtection } from '../../worker/api/taskStateProtection.js';
 
 const touchedNodeIds = new Set<NodeId>();
 
@@ -55,7 +55,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
   it('should preserve all task state fields during abort', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.constantFrom('queued', 'running', 'completed', 'failed'),
         fc.integer({ min: 0, max: 100 }),
         async (nodeId: NodeId, status: TaskStatus, progress: number) => {
@@ -119,75 +119,83 @@ describe('Property 3: Task State Preservation on Termination', () => {
     );
   });
 
-  it('should maintain task state consistency during concurrent aborts', { timeout: 15000 }, async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
-        fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 3, maxLength: 8 }),
-        async (nodeId: NodeId, progressValues: number[]) => {
-          touchedNodeIds.add(nodeId);
-          const tasks = progressValues.map((progress, i) =>
-            createMockTask(`task-${i}`, nodeId, 'running', progress)
-          );
+  it(
+    'should maintain task state consistency during concurrent aborts',
+    { timeout: 15000 },
+    async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
+          fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 3, maxLength: 8 }),
+          async (nodeId: NodeId, progressValues: number[]) => {
+            touchedNodeIds.add(nodeId);
+            const tasks = progressValues.map((progress, i) =>
+              createMockTask(`task-${i}`, nodeId, 'running', progress)
+            );
 
-          // Store all tasks
-          await ephemeralDB.buildTasks.bulkPut(tasks);
+            // Store all tasks
+            await ephemeralDB.buildTasks.bulkPut(tasks);
 
-          // Create snapshots for all tasks
-          for (const task of tasks) {
-            await taskStateProtection.createTaskSnapshot(task.taskId);
-          }
+            // Create snapshots for all tasks
+            for (const task of tasks) {
+              await taskStateProtection.createTaskSnapshot(task.taskId);
+            }
 
-          // Create multiple abort controllers
-          const abortControllers = tasks.map(() => new AbortController());
+            // Create multiple abort controllers
+            const abortControllers = tasks.map(() => new AbortController());
 
-          // Start concurrent updates
-          const updatePromises = tasks.map((task, i) =>
-            updateBuildTaskProtected(
-              task.taskId,
-              { progress: Math.min(task.progress + 5, 100) },
-              abortControllers[i].signal
-            ).catch(() => { }) // Ignore abort errors
-          );
+            // Start concurrent updates
+            const updatePromises = tasks.map(
+              (task, i) =>
+                updateBuildTaskProtected(
+                  task.taskId,
+                  { progress: Math.min(task.progress + 5, 100) },
+                  abortControllers[i].signal
+                ).catch(() => {}) // Ignore abort errors
+            );
 
-          // Abort all operations at different times
-          for (let i = 0; i < abortControllers.length; i++) {
-            setTimeout(() => abortControllers[i].abort(), i * 10);
-          }
+            // Abort all operations at different times
+            for (let i = 0; i < abortControllers.length; i++) {
+              setTimeout(() => abortControllers[i].abort(), i * 10);
+            }
 
-          // Wait for all operations to complete
-          await Promise.all(updatePromises);
+            // Wait for all operations to complete
+            await Promise.all(updatePromises);
 
-          // Verify session task consistency
-          await ensureSessionTaskConsistency(nodeId);
+            // Verify session task consistency
+            await ensureSessionTaskConsistency(nodeId);
 
-          // All tasks should still exist and be valid
-          const finalTasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
-          expect(finalTasks.length).toBe(tasks.length);
+            // All tasks should still exist and be valid
+            const finalTasks = await ephemeralDB.buildTasks
+              .where('nodeId')
+              .equals(nodeId)
+              .toArray();
+            expect(finalTasks.length).toBe(tasks.length);
 
-          // Validate each task state
-          for (const finalTask of finalTasks) {
-            const validation = taskStateProtection.validateTaskState(finalTask);
-            expect(validation.isValid).toBe(true);
+            // Validate each task state
+            for (const finalTask of finalTasks) {
+              const validation = taskStateProtection.validateTaskState(finalTask);
+              expect(validation.isValid).toBe(true);
 
-            if (!validation.isValid) {
-              console.error('Task state validation failed:', {
-                taskId: finalTask.taskId,
-                inconsistencies: validation.inconsistencies,
-                missingFields: validation.missingFields,
-              });
+              if (!validation.isValid) {
+                console.error('Task state validation failed:', {
+                  taskId: finalTask.taskId,
+                  inconsistencies: validation.inconsistencies,
+                  missingFields: validation.missingFields,
+                });
+              }
             }
           }
-        }
-      ),
-      { numRuns: 50 }
-    );
-  });
+        ),
+        { numRuns: 50 }
+      );
+    }
+  );
 
   it('should preserve terminal task states during abort', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.constantFrom('completed', 'failed'),
         async (nodeId: NodeId, terminalStatus: TaskStatus) => {
           touchedNodeIds.add(nodeId);
@@ -229,7 +237,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
   it('should handle progress validation during abort', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.oneof(
           fc.constant(Number.NaN),
           fc.constant(Number.POSITIVE_INFINITY),
@@ -274,52 +282,56 @@ describe('Property 3: Task State Preservation on Termination', () => {
     );
   });
 
-  it('should restore from snapshots when state becomes inconsistent', { timeout: 15000 }, async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
-        fc.constantFrom('running', 'completed'),
-        async (nodeId: NodeId, status: TaskStatus) => {
-          touchedNodeIds.add(nodeId);
-          const taskId = `restore-task-${Date.now()}`;
-          const originalTask = createMockTask(taskId, nodeId, status, 75);
+  it(
+    'should restore from snapshots when state becomes inconsistent',
+    { timeout: 15000 },
+    async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
+          fc.constantFrom('running', 'completed'),
+          async (nodeId: NodeId, status: TaskStatus) => {
+            touchedNodeIds.add(nodeId);
+            const taskId = `restore-task-${Date.now()}`;
+            const originalTask = createMockTask(taskId, nodeId, status, 75);
 
-          // Store original task
-          await ephemeralDB.buildTasks.put(originalTask);
+            // Store original task
+            await ephemeralDB.buildTasks.put(originalTask);
 
-          // Create snapshot
-          await taskStateProtection.createTaskSnapshot(taskId);
+            // Create snapshot
+            await taskStateProtection.createTaskSnapshot(taskId);
 
-          // Simulate corruption by directly modifying database
-          await ephemeralDB.buildTasks.update(taskId, {
-            status: 'completed',
-            completedAt: undefined, // Inconsistent state
-            progress: Number.NaN, // Invalid progress
-          });
+            // Simulate corruption by directly modifying database
+            await ephemeralDB.buildTasks.update(taskId, {
+              status: 'completed',
+              completedAt: undefined, // Inconsistent state
+              progress: Number.NaN, // Invalid progress
+            });
 
-          // Verify corruption
-          const corruptedTask = await ephemeralDB.buildTasks.get(taskId);
-          const validation = taskStateProtection.validateTaskState(corruptedTask!);
-          expect(validation.isValid).toBe(false);
+            // Verify corruption
+            const corruptedTask = await ephemeralDB.buildTasks.get(taskId);
+            const validation = taskStateProtection.validateTaskState(corruptedTask!);
+            expect(validation.isValid).toBe(false);
 
-          // Restore from snapshot
-          const restored = await taskStateProtection.restoreTaskFromSnapshot(taskId);
-          expect(restored).toBe(true);
+            // Restore from snapshot
+            const restored = await taskStateProtection.restoreTaskFromSnapshot(taskId);
+            expect(restored).toBe(true);
 
-          // Verify restoration
-          const restoredTask = await ephemeralDB.buildTasks.get(taskId);
-          expect(restoredTask).toBeDefined();
+            // Verify restoration
+            const restoredTask = await ephemeralDB.buildTasks.get(taskId);
+            expect(restoredTask).toBeDefined();
 
-          const restoredValidation = taskStateProtection.validateTaskState(restoredTask!);
-          expect(restoredValidation.isValid).toBe(true);
+            const restoredValidation = taskStateProtection.validateTaskState(restoredTask!);
+            expect(restoredValidation.isValid).toBe(true);
 
-          // Should match original state
-          expect(restoredTask!.status).toBe(originalTask.status);
-          expect(restoredTask!.progress).toBe(originalTask.progress);
-          expect(restoredTask!.completedAt).toBe(originalTask.completedAt);
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
+            // Should match original state
+            expect(restoredTask!.status).toBe(originalTask.status);
+            expect(restoredTask!.progress).toBe(originalTask.progress);
+            expect(restoredTask!.completedAt).toBe(originalTask.completedAt);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    }
+  );
 });

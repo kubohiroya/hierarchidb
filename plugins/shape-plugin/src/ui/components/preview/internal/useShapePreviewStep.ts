@@ -1,75 +1,72 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
-import { useTheme } from '@mui/material/styles';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import type {
-  DataSourceName,
-  SourceTaskPayload,
-  ShapeEntity,
-} from '~/common/types/index';
-import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+  ShapeDataSourceMetadata,
+  ShapeFeatureMetadata,
+  ShapeGeometryErrorRecord,
+} from '@hierarchidb/shape-api';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { parseAdminLevelValue } from './parseAdminLevelValue';
-import {
-  shapePreviewSearchAtom,
-  shapePreviewMatchedIdsAtom,
-  shapePreviewSelectedIdsAtom,
-  shapePreviewHoveredIdAtom,
-  shapePreviewSelectionContextAtom,
-} from '~/ui/atoms/shapePreviewAtomConstants';
 import type {
   MapHighlightEntry,
+  MapLibreMapInstance,
   MapWithVectorTilesProps,
   ResolvedLayerSetEntry,
   ShapePreviewFeatureRow,
 } from '@hierarchidb/ui-map';
-import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildHighlightKey,
-  formatAdminLevelLabel,
   buildShapeSourceLayerName,
-  parseShapeSourceLayerName,
+  formatAdminLevelLabel,
   getLayerSetDefinition,
   mapHoverCandidatesAtom,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
+  parseShapeSourceLayerName,
   resolveLayerSetEntries,
   useVectorTilePreviewMetadata,
   useVectorTilePreviewSearch,
   useVectorTilePreviewSelection,
 } from '@hierarchidb/ui-map';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 //import { getShapeDbAPIClient } from '../../../services/build/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { useTheme } from '@mui/material/styles';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
+import type { DataSourceName, ShapeEntity, SourceTaskPayload } from '~/common/types/index';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import {
+  shapePreviewHoveredIdAtom,
+  shapePreviewMatchedIdsAtom,
+  shapePreviewSearchAtom,
+  shapePreviewSelectedIdsAtom,
+  shapePreviewSelectionContextAtom,
+} from '~/ui/atoms/shapePreviewAtomConstants';
+import { parseAdminLevelValue } from './parseAdminLevelValue';
+import { useShapePreviewFeatureSection } from './useShapePreviewFeatureSection';
 import type { ShapePreviewDraft as PreviewDraftType } from './useShapePreviewStepUtils';
 import {
-  DEFAULT_BOUNDS_MARGIN,
-  DEFAULT_VIEW,
-  MIN_BOUNDS_MARGIN,
   buildHoverLabel,
   buildLookupKey,
+  collectShapeLayerAdminLevels,
+  DEFAULT_BOUNDS_MARGIN,
+  DEFAULT_VIEW,
+  fetchTile,
   isNumericId,
+  MIN_BOUNDS_MARGIN,
   normalizeCountryCodeValue,
   normalizeText,
-  collectShapeLayerAdminLevels,
   parseSourceKey,
   parseVectorTileLayerNames,
-  fetchTile,
   resolveAdminLevelFromProps,
   resolvePersistedViewState,
 } from './useShapePreviewStepUtils';
-import { useShapePreviewFeatureSection } from './useShapePreviewFeatureSection';
 
 type ShapePreviewDraft = PreviewDraftType;
 
-export const useShapePreviewStep = (
-  data: Partial<ShapeEntity>,
-  nodeId?: string,
-) => {
+export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
   const { t } = useTranslation('shape-plugin');
   const theme = useTheme();
   const metadataEnabled = isShapePreviewMetadataEnabled();
@@ -113,7 +110,9 @@ export const useShapePreviewStep = (
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
   const selectionMatrix = previewDraft.selectedArrayByCountries;
-  const selectionDataSource = previewDraft.buildConfig?.dataSourceName as DataSourceName | undefined;
+  const selectionDataSource = previewDraft.buildConfig?.dataSourceName as
+    | DataSourceName
+    | undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +126,7 @@ export const useShapePreviewStep = (
         const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
           activeNodeId,
           selectionDataSource,
-          selectionMatrix,
+          selectionMatrix
         );
         if (!cancelled) {
           setSelectionMetadata(payloads as SourceTaskPayload[]);
@@ -148,19 +147,21 @@ export const useShapePreviewStep = (
   const loadDataSourceMetadataRows = useCallback(
     (targetNodeId: NodeId) =>
       shapeQueryAPIImpl.listDataSourceMetadata(targetNodeId) as Promise<ShapeDataSourceMetadata[]>,
-    [],
+    []
   );
 
   const loadFeatureMetadataRows = useCallback(
     (targetNodeId: NodeId) =>
       shapeQueryAPIImpl.listFeatureMetadata(targetNodeId) as Promise<ShapeFeatureMetadata[]>,
-    [],
+    []
   );
 
   const loadTransformErrorRows = useCallback(
     (targetNodeId: NodeId) =>
-      shapeQueryAPIImpl.listGeometryErrorRecords(targetNodeId) as Promise<ShapeGeometryErrorRecord[]>,
-    [],
+      shapeQueryAPIImpl.listGeometryErrorRecords(targetNodeId) as Promise<
+        ShapeGeometryErrorRecord[]
+      >,
+    []
   );
 
   const {
@@ -168,23 +169,17 @@ export const useShapePreviewStep = (
     metadataLoading: dataSourceMetadataLoading,
     metadataError: dataSourceMetadataError,
     metadataLoaded: dataSourceMetadataLoaded,
-  } = useVectorTilePreviewMetadata(
-    metadataEnabled,
-    activeNodeId,
-    loadDataSourceMetadataRows,
-  );
+  } = useVectorTilePreviewMetadata(metadataEnabled, activeNodeId, loadDataSourceMetadataRows);
 
   const {
     metadataRows: rawFeatureMetadataRows,
     metadataLoading: featureMetadataLoading,
     metadataError: featureMetadataError,
     metadataLoaded: featureMetadataLoaded,
-  } = useVectorTilePreviewMetadata(
-    metadataEnabled,
-    activeNodeId,
-    loadFeatureMetadataRows,
-  );
-  const [featureMetadataOverride, setFeatureMetadataOverride] = useState<ShapeFeatureMetadata[] | null>(null);
+  } = useVectorTilePreviewMetadata(metadataEnabled, activeNodeId, loadFeatureMetadataRows);
+  const [featureMetadataOverride, setFeatureMetadataOverride] = useState<
+    ShapeFeatureMetadata[] | null
+  >(null);
   useEffect(() => {
     setFeatureMetadataOverride(null);
   }, [rawFeatureMetadataRows]);
@@ -194,11 +189,7 @@ export const useShapePreviewStep = (
     metadataLoading: transformErrorLoading,
     metadataError: transformErrorError,
     metadataLoaded: transformErrorLoaded,
-  } = useVectorTilePreviewMetadata(
-    metadataEnabled,
-    activeNodeId,
-    loadTransformErrorRows,
-  );
+  } = useVectorTilePreviewMetadata(metadataEnabled, activeNodeId, loadTransformErrorRows);
 
   const selectionFilters = useMemo(() => {
     if (selectionMetadata.length === 0) return null;
@@ -261,51 +252,57 @@ export const useShapePreviewStep = (
   const featureMetadataRows = featureMetadataOverride ?? rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
 
-  const applyTileLayerNames = useCallback((nextNames: string[], source: TileLayerNameSource = 'discovered') => {
+  const applyTileLayerNames = useCallback(
+    (nextNames: string[], source: TileLayerNameSource = 'discovered') => {
       const parsedNames = nextNames
-        .map((name) => typeof name === 'string' ? name.trim() : '')
+        .map((name) => (typeof name === 'string' ? name.trim() : ''))
         .filter(Boolean)
-      .map((name) => {
-        const parsed = parseShapeSourceLayerName(name);
-        if (!parsed) {
-          return { raw: name, canonical: undefined as string | undefined };
+        .map((name) => {
+          const parsed = parseShapeSourceLayerName(name);
+          if (!parsed) {
+            return { raw: name, canonical: undefined as string | undefined };
+          }
+          return {
+            raw: name,
+            canonical: buildShapeSourceLayerName(
+              parsed.adminLevel,
+              parsed.boundary === 'b' ? 'boundary' : 'fill'
+            ),
+          };
+        })
+        .filter((entry): entry is { raw: string; canonical: string } => Boolean(entry.canonical));
+      if (!parsedNames.length) return;
+
+      const nextMap = new Map(tileLayerNamesRef.current ?? new Map<string, TileLayerNameRecord>());
+      let changed = false;
+
+      parsedNames.forEach(({ raw, canonical }) => {
+        const existing = nextMap.get(canonical);
+        if (!existing) {
+          nextMap.set(canonical, { name: raw, source });
+          changed = true;
+          return;
         }
-        return {
-          raw: name,
-          canonical: buildShapeSourceLayerName(parsed.adminLevel, parsed.boundary === 'b' ? 'boundary' : 'fill'),
-        };
-      })
-      .filter((entry): entry is { raw: string; canonical: string } => Boolean(entry.canonical));
-    if (!parsedNames.length) return;
-
-    const nextMap = new Map(tileLayerNamesRef.current ?? new Map<string, TileLayerNameRecord>());
-    let changed = false;
-
-    parsedNames.forEach(({ raw, canonical }) => {
-      const existing = nextMap.get(canonical);
-      if (!existing) {
-        nextMap.set(canonical, { name: raw, source });
-        changed = true;
-        return;
-      }
-      if (existing.source === source) {
-        if (existing.name !== raw) {
+        if (existing.source === source) {
+          if (existing.name !== raw) {
+            nextMap.set(canonical, { name: raw, source });
+            changed = true;
+          }
+          return;
+        }
+        if (source === 'discovered' && existing.source === 'fallback') {
           nextMap.set(canonical, { name: raw, source });
           changed = true;
         }
-        return;
-      }
-      if (source === 'discovered' && existing.source === 'fallback') {
-        nextMap.set(canonical, { name: raw, source });
-        changed = true;
-      }
-    });
+      });
 
-    if (!changed) return;
-    const next = Array.from(nextMap.values(), ({ name }) => name);
-    tileLayerNamesRef.current = nextMap;
-    setTileLayerNames(next);
-  }, []);
+      if (!changed) return;
+      const next = Array.from(nextMap.values(), ({ name }) => name);
+      tileLayerNamesRef.current = nextMap;
+      setTileLayerNames(next);
+    },
+    []
+  );
 
   const dataSourceMetadataLookup = useMemo(() => {
     const bySourceKey = new Map<string, ShapeDataSourceMetadata>();
@@ -328,51 +325,71 @@ export const useShapePreviewStep = (
     return { bySourceKey, byCountryName, byCountryCode };
   }, [dataSourceMetadataRows]);
 
-  const resolveSourceContext = useCallback((input: {
-    countryCode?: string;
-    countryName?: string;
-    adminLevel?: number;
-    sourceKey?: string;
-    dataSource?: string;
-  }) => {
-    const parsedSourceKey = parseSourceKey(input.sourceKey);
-    const candidateAdminLevel = parseAdminLevelValue(input.adminLevel) ?? parsedSourceKey.adminLevel;
-    const candidateCode = normalizeCountryCodeValue(input.countryCode) ?? parsedSourceKey.countryCode;
-    const candidateNameInput = normalizeText(input.countryName);
-    const selectionByCode = candidateCode ? selectionLookup.byCode.get(candidateCode) : undefined;
-    const selectionByName = candidateNameInput
-      ? selectionLookup.byName.get(candidateNameInput.toLowerCase())
-      : undefined;
-    const candidateName = candidateNameInput
-      ?? normalizeText(selectionByCode?.countryName)
-      ?? normalizeText(selectionByName?.countryName);
-    const lookupKey = buildLookupKey(candidateCode, candidateAdminLevel);
-    const sourceByKey = lookupKey ? dataSourceMetadataLookup.bySourceKey.get(lookupKey) : undefined;
-    const sourceByName = candidateName && candidateAdminLevel != null
-      ? dataSourceMetadataLookup.byCountryName.get(`${candidateName.toLowerCase()}:${candidateAdminLevel}`)
-      : undefined;
-    const sourceByCode = candidateCode ? dataSourceMetadataLookup.byCountryCode.get(candidateCode) : undefined;
-    const sourceRow = sourceByKey ?? sourceByName ?? sourceByCode;
-    const countryCode = normalizeCountryCodeValue(sourceRow?.countryCode)
-      ?? candidateCode
-      ?? normalizeCountryCodeValue(selectionByCode?.countryCode)
-      ?? normalizeCountryCodeValue(selectionByName?.countryCode);
-    const countryName = normalizeText(sourceRow?.countryName) ?? candidateName ?? candidateNameInput;
-    const adminLevel = parseAdminLevelValue(sourceRow?.adminLevel ?? candidateAdminLevel);
-    const dataSource = sourceRow?.dataSource ?? input.dataSource ?? selectionDataSource;
-    return {
-      countryCode,
-      countryName,
-      adminLevel,
-      dataSource,
-      sourceKey: parsedSourceKey.countryCode && parsedSourceKey.adminLevel != null
-        ? `${parsedSourceKey.countryCode}:${parsedSourceKey.adminLevel}`
-        : input.sourceKey,
-    };
-  }, [selectionDataSource, selectionLookup.byCode, selectionLookup.byName, dataSourceMetadataLookup]);
+  const resolveSourceContext = useCallback(
+    (input: {
+      countryCode?: string;
+      countryName?: string;
+      adminLevel?: number;
+      sourceKey?: string;
+      dataSource?: string;
+    }) => {
+      const parsedSourceKey = parseSourceKey(input.sourceKey);
+      const candidateAdminLevel =
+        parseAdminLevelValue(input.adminLevel) ?? parsedSourceKey.adminLevel;
+      const candidateCode =
+        normalizeCountryCodeValue(input.countryCode) ?? parsedSourceKey.countryCode;
+      const candidateNameInput = normalizeText(input.countryName);
+      const selectionByCode = candidateCode ? selectionLookup.byCode.get(candidateCode) : undefined;
+      const selectionByName = candidateNameInput
+        ? selectionLookup.byName.get(candidateNameInput.toLowerCase())
+        : undefined;
+      const candidateName =
+        candidateNameInput ??
+        normalizeText(selectionByCode?.countryName) ??
+        normalizeText(selectionByName?.countryName);
+      const lookupKey = buildLookupKey(candidateCode, candidateAdminLevel);
+      const sourceByKey = lookupKey
+        ? dataSourceMetadataLookup.bySourceKey.get(lookupKey)
+        : undefined;
+      const sourceByName =
+        candidateName && candidateAdminLevel != null
+          ? dataSourceMetadataLookup.byCountryName.get(
+              `${candidateName.toLowerCase()}:${candidateAdminLevel}`
+            )
+          : undefined;
+      const sourceByCode = candidateCode
+        ? dataSourceMetadataLookup.byCountryCode.get(candidateCode)
+        : undefined;
+      const sourceRow = sourceByKey ?? sourceByName ?? sourceByCode;
+      const countryCode =
+        normalizeCountryCodeValue(sourceRow?.countryCode) ??
+        candidateCode ??
+        normalizeCountryCodeValue(selectionByCode?.countryCode) ??
+        normalizeCountryCodeValue(selectionByName?.countryCode);
+      const countryName =
+        normalizeText(sourceRow?.countryName) ?? candidateName ?? candidateNameInput;
+      const adminLevel = parseAdminLevelValue(sourceRow?.adminLevel ?? candidateAdminLevel);
+      const dataSource = sourceRow?.dataSource ?? input.dataSource ?? selectionDataSource;
+      return {
+        countryCode,
+        countryName,
+        adminLevel,
+        dataSource,
+        sourceKey:
+          parsedSourceKey.countryCode && parsedSourceKey.adminLevel != null
+            ? `${parsedSourceKey.countryCode}:${parsedSourceKey.adminLevel}`
+            : input.sourceKey,
+      };
+    },
+    [selectionDataSource, selectionLookup.byCode, selectionLookup.byName, dataSourceMetadataLookup]
+  );
 
   const updateBounds = useCallback(
-    (bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null, lng: number, lat: number) => {
+    (
+      bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null,
+      lng: number,
+      lat: number
+    ) => {
       if (!bounds) {
         return { minLng: lng, minLat: lat, maxLng: lng, maxLat: lat };
       }
@@ -383,28 +400,34 @@ export const useShapePreviewStep = (
         maxLat: Math.max(bounds.maxLat, lat),
       };
     },
-    [],
+    []
   );
 
   const visitCoordinates = useCallback(
-    (coords: unknown, bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null) => {
+    (
+      coords: unknown,
+      bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null
+    ) => {
       if (!Array.isArray(coords)) return bounds;
       if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
         return updateBounds(bounds, coords[0], coords[1]);
       }
-      return coords.reduce(
-        (current, entry) => visitCoordinates(entry, current),
-        bounds,
-      );
+      return coords.reduce((current, entry) => visitCoordinates(entry, current), bounds);
     },
-    [updateBounds],
+    [updateBounds]
   );
 
   const finalizeBounds = useCallback(
     (bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null) => {
       if (!bounds) return null;
-      const lngPadding = Math.max((bounds.maxLng - bounds.minLng) * DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN);
-      const latPadding = Math.max((bounds.maxLat - bounds.minLat) * DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN);
+      const lngPadding = Math.max(
+        (bounds.maxLng - bounds.minLng) * DEFAULT_BOUNDS_MARGIN,
+        MIN_BOUNDS_MARGIN
+      );
+      const latPadding = Math.max(
+        (bounds.maxLat - bounds.minLat) * DEFAULT_BOUNDS_MARGIN,
+        MIN_BOUNDS_MARGIN
+      );
       const clampLng = (value: number) => Math.max(-180, Math.min(180, value));
       const clampLat = (value: number) => Math.max(-90, Math.min(90, value));
       return {
@@ -414,7 +437,7 @@ export const useShapePreviewStep = (
         maxLat: clampLat(bounds.maxLat + latPadding),
       };
     },
-    [],
+    []
   );
 
   const selectionBounds = useMemo(() => {
@@ -427,7 +450,12 @@ export const useShapePreviewStep = (
       const bbox = row.bbox;
       if (!bbox || bbox.length !== 4) return;
       const [minX, minY, maxX, maxY] = bbox;
-      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+      if (
+        !Number.isFinite(minX) ||
+        !Number.isFinite(minY) ||
+        !Number.isFinite(maxX) ||
+        !Number.isFinite(maxY)
+      ) {
         return;
       }
       hasBounds = true;
@@ -451,7 +479,7 @@ export const useShapePreviewStep = (
 
   const persistedViewState = useMemo(
     () => resolvePersistedViewState(data.previewMapView),
-    [data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom],
+    [data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]
   );
   const lastAutoFitBounds = useRef<{
     minLng: number;
@@ -460,40 +488,54 @@ export const useShapePreviewStep = (
     maxLat: number;
   } | null>(null);
 
-  const normalizedTransformErrorRows = useMemo(() => transformErrorRows.map((row) => {
-    const context = resolveSourceContext({
-      countryCode: row.countryCode,
-      countryName: row.countryName,
-      adminLevel: row.adminLevel,
-      sourceKey: row.sourceKey,
-    });
-    const rawFeatureId = normalizeText(row.featureId);
-    const fallbackId = normalizeText(row.id);
-    const normalizedFeatureId = !rawFeatureId || isNumericId(rawFeatureId)
-      ? [
-        context.countryCode ?? 'XX',
-        context.adminLevel != null ? formatAdminLevelLabel(context.adminLevel) : 'Base',
-        context.sourceKey,
-        row.featureIndex != null ? String(row.featureIndex) : fallbackId ?? rawFeatureId ?? '0',
-      ].filter(Boolean).join(':')
-      : rawFeatureId;
-    return {
-      ...row,
-      featureId: normalizedFeatureId,
-      countryName: context.countryName ?? row.countryName,
-      countryCode: context.countryCode ?? row.countryCode,
-      adminLevel: parseAdminLevelValue(context.adminLevel ?? row.adminLevel),
-    };
-  }), [resolveSourceContext, transformErrorRows]);
+  const normalizedTransformErrorRows = useMemo(
+    () =>
+      transformErrorRows.map((row) => {
+        const context = resolveSourceContext({
+          countryCode: row.countryCode,
+          countryName: row.countryName,
+          adminLevel: row.adminLevel,
+          sourceKey: row.sourceKey,
+        });
+        const rawFeatureId = normalizeText(row.featureId);
+        const fallbackId = normalizeText(row.id);
+        const normalizedFeatureId =
+          !rawFeatureId || isNumericId(rawFeatureId)
+            ? [
+                context.countryCode ?? 'XX',
+                context.adminLevel != null ? formatAdminLevelLabel(context.adminLevel) : 'Base',
+                context.sourceKey,
+                row.featureIndex != null
+                  ? String(row.featureIndex)
+                  : (fallbackId ?? rawFeatureId ?? '0'),
+              ]
+                .filter(Boolean)
+                .join(':')
+            : rawFeatureId;
+        return {
+          ...row,
+          featureId: normalizedFeatureId,
+          countryName: context.countryName ?? row.countryName,
+          countryCode: context.countryCode ?? row.countryCode,
+          adminLevel: parseAdminLevelValue(context.adminLevel ?? row.adminLevel),
+        };
+      }),
+    [resolveSourceContext, transformErrorRows]
+  );
 
   const shapeLayerAdminLevels = useMemo(() => {
     return collectShapeLayerAdminLevels(
       dataSourceMetadataRows,
       featureMetadataRows,
       normalizedTransformErrorRows,
-      selectionMetadata,
+      selectionMetadata
     );
-  }, [dataSourceMetadataRows, featureMetadataRows, normalizedTransformErrorRows, selectionMetadata]);
+  }, [
+    dataSourceMetadataRows,
+    featureMetadataRows,
+    normalizedTransformErrorRows,
+    selectionMetadata,
+  ]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     if (persistedViewState) {
@@ -517,11 +559,11 @@ export const useShapePreviewStep = (
     if (!mapInstance || !selectionBounds || persistedViewState) return;
     const prevBounds = lastAutoFitBounds.current;
     if (
-      prevBounds
-      && Math.abs(prevBounds.minLng - selectionBounds.minLng) < 1e-7
-      && Math.abs(prevBounds.minLat - selectionBounds.minLat) < 1e-7
-      && Math.abs(prevBounds.maxLng - selectionBounds.maxLng) < 1e-7
-      && Math.abs(prevBounds.maxLat - selectionBounds.maxLat) < 1e-7
+      prevBounds &&
+      Math.abs(prevBounds.minLng - selectionBounds.minLng) < 1e-7 &&
+      Math.abs(prevBounds.minLat - selectionBounds.minLat) < 1e-7 &&
+      Math.abs(prevBounds.maxLng - selectionBounds.maxLng) < 1e-7 &&
+      Math.abs(prevBounds.maxLat - selectionBounds.maxLat) < 1e-7
     ) {
       return;
     }
@@ -562,13 +604,10 @@ export const useShapePreviewStep = (
     searchKeyword,
     getRowId,
     buildSearchText,
-    setMatchedIds,
+    setMatchedIds
   );
 
-  const deriveSelectionContext = useCallback((
-    rows: ShapeDataSourceMetadata[],
-    ids: string[],
-  ) => {
+  const deriveSelectionContext = useCallback((rows: ShapeDataSourceMetadata[], ids: string[]) => {
     if (!ids.length) return null;
     const selectedRows = rows.filter((row) => ids.includes(row.originKey));
     const first = selectedRows[0];
@@ -577,52 +616,57 @@ export const useShapePreviewStep = (
     const firstCountryCode = normalizeCountryCodeValue(first.countryCode);
     if (!firstCountryCode) return null;
     const consistent = selectedRows.every(
-      (row) => normalizeCountryCodeValue(row.countryCode) === firstCountryCode
-        && parseAdminLevelValue(row.adminLevel) === firstLevel,
+      (row) =>
+        normalizeCountryCodeValue(row.countryCode) === firstCountryCode &&
+        parseAdminLevelValue(row.adminLevel) === firstLevel
     );
     return consistent && firstLevel != null
       ? { countryCode: firstCountryCode, adminLevel: firstLevel }
       : null;
   }, []);
 
-  const resolveSelection = useCallback((
-    row: ShapeDataSourceMetadata,
-    current: typeof selectionContext,
-    rows: ShapeDataSourceMetadata[],
-  ) => {
-    const adminLevel = parseAdminLevelValue(row.adminLevel) ?? 0;
-    const countryCode = normalizeCountryCodeValue(row.countryCode);
-    if (!countryCode) {
-      return { nextContext: null, selectedIds: [] as string[] };
-    }
-    const isSameCountry = current?.countryCode === countryCode;
-    const currentLevel = isSameCountry ? parseAdminLevelValue(current.adminLevel) : null;
-    const nextLevel = currentLevel != null
-      ? currentLevel > 0
-        ? currentLevel - 1
-        : null
-      : adminLevel;
-    if (nextLevel === null) {
-      return { nextContext: null, selectedIds: [] as string[] };
-    }
-    const selectedIds = rows
-      .filter((item) => (
-        normalizeCountryCodeValue(item.countryCode) === countryCode
-        && parseAdminLevelValue(item.adminLevel) === nextLevel
-      ))
-      .map((item) => item.originKey);
-    return {
-      nextContext: selectedIds.length ? { countryCode, adminLevel: nextLevel } : null,
-      selectedIds,
-    };
-  }, []);
+  const resolveSelection = useCallback(
+    (
+      row: ShapeDataSourceMetadata,
+      current: typeof selectionContext,
+      rows: ShapeDataSourceMetadata[]
+    ) => {
+      const adminLevel = parseAdminLevelValue(row.adminLevel) ?? 0;
+      const countryCode = normalizeCountryCodeValue(row.countryCode);
+      if (!countryCode) {
+        return { nextContext: null, selectedIds: [] as string[] };
+      }
+      const isSameCountry = current?.countryCode === countryCode;
+      const currentLevel = isSameCountry ? parseAdminLevelValue(current.adminLevel) : null;
+      const nextLevel =
+        currentLevel != null ? (currentLevel > 0 ? currentLevel - 1 : null) : adminLevel;
+      if (nextLevel === null) {
+        return { nextContext: null, selectedIds: [] as string[] };
+      }
+      const selectedIds = rows
+        .filter(
+          (item) =>
+            normalizeCountryCodeValue(item.countryCode) === countryCode &&
+            parseAdminLevelValue(item.adminLevel) === nextLevel
+        )
+        .map((item) => item.originKey);
+      return {
+        nextContext: selectedIds.length ? { countryCode, adminLevel: nextLevel } : null,
+        selectedIds,
+      };
+    },
+    []
+  );
 
-
-  const resolveHoverOriginKey = useCallback((feature: { id?: unknown; properties?: Record<string, unknown> | null }) => {
-    const candidate = feature?.properties?.__hdbOriginKey ?? feature?.properties?.id ?? feature?.id;
-    if (candidate === null || candidate === undefined) return '';
-    return normalizeText(String(candidate)) ?? '';
-  }, []);
+  const resolveHoverOriginKey = useCallback(
+    (feature: { id?: unknown; properties?: Record<string, unknown> | null }) => {
+      const candidate =
+        feature?.properties?.__hdbOriginKey ?? feature?.properties?.id ?? feature?.id;
+      if (candidate === null || candidate === undefined) return '';
+      return normalizeText(String(candidate)) ?? '';
+    },
+    []
+  );
 
   const hoverFeatureByOriginKey = useMemo(() => {
     const map = new Map<string, { props: Record<string, unknown>; adminLevel: number }>();
@@ -639,30 +683,29 @@ export const useShapePreviewStep = (
     return map;
   }, [hoverCandidates, resolveHoverOriginKey]);
 
-  const getHoverLabel = useCallback((row: ShapeDataSourceMetadata) => {
-    const hoverProps = hoverFeatureByOriginKey.get(row.originKey)?.props;
-    return buildHoverLabel(row, hoverProps);
-  }, [hoverFeatureByOriginKey]);
+  const getHoverLabel = useCallback(
+    (row: ShapeDataSourceMetadata) => {
+      const hoverProps = hoverFeatureByOriginKey.get(row.originKey)?.props;
+      return buildHoverLabel(row, hoverProps);
+    },
+    [hoverFeatureByOriginKey]
+  );
 
-  const {
-    selectedIdSet,
-    hoveredIdSet,
-    hoverMessage,
-    handleMapIdentify,
-  } = useVectorTilePreviewSelection({
-    rows: dataSourceMetadataRows,
-    selectedIds,
-    setSelectedIds,
-    hoveredId,
-    selectionContext,
-    setSelectionContext,
-    getRowId,
-    resolveSelection,
-    deriveSelectionContext,
-    getHoverLabel,
-    resolveFeatureId: (feature) =>
-      String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
-  });
+  const { selectedIdSet, hoveredIdSet, hoverMessage, handleMapIdentify } =
+    useVectorTilePreviewSelection({
+      rows: dataSourceMetadataRows,
+      selectedIds,
+      setSelectedIds,
+      hoveredId,
+      selectionContext,
+      setSelectionContext,
+      getRowId,
+      resolveSelection,
+      deriveSelectionContext,
+      getHoverLabel,
+      resolveFeatureId: (feature) =>
+        String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
+    });
 
   useEffect(() => {
     const candidate = hoverCandidates[0];
@@ -674,7 +717,7 @@ export const useShapePreviewStep = (
     }
     const feature = candidate.feature;
     const resolved = String(
-      feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? '',
+      feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''
     );
     if (!resolved) {
       if (hoveredId !== null) {
@@ -701,20 +744,25 @@ export const useShapePreviewStep = (
     setFeatureMetadataOverride,
   });
 
-  const getFeatureRowId = useCallback((row: ShapePreviewFeatureRow) => String(row.featureId ?? row.id ?? ''), []);
-  const buildFeatureSearchText = useCallback((row: ShapePreviewFeatureRow) => (
-    [
-      row.featureId,
-      row.countryName,
-      row.countryCode,
-      row.adminName,
-      row.adminCode,
-      row.adminLevel != null ? String(row.adminLevel) : undefined,
-      row.dataSource,
-    ]
-      .filter(Boolean)
-      .join(' ')
-  ), []);
+  const getFeatureRowId = useCallback(
+    (row: ShapePreviewFeatureRow) => String(row.featureId ?? row.id ?? ''),
+    []
+  );
+  const buildFeatureSearchText = useCallback(
+    (row: ShapePreviewFeatureRow) =>
+      [
+        row.featureId,
+        row.countryName,
+        row.countryCode,
+        row.adminName,
+        row.adminCode,
+        row.adminLevel != null ? String(row.adminLevel) : undefined,
+        row.dataSource,
+      ]
+        .filter(Boolean)
+        .join(' '),
+    []
+  );
 
   useVectorTilePreviewSearch(
     metadataEnabled,
@@ -722,12 +770,12 @@ export const useShapePreviewStep = (
     featureSearchKeyword,
     getFeatureRowId,
     buildFeatureSearchText,
-    setMatchedFeatureIds,
+    setMatchedFeatureIds
   );
 
   const matchedFeatureIdSet = useMemo<Set<string>>(
     () => new Set(matchedFeatureIds),
-    [matchedFeatureIds],
+    [matchedFeatureIds]
   );
   const [featureRowFilterMode, setFeatureRowFilterMode] = useState<'all' | 'viewport'>('all');
   const [featureRowSearchOnly, setFeatureRowSearchOnly] = useState(true);
@@ -744,28 +792,33 @@ export const useShapePreviewStep = (
   const displayedFeatureRows = useMemo(() => {
     if (featureRowFilterMode !== 'viewport') return featureListRows;
     if (!viewportFeatureIdSet || viewportFeatureIdSet.size === 0) return [];
-    return featureListRows.filter((row) => viewportFeatureIdSet.has(String(row.featureId ?? row.id)));
+    return featureListRows.filter((row) =>
+      viewportFeatureIdSet.has(String(row.featureId ?? row.id))
+    );
   }, [featureListRows, featureRowFilterMode, viewportFeatureIdSet]);
 
   const wrappedToggleRecyclingForSelection = useCallback(async () => {
     await toggleRecyclingForSelection(selectedFeatureIds);
   }, [toggleRecyclingForSelection, selectedFeatureIds]);
 
-  const expandMapIds = useCallback((ids: string[]) => {
-    const result = new Set<string>();
-    const addMembers = (members?: string[]) => {
-      members?.forEach((memberId) => result.add(memberId));
-    };
-    ids.forEach((id) => {
-      const members = rowIdToMembers.get(id) ?? [id];
-      members.forEach((memberId) => {
-        result.add(memberId);
-        const countryKey = featureToCountryKey.get(memberId);
-        if (countryKey) addMembers(countryGroupMembers.get(countryKey));
+  const expandMapIds = useCallback(
+    (ids: string[]) => {
+      const result = new Set<string>();
+      const addMembers = (members?: string[]) => {
+        members?.forEach((memberId) => result.add(memberId));
+      };
+      ids.forEach((id) => {
+        const members = rowIdToMembers.get(id) ?? [id];
+        members.forEach((memberId) => {
+          result.add(memberId);
+          const countryKey = featureToCountryKey.get(memberId);
+          if (countryKey) addMembers(countryGroupMembers.get(countryKey));
+        });
       });
-    });
-    return Array.from(result);
-  }, [countryGroupMembers, featureToCountryKey, rowIdToMembers]);
+      return Array.from(result);
+    },
+    [countryGroupMembers, featureToCountryKey, rowIdToMembers]
+  );
 
   const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
     const definition = getLayerSetDefinition(layerSetName);
@@ -802,43 +855,49 @@ export const useShapePreviewStep = (
     return map;
   }, [featureMetadataRows, normalizedTransformErrorRows]);
 
-  const buildMapEntries = useCallback((id: string): MapHighlightEntry[] => {
-    const adminLevel = featureAdminLevelById.get(id);
-    const entries = typeof adminLevel === 'number'
-      ? layerEntriesByAdminLevel.get(adminLevel)?.filter((entry) => typeof entry.sourceLayer === 'string')
-      : undefined;
-    const effectiveEntries = entries && entries.length > 0 ? entries : [];
-    if (effectiveEntries.length > 0) {
-      return effectiveEntries.map((entry) => ({
-        source: `${baseSourceId}-${entry.id}`,
-        id,
-        layerId: `${baseLayerId}-${entry.id}`,
-        sourceLayer: entry.sourceLayer,
-        nodeId: nodeKey ? String(nodeKey) : undefined,
-        nodeType: 'shape',
-      }));
-    }
-    return [];
-  }, [
-    baseLayerId,
-    baseSourceId,
-    featureAdminLevelById,
-    layerEntriesByAdminLevel,
-    nodeKey,
-    resolvedLayerSetEntries,
-  ]);
+  const buildMapEntries = useCallback(
+    (id: string): MapHighlightEntry[] => {
+      const adminLevel = featureAdminLevelById.get(id);
+      const entries =
+        typeof adminLevel === 'number'
+          ? layerEntriesByAdminLevel
+              .get(adminLevel)
+              ?.filter((entry) => typeof entry.sourceLayer === 'string')
+          : undefined;
+      const effectiveEntries = entries && entries.length > 0 ? entries : [];
+      if (effectiveEntries.length > 0) {
+        return effectiveEntries.map((entry) => ({
+          source: `${baseSourceId}-${entry.id}`,
+          id,
+          layerId: `${baseLayerId}-${entry.id}`,
+          sourceLayer: entry.sourceLayer,
+          nodeId: nodeKey ? String(nodeKey) : undefined,
+          nodeType: 'shape',
+        }));
+      }
+      return [];
+    },
+    [
+      baseLayerId,
+      baseSourceId,
+      featureAdminLevelById,
+      layerEntriesByAdminLevel,
+      nodeKey,
+      resolvedLayerSetEntries,
+    ]
+  );
 
   const expandedMatchedIds = useMemo(
     () => expandMapIds(matchedFeatureIds),
-    [expandMapIds, matchedFeatureIds],
+    [expandMapIds, matchedFeatureIds]
   );
   const expandedSelectedIds = useMemo(
     () => expandMapIds(selectedFeatureIds),
-    [expandMapIds, selectedFeatureIds],
+    [expandMapIds, selectedFeatureIds]
   );
   const expandedHoverIds = useMemo(
     () => (hoveredId ? expandMapIds([hoveredId]) : []),
-    [expandMapIds, hoveredId],
+    [expandMapIds, hoveredId]
   );
 
   const selectedFeatureIdSet = useMemo(() => new Set(expandedSelectedIds), [expandedSelectedIds]);
@@ -846,19 +905,25 @@ export const useShapePreviewStep = (
   const searchMatchKeysRef = useRef<string[]>([]);
   const selectedMatchKeysRef = useRef<string[]>([]);
   const hoverMatchKeysRef = useRef<string[]>([]);
-  const setMatchesIfChanged = useCallback((
-    next: MapHighlightEntry[],
-    keyRef: MutableRefObject<string[]>,
-    setter: (entries: MapHighlightEntry[]) => void,
-  ) => {
-    const nextKeys = next.map(buildHighlightKey);
-    const prevKeys = keyRef.current;
-    if (prevKeys.length === nextKeys.length && prevKeys.every((value, index) => value === nextKeys[index])) {
-      return;
-    }
-    keyRef.current = nextKeys;
-    setter(next);
-  }, [buildHighlightKey]);
+  const setMatchesIfChanged = useCallback(
+    (
+      next: MapHighlightEntry[],
+      keyRef: MutableRefObject<string[]>,
+      setter: (entries: MapHighlightEntry[]) => void
+    ) => {
+      const nextKeys = next.map(buildHighlightKey);
+      const prevKeys = keyRef.current;
+      if (
+        prevKeys.length === nextKeys.length &&
+        prevKeys.every((value, index) => value === nextKeys[index])
+      ) {
+        return;
+      }
+      keyRef.current = nextKeys;
+      setter(next);
+    },
+    [buildHighlightKey]
+  );
 
   const selectedErrorBounds = useMemo(() => {
     if (selectedFeatureIdSet.size === 0) return null;
@@ -928,10 +993,15 @@ export const useShapePreviewStep = (
       try {
         const tiles = await shapeQueryAPIImpl.listVectorTiles(activeNodeId as NodeId);
         if (cancelled || !tiles.length) return;
-        const prioritizedTiles = [...tiles].sort((a, b) => (b.z - a.z) || (a.x - b.x) || (a.y - b.y));
+        const prioritizedTiles = [...tiles].sort((a, b) => b.z - a.z || a.x - b.x || a.y - b.y);
         const sampleTiles = prioritizedTiles.slice(0, 12);
         for (const tile of sampleTiles) {
-          const tileInfo = await shapeQueryAPIImpl.getVectorTileInfo(activeNodeId, tile.z, tile.x, tile.y);
+          const tileInfo = await shapeQueryAPIImpl.getVectorTileInfo(
+            activeNodeId,
+            tile.z,
+            tile.x,
+            tile.y
+          );
           if (cancelled) return;
           const tileLayers = (tileInfo?.layers ?? [])
             .map((layer) => layer.name)
@@ -972,7 +1042,7 @@ export const useShapePreviewStep = (
       applyTileLayerNames(names, 'discovered');
       return data;
     },
-    [activeNodeId, applyTileLayerNames],
+    [activeNodeId, applyTileLayerNames]
   );
 
   useEffect(() => {
@@ -990,7 +1060,11 @@ export const useShapePreviewStep = (
       setMatchesIfChanged([], hoverMatchKeysRef, setMapHoverMatches);
       return;
     }
-    setMatchesIfChanged(expandedHoverIds.flatMap((id) => buildMapEntries(String(id))), hoverMatchKeysRef, setMapHoverMatches);
+    setMatchesIfChanged(
+      expandedHoverIds.flatMap((id) => buildMapEntries(String(id))),
+      hoverMatchKeysRef,
+      setMapHoverMatches
+    );
   }, [buildMapEntries, expandedHoverIds, setMapHoverMatches, setMatchesIfChanged]);
 
   return {

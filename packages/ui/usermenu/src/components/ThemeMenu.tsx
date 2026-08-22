@@ -1,3 +1,4 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import {
   DarkMode as DarkModeIcon,
@@ -5,7 +6,6 @@ import {
   SettingsBrightness as SystemThemeIcon,
 } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface ThemeMenuProps {
   anchorEl: HTMLElement | null;

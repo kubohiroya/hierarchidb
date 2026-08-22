@@ -50,45 +50,66 @@ export function useBasicInfoStepView({
   const nameInputId = `${fieldId}-name`;
   const descriptionInputId = `${fieldId}-description`;
 
-  const emitChange = useCallback((updates: Partial<BasicInfoData>) => {
-    onChange({
-      name,
-      description,
-      tags,
-      ...updates,
-    });
-  }, [description, name, onChange, tags]);
+  const emitChange = useCallback(
+    (updates: Partial<BasicInfoData>) => {
+      onChange({
+        name,
+        description,
+        tags,
+        ...updates,
+      });
+    },
+    [description, name, onChange, tags]
+  );
 
-  const removeTag = useCallback((tag: string) => {
-    const nextTags = tags.filter((currentTag) => currentTag !== tag);
-    emitChange({ tags: nextTags });
-  }, [emitChange, tags]);
+  const removeTag = useCallback(
+    (tag: string) => {
+      const nextTags = tags.filter((currentTag) => currentTag !== tag);
+      emitChange({ tags: nextTags });
+    },
+    [emitChange, tags]
+  );
 
-  const handleNameChange = useCallback((value: string) => {
-    emitChange({ name: value });
-  }, [emitChange]);
+  const handleNameChange = useCallback(
+    (value: string) => {
+      emitChange({ name: value });
+    },
+    [emitChange]
+  );
 
-  const handleDescriptionChange = useCallback((value: string) => {
-    emitChange({ description: value });
-  }, [emitChange]);
+  const handleDescriptionChange = useCallback(
+    (value: string) => {
+      emitChange({ description: value });
+    },
+    [emitChange]
+  );
 
-  const handleTagsChange = useCallback((nextTags: string[]) => {
-    emitChange({ tags: nextTags });
-  }, [emitChange]);
+  const handleTagsChange = useCallback(
+    (nextTags: string[]) => {
+      emitChange({ tags: nextTags });
+    },
+    [emitChange]
+  );
 
-  const handleTagClick = useCallback((tag: string) => {
-    if (!onTagClick) return;
-    onTagClick(tag);
-  }, [onTagClick]);
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      if (!onTagClick) return;
+      onTagClick(tag);
+    },
+    [onTagClick]
+  );
 
-  const handleTagDeleteRequest = useCallback((tag: string) => {
-    if (disabled) return;
-    if (!confirmTagDelete) {
-      removeTag(tag);
-      return;
-    }
-    setPendingTagDelete(tag);
-  }, [confirmTagDelete, disabled, removeTag]);
+  const handleTagDeleteRequest = useCallback(
+    (tag: string) => {
+      if (disabled) return;
+      if (!confirmTagDelete) {
+        removeTag(tag);
+        return;
+      }
+      setPendingTagDelete(tag);
+    },
+    [confirmTagDelete, disabled, removeTag]
+  );
 
   const handleConfirmDelete = useCallback(() => {
     if (!pendingTagDelete) return;
@@ -102,7 +123,11 @@ export function useBasicInfoStepView({
 
   const normalizedName = typeof name === 'string' ? name : '';
   const normalizedDescription = typeof description === 'string' ? description : '';
-  const validationError = validate?.({ name: normalizedName, description: normalizedDescription, tags });
+  const validationError = validate?.({
+    name: normalizedName,
+    description: normalizedDescription,
+    tags,
+  });
   const nameError = !normalizedName.trim() ? requiredNameMessage : null;
   const mergedNameError = validationError ?? nameError;
 

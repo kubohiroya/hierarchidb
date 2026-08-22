@@ -1,17 +1,17 @@
 /**
-  * TreeConsoleFooter -
-  * eria-cartographTreeConsoleFooterUI
-   */
+ * TreeConsoleFooter -
+ * eria-cartographTreeConsoleFooterUI
+ */
 
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { HelpOutline } from '@mui/icons-material';
-import { type Theme, useTheme } from '@mui/material/styles';
 import styled from '@emotion/styled';
+import { HelpOutline } from '@mui/icons-material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { type Theme, useTheme } from '@mui/material/styles';
 import type { TreeConsoleFooterProps } from '~/types/index';
 
 /**
-  * FooterContainer -
-  */
+ * FooterContainer -
+ */
 const FooterContainer = styled(Box)`
   border-top: 1px solid;
   border-color: ${({ theme }: { theme: Theme }) => theme.palette.divider};
@@ -24,16 +24,16 @@ const FooterContainer = styled(Box)`
 `;
 
 /**
-  * FooterText -
-  */
+ * FooterText -
+ */
 const FooterText = styled(Typography)`
   color: ${({ theme }: { theme: Theme }) => theme.palette.text.secondary};
 `;
 
 /**
-  * TreeConsoleFooter
  * TreeConsoleFooter
-  */
+ * TreeConsoleFooter
+ */
 export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Element {
   const { controller, onStartTour, height = 32, loadingText, loadingTooltip, rightSlot } = props;
 
@@ -61,9 +61,11 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
           aria-label="Start guided tour"
           sx={{
             color: onStartTour ? 'text.secondary' : 'action.disabled',
-            '&:hover': onStartTour ? {
-              color: 'primary.main',
-            } : {},
+            '&:hover': onStartTour
+              ? {
+                  color: 'primary.main',
+                }
+              : {},
             '&.Mui-disabled': {
               color: 'action.disabled',
             },
@@ -72,11 +74,7 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
           <HelpOutline fontSize="small" />
         </IconButton>
         <Tooltip title={loadingTooltip || ''} arrow disableHoverListener={!loadingTooltip}>
-          <FooterText
-            variant="body2"
-            theme={theme}
-            sx={{ ml: 2 }}
-          >
+          <FooterText variant="body2" theme={theme} sx={{ ml: 2 }}>
             {loadingText ?? 'Loading...'}
           </FooterText>
         </Tooltip>
@@ -135,9 +133,11 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
         aria-label="Start guided tour"
         sx={{
           color: onStartTour ? 'text.secondary' : 'action.disabled',
-          '&:hover': onStartTour ? {
-            color: 'primary.main',
-          } : {},
+          '&:hover': onStartTour
+            ? {
+                color: 'primary.main',
+              }
+            : {},
           '&.Mui-disabled': {
             color: 'action.disabled',
           },
@@ -147,11 +147,7 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       </IconButton>
 
       {/* Node counts display with left margin */}
-      <FooterText
-        variant="body2"
-        theme={theme}
-        sx={{ ml: 2 }}
-      >
+      <FooterText variant="body2" theme={theme} sx={{ ml: 2 }}>
         {getFooterText()}
       </FooterText>
       {rightSlot && (

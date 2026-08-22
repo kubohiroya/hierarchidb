@@ -1,13 +1,11 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { VtDebugFocusConfig } from './vtStageDebug.js';
 import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
-import {
-  clipFeaturesForTile,
-} from './vtStageGeometryClippingUtils.js';
-import { buildFeaturesWithBBox, type FeatureWithBBox } from './vtStageGeometryFeature.js';
-import { collectUniqueFeatureIds } from './vtStageFeatureMetadataUtils.js';
+import type { VtDebugFocusConfig } from './vtStageDebug.js';
 import { resolveVtDebugFocusMatch } from './vtStageDebug.js';
+import { collectUniqueFeatureIds } from './vtStageFeatureMetadataUtils.js';
+import { clipFeaturesForTile } from './vtStageGeometryClippingUtils.js';
+import { buildFeaturesWithBBox, type FeatureWithBBox } from './vtStageGeometryFeature.js';
 import type { GeojsonVtEmptyTileDetail } from './vtStageSummary.js';
 import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 
@@ -18,18 +16,22 @@ type LayerPrecomputeInput = {
   taskContext: TaskLayerContext;
 };
 
-export const buildFeaturesWithBBoxByLayer = (
-  { layerMap, taskContext }: LayerPrecomputeInput,
-): PerTileLayerFeatureMap => {
+export const buildFeaturesWithBBoxByLayer = ({
+  layerMap,
+  taskContext,
+}: LayerPrecomputeInput): PerTileLayerFeatureMap => {
   const featuresWithBBoxByLayer = new Map<string, FeatureWithBBox[]>();
   for (const [layerName, features] of layerMap.entries()) {
     const featuresWithBBox = buildFeaturesWithBBox(features);
     if (features.length > 0 && featuresWithBBox.length === 0) {
-      console.warn('[tileEmit] layer has features but no bbox', JSON.stringify({
-        ...taskContext,
-        layerName,
-        featureCount: features.length,
-      }));
+      console.warn(
+        '[tileEmit] layer has features but no bbox',
+        JSON.stringify({
+          ...taskContext,
+          layerName,
+          featureCount: features.length,
+        })
+      );
     }
     featuresWithBBoxByLayer.set(layerName, featuresWithBBox);
   }
@@ -46,7 +48,13 @@ type ResolveTileLayerInput = {
   z: number;
   x: number;
   y: number;
-  buildLayerIndexForTile: (layerName: string, features: Feature<Geometry>[], z: number, x: number, y: number) => Promise<Tile | null>;
+  buildLayerIndexForTile: (
+    layerName: string,
+    features: Feature<Geometry>[],
+    z: number,
+    x: number,
+    y: number
+  ) => Promise<Tile | null>;
   debugFocusConfig: VtDebugFocusConfig;
 };
 
@@ -79,27 +87,36 @@ export const resolvePerTileLayerContribution = async ({
   const debugFocusMatch = debugFocusConfig.enabled
     ? resolveVtDebugFocusMatch(debugFocusConfig, tileKey, clippedFeatureIds as string[])
     : {
-      shouldLog: false,
-      tileMatched: false,
-      featureMatched: false,
-      matchedFeatureIds: [],
-    };
+        shouldLog: false,
+        tileMatched: false,
+        featureMatched: false,
+        matchedFeatureIds: [],
+      };
 
   if (debugFocusMatch.shouldLog) {
-    console.info('[tileEmit][focus] per-tile layer input', JSON.stringify({
-      ...context,
-      parentTile: parent,
-      tile: { z, x, y },
-      layerName,
-      featureCount: featuresWithBBox.length,
-      clippedFeatureCount: clippedFeatures.length,
-      tileMatched: debugFocusMatch.tileMatched,
-      featureMatched: debugFocusMatch.featureMatched,
-      matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
-    }));
+    console.info(
+      '[tileEmit][focus] per-tile layer input',
+      JSON.stringify({
+        ...context,
+        parentTile: parent,
+        tile: { z, x, y },
+        layerName,
+        featureCount: featuresWithBBox.length,
+        clippedFeatureCount: clippedFeatures.length,
+        tileMatched: debugFocusMatch.tileMatched,
+        featureMatched: debugFocusMatch.featureMatched,
+        matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
+      })
+    );
   }
 
-  const tile = await buildLayerIndexForTile(layerName, clippedFeatures as Feature<Geometry>[], z, x, y);
+  const tile = await buildLayerIndexForTile(
+    layerName,
+    clippedFeatures as Feature<Geometry>[],
+    z,
+    x,
+    y
+  );
   if (tile) {
     return { tile, emptyTileDetail: null };
   }
@@ -116,15 +133,18 @@ export const resolvePerTileLayerContribution = async ({
       : {}),
   };
   if (debugFocusMatch.shouldLog) {
-    console.warn('[tileEmit][focus] geojson-vt empty tile', JSON.stringify({
-      ...context,
-      parentTile: parent,
-      tile: { z, x, y },
-      layerName,
-      clippedFeatureCount: clippedFeatures.length,
-      featureCount: featuresWithBBox.length,
-      matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
-    }));
+    console.warn(
+      '[tileEmit][focus] geojson-vt empty tile',
+      JSON.stringify({
+        ...context,
+        parentTile: parent,
+        tile: { z, x, y },
+        layerName,
+        clippedFeatureCount: clippedFeatures.length,
+        featureCount: featuresWithBBox.length,
+        matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
+      })
+    );
   }
 
   return { tile: null, emptyTileDetail: detail };

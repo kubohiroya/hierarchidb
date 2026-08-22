@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
+import { describe, expect, it } from 'vitest';
 import {
   buildAbsolutePath,
   collectOrderedNodesByType,
@@ -15,7 +15,12 @@ const nodes: TreeNodeLike[] = [
   { id: 'root', parentId: null, nodeType: 'folder', metadata: { name: 'Resources' } },
   { id: 'alpha', parentId: 'root', nodeType: 'folder', metadata: { name: 'Alpha' } },
   { id: 'alpha-shapes', parentId: 'alpha', nodeType: 'folder', metadata: { name: 'Shapes' } },
-  { id: 'alpha-shape-1', parentId: 'alpha-shapes', nodeType: 'shape', metadata: { name: 'Shape A' } },
+  {
+    id: 'alpha-shape-1',
+    parentId: 'alpha-shapes',
+    nodeType: 'shape',
+    metadata: { name: 'Shape A' },
+  },
   { id: 'beta', parentId: 'root', nodeType: 'folder', metadata: { name: 'Beta' } },
   { id: 'beta-basemap', parentId: 'beta', nodeType: 'basemap', metadata: { name: 'Basemap B' } },
   { id: 'beta-route', parentId: 'beta', nodeType: 'route', metadata: { name: 'Route B' } },
@@ -56,18 +61,14 @@ describe('resourceTreeOrdering', () => {
       sources: {
         alpha: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
-      layers: [
-        { id: 'layer-alpha', type: 'fill', paint: { 'fill-color': '#ff0000' } },
-      ],
+      layers: [{ id: 'layer-alpha', type: 'fill', paint: { 'fill-color': '#ff0000' } }],
     } as MapLibreStyle;
     const styleB: MapLibreStyle = {
       version: 8,
       sources: {
         beta: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
-      layers: [
-        { id: 'layer-beta', type: 'fill', paint: { 'fill-color': '#0000ff' } },
-      ],
+      layers: [{ id: 'layer-beta', type: 'fill', paint: { 'fill-color': '#0000ff' } }],
     } as MapLibreStyle;
 
     const inputs = [

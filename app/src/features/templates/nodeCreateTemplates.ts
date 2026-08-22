@@ -1,7 +1,6 @@
 import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import {
   buildShapePresetDraftDataPatch,
   getShapePresetMenuEntries,
@@ -11,6 +10,7 @@ import {
   type ShapeCreatePresetId,
   type TranslateWithFallback,
 } from '~/features/shape/shapeCreatePresets';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 
 export type TemplateTreeContext = 'resources' | 'projects';
 
@@ -183,8 +183,7 @@ function toImportNode(node: TemplateNodeInput): {
         : 'folder';
 
   const normalizedData = normalizeRecord(node.data);
-  const data =
-    normalizedData && isPeerEntityPayload(normalizedData) ? normalizedData : undefined;
+  const data = normalizedData && isPeerEntityPayload(normalizedData) ? normalizedData : undefined;
   const normalizedDraftMetadata = normalizeRecord(node.draftMetadata);
   const rawBuildMetadata = rawMetadata.buildMetadata;
   const draftBuildMetadata = normalizedDraftMetadata?.buildMetadata;
@@ -197,21 +196,22 @@ function toImportNode(node: TemplateNodeInput): {
     typeof draftBuildMetadata === 'object' && draftBuildMetadata !== null
       ? draftBuildMetadata
       : undefined;
-  const requiresBuildMetadataDefault = resolvedNodeType === 'shape' || resolvedNodeType === 'styler';
+  const requiresBuildMetadataDefault =
+    resolvedNodeType === 'shape' || resolvedNodeType === 'styler';
   const importedMetadata = {
     ...rawMetadata,
     ...(requiresBuildMetadataDefault && !hasBuildMetadata
       ? { buildMetadata: { buildRequired: true } }
       : rawBuildMetadataObject
-      ? { buildMetadata: rawBuildMetadataObject }
-      : {}),
+        ? { buildMetadata: rawBuildMetadataObject }
+        : {}),
   };
   const importedDraftMetadata =
     requiresBuildMetadataDefault && !hasBuildMetadata
       ? { ...(normalizedDraftMetadata ?? {}), buildMetadata: { buildRequired: true } }
       : draftBuildMetadataObject
-      ? { ...(normalizedDraftMetadata ?? {}), buildMetadata: draftBuildMetadataObject }
-      : normalizedDraftMetadata;
+        ? { ...(normalizedDraftMetadata ?? {}), buildMetadata: draftBuildMetadataObject }
+        : normalizedDraftMetadata;
 
   return {
     name,

@@ -26,22 +26,25 @@ export const useFileInputWithUrlView = ({
   const showUrlDownloadSection = resolvedMode !== 'local';
   const displayError = error ?? localError ?? undefined;
 
-  const handleSignIn = useCallback((provider?: string) => {
-    devLog('FileInputWithUrl onSignIn:', {
-      signIn,
-      typeof: typeof signIn,
-      provider,
-    });
-    if (typeof signIn === 'function') {
-      signIn(provider);
-      return;
-    }
-    devError('signIn is not a function:', signIn);
-  }, [signIn]);
+  const handleSignIn = useCallback(
+    (provider?: string) => {
+      devLog('FileInputWithUrl onSignIn:', {
+        signIn,
+        typeof: typeof signIn,
+        provider,
+      });
+      if (typeof signIn === 'function') {
+        signIn(provider);
+        return;
+      }
+      devError('signIn is not a function:', signIn);
+    },
+    [signIn]
+  );
 
   const shouldShowAuthErrorAction = useMemo(
     () => Boolean(displayError?.includes('Authentication required') && !isAuthenticated),
-    [displayError, isAuthenticated],
+    [displayError, isAuthenticated]
   );
 
   return {

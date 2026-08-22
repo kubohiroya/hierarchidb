@@ -2,19 +2,19 @@
  * Mutation actions for TreeConsole.
  */
 
+import { notify } from '@hierarchidb/components';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { MaybeCP, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
+import type { NavigationHelpers } from './navigation.ts';
 import {
-  createUniqueName,
   confirmOverwrite,
+  createUniqueName,
   fireCmdEvent,
   isNameConflictError,
   resolveArchiveNavigationTarget,
   showCommandError,
 } from './treeConsoleActionUtils.ts';
-import type { NavigationHelpers } from './navigation.ts';
-import { notify } from '@hierarchidb/components';
 
 export const createMutationActions = (
   deps: TreeConsoleActionDeps,
@@ -35,11 +35,11 @@ export const createMutationActions = (
     translateWithFallback,
   } = deps;
 
-  const translateError = (key: string, fallback: string): string => (
-    translateWithFallback ? translateWithFallback(key, fallback) : fallback
-  );
+  const translateError = (key: string, fallback: string): string =>
+    translateWithFallback ? translateWithFallback(key, fallback) : fallback;
   const resolveArchiveErrorMessage = (error?: string): string => {
-    if (!error) return translateError('treeConsole.errors.archiveFailed', 'Move to archive failed.');
+    if (!error)
+      return translateError('treeConsole.errors.archiveFailed', 'Move to archive failed.');
     if (error === 'TRASH_REF_ROUTE') {
       return translateError(
         'treeConsole.errors.archiveReferencedByRoutes',

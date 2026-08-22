@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import L from 'leaflet';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import L from 'leaflet';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { TileBBox } from './TileEmitGeometryPreviewMap';
 
-const toLatLngBounds = (bbox: TileBBox): L.LatLngBounds => (
+const toLatLngBounds = (bbox: TileBBox): L.LatLngBounds =>
   L.latLngBounds([
     [bbox.minY, bbox.minX],
     [bbox.maxY, bbox.maxX],
-  ])
-);
+  ]);
 
 const resolveFeatureId = (feature: Feature): string | null => {
   const props = feature.properties as Record<string, unknown> | undefined;
@@ -150,7 +149,7 @@ export const useTileEmitGeometryPreviewMap = ({
     baseLayer.clearLayers();
     highlightLayer.clearLayers();
 
-    const selectedFeature = selectedFeatureId ? featureById.get(selectedFeatureId) ?? null : null;
+    const selectedFeature = selectedFeatureId ? (featureById.get(selectedFeatureId) ?? null) : null;
     const renderFeatures = selectedFeature ? [selectedFeature] : features;
     if (renderFeatures.length > 0) {
       L.geoJSON(toFeatureCollection(renderFeatures), {
@@ -178,7 +177,15 @@ export const useTileEmitGeometryPreviewMap = ({
     }
 
     fitToTarget();
-  }, [baseColor, featureById, features, fitToTarget, hoveredFeatureId, hoverColor, selectedFeatureId]);
+  }, [
+    baseColor,
+    featureById,
+    features,
+    fitToTarget,
+    hoveredFeatureId,
+    hoverColor,
+    selectedFeatureId,
+  ]);
 
   useEffect(() => {
     const tileLayer = tileLayerRef.current;

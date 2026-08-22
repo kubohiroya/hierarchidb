@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
-import { putTasks, listTasksByStageAndStatus, VtTaskQueueDb } from '../task/taskQueue';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runStageTasks } from '../runStageTasks';
+import { listTasksByStageAndStatus, putTasks, VtTaskQueueDb } from '../task/taskQueue';
 
 const NODE_ID = 'vt-orchestrator-auth-pending-node' as NodeId;
 
@@ -15,17 +15,19 @@ describe('runStageTasks auth required handling', () => {
 
   it('requeues auth-required task without marking it failed', async () => {
     const taskId = 'source-auth-1';
-    await putTasks(db, [{
-      taskId,
-      nodeId: NODE_ID,
-      stage: 'source',
-      status: 'queued',
-      index: 0,
-      progress: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      inputData: { url: 'https://example.com/data.geojson' },
-    }]);
+    await putTasks(db, [
+      {
+        taskId,
+        nodeId: NODE_ID,
+        stage: 'source',
+        status: 'queued',
+        index: 0,
+        progress: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        inputData: { url: 'https://example.com/data.geojson' },
+      },
+    ]);
 
     const handler = vi.fn(async () => {
       const error = new Error('Authentication required');

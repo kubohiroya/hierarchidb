@@ -3,13 +3,13 @@
  * These types are defined in docs/build-session-worker-ui-event-spec.md.
  */
 export type {
-    SessionPhase,
-    SessionStatusUpdatedEvent,
-    TaskSummary,
-    StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
-    HeartbeatEvent,
-    WorkerLogEvent,
-    CriticalErrorEvent,
-    CanonicalSessionEvent,
+  CanonicalSessionEvent,
+  CriticalErrorEvent,
+  HeartbeatEvent,
+  SessionPhase,
+  SessionStatusUpdatedEvent,
+  StageSnapshotUpdatedEvent,
+  TaskProgressUpdatedEvent,
+  TaskSummary,
+  WorkerLogEvent,
 } from '@hierarchidb/build-api';

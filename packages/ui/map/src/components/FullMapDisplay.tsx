@@ -29,12 +29,6 @@ export type FullMapDisplayProps = Omit<
     vectorLayers?: ResourceVectorLayer[];
   };
 
-export const FullMapDisplay: React.FC<FullMapDisplayProps> = ({
-  vectorLayers = [],
-  ...props
-}) => (
-  <ResourceLayerMap
-    vectorLayers={vectorLayers}
-    {...props}
-  />
+export const FullMapDisplay: React.FC<FullMapDisplayProps> = ({ vectorLayers = [], ...props }) => (
+  <ResourceLayerMap vectorLayers={vectorLayers} {...props} />
 );

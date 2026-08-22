@@ -1,8 +1,19 @@
-import type { FC } from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, TextField, Typography } from '@mui/material';
-import { LocalOffer } from '@mui/icons-material';
-import { TagChipsInput } from './TagChipsInput.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { LocalOffer } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
+  TextField,
+  Typography,
+} from '@mui/material';
+import type { FC } from 'react';
+import { TagChipsInput } from './TagChipsInput.js';
 import { useBasicInfoStepView } from './useBasicInfoStepView.js';
 
 export interface BasicInfoData {
@@ -102,7 +113,12 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           variant="outlined"
           inputRef={nameInputRef}
           autoComplete="organization"
-          inputProps={{ maxLength: 255, id: nameInputId, name: 'name', autoComplete: 'organization' }}
+          inputProps={{
+            maxLength: 255,
+            id: nameInputId,
+            name: 'name',
+            autoComplete: 'organization',
+          }}
           slotProps={{
             input: {
               id: nameInputId,
@@ -131,7 +147,12 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
             })
           )}
           autoComplete="off"
-          inputProps={{ maxLength: 1000, id: descriptionInputId, name: 'description', autoComplete: 'off' }}
+          inputProps={{
+            maxLength: 1000,
+            id: descriptionInputId,
+            name: 'description',
+            autoComplete: 'off',
+          }}
           slotProps={{
             input: {
               id: descriptionInputId,
@@ -145,12 +166,12 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
 
       <FormControl fullWidth>
         <TagChipsInput
-          label={(
+          label={
             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
               <LocalOffer fontSize="small" />
               <Box component="span">{t('fields.tags.label', 'Tags')}</Box>
             </Box>
-          )}
+          }
           value={tags}
           onChange={handleTagsChange}
           onTagClick={handleTagClick}
@@ -177,9 +198,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancelDelete}>
-            {t('actions.cancel', 'Cancel')}
-          </Button>
+          <Button onClick={handleCancelDelete}>{t('actions.cancel', 'Cancel')}</Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained">
             {t('actions.remove', 'Remove')}
           </Button>

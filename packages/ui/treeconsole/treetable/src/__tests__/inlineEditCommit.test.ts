@@ -1,10 +1,10 @@
-import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
-import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
-import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { fireEvent, render } from '@testing-library/react';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
+import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 
 const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
 const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
@@ -123,7 +123,11 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
   };
 }
 
-function renderCell(params: ColumnBuilderParams, node: TreeNode, columnId: 'name' | 'description' = 'name') {
+function renderCell(
+  params: ColumnBuilderParams,
+  node: TreeNode,
+  columnId: 'name' | 'description' = 'name'
+) {
   const columns = createTreeTableColumns(params);
   const targetColumn = columns.find((col) => col.id === columnId);
   if (!targetColumn || typeof targetColumn.cell !== 'function') {

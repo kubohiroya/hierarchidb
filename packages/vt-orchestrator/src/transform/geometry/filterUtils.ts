@@ -1,13 +1,13 @@
-import type { Feature, Geometry, MultiPolygon, Polygon } from 'geojson';
 import {
+  type GeometryEngine,
   geometryArea,
   geometryUnkinkPolygons,
-  type GeometryEngine,
   type OmitDetailsConfig,
   type RingFixConfig,
   type SelfIntersectionConfig,
   type SelfIntersectionTuningConfig,
 } from '@hierarchidb/gis-sdk';
+import type { Feature, Geometry, MultiPolygon, Polygon } from 'geojson';
 import {
   computeOuterRingArea,
   computeOuterRingBounds,
@@ -16,9 +16,9 @@ import {
   metersPerPixel,
   resolveQuantizeFactor,
 } from './metrics.js';
-import { cleanGeometry, isGeometryValid } from './validationUtils.js';
 import { applyRingFix } from './ringUtils.js';
 import { snapGeometryToGridWithStep } from './snapUtils.js';
+import { cleanGeometry, isGeometryValid } from './validationUtils.js';
 
 type OmitDetailsLevel = OmitDetailsConfig['level'];
 
@@ -46,7 +46,10 @@ const OMIT_DETAILS_PRESETS: Record<OmitDetailsLevel, OmitDetailsThreshold[]> = {
   ],
 };
 
-const resolveOmitDetailsThreshold = (config: OmitDetailsConfig, zTarget: number): OmitDetailsThreshold => {
+const resolveOmitDetailsThreshold = (
+  config: OmitDetailsConfig,
+  zTarget: number
+): OmitDetailsThreshold => {
   const presets = OMIT_DETAILS_PRESETS[config.level];
   if (!presets) {
     throw new Error(`unknown omit-details level: ${config.level}`);
@@ -65,7 +68,7 @@ export const applyOmitDetailsFilter = (
   geometry: Geometry,
   config: OmitDetailsConfig,
   zTarget: number,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Geometry | null => {
   const threshold = resolveOmitDetailsThreshold(config, zTarget);
   const metersPerPixelValue = metersPerPixel(zTarget);
@@ -74,7 +77,8 @@ export const applyOmitDetailsFilter = (
     const areaMeters = computeOuterRingArea(coords, geometryEngine);
     const widthPx = metersPerPixelValue > 0 ? widthMeters / metersPerPixelValue : 0;
     const heightPx = metersPerPixelValue > 0 ? heightMeters / metersPerPixelValue : 0;
-    const areaPx2 = metersPerPixelValue > 0 ? areaMeters / (metersPerPixelValue * metersPerPixelValue) : 0;
+    const areaPx2 =
+      metersPerPixelValue > 0 ? areaMeters / (metersPerPixelValue * metersPerPixelValue) : 0;
     const bboxTooSmall = widthPx < threshold.minBBoxPx && heightPx < threshold.minBBoxPx;
     const areaTooSmall = areaPx2 < threshold.minAreaPx2;
     return bboxTooSmall || areaTooSmall;
@@ -99,7 +103,7 @@ export const applyPolygonAreaExclusion = (
   coefficient: number,
   zTarget: number,
   quantize: number | undefined,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Geometry | null => {
   if (!Number.isFinite(coefficient)) {
     throw new Error('excludePolygonAreaCoefficient must be a finite number');
@@ -124,18 +128,18 @@ export const applyPolygonAreaExclusion = (
       return { ...geometry, coordinates: filtered };
     }
     if (polygons.length === 0) return null;
-    const largest = polygons.reduce((best, current) => (
-      computePolygonArea(current, geometryEngine) > computePolygonArea(best, geometryEngine) ? current : best
-    ));
+    const largest = polygons.reduce((best, current) =>
+      computePolygonArea(current, geometryEngine) > computePolygonArea(best, geometryEngine)
+        ? current
+        : best
+    );
     return { ...geometry, coordinates: [largest] };
   }
   return geometry;
 };
 
-const countPolygonVertices = (coords: number[][][]): number => coords.reduce(
-  (sum, ring) => sum + (Array.isArray(ring) ? ring.length : 0),
-  0,
-);
+const countPolygonVertices = (coords: number[][][]): number =>
+  coords.reduce((sum, ring) => sum + (Array.isArray(ring) ? ring.length : 0), 0);
 
 export const applySelfIntersectionFix = (
   geometry: Geometry,
@@ -145,35 +149,39 @@ export const applySelfIntersectionFix = (
   zTarget: number,
   quantize: number | undefined,
   geometryEngine: GeometryEngine,
-  options: { splitSelfIntersections: boolean; dropSmallPolygons: boolean; minRingVertices: number },
+  options: { splitSelfIntersections: boolean; dropSmallPolygons: boolean; minRingVertices: number }
 ): Geometry | null => {
-  const sanitizePolygon = (coords: number[][][]): number[][][] => (
-    config.retainHoles ? coords : [coords[0] ?? []]
-  );
+  const sanitizePolygon = (coords: number[][][]): number[][][] =>
+    config.retainHoles ? coords : [coords[0] ?? []];
   const splitPolygon = (coords: number[][][]): number[][][][] => {
-    const polygon = { type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: {} } as const;
-    const pieces = geometryUnkinkPolygons(polygon, geometryEngine)
-      .map((feature) => (feature as { coordinates: number[][][] }).coordinates);
+    const polygon = {
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: coords },
+      properties: {},
+    } as const;
+    const pieces = geometryUnkinkPolygons(polygon, geometryEngine).map(
+      (feature) => (feature as { coordinates: number[][][] }).coordinates
+    );
     if (pieces.length <= 1) return [coords];
     return pieces;
   };
 
   const baseSnapTolerance = (metersPerPixel(zTarget) * resolveQuantizeFactor(quantize)) / 2;
   const snapStep = baseSnapTolerance * config.snapToleranceMultiplier;
-  const geometryForFix = snapStep > 0
-    ? snapGeometryToGridWithStep(geometry, snapStep)
-    : geometry;
+  const geometryForFix = snapStep > 0 ? snapGeometryToGridWithStep(geometry, snapStep) : geometry;
 
-  const polygons = geometryForFix.type === 'Polygon'
-    ? [geometryForFix.coordinates as number[][][]]
-    : geometryForFix.type === 'MultiPolygon'
-      ? geometryForFix.coordinates as number[][][][]
-      : [];
+  const polygons =
+    geometryForFix.type === 'Polygon'
+      ? [geometryForFix.coordinates as number[][][]]
+      : geometryForFix.type === 'MultiPolygon'
+        ? (geometryForFix.coordinates as number[][][][])
+        : [];
   if (polygons.length === 0) return geometryForFix;
 
-  const maxVertexCount = polygons.reduce((max, coords) => (
-    Math.max(max, countPolygonVertices(coords))
-  ), 0);
+  const maxVertexCount = polygons.reduce(
+    (max, coords) => Math.max(max, countPolygonVertices(coords)),
+    0
+  );
   if (zTarget <= tuning.disableAtZoomOrBelow) {
     return geometryForFix;
   }
@@ -185,32 +193,41 @@ export const applySelfIntersectionFix = (
   const candidates = polygons.flatMap((coords) => {
     const sanitized = sanitizePolygon(coords);
     const vertexCount = countPolygonVertices(coords);
-    const splitAllowed = shouldSplit
-      && (tuning.maxVerticesForSplit <= 0 || vertexCount <= tuning.maxVerticesForSplit);
+    const splitAllowed =
+      shouldSplit && (tuning.maxVerticesForSplit <= 0 || vertexCount <= tuning.maxVerticesForSplit);
     const pieces = splitAllowed ? splitPolygon(sanitized) : [sanitized];
     return pieces.map((piece) => ({
       coords: piece,
-      area: Math.abs(geometryArea({ type: 'Polygon', coordinates: piece } as Polygon, geometryEngine)),
+      area: Math.abs(
+        geometryArea({ type: 'Polygon', coordinates: piece } as Polygon, geometryEngine)
+      ),
       vertexCount: countPolygonVertices(piece),
     }));
   });
 
   const filtered = options.dropSmallPolygons
-    ? candidates.filter((entry) => entry.area >= minPolygonArea && entry.vertexCount >= options.minRingVertices)
+    ? candidates.filter(
+        (entry) => entry.area >= minPolygonArea && entry.vertexCount >= options.minRingVertices
+      )
     : candidates;
-  const fallbackCandidates = candidates.filter((entry) => entry.vertexCount >= options.minRingVertices);
-  const effective = filtered.length > 0
-    ? filtered
-    : fallbackCandidates.length > 0
-      ? [fallbackCandidates.reduce((best, current) => (current.area > best.area ? current : best))]
-      : [];
+  const fallbackCandidates = candidates.filter(
+    (entry) => entry.vertexCount >= options.minRingVertices
+  );
+  const effective =
+    filtered.length > 0
+      ? filtered
+      : fallbackCandidates.length > 0
+        ? [
+            fallbackCandidates.reduce((best, current) =>
+              current.area > best.area ? current : best
+            ),
+          ]
+        : [];
   if (effective.length === 0) return null;
 
   const sorted = [...effective].sort((a, b) => b.area - a.area);
   const limit = config.maxPolygons > 0 ? config.maxPolygons : sorted.length;
-  const selected = config.strategy === 'keep_all'
-    ? sorted.slice(0, limit)
-    : sorted.slice(0, 1);
+  const selected = config.strategy === 'keep_all' ? sorted.slice(0, limit) : sorted.slice(0, 1);
   const coords = selected.map((entry) => entry.coords);
   if (coords.length === 1) {
     return { type: 'Polygon', coordinates: coords[0] } as Polygon;
@@ -224,24 +241,26 @@ export const recoverInvalidSelfIntersection = (
   ringFix: RingFixConfig,
   minRingArea: number,
   dropInvalidHoles: boolean,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Geometry | null => {
   const toPolygonFeature = (coords: number[][][]): Feature<Polygon> => ({
     type: 'Feature',
     geometry: { type: 'Polygon', coordinates: coords },
     properties: {},
   });
-  const polygons = geometry.type === 'Polygon'
-    ? [geometry.coordinates as number[][][]]
-    : geometry.type === 'MultiPolygon'
-      ? geometry.coordinates as number[][][][]
-      : [];
+  const polygons =
+    geometry.type === 'Polygon'
+      ? [geometry.coordinates as number[][][]]
+      : geometry.type === 'MultiPolygon'
+        ? (geometry.coordinates as number[][][][])
+        : [];
   if (polygons.length === 0) return null;
 
   const candidates = polygons.flatMap((coords) => {
     try {
-      const pieces = geometryUnkinkPolygons(toPolygonFeature(coords), geometryEngine)
-        .map((feature) => feature.coordinates);
+      const pieces = geometryUnkinkPolygons(toPolygonFeature(coords), geometryEngine).map(
+        (feature) => feature.coordinates
+      );
       return pieces.length > 0 ? pieces : [coords];
     } catch {
       return [coords];
@@ -250,26 +269,20 @@ export const recoverInvalidSelfIntersection = (
 
   const validPieces = candidates.flatMap((coords) => {
     const cleaned = cleanGeometry({ type: 'Polygon', coordinates: coords } as Polygon);
-    const fixed = applyRingFix(
-      cleaned,
-      ringFix,
-      minRingArea,
-      dropInvalidHoles,
-      geometryEngine,
-    );
+    const fixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles, geometryEngine);
     if (!fixed || !isGeometryValid(fixed, geometryEngine)) return [];
-    return [{
-      coords: (fixed as Polygon).coordinates,
-      area: Math.abs(geometryArea(fixed as Polygon, geometryEngine)),
-    }];
+    return [
+      {
+        coords: (fixed as Polygon).coordinates,
+        area: Math.abs(geometryArea(fixed as Polygon, geometryEngine)),
+      },
+    ];
   });
 
   if (validPieces.length === 0) return null;
   const sorted = [...validPieces].sort((a, b) => b.area - a.area);
   const limit = config.maxPolygons > 0 ? config.maxPolygons : sorted.length;
-  const selected = config.strategy === 'keep_all'
-    ? sorted.slice(0, limit)
-    : sorted.slice(0, 1);
+  const selected = config.strategy === 'keep_all' ? sorted.slice(0, limit) : sorted.slice(0, 1);
   const coords = selected.map((entry) => entry.coords);
   if (coords.length === 1) {
     return { type: 'Polygon', coordinates: coords[0] } as Polygon;

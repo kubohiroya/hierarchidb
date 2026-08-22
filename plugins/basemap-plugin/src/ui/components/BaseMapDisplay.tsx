@@ -7,11 +7,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 // CrossViewSnackbar/useCrossHighlightSync pull tabular-store (node:module) into client bundle; disable for browser safety
 // import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-grid';
-import {
-  loadMapLibreMap,
-  type MapLibreMapInstance,
-  type MapViewState,
-} from '@hierarchidb/ui-map';
+import { loadMapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type React from 'react';
 import { lazy, Suspense } from 'react';

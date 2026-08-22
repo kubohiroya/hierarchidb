@@ -20,14 +20,8 @@ import {
 import { useAuthMethodSettingsView } from './useAuthMethodSettingsView.js';
 
 export function AuthMethodSettings() {
-  const {
-    currentMethod,
-    labelId,
-    popupId,
-    redirectId,
-    handleChange,
-    noteText,
-  } = useAuthMethodSettingsView();
+  const { currentMethod, labelId, popupId, redirectId, handleChange, noteText } =
+    useAuthMethodSettingsView();
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
@@ -57,9 +51,7 @@ export function AuthMethodSettings() {
         >
           <FormControlLabel
             value="popup"
-            control={
-              <Radio inputProps={{ id: popupId, name: 'auth-method' }} />
-            }
+            control={<Radio inputProps={{ id: popupId, name: 'auth-method' }} />}
             label={
               <Box>
                 <Typography>Popup Window (Recommended)</Typography>
@@ -72,11 +64,7 @@ export function AuthMethodSettings() {
           />
           <FormControlLabel
             value="redirect"
-            control={
-              <Radio
-                inputProps={{ id: redirectId, name: 'auth-method' }}
-              />
-            }
+            control={<Radio inputProps={{ id: redirectId, name: 'auth-method' }} />}
             label={
               <Box>
                 <Typography>Page Redirect</Typography>

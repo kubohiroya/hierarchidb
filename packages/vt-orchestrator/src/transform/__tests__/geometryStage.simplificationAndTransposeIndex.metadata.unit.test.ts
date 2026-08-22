@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FeatureCollection } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { FeatureCollection } from 'geojson';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TaskQueueRecord } from '~/types/types';
 
 const { updateTaskMock } = vi.hoisted(() => ({
@@ -53,14 +53,24 @@ vi.mock('../createGeometryStageHandler/helpers/analysis.js', () => ({
 
 const collection: FeatureCollection = {
   type: 'FeatureCollection',
-  features: [{
-    type: 'Feature',
-    properties: {},
-    geometry: {
-      type: 'Polygon',
-      coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+  features: [
+    {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 1],
+            [0, 0],
+          ],
+        ],
+      },
     },
-  }],
+  ],
 };
 
 vi.mock('../createGeometryStageHandler/helpers/validation.js', () => ({

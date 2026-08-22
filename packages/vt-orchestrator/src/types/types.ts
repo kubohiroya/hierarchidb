@@ -1,4 +1,3 @@
-import type { NodeId } from '@hierarchidb/core-types';
 import type {
   StageHandler as CommonStageHandler,
   StageHandlerResult as CommonStageHandlerResult,
@@ -7,10 +6,14 @@ import type {
   TaskStage as CommonTaskStage,
   TaskStatus as CommonTaskStatus,
 } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export type StageHandlerResult<TOutput = unknown> = CommonStageHandlerResult<TOutput>;
 export type StageHandler<TInput = unknown, TOutput = unknown> = CommonStageHandler<TInput, TOutput>;
-export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = CommonTaskQueueRecord<TInput, TOutput>;
+export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = CommonTaskQueueRecord<
+  TInput,
+  TOutput
+>;
 export type TaskQueueEvent = CommonTaskQueueEvent;
 export type TaskStage = CommonTaskStage;
 export type TaskStatus = CommonTaskStatus;
@@ -20,7 +23,7 @@ export type StageCapability = 'io' | 'geometry' | 'tile-emit';
 export type FailureHandling = 'continue' | 'stop' | 'skip';
 
 export type TaskFilter<TInput = unknown, TOutput = unknown> = (
-  task: TaskQueueRecord<TInput, TOutput>,
+  task: TaskQueueRecord<TInput, TOutput>
 ) => boolean;
 
 export type LaneExecutionPolicy<TInput = unknown, TOutput = unknown> = {
@@ -99,13 +102,13 @@ const STAGE_ID_TO_CAPABILITY = {
 
 const normalizeStageId = (
   stage: TaskStage | undefined,
-  stageId: CanonicalStageId | undefined,
+  stageId: CanonicalStageId | undefined
 ): CanonicalStageId => {
   if (stageId !== undefined && stage !== undefined) {
     const expected = STAGE_ID_TO_TASK_STAGE[stageId];
     if (expected !== stage) {
       throw new Error(
-        `Mismatched runStageTasks stage identity: stage=${stage}, stageId=${stageId}, expectedStage=${expected}`,
+        `Mismatched runStageTasks stage identity: stage=${stage}, stageId=${stageId}, expectedStage=${expected}`
       );
     }
   }
@@ -118,12 +121,12 @@ const normalizeStageId = (
 
 const normalizeCapability = (
   stageId: CanonicalStageId,
-  capability: StageCapability | undefined,
+  capability: StageCapability | undefined
 ): StageCapability => {
   const expected = STAGE_ID_TO_CAPABILITY[stageId];
   if (capability !== undefined && capability !== expected) {
     throw new Error(
-      `Mismatched runStageTasks capability: stageId=${stageId}, capability=${capability}, expectedCapability=${expected}`,
+      `Mismatched runStageTasks capability: stageId=${stageId}, capability=${capability}, expectedCapability=${expected}`
     );
   }
   return expected;
@@ -189,7 +192,7 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
 
 export type PipelineRunConfig<
   TGeometryStageInput = GeometryStageTaskInput,
-  TVtInput = VtTaskInput
+  TVtInput = VtTaskInput,
 > = {
   nodeId: NodeId;
   // taskQueue: VtTaskQueueDb;

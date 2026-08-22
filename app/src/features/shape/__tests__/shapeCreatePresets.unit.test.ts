@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  SHAPE_CREATE_PRESET_IDS,
   buildShapePresetDraftDataPatch,
   getShapePresetMenuEntries,
   parseCreateAction,
   resolveShapePresetNodeDefaults,
+  SHAPE_CREATE_PRESET_IDS,
 } from '../shapeCreatePresets.ts';
 
 describe('shapeCreatePresets', () => {
@@ -52,7 +52,9 @@ describe('shapeCreatePresets', () => {
     for (const presetId of SHAPE_CREATE_PRESET_IDS) {
       const patch = buildShapePresetDraftDataPatch(presetId);
       const level = (
-        patch.buildConfig as { geometryConfig?: { omitDetailsConfig?: { level?: string } } } | undefined
+        patch.buildConfig as
+          | { geometryConfig?: { omitDetailsConfig?: { level?: string } } }
+          | undefined
       )?.geometryConfig?.omitDetailsConfig?.level;
       expect(level).toBeDefined();
       expect(supportedLevels.has(level ?? '')).toBe(true);

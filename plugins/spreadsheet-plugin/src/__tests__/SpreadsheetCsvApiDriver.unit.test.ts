@@ -1,5 +1,5 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 type GlobalFileTarget = typeof globalThis & {
   Blob?: typeof Blob;
@@ -24,7 +24,8 @@ beforeAll(async () => {
   SpreadsheetMetadataManager = metadataModule.SpreadsheetMetadataManager;
 });
 
-const createFile = (content: string, name = 'test.csv') => new NodeFile([content], name, { type: 'text/csv' });
+const createFile = (content: string, name = 'test.csv') =>
+  new NodeFile([content], name, { type: 'text/csv' });
 
 describe('SpreadsheetTabularApiDriver', () => {
   let driver: SpreadsheetTabularApiDriver;
@@ -70,7 +71,7 @@ describe('SpreadsheetTabularApiDriver', () => {
           enabled: true,
         },
       ],
-      10,
+      10
     );
     expect(result.totalRows).toBe(2);
     expect(result.rows).toHaveLength(2);

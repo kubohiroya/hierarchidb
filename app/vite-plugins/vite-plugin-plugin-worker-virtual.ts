@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Plugin } from 'vite';
 import { pluginRegistry } from '@hierarchidb/plugin-registry';
+import type { Plugin } from 'vite';
 
 type WorkerEntryPaths = {
   src?: string;

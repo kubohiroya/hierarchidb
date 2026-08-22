@@ -1,3 +1,4 @@
+import type { SvgIconComponent } from '@mui/icons-material';
 import ApprovalIcon from '@mui/icons-material/Approval';
 import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import CheckIcon from '@mui/icons-material/Check';
@@ -9,7 +10,6 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import PublicIcon from '@mui/icons-material/Public';
 import SettingsIcon from '@mui/icons-material/Settings';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import type { SvgIconComponent } from '@mui/icons-material';
 import { Box, CircularProgress, type Theme } from '@mui/material';
 import type { StepIconProps } from '@mui/material/StepIcon';
 import { alpha } from '@mui/material/styles';

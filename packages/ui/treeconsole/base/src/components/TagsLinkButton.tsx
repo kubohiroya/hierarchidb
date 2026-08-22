@@ -1,5 +1,5 @@
-import { IconButton } from '@mui/material';
 import { Sell } from '@mui/icons-material';
+import { IconButton } from '@mui/material';
 
 export type TagsLinkButtonProps = {
   treeId: string;

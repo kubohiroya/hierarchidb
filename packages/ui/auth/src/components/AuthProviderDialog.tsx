@@ -28,7 +28,10 @@ export const AuthProviderDialog: React.FC<AuthProviderDialogProps> = ({
   onClose,
   onSelectProvider,
 }) => {
-  const { titleId, handleProviderSelect } = useAuthProviderDialogView({ onSelectProvider, onClose });
+  const { titleId, handleProviderSelect } = useAuthProviderDialogView({
+    onSelectProvider,
+    onClose,
+  });
 
   return (
     <Dialog

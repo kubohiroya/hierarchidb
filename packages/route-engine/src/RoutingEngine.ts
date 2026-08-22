@@ -1,7 +1,7 @@
 export interface RoutingEngine {
   route(
     points: [number, number][],
-    options?: unknown,
+    options?: unknown
   ): Promise<{
     line: [number, number][];
     distance_m: number;

@@ -12,13 +12,13 @@ const TYPE_MAP: Record<string, LocationType> = {
   interchange: 'interchange',
 };
 
-export const mapType = (value?: string): LocationType =>
-  TYPE_MAP[value ?? ''] ?? 'area_centroid';
+export const mapType = (value?: string): LocationType => TYPE_MAP[value ?? ''] ?? 'area_centroid';
 
 export const sanitizeTags = (tags: unknown): Record<string, string> | undefined => {
   if (!tags || typeof tags !== 'object') return undefined;
-  const entries = Object.entries(tags as Record<string, unknown>)
-    .filter((entry): entry is [string, string] => typeof entry[1] === 'string');
+  const entries = Object.entries(tags as Record<string, unknown>).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string'
+  );
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 

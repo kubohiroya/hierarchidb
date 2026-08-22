@@ -1,7 +1,7 @@
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
+import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -86,8 +86,8 @@ export function useConflictGuard(params: {
     if (latest.version > localVersion) {
       const localSnapshot = getLocalDraftSnapshot?.() ?? null;
       const latestNode = latest.latest as TreeNode;
-      const latestDraftData =
-        (latestNode as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
+      const latestDraftData = (latestNode as { draftData?: Partial<PeerEntity<TreeNodeData>> })
+        .draftData;
       const latestDraftMetadata =
         (latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
       const normalizeDraftData = (value: unknown) => {
@@ -97,9 +97,10 @@ export function useConflictGuard(params: {
       const remoteSnapshot = {
         draftData: normalizeDraftData(
           latestDraftData ??
-            ((latestNode as { data?: Partial<PeerEntity<TreeNodeData>> }).data ?? undefined)
+            (latestNode as { data?: Partial<PeerEntity<TreeNodeData>> }).data ??
+            undefined
         ),
-        draftMetadata: latestDraftMetadata ?? (latestNode.metadata ?? null),
+        draftMetadata: latestDraftMetadata ?? latestNode.metadata ?? null,
       };
       const isSameContent = compareDraftSnapshots(localSnapshot, remoteSnapshot);
       if (isSameContent) {

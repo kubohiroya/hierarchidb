@@ -1,2 +1,7 @@
 // Backward-compatible facade that now delegates to the generic properties table.
-export { getColumnWidths, saveColumnWidths, removeColumnWidths, removeColumnWidthsMany } from './properties-db.js';
+export {
+  getColumnWidths,
+  removeColumnWidths,
+  removeColumnWidthsMany,
+  saveColumnWidths,
+} from './properties-db.js';

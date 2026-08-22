@@ -18,4 +18,3 @@ export interface StageControls {
    */
   requestPause?: (message: string) => void | Promise<void>;
 }
-

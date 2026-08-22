@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 
 export type BuildStageFilter = {
   failedMode: boolean;
@@ -18,12 +18,6 @@ export const BuildStageFilterProvider = ({
 }: {
   value: BuildStageFilter;
   children: ReactNode;
-}) => (
-  <BuildStageFilterContext.Provider value={value}>
-    {children}
-  </BuildStageFilterContext.Provider>
-);
+}) => <BuildStageFilterContext.Provider value={value}>{children}</BuildStageFilterContext.Provider>;
 
-export const useBuildStageFilter = (): BuildStageFilter => (
-  useContext(BuildStageFilterContext)
-);
+export const useBuildStageFilter = (): BuildStageFilter => useContext(BuildStageFilterContext);

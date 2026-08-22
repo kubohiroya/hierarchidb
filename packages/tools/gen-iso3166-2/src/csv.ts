@@ -1,51 +1,51 @@
-import type { SubdivisionRow } from "./types.js";
-export const DEFAULT_OUTPUT = "iso3166-2-level1.csv";
-export const DEFAULT_FAILURES = "iso3166-2-level1.failures.csv";
-export const DEFAULT_COUNTRY_NAMES_I18N_OUTPUT = "iso3166-country-names.i18n.json";
+import type { SubdivisionRow } from './types.js';
+export const DEFAULT_OUTPUT = 'iso3166-2-level1.csv';
+export const DEFAULT_FAILURES = 'iso3166-2-level1.failures.csv';
+export const DEFAULT_COUNTRY_NAMES_I18N_OUTPUT = 'iso3166-country-names.i18n.json';
 
 const LOCATION_MAP: Record<string, string> = {
-  "中央アジア": "Central Asia",
-  "中央アフリカ": "Central Africa",
-  "中央アメリカ": "Central America",
-  "中央ヨーロッパ": "Central Europe",
-  "北アフリカ": "Northern Africa",
-  "北ヨーロッパ": "Northern Europe",
-  "南アジア": "South Asia",
-  "南アフリカ": "Southern Africa",
-  "南ヨーロッパ": "Southern Europe",
-  "東アジア": "Eastern Asia",
-  "東アフリカ": "Eastern Africa",
-  "東ヨーロッパ": "Eastern Europe",
-  "東南アジア": "South-Eastern Asia",
-  "西アフリカ": "Western Africa",
-  "西ヨーロッパ": "Western Europe",
-  "インド洋地域": "Indian Ocean",
-  "地中海地域": "Mediterranean",
-  "ロシア": "Russia",
+  中央アジア: 'Central Asia',
+  中央アフリカ: 'Central Africa',
+  中央アメリカ: 'Central America',
+  中央ヨーロッパ: 'Central Europe',
+  北アフリカ: 'Northern Africa',
+  北ヨーロッパ: 'Northern Europe',
+  南アジア: 'South Asia',
+  南アフリカ: 'Southern Africa',
+  南ヨーロッパ: 'Southern Europe',
+  東アジア: 'Eastern Asia',
+  東アフリカ: 'Eastern Africa',
+  東ヨーロッパ: 'Eastern Europe',
+  東南アジア: 'South-Eastern Asia',
+  西アフリカ: 'Western Africa',
+  西ヨーロッパ: 'Western Europe',
+  インド洋地域: 'Indian Ocean',
+  地中海地域: 'Mediterranean',
+  ロシア: 'Russia',
 };
 
 const normalizeLocation = (value: string): string => {
-  const key = (value ?? "").trim();
+  const key = (value ?? '').trim();
   return LOCATION_MAP[key] ?? key;
 };
 
 export function csvEscape(v: string): string {
-  const s = v ?? "";
+  const s = v ?? '';
   if (/[,"\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 
 export function toCsv(rows: SubdivisionRow[]): string {
   const header = [
-    "country_en",
-    "alpha_3",
-    "alpha_2",
-    "location",
-    "subdivision_en",
-    "subdivision_local",
-    "subdivision_code",
+    'country_en',
+    'alpha_3',
+    'alpha_2',
+    'location',
+    'subdivision_en',
+    'subdivision_local',
+    'subdivision_code',
   ];
-  const lines = [header.join(",")];
+  const lines = [header.join(',')];
   for (const r of rows) {
     lines.push(
       [
@@ -56,10 +56,12 @@ export function toCsv(rows: SubdivisionRow[]): string {
         r.subdivisionEn,
         r.subdivisionLocal,
         r.subdivisionCode,
-      ].map(csvEscape).join(","),
+      ]
+        .map(csvEscape)
+        .join(',')
     );
   }
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 export function parseCsv(text: string): SubdivisionRow[] {
@@ -68,7 +70,7 @@ export function parseCsv(text: string): SubdivisionRow[] {
   const rows: SubdivisionRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i]?.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map((c) => {
-      const raw = c ?? "";
+      const raw = c ?? '';
       const trimmed = raw.trim();
       if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
         return trimmed.slice(1, -1).replace(/""/g, '"');
@@ -77,15 +79,16 @@ export function parseCsv(text: string): SubdivisionRow[] {
     });
     if (!cols) continue;
     if (cols.length < 7) continue;
-    const [countryEn, alpha3, alpha2, location, subdivisionEn, subdivisionLocal, subdivisionCode] = cols;
+    const [countryEn, alpha3, alpha2, location, subdivisionEn, subdivisionLocal, subdivisionCode] =
+      cols;
     rows.push({
-      countryEn: countryEn??'',
-      alpha3: alpha3??'',
-      alpha2: alpha2??'',
-      location: location??'',
-      subdivisionEn: subdivisionEn??'',
-      subdivisionLocal: subdivisionLocal??'',
-      subdivisionCode:subdivisionCode??'',
+      countryEn: countryEn ?? '',
+      alpha3: alpha3 ?? '',
+      alpha2: alpha2 ?? '',
+      location: location ?? '',
+      subdivisionEn: subdivisionEn ?? '',
+      subdivisionLocal: subdivisionLocal ?? '',
+      subdivisionCode: subdivisionCode ?? '',
     });
   }
   return rows;

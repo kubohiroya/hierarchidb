@@ -1,6 +1,6 @@
 import { Calculate } from '@mui/icons-material';
-import { createElement, useId, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { createElement, useId, useMemo } from 'react';
 import type { ConcurrencyConfig } from './ConcurrencySection.js';
 
 export interface UseConcurrencySectionParams {
@@ -20,10 +20,7 @@ export function useConcurrencySection({
 }: UseConcurrencySectionParams): UseConcurrencySectionResult {
   const switchId = useId();
 
-  const icon = useMemo<ReactNode>(
-    () => config?.icon ?? createElement(Calculate),
-    [config?.icon],
-  );
+  const icon = useMemo<ReactNode>(() => config?.icon ?? createElement(Calculate), [config?.icon]);
 
   return {
     icon,

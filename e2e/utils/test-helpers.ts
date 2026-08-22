@@ -1,8 +1,5 @@
-import { Page, Locator, expect } from '@playwright/test';
-import {
-  buildAppUrl,
-  resolveE2EUrlContract,
-} from './e2e-url-contract';
+import { expect, Locator, Page } from '@playwright/test';
+import { buildAppUrl, resolveE2EUrlContract } from './e2e-url-contract';
 
 export type CreateMenuMatcher = string | RegExp;
 const e2eUrlContract = resolveE2EUrlContract();
@@ -39,24 +36,35 @@ export async function dismissGuidedTour(page: Page): Promise<void> {
  * Waits for the TreeTable to fully load
  */
 export async function waitForTreeTableLoad(page: Page): Promise<void> {
-  const treeTable = page.locator('[data-testid="console-table"], [data-tour-id="tree-table"]').first();
+  const treeTable = page
+    .locator('[data-testid="console-table"], [data-tour-id="tree-table"]')
+    .first();
 
-  await expect.poll(async () => {
-    const tableVisible = await treeTable.isVisible().catch(() => false);
-    if (tableVisible) return 'ready';
+  await expect
+    .poll(
+      async () => {
+        const tableVisible = await treeTable.isVisible().catch(() => false);
+        if (tableVisible) return 'ready';
 
-    const navigateToResourcesButton = page.getByRole('button', { name: /Navigate to Resources view/i });
-    const canNavigateToResources = await navigateToResourcesButton.isVisible().catch(() => false);
-    if (canNavigateToResources) {
-      await navigateToResourcesButton.click({ force: true }).catch(() => {
-        // No-op: retry on next poll tick.
-      });
-    }
-    return 'waiting';
-  }, {
-    timeout: 30000,
-    intervals: [200, 500, 1000],
-  }).toBe('ready');
+        const navigateToResourcesButton = page.getByRole('button', {
+          name: /Navigate to Resources view/i,
+        });
+        const canNavigateToResources = await navigateToResourcesButton
+          .isVisible()
+          .catch(() => false);
+        if (canNavigateToResources) {
+          await navigateToResourcesButton.click({ force: true }).catch(() => {
+            // No-op: retry on next poll tick.
+          });
+        }
+        return 'waiting';
+      },
+      {
+        timeout: 30000,
+        intervals: [200, 500, 1000],
+      }
+    )
+    .toBe('ready');
 
   // Wait for loading indicators to disappear
   await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
@@ -64,7 +72,9 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
   // Wait for at least one row to be present (or empty atoms)
   await page.waitForFunction(
     () => {
-      const table = document.querySelector('[data-testid="console-table"], [data-tour-id="tree-table"]');
+      const table = document.querySelector(
+        '[data-testid="console-table"], [data-tour-id="tree-table"]'
+      );
       const rows = table?.querySelectorAll('tr');
       const emptyState = table?.querySelector('[data-testid="empty-atoms"]');
       const hasNoData = table?.textContent?.includes('No data');
@@ -75,7 +85,9 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
 }
 
 function resolveCreateMenuButton(page: Page) {
-  return page.getByRole('button', { name: /^作成$/ }).or(page.getByRole('button', { name: /Create new item/i }));
+  return page
+    .getByRole('button', { name: /^作成$/ })
+    .or(page.getByRole('button', { name: /Create new item/i }));
 }
 
 async function findActiveMenuItems(page: Page) {
@@ -89,7 +101,9 @@ async function findActiveMenuItems(page: Page) {
 }
 
 function resolveSubmenuTrigger(item: Locator) {
-  return item.locator('button[aria-label*="submenu trigger" i]').or(item.locator('[data-testid$="-submenu-trigger"]'));
+  return item
+    .locator('button[aria-label*="submenu trigger" i]')
+    .or(item.locator('[data-testid$="-submenu-trigger"]'));
 }
 
 async function drillCreateMenu(
@@ -190,7 +204,9 @@ export async function openContextCreateMenuNode(
   const { label, maxDepth = 3 } = options;
 
   await parentNode.click({ button: 'right' });
-  const contextMenu = page.locator('[data-testid="context-menu"]').or(page.locator('[role="menu"]'));
+  const contextMenu = page
+    .locator('[data-testid="context-menu"]')
+    .or(page.locator('[role="menu"]'));
   await expect(contextMenu).toBeVisible({ timeout: 5000 });
 
   const createTrigger = page
@@ -201,7 +217,10 @@ export async function openContextCreateMenuNode(
   await expect(createTrigger).toBeVisible({ timeout: 5000 });
 
   const submenuTrigger = resolveSubmenuTrigger(createTrigger);
-  const hasSubmenu = await submenuTrigger.first().isVisible().catch(() => false);
+  const hasSubmenu = await submenuTrigger
+    .first()
+    .isVisible()
+    .catch(() => false);
   if (!hasSubmenu) {
     await createTrigger.click();
     return;
@@ -234,11 +253,11 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
 
   await openFolderCreateDialog(page);
 
-  const dialog = page
-    .locator('dialog')
-    .filter({
-      has: page.getByRole('heading', { name: /Folderの作成|Folderの新規作成|Create Folder|Create New Folder/ }),
-    });
+  const dialog = page.locator('dialog').filter({
+    has: page.getByRole('heading', {
+      name: /Folderの作成|Folderの新規作成|Create Folder|Create New Folder/,
+    }),
+  });
   await expect(dialog).toBeVisible({ timeout: 5000 });
 
   await dialog
@@ -257,7 +276,10 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
 
   await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
-  const newNode = page.locator('[data-testid="console-node"]').filter({ hasText: folderName }).first();
+  const newNode = page
+    .locator('[data-testid="console-node"]')
+    .filter({ hasText: folderName })
+    .first();
   await expect(newNode).toBeVisible({ timeout: 10000 });
 
   console.log('SpeedDial folder creation flow completed successfully');
@@ -373,7 +395,10 @@ export async function restoreFromArchive(page: Page, folderName: string): Promis
   const archivePanel = page.locator('[data-testid="archive-panel"]');
   await expect(archivePanel).toBeVisible({ timeout: 5000 });
 
-  const archiveItem = archivePanel.locator('[data-testid="archive-item"]').filter({ hasText: folderName }).first();
+  const archiveItem = archivePanel
+    .locator('[data-testid="archive-item"]')
+    .filter({ hasText: folderName })
+    .first();
   await expect(archiveItem).toBeVisible({ timeout: 5000 });
 
   await archiveItem.click({ button: 'right' });
@@ -590,7 +615,7 @@ export async function waitForAnimations(page: Page): Promise<void> {
     () => {
       // Check if any CSS animations or transitions are running
       const elements = document.querySelectorAll('*');
-      elements.forEach (element =>{
+      elements.forEach((element) => {
         const computedStyle = getComputedStyle(element);
         if (computedStyle.animationName !== 'none' || computedStyle.transitionDuration !== '0s') {
           return false;
@@ -634,7 +659,7 @@ export function setupConsoleErrorTracking(page: Page): void {
             } catch (serializationError) {
               return `<unserializable: ${serializationError}>`;
             }
-          }),
+          })
         );
       } catch (serializationError) {
         serializedArgs = [`<args unavailable: ${serializationError}>`];

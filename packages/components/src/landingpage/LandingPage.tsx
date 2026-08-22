@@ -47,12 +47,8 @@ export function LandingPage(props: LandingPageProps) {
   return (
     <Box sx={{ position: 'relative', width: '100%', height: '100vh' }}>
       {/* Top overlay slots */}
-      <Box sx={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
-        {topLeft}
-      </Box>
-      <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
-        {topRight}
-      </Box>
+      <Box sx={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>{topLeft}</Box>
+      <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>{topRight}</Box>
 
       {/* Centered content */}
       <Stack
@@ -71,12 +67,7 @@ export function LandingPage(props: LandingPageProps) {
           <Stack spacing={1} alignItems={'center'}>
             {logo}
             {heading && (
-              <Typography
-                variant="h3"
-                component="h1"
-                color="grey"
-                textAlign="center"
-              >
+              <Typography variant="h3" component="h1" color="grey" textAlign="center">
                 {heading}
               </Typography>
             )}
@@ -103,9 +94,7 @@ export function LandingPage(props: LandingPageProps) {
         )}
 
         {(shouldShowInfo || shouldShowHelp) && (
-          <Box
-            sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 1 }}
-          >
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 1 }}>
             {shouldShowInfo && (infoPath || onInfoClick) && (
               <Button
                 component={onInfoClick ? 'button' : 'a'}

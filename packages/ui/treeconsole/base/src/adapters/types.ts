@@ -1,13 +1,17 @@
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { OnNameConflict, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/tree-api';
+import type {
+  OnNameConflict,
+  TreeChangeEvent,
+  TreeChangeEventType,
+  TreeNode,
+} from '@hierarchidb/tree-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 
 export type TreeChangeCallback = (event: TreeChangeEvent) => void;
 
 export type UnsubscribeFunction = () => void;
 
 export interface AdapterContext {
-
   viewId: string;
 
   groupId: string;
@@ -15,9 +19,7 @@ export interface AdapterContext {
   onNameConflict?: OnNameConflict;
 }
 
-
 export interface CommandAdapterOptions {
-
   context: AdapterContext;
 
   retryConfig?: {
@@ -26,9 +28,7 @@ export interface CommandAdapterOptions {
   };
 }
 
-
 export interface WorkerAPIAdapterConfig<T> {
-
   workerAPI: WorkerAPI<T>;
 
   defaultViewId: string;
@@ -54,7 +54,7 @@ export class TreeConsoleAdapterError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly originalError?: Error,
+    public readonly originalError?: Error
   ) {
     super(message);
     this.name = 'TreeConsoleAdapterError';

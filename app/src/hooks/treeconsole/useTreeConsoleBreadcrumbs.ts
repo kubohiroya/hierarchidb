@@ -5,13 +5,16 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type SubscriptionId, type TreeNode } from '@hierarchidb/tree-api';
-import { isFolderNodeType, type BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import {
+  type BreadcrumbNode,
+  isFolderNodeType,
+} from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 
 interface Params {
@@ -93,18 +96,16 @@ export function useTreeConsoleBreadcrumbs({
           );
         };
         const hasBuildRequiredInDescendants = async (folderNodeId: string): Promise<boolean> => {
-          const listDescendants = (queryAPI as { listDescendants?: (nodeId: NodeId) => Promise<TreeNode[]> })
-            .listDescendants;
+          const listDescendants = (
+            queryAPI as { listDescendants?: (nodeId: NodeId) => Promise<TreeNode[]> }
+          ).listDescendants;
           if (typeof listDescendants !== 'function') {
             return false;
           }
-          const descendants = await listDescendants(
-            folderNodeId as NodeId
-          );
+          const descendants = await listDescendants(folderNodeId as NodeId);
           return descendants.some(
             (descendant) =>
-              !isFolderNodeType(String(descendant.nodeType ?? '')) &&
-              readBuildRequired(descendant)
+              !isFolderNodeType(String(descendant.nodeType ?? '')) && readBuildRequired(descendant)
           );
         };
 
@@ -165,7 +166,7 @@ export function useTreeConsoleBreadcrumbs({
                 description: pageTreeNode.draftMetadata.description,
                 tags: pageTreeNode.draftMetadata.tags,
                 buildMetadata: pageTreeNode.draftMetadata.buildMetadata,
-            }
+              }
             : null,
         };
         const nodeType = currentBreadcrumb.nodeType;
@@ -175,7 +176,8 @@ export function useTreeConsoleBreadcrumbs({
             String(pageTreeNode.id as NodeId)
           );
           const currentBuildMetadata = currentBreadcrumb.metadata?.buildMetadata;
-          const currentBuildRequired = readBuildRequired(pageTreeNode) || hasBuildRequiredDescendant;
+          const currentBuildRequired =
+            readBuildRequired(pageTreeNode) || hasBuildRequiredDescendant;
           currentBreadcrumb.metadata = {
             ...currentBreadcrumb.metadata,
             buildMetadata: {
@@ -190,7 +192,10 @@ export function useTreeConsoleBreadcrumbs({
         }
 
         if (subscriptionAPI) {
-          const targetIds = [...ancestors.map((ancestor) => ancestor.id as NodeId), pageTreeNode.id as NodeId];
+          const targetIds = [
+            ...ancestors.map((ancestor) => ancestor.id as NodeId),
+            pageTreeNode.id as NodeId,
+          ];
           const cb = comlinkProxy((event: unknown) => {
             const ev = sanitizeForComlink(event) as { nodeId?: string; node?: TreeNode };
             const changedId = ev?.nodeId || ev?.node?.id;
@@ -202,24 +207,22 @@ export function useTreeConsoleBreadcrumbs({
                 const nextNodeType = ev.node?.nodeType ?? item.nodeType;
                 const nextVisible =
                   typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
-                const nextMetadata =
-                  ev.node?.metadata
-                    ? {
-                        name: ev.node.metadata.name,
-                        description: ev.node.metadata.description,
-                        tags: ev.node.metadata.tags,
-                        buildMetadata: ev.node.metadata.buildMetadata,
-                      }
-                    : item.metadata;
-                const nextDraftMetadata =
-                  ev.node?.draftMetadata
-                    ? {
-                        name: ev.node.draftMetadata.name,
-                        description: ev.node.draftMetadata.description,
-                        tags: ev.node.draftMetadata.tags,
-                        buildMetadata: ev.node.draftMetadata.buildMetadata,
-                      }
-                    : item.draftMetadata;
+                const nextMetadata = ev.node?.metadata
+                  ? {
+                      name: ev.node.metadata.name,
+                      description: ev.node.metadata.description,
+                      tags: ev.node.metadata.tags,
+                      buildMetadata: ev.node.metadata.buildMetadata,
+                    }
+                  : item.metadata;
+                const nextDraftMetadata = ev.node?.draftMetadata
+                  ? {
+                      name: ev.node.draftMetadata.name,
+                      description: ev.node.draftMetadata.description,
+                      tags: ev.node.draftMetadata.tags,
+                      buildMetadata: ev.node.draftMetadata.buildMetadata,
+                    }
+                  : item.draftMetadata;
                 return {
                   ...item,
                   name: nextName,

@@ -1,15 +1,14 @@
-import { useCallback, useState } from 'react';
 import {
+  Delete as ArchiveIcon,
+  Clear as ClearIcon,
   ContentCopy as ContentCopyIcon,
   ContentCut as ContentCutIcon,
   ContentPaste as ContentPasteIcon,
+  FileCopy as DuplicateIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Redo as RedoIcon,
-  Delete as ArchiveIcon,
-  Undo as UndoIcon,
-  FileCopy as DuplicateIcon,
-  Clear as ClearIcon,
   ContentCut as ScissorsIcon,
+  Undo as UndoIcon,
 } from '@mui/icons-material';
 import {
   Button,
@@ -22,6 +21,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import type { MouseEvent } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface ActionButtonsProps {
   canUndo: boolean;
@@ -236,7 +236,7 @@ function CompactActionButtons({
       onAction(action);
       handleClose();
     },
-    [onAction, handleClose],
+    [onAction, handleClose]
   );
 
   const handleArchiveMenuClick = useCallback(
@@ -244,7 +244,7 @@ function CompactActionButtons({
       handleClose();
       onArchiveClick(e);
     },
-    [onArchiveClick, handleClose],
+    [onArchiveClick, handleClose]
   );
 
   return (
@@ -260,50 +260,62 @@ function CompactActionButtons({
           More actions
         </Button>
       ) : (
-        <IconButton
-          size="small"
-          onClick={handleOpen}
-          aria-label="More actions"
-        >
+        <IconButton size="small" onClick={handleOpen} aria-label="More actions">
           <ScissorsIcon fontSize="small" />
         </IconButton>
       )}
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem disabled={!canUndo} onClick={() => handleMenuAction('undo')}>
-          <ListItemIcon><UndoIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <UndoIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText>{tooltips.undo}</ListItemText>
         </MenuItem>
         <MenuItem disabled={!canRedo} onClick={() => handleMenuAction('redo')}>
-          <ListItemIcon><RedoIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <RedoIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText>{tooltips.redo}</ListItemText>
         </MenuItem>
         <Divider />
         <MenuItem disabled={!canCopy} onClick={() => handleMenuAction('cut')}>
-          <ListItemIcon><ContentCutIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <ContentCutIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText>{tooltips.cut}</ListItemText>
         </MenuItem>
         <MenuItem disabled={!canCopy} onClick={() => handleMenuAction('copy')}>
-          <ListItemIcon><ContentCopyIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <ContentCopyIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText>{tooltips.copy}</ListItemText>
         </MenuItem>
         <MenuItem disabled={!canPaste} onClick={() => handleMenuAction('paste')}>
-          <ListItemIcon><ContentPasteIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <ContentPasteIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText>{tooltips.paste}</ListItemText>
         </MenuItem>
         <Divider />
         <MenuItem disabled={!canDuplicate} onClick={() => handleMenuAction('duplicate')}>
-          <ListItemIcon><DuplicateIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <DuplicateIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText>{tooltips.duplicate}</ListItemText>
         </MenuItem>
         <MenuItem disabled={!allowArchive} onClick={() => handleMenuAction('archive')}>
-          <ListItemIcon><ClearIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemIcon>
+            <ClearIcon fontSize="small" color="error" />
+          </ListItemIcon>
           <ListItemText>{tooltips.moveToArchive}</ListItemText>
         </MenuItem>
         {hasArchiveItems && (
           <>
             <Divider />
             <MenuItem onClick={handleArchiveMenuClick}>
-              <ListItemIcon><ArchiveIcon fontSize="small" color="error" /></ListItemIcon>
+              <ListItemIcon>
+                <ArchiveIcon fontSize="small" color="error" />
+              </ListItemIcon>
               <ListItemText>{archiveButtonLabel}</ListItemText>
             </MenuItem>
           </>

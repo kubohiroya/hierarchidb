@@ -2,15 +2,11 @@
   "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": [
-      "@hierarchidb/gen-iso3166-2"
-    ],
+    "types": ["@hierarchidb/gen-iso3166-2"],
     "jsx": "react-jsx",
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

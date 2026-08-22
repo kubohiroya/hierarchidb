@@ -1,23 +1,28 @@
 /**
-  * Plugin Provider Component
-  * TreeTableReact
-   */
+ * Plugin Provider Component
+ * TreeTableReact
+ */
 
-import { createContext, type ReactNode, useContext, type ReactElement } from 'react';
+import { createContext, type ReactElement, type ReactNode, useContext } from 'react';
 import type {
   PluginContext as IPluginContext,
-  PluginEvent,
   PluginRegistry as IPluginRegistry,
+  PluginEvent,
   TreeTablePlugin,
   TreeTablePluginConfig,
 } from './types.js';
-import { usePluginDebugPanelState, usePluginProviderState, type PluginStats } from './usePluginProviderState.js';
+import {
+  type PluginStats,
+  usePluginDebugPanelState,
+  usePluginProviderState,
+} from './usePluginProviderState.js';
 
 // =============================================================================
 // Context Definition
 // =============================================================================
 
-export const PluginContext: React.Context<IPluginContext | null> = createContext<IPluginContext | null>(null);
+export const PluginContext: React.Context<IPluginContext | null> =
+  createContext<IPluginContext | null>(null);
 
 // =============================================================================
 // Provider Props
@@ -25,19 +30,19 @@ export const PluginContext: React.Context<IPluginContext | null> = createContext
 
 export interface PluginProviderProps {
   /**
-      */
+   */
   children: ReactNode;
   /**
-      */
+   */
   plugins?: TreeTablePlugin[];
   /**
-      */
+   */
   config?: TreeTablePluginConfig;
   /**
-      */
+   */
   debugMode?: boolean;
   /**
-      */
+   */
   onPluginEvent?: (event: PluginEvent) => void;
 }
 
@@ -46,14 +51,14 @@ export interface PluginProviderProps {
 // =============================================================================
 
 /**
-    */
+ */
 export function PluginProvider({
-                                 children,
-                                 plugins = [],
-                                 config,
-                                 debugMode = false,
-                                 onPluginEvent,
-                               }: PluginProviderProps): ReactElement {
+  children,
+  plugins = [],
+  config,
+  debugMode = false,
+  onPluginEvent,
+}: PluginProviderProps): ReactElement {
   const { events, pluginStates, contextValue } = usePluginProviderState({
     plugins,
     config,
@@ -64,12 +69,7 @@ export function PluginProvider({
   return (
     <PluginContext.Provider value={contextValue}>
       {children}
-      {debugMode && (
-        <PluginDebugPanel
-          events={events}
-          pluginStates={pluginStates}
-        />
-      )}
+      {debugMode && <PluginDebugPanel events={events} pluginStates={pluginStates} />}
     </PluginContext.Provider>
   );
 }
@@ -79,7 +79,7 @@ export function PluginProvider({
 // =============================================================================
 
 /**
-    */
+ */
 export function usePluginContext(): IPluginContext {
   const context = useContext(PluginContext);
   if (!context) {
@@ -89,28 +89,28 @@ export function usePluginContext(): IPluginContext {
 }
 
 /**
-    */
+ */
 export function usePluginRegistry(): IPluginRegistry {
   const { registry } = usePluginContext();
   return registry;
 }
 
 /**
-    */
+ */
 export function usePlugin(pluginName: string): TreeTablePlugin | undefined {
   const registry = usePluginRegistry();
   return registry.getPlugin(pluginName);
 }
 
 /**
-    */
+ */
 export function usePluginHooks() {
   const { executeHook } = usePluginContext();
   return executeHook;
 }
 
 /**
-    */
+ */
 export function usePluginEnabled(pluginName: string): boolean {
   const registry = usePluginRegistry();
   return registry.hasPlugin(pluginName);
@@ -208,17 +208,20 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
 
         <h4>Recent Events ({events.length})</h4>
         <div style={{ maxHeight: 200, overflow: 'auto' }}>
-          {events.slice(-10).reverse().map((event) => (
-            <div key={`${event.timestamp}-${event.type}-${event.plugin}`} style={{ marginBottom: '3px', fontSize: '10px' }}>
-              <span style={{ color: '#61dafb' }}>
-                {new Date(event.timestamp).toLocaleTimeString()}
-              </span>
-              {' '}
-              <span style={{ color: '#ffd93d' }}>{event.type}</span>
-              {' '}
-              <span>{event.plugin}</span>
-            </div>
-          ))}
+          {events
+            .slice(-10)
+            .reverse()
+            .map((event) => (
+              <div
+                key={`${event.timestamp}-${event.type}-${event.plugin}`}
+                style={{ marginBottom: '3px', fontSize: '10px' }}
+              >
+                <span style={{ color: '#61dafb' }}>
+                  {new Date(event.timestamp).toLocaleTimeString()}
+                </span>{' '}
+                <span style={{ color: '#ffd93d' }}>{event.type}</span> <span>{event.plugin}</span>
+              </div>
+            ))}
         </div>
       </div>
     </div>
@@ -230,14 +233,14 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
 // =============================================================================
 
 /**
-  * HOC
-  */
+ * HOC
+ */
 export function withPlugins<P extends object>(
   Component: React.ComponentType<P>,
-  defaultPlugins: TreeTablePlugin[] = [],
+  defaultPlugins: TreeTablePlugin[] = []
 ) {
   return function PluginEnhancedComponent(
-    props: P & { plugins?: TreeTablePlugin[] },
+    props: P & { plugins?: TreeTablePlugin[] }
   ): ReactElement {
     const { plugins = defaultPlugins, ...restProps } = props;
 

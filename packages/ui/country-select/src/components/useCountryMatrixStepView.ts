@@ -50,9 +50,10 @@ export function useCountryMatrixStepView({
   const stats = useMemo(() => {
     const totalCountries = countries.length;
     const selectedCountries = selections.length;
-    const totalSelections = selections.reduce((sum, selection) => (
-      sum + Object.values(selection.selections).filter(Boolean).length
-    ), 0);
+    const totalSelections = selections.reduce(
+      (sum, selection) => sum + Object.values(selection.selections).filter(Boolean).length,
+      0
+    );
 
     return {
       totalCountries,

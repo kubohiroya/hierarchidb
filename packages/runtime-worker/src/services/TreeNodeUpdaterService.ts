@@ -1,21 +1,25 @@
 import type {
-  CommitDraftMode,
-  CommitDraftRequest,
-  DiscardDraftOptions,
-  TreeNodeUpdaterAPI,
-  ViewProperties,
-} from '@hierarchidb/tree-api';
+  NodeId,
+  NodeType,
+  PeerEntity,
+  TreeId,
+  ValidationResult,
+} from '@hierarchidb/core-types';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
 import type {
+  CommitDraftMode,
+  CommitDraftRequest,
   CommitResult,
   DialogUIState,
+  DiscardDraftOptions,
   OnNameConflict,
   TreeNode,
   TreeNodeData,
   TreeNodeMetadata,
+  TreeNodeUpdaterAPI,
+  ViewProperties,
 } from '@hierarchidb/tree-api';
-import type { NodeId, NodeType, PeerEntity, TreeId, ValidationResult } from '@hierarchidb/core-types';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
@@ -147,7 +151,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     _commandProcessor?: CommandProcessor,
     private tagService?: TagAPI,
     private yamlCanonicalDialogWriter?: YamlCanonicalDialogWriter
-  ) { }
+  ) {}
 
   private readonly defaultDialogUIState: DialogUIState = {
     dialogWindow: null,
@@ -266,9 +270,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       this.tagService.getTagAssociationsForNode(nodeId),
     ]);
 
-    const allByName = new Map(
-      allTags.map((tag) => [tag.name.trim().toLowerCase(), tag] as const)
-    );
+    const allByName = new Map(allTags.map((tag) => [tag.name.trim().toLowerCase(), tag] as const));
     const existingByName = new Map(
       existingTags
         .filter((assoc) => assoc.scope === scope)
@@ -277,7 +279,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
           if (!tag) return null;
           return [tag.name.trim().toLowerCase(), tag] as const;
         })
-        .filter((entry): entry is readonly [string, typeof allTags[number]] => Boolean(entry))
+        .filter((entry): entry is readonly [string, (typeof allTags)[number]] => Boolean(entry))
     );
 
     for (const name of desired) {
@@ -464,7 +466,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     if (!node) return undefined;
     const withMeta = await this.ensureDraftMetadata(node ?? undefined, undefined, false);
     const withDraft = await this.ensureDraftData(withMeta ?? node ?? undefined, false);
-    const withUi = await this.ensureDialogUIState(withDraft ?? withMeta ?? node ?? undefined, false);
+    const withUi = await this.ensureDialogUIState(
+      withDraft ?? withMeta ?? node ?? undefined,
+      false
+    );
     return this.normalizeForUpdater(withUi ?? withDraft ?? withMeta ?? node ?? undefined);
   }
 
@@ -591,8 +596,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     const shouldLogDebug =
       typeof console !== 'undefined' &&
       typeof console.debug === 'function' &&
-      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
-        .__HDB_SILENCE_WORKER_LOGS__;
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__;
     // Ensure dialogUIState is persisted when provided (save-draft path often depends on it).
     if (request?.dialogUIState) {
       await this.coreDB.nodes.update(draftId, { dialogUIState: request.dialogUIState });
@@ -609,7 +613,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     if (mode === 'save-draft') {
       const requestedName = request?.draftMetadata?.name;
       const requestedTags = Array.isArray(request?.draftMetadata?.tags)
-        ? request?.draftMetadata?.tags ?? []
+        ? (request?.draftMetadata?.tags ?? [])
         : [];
       let nodeMaybe: TreeNode | undefined = (await getTreeNode(this.coreDB, draftId)) ?? undefined;
       nodeMaybe =
@@ -676,7 +680,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       const normalizedNode =
         (await this.ensureDraftMetadata(
           (result.node as TreeNode | undefined) ??
-          ((await getTreeNode(this.coreDB, result.nodeId as NodeId)) as TreeNode | undefined),
+            ((await getTreeNode(this.coreDB, result.nodeId as NodeId)) as TreeNode | undefined),
           requestedName,
           true
         )) ?? (result.node as TreeNode | undefined);
@@ -684,7 +688,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
         (await this.ensureDialogUIState(normalizedNode ?? undefined, false)) ?? normalizedNode;
       const forUpdater = this.normalizeForUpdater(withUi ?? undefined, requestedName);
       const metadataTags = Array.isArray(forUpdater?.metadata?.tags)
-        ? forUpdater?.metadata?.tags ?? []
+        ? (forUpdater?.metadata?.tags ?? [])
         : [];
       if (this.tagService) {
         await this.syncTagsForNode(result.nodeId, metadataTags, 'published');

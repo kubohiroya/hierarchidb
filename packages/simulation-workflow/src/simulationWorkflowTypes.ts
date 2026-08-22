@@ -1,11 +1,5 @@
 /** Names of each step in the simulation workflows. */
-export type StepName =
-    | 'import'
-    | 'calibrate'
-    | 'simulate'
-    | 'export'
-    | 'rsync-push'
-    | 'rsync-pull';
+export type StepName = 'import' | 'calibrate' | 'simulate' | 'export' | 'rsync-push' | 'rsync-pull';
 
 /** Status of a workflow step. */
 export type StepStatus = 'running' | 'done' | 'failed';
@@ -21,6 +15,6 @@ export type ConnectionType = 'remote' | 'ssh' | 'ec2';
  * When omitted, IDE-GSM applies its own default filter.
  */
 export interface RsyncFilter {
-    include?: string[];
-    exclude?: string[];
+  include?: string[];
+  exclude?: string[];
 }

@@ -1,6 +1,17 @@
-import type { Feature, FeatureCollection, Geometry, GeoJsonProperties, MultiPolygon, Polygon } from 'geojson';
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJsonProperties,
+  Geometry,
+  MultiPolygon,
+  Polygon,
+} from 'geojson';
 import type { GeometryEngine } from '~/configTypes';
-import { geometryCleanCoords, geometrySimplify, geometryUnkinkPolygons } from '~/geometryEngineUtils';
+import {
+  geometryCleanCoords,
+  geometrySimplify,
+  geometryUnkinkPolygons,
+} from '~/geometryEngineUtils';
 
 export interface ExtractOptions {
   tolerance: number;
@@ -10,7 +21,7 @@ export interface ExtractOptions {
 }
 
 const isPolygonFeature = (
-  feature: Feature<Geometry, GeoJsonProperties>,
+  feature: Feature<Geometry, GeoJsonProperties>
 ): feature is Feature<Polygon | MultiPolygon, GeoJsonProperties> => {
   const type = feature.geometry?.type;
   return type === 'Polygon' || type === 'MultiPolygon';
@@ -19,7 +30,7 @@ const isPolygonFeature = (
 const extractFeature = (
   feature: Feature<Geometry, GeoJsonProperties>,
   tolerance: number,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry) return feature;
   const extracted = geometrySimplify(feature, geometryEngine, {
@@ -29,12 +40,18 @@ const extractFeature = (
     preserveTopology: true,
   });
   if (!isPolygonFeature(extracted)) return extracted;
-  const polygons = geometryUnkinkPolygons(extracted as Feature<Polygon | MultiPolygon>, geometryEngine);
+  const polygons = geometryUnkinkPolygons(
+    extracted as Feature<Polygon | MultiPolygon>,
+    geometryEngine
+  );
   if (polygons.length === 0) return extracted;
   const mergedGeometry: Polygon | MultiPolygon | undefined =
     polygons.length === 1
       ? polygons[0]
-      : { type: 'MultiPolygon', coordinates: polygons.map((polygon: Polygon) => polygon.coordinates) };
+      : {
+          type: 'MultiPolygon',
+          coordinates: polygons.map((polygon: Polygon) => polygon.coordinates),
+        };
   if (!mergedGeometry) {
     return { ...extracted };
   }
@@ -52,7 +69,6 @@ const quantizeCoordinates = <T>(coords: T, quantize: number): T => {
   }
   return (coords as T[]).map((child) => quantizeCoordinates(child, quantize)) as T;
 };
-
 
 const isSamePoint = (a?: number[], b?: number[]): boolean => {
   if (!a || !b) return false;
@@ -116,9 +132,7 @@ const pruneQuantizedGeometry = (geometry: Geometry): Geometry | null => {
     };
   }
   if (geometry.type === 'Polygon') {
-    const rings = Array.isArray(geometry.coordinates)
-      ? (geometry.coordinates as number[][][])
-      : [];
+    const rings = Array.isArray(geometry.coordinates) ? (geometry.coordinates as number[][][]) : [];
     const pruned = prunePolygonRings(rings);
     if (!pruned) return null;
     return {
@@ -146,13 +160,13 @@ const quantizeGeometryObject = (geometry: Geometry, quantize: number): Geometry 
   if (geometry.type === 'GeometryCollection') {
     return {
       ...geometry,
-      geometries: (geometry.geometries ?? []).map((child) => quantizeGeometryObject(child, quantize)),
+      geometries: (geometry.geometries ?? []).map((child) =>
+        quantizeGeometryObject(child, quantize)
+      ),
     };
   }
   if (geometry.type === 'Polygon') {
-    const rings = Array.isArray(geometry.coordinates)
-      ? (geometry.coordinates as number[][][])
-      : [];
+    const rings = Array.isArray(geometry.coordinates) ? (geometry.coordinates as number[][][]) : [];
     return {
       ...geometry,
       coordinates: rings.map((ring) => quantizeRing(ring ?? [], quantize)),
@@ -164,10 +178,15 @@ const quantizeGeometryObject = (geometry: Geometry, quantize: number): Geometry 
       : [];
     return {
       ...geometry,
-      coordinates: polygons.map((polygon) => (polygon ?? []).map((ring) => quantizeRing(ring ?? [], quantize))),
+      coordinates: polygons.map((polygon) =>
+        (polygon ?? []).map((ring) => quantizeRing(ring ?? [], quantize))
+      ),
     } as Geometry;
   }
-  const coordinates = quantizeCoordinates(geometry.coordinates, quantize) as typeof geometry.coordinates;
+  const coordinates = quantizeCoordinates(
+    geometry.coordinates,
+    quantize
+  ) as typeof geometry.coordinates;
   return {
     ...geometry,
     coordinates,
@@ -176,7 +195,7 @@ const quantizeGeometryObject = (geometry: Geometry, quantize: number): Geometry 
 
 const quantizeGeometry = (
   feature: Feature<Geometry, GeoJsonProperties>,
-  quantize?: number,
+  quantize?: number
 ): Feature<Geometry, GeoJsonProperties> | null => {
   if (!feature.geometry || !quantize || quantize <= 0) return feature;
   const quantized = {

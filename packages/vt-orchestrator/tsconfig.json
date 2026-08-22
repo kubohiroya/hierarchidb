@@ -4,9 +4,7 @@
     "baseUrl": ".",
     "moduleResolution": "Bundler",
     "paths": {
-      "~/*": [
-        "./src/*"
-      ]
+      "~/*": ["./src/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -14,7 +12,5 @@
     "composite": false,
     "incremental": false
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

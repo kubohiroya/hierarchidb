@@ -1,7 +1,7 @@
+import { Edit as EditIcon, Info as InfoIcon, Save as SaveIcon } from '@mui/icons-material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react';
 import { AutoHideFullScreenDialog } from './AutoHideFullScreenDialog.js';
-import { Box, Button, IconButton, Typography } from '@mui/material';
-import { Edit as EditIcon, Info as InfoIcon, Save as SaveIcon } from '@mui/icons-material';
 
 const meta = {
   title: 'ui/legacy-dialog/AutoHideFullScreenDialog',
@@ -74,8 +74,7 @@ export const Default: Story = {
   args: {
     title: 'AutoHide FullScreen Dialog',
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -85,8 +84,7 @@ export const WithSubtitle: Story = {
     title: 'ドキュメントビューアー',
     subtitle: '最終更新: 2024年8月30日',
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -97,8 +95,7 @@ export const WithIcon: Story = {
     subtitle: 'バージョン 1.0.0',
     icon: <InfoIcon />,
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -115,8 +112,7 @@ export const WithTitleActions: Story = {
       </>
     ),
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -131,8 +127,7 @@ export const WithFooterActions: Story = {
       </>
     ),
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -144,8 +139,7 @@ export const AutoHideEnabled: Story = {
     autoHide: true,
     autoHideDelay: 3000,
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -156,8 +150,7 @@ export const AutoHideDisabled: Story = {
     subtitle: 'コントロールバーは常に表示されます',
     autoHide: false,
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };
@@ -183,8 +176,7 @@ export const CompleteExample: Story = {
     autoHide: true,
     autoHideDelay: 5000,
     open: true,
-    onClose: () => {
-    },
+    onClose: () => {},
     children: <SampleContent />,
   },
 };

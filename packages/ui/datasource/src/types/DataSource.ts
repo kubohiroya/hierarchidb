@@ -54,7 +54,9 @@ export function getDataSourceConfig(name: DataSourceName): DataSourceConfig | un
 /**
  * List data sources by category from the injected registry.
  */
-export function getDataSourcesByCategory(category: DataSourceConfig['category']): DataSourceConfig[] {
+export function getDataSourcesByCategory(
+  category: DataSourceConfig['category']
+): DataSourceConfig[] {
   return Object.values(__DATA_SOURCE_REGISTRY).filter((config) => config.category === category);
 }
 
@@ -71,7 +73,9 @@ export type LicenseType = DataSourceConfig['licenseType'];
 export type UsageType = 'personal' | 'academic' | 'commercial';
 
 // Utility functions (UI)
-export function getLicenseColor(licenseType: LicenseType): 'success' | 'warning' | 'info' | 'error' | 'default' {
+export function getLicenseColor(
+  licenseType: LicenseType
+): 'success' | 'warning' | 'info' | 'error' | 'default' {
   switch (licenseType) {
     case 'public':
       return 'success';

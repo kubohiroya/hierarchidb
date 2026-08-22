@@ -1,7 +1,7 @@
-import { useBuildSessionStageCardState } from './useBuildSessionStageCardState.js';
-import { BuildSessionStageCardView } from './BuildSessionStageCardView.tsx';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
+import { BuildSessionStageCardView } from './BuildSessionStageCardView.tsx';
+import { useBuildSessionStageCardState } from './useBuildSessionStageCardState.js';
 
 type BuildSessionStageCardProps = {
   showHeader?: boolean;
@@ -24,10 +24,17 @@ type BuildSessionStageCardProps = {
   isStartupPending: boolean;
   buildStatus: BuildStatus;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
-  resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
-  resolveTaskTitle: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => string;
+  resolveStatusColor: (
+    statusValue?: string,
+    skipped?: boolean
+  ) => 'default' | 'success' | 'error' | 'warning' | 'info';
+  resolveTaskTitle: (
+    task: import('../../taskItemCardList/types.js').TaskItemWithMetadata
+  ) => string;
   t: (key: string, fallback: string) => string;
-  matchesSearchQuery: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => boolean;
+  matchesSearchQuery: (
+    task: import('../../taskItemCardList/types.js').TaskItemWithMetadata
+  ) => boolean;
   isDetailFloatingWindowOpen: boolean;
   isOpeningPending?: boolean;
   buildConfig?: ShapeBuildConfig;
@@ -83,10 +90,5 @@ export const BuildSessionStageCard = ({
     onRequestBringFloatingWindowToFront,
   });
 
-  return (
-    <BuildSessionStageCardView
-      {...state}
-      showHeader={showHeader}
-    />
-  );
+  return <BuildSessionStageCardView {...state} showHeader={showHeader} />;
 };

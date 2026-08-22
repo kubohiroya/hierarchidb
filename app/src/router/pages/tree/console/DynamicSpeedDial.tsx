@@ -1,15 +1,15 @@
-import type { TreeId } from '@hierarchidb/core-types';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { IconDescriptorInput } from '@hierarchidb/components';
 import { useIconRegistry } from '@hierarchidb/components';
-import { useMemo } from 'react';
+import type { TreeId } from '@hierarchidb/core-types';
 import {
   DynamicSpeedDial as BaseDynamicSpeedDial,
   type DynamicSpeedDialProps as BaseDynamicSpeedDialProps,
 } from '@hierarchidb/ui-dynamic-speed-dial';
-import type { TreeContext } from '~/plugin-loaders/menu-builders';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import { useMemo } from 'react';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
+import type { TreeContext } from '~/plugin-loaders/menu-builders';
 
 export interface DynamicSpeedDialProps
   extends Omit<
@@ -28,15 +28,14 @@ export function DynamicSpeedDial({ treeId, menuContext, ...props }: DynamicSpeed
   void menuContext;
 
   const translateWithFallback = useMemo(
-    () =>
-      (key: string, fallback: string) => {
-        const safeFallback = fallback?.trim?.() ?? '';
-        const translated = t(key, safeFallback);
-        if (translated === key) {
-          return safeFallback || key;
-        }
-        return translated;
-      },
+    () => (key: string, fallback: string) => {
+      const safeFallback = fallback?.trim?.() ?? '';
+      const translated = t(key, safeFallback);
+      if (translated === key) {
+        return safeFallback || key;
+      }
+      return translated;
+    },
     [t]
   );
 

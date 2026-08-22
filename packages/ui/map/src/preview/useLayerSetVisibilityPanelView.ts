@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { formatAdminLevelLabel } from './layerSetDefinitions.js';
 import type { LayerSetDefinition, LayerSetId } from './layerSetDefinitions.js';
+import { formatAdminLevelLabel } from './layerSetDefinitions.js';
 
 type LayerSetItemBase = {
   layerSetId: LayerSetId;
@@ -22,7 +22,7 @@ export const useLayerSetVisibilityPanelView = <T extends LayerSetItemBase>({
 }) => {
   const orderedSets = useMemo(
     () => [...layerSets].sort((a, b) => b.priority - a.priority),
-    [layerSets],
+    [layerSets]
   );
 
   const itemsBySet = useMemo(() => {

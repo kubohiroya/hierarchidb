@@ -1,19 +1,20 @@
 import type { Feature, Geometry } from 'geojson';
 import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
-import { type VtDebugFocusConfig } from './vtStageDebug.js';
-import type {
-  TaskLayerContext,
-} from './vtStageTaskLayerBuilderTypes.js';
-import type { BuildLayerIndexForTile, LayerBuildBranchResult } from './vtStageTaskLayerBuilderTypes.js';
 import {
   executePerTileLayerBuild,
   type PerTileLayerExecutionResult,
 } from './executePerTileLayerBuild.js';
+import { type VtDebugFocusConfig } from './vtStageDebug.js';
 import {
-  logPerTileLayerNoResult,
   logPerTileEmptyTilesSummary,
+  logPerTileLayerNoResult,
 } from './vtStageTaskLayerBuilderStrategyPerTileLogUtils.js';
+import type {
+  BuildLayerIndexForTile,
+  LayerBuildBranchResult,
+  TaskLayerContext,
+} from './vtStageTaskLayerBuilderTypes.js';
 
 export const buildLayersWithPerTileIndex = async ({
   context,

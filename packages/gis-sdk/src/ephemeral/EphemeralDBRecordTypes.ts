@@ -1,8 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type {
-  ShapeBuildProgressSummary,
-  ShapeGeometryErrorRecord,
-} from '@hierarchidb/shape-api';
+import type { ShapeBuildProgressSummary, ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 
 export type EphemeralDomainType = 'shape' | 'route' | 'tileEmit';
 
@@ -122,7 +119,7 @@ export interface BuildSessionStatus {
  * Stores per-stage status, creating a new record for each stage transition.
  * This preserves historical stage information.
  * Update frequency: On stage transitions and stage completion
- * 
+ *
  * Note: The `id` field uses format `${nodeId}:${stage}` for efficient current stage lookup.
  * Historical records can be queried using `[nodeId+startedAt]` compound index.
  */
@@ -238,78 +235,63 @@ export interface EphemeralTileIdToBufferRelation {
 }
 
 export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
-  sessions:
-    '&nodeId',
+  sessions: '&nodeId',
   buildTasks:
-    '&taskId, nodeId, status, index, stagePriority'
-    + ', [nodeId+status], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  sourceCache:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  sourceCacheMeta:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&taskId, nodeId, status, index, stagePriority' +
+    ', [nodeId+status], [nodeId+stage]' +
+    ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  geometryErrors:
-    '&id, nodeId',
-  tileEmitBufferRelations:
-    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+  geometryErrors: '&id, nodeId',
+  tileEmitBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };
 
 export const EPHEMERAL_DB_SCHEMA_V1: Record<string, string> = {
-  sessions:
-    '&nodeId, status, updatedAt',
+  sessions: '&nodeId, status, updatedAt',
   buildTasks:
-    '&taskId, nodeId, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  sourceCache:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  sourceCacheMeta:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&taskId, nodeId, status, index, stagePriority, sequence' +
+    ', [nodeId+status], [nodeId+stage]' +
+    ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  geometryErrors:
-    '&id, nodeId',
-  tileEmitBufferRelations:
-    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+  geometryErrors: '&id, nodeId',
+  tileEmitBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };
 
 export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
-  sessions:
-    '&nodeId',
+  sessions: '&nodeId',
   buildTasks:
-    '&taskId, nodeId, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  sourceCache:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  sourceCacheMeta:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&taskId, nodeId, status, index, stagePriority, sequence' +
+    ', [nodeId+status], [nodeId+stage]' +
+    ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  geometryErrors:
-    '&id, nodeId',
-  tileEmitBufferRelations:
-    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+  geometryErrors: '&id, nodeId',
+  tileEmitBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };
 
 /**
  * EPHEMERAL_DB_SCHEMA_V3 - Refactored session schema
- * 
+ *
  * Changes from V2:
  * - Removed old `sessions` table
  * - Added `buildSessionConfigs` table for immutable session configuration
  * - Added `buildSessionHeartbeats` table for high-frequency heartbeat updates
  * - Added `buildSessionStatuses` table for session-level status tracking
  * - Added `buildStageStatuses` table for per-stage status tracking with history
- * 
+ *
  * This refactor eliminates data duplication, removes unused fields, reduces
  * serialization overhead, and preserves historical stage information.
  */
@@ -319,21 +301,17 @@ export const EPHEMERAL_DB_SCHEMA_V3: Record<string, string> = {
   buildSessionStatuses: '&nodeId, status',
   buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
   buildTasks:
-    '&taskId, nodeId, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  sourceCache:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  sourceCacheMeta:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&taskId, nodeId, status, index, stagePriority, sequence' +
+    ', [nodeId+status], [nodeId+stage]' +
+    ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  geometryErrors:
-    '&id, nodeId',
-  tileEmitBufferRelations:
-    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+  geometryErrors: '&id, nodeId',
+  tileEmitBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };
 
 /**
@@ -348,19 +326,15 @@ export const EPHEMERAL_DB_SCHEMA_V4: Record<string, string> = {
   buildSessionStatuses: '&nodeId, status',
   buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
   buildTasks:
-    '&taskId, nodeId, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  sourceCache:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  sourceCacheMeta:
-    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&taskId, nodeId, status, index, stagePriority, sequence' +
+    ', [nodeId+status], [nodeId+stage]' +
+    ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  geometryErrors:
-    '&id, nodeId',
-  tileEmitBufferRelations:
-    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+  geometryErrors: '&id, nodeId',
+  tileEmitBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };

@@ -1,6 +1,6 @@
 /**
-  * Folder plugin metadata - UIWorker
-  */
+ * Folder plugin metadata - UIWorker
+ */
 
 import type { NodeType } from '@hierarchidb/core-types';
 

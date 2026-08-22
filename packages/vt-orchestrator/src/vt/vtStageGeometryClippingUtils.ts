@@ -1,3 +1,4 @@
+import { geometryBboxClip } from '@hierarchidb/gis-sdk';
 import type {
   Feature,
   Geometry,
@@ -6,7 +7,6 @@ import type {
   MultiPolygon,
   Polygon,
 } from 'geojson';
-import { geometryBboxClip } from '@hierarchidb/gis-sdk';
 import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import type { FeatureWithBBox } from './vtStageGeometryFeature.js';
 import {
@@ -17,14 +17,17 @@ import {
 } from './vtStageGeometryFeature.js';
 import { bboxIntersects } from './vtStageGeometryTileUtils.js';
 
-export const clipFeatureForTile = (feature: Feature<Geometry>, tileBBox: TileBBox): Feature<Geometry> | null => {
+export const clipFeatureForTile = (
+  feature: Feature<Geometry>,
+  tileBBox: TileBBox
+): Feature<Geometry> | null => {
   const geometry = feature.geometry;
   if (!geometry) return null;
   if (isClipGeometry(geometry)) {
     return geometryBboxClip(
       feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
       [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
-      'turf',
+      'turf'
     ) as Feature<Geometry>;
   }
   if (isPointGeometry(geometry) && isAnyPointInBBox(geometry, tileBBox)) {
@@ -35,7 +38,7 @@ export const clipFeatureForTile = (feature: Feature<Geometry>, tileBBox: TileBBo
 
 export const clipFeaturesForTile = (
   featuresWithBBox: FeatureWithBBox[],
-  tileBBox: TileBBox,
+  tileBBox: TileBBox
 ): Feature<Geometry>[] => {
   const clippedFeatures: Feature<Geometry>[] = [];
   for (const entry of featuresWithBBox) {

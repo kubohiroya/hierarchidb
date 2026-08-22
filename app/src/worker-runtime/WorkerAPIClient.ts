@@ -2,8 +2,8 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { Remote } from 'comlink';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxyUtils';
 
 // Create a type that matches the shared contract

@@ -84,7 +84,10 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
   return value;
 };
 
-type TreeSubscriptionCoreDB = Pick<CoreDB, 'changeSubject' | 'listChildren' | 'getNode' | 'getTree' | 'listTrees'> & {
+type TreeSubscriptionCoreDB = Pick<
+  CoreDB,
+  'changeSubject' | 'listChildren' | 'getNode' | 'getTree' | 'listTrees'
+> & {
   nodes: {
     get: CoreDB['nodes']['get'];
   };
@@ -116,8 +119,7 @@ export class TreeSubscriptionService {
   private readonly shouldLogInfo =
     typeof console !== 'undefined' &&
     typeof console.log === 'function' &&
-    !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
-      .__HDB_SILENCE_WORKER_LOGS__;
+    !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__;
 
   private readonly undoStateSubscriptions = new Map<
     SubscriptionId,

@@ -1,6 +1,6 @@
 /**
-  * Folder plugin utilities - UIWorker
-  */
+ * Folder plugin utilities - UIWorker
+ */
 
 import { CreateFolderData } from '~/common/types/types';
 
@@ -41,5 +41,3 @@ export function validateFolderData(data: CreateFolderData): { isValid: boolean; 
     errors,
   };
 }
-
-

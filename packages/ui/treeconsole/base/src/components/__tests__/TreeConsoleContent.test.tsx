@@ -1,11 +1,11 @@
 /**
-  * TreeConsoleContent.test.tsx
-  * TreeConsoleContent
-  */
+ * TreeConsoleContent.test.tsx
+ * TreeConsoleContent
+ */
 
-import type React from 'react';
-import { render, screen } from '@testing-library/react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { render, screen } from '@testing-library/react';
+import type React from 'react';
 import { vi } from 'vitest';
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
@@ -17,11 +17,11 @@ vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   isFolderNodeType: () => true,
 }));
 
-import { TreeConsoleContent } from '../TreeConsoleContent';
-import type { TreeConsoleContentProps, TreeViewController } from '../../types';
-import { toNodeId, type NodeId, type NodeType } from '@hierarchidb/core-types';
-import { DualKeyMap } from '@hierarchidb/util';
+import { type NodeId, type NodeType, toNodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { DualKeyMap } from '@hierarchidb/util';
+import type { TreeConsoleContentProps, TreeViewController } from '../../types';
+import { TreeConsoleContent } from '../TreeConsoleContent';
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = createTheme();
@@ -76,7 +76,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={loadingController} />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
     const loadingTexts = screen.getAllByText('Loading...');
@@ -93,10 +93,12 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={emptyController} />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
-    expect(screen.getByText('No resources yet. Create a new resource to get started.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No resources yet. Create a new resource to get started.')
+    ).toBeInTheDocument();
   });
 
   it('プロジェクトページでの空状態を正しく表示する', () => {
@@ -113,10 +115,12 @@ describe('TreeConsoleContent', () => {
           isProjectsPage={true}
           isResourcesPage={false}
         />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
-    expect(screen.getByText('No projects yet. Create a new project to get started.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No projects yet. Create a new project to get started.')
+    ).toBeInTheDocument();
   });
 
   it('復元モードでの空状態を正しく表示する', () => {
@@ -128,7 +132,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={emptyController} mode="restore" />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
     expect(screen.getByText('No items can be restored from the archive.')).toBeInTheDocument();
@@ -143,7 +147,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={emptyController} mode="dispose" />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
     expect(screen.getByText('No items can be permanently deleted.')).toBeInTheDocument();
@@ -154,35 +158,37 @@ describe('TreeConsoleContent', () => {
       isLoading: false,
       selectedNodes: ['node1', 'node2'] as NodeId[],
       expandedNodes: ['node1'] as NodeId[],
-  data: [ {
-      id: toNodeId('node1'),
-      name: 'Node 1',
-      nodeType: 'folder' as NodeType,
-      parentId: toNodeId('root'),
-      depth: 0,
-      createdAt: 0,
-      updatedAt: 0,
-      version: 1,
-      metadata: {
-        name: 'Node 1',
-        description: '',
-        tags: [],
-      },
-      draftMetadata: {
-        name: 'Node 1',
-        description: '',
-        tags: [],
-      },
-      data: null,
-      draftData: undefined,
-      visible: true,
-    }],
+      data: [
+        {
+          id: toNodeId('node1'),
+          name: 'Node 1',
+          nodeType: 'folder' as NodeType,
+          parentId: toNodeId('root'),
+          depth: 0,
+          createdAt: 0,
+          updatedAt: 0,
+          version: 1,
+          metadata: {
+            name: 'Node 1',
+            description: '',
+            tags: [],
+          },
+          draftMetadata: {
+            name: 'Node 1',
+            description: '',
+            tags: [],
+          },
+          data: null,
+          draftData: undefined,
+          visible: true,
+        },
+      ],
     });
 
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={dataController} />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
     expect(screen.getByRole('table')).toBeInTheDocument();
@@ -205,7 +211,7 @@ describe('TreeConsoleContent', () => {
           rootNodeId={'test-root' as NodeId}
           mode="restore"
         />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
     const debugPanel = screen.queryByTestId('treeconsole-debug-info');
@@ -214,9 +220,7 @@ describe('TreeConsoleContent', () => {
       expect(screen.getByText('Mode: restore')).toBeInTheDocument();
       expect(screen.getByText('Controller: Available')).toBeInTheDocument();
     } else {
-      expect(
-        screen.getByText('No items can be restored from the archive.'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('No items can be restored from the archive.')).toBeInTheDocument();
     }
   });
 
@@ -224,7 +228,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={null} />
-      </TestWrapper>,
+      </TestWrapper>
     );
 
     const loadingTexts = screen.getAllByText('Loading...');

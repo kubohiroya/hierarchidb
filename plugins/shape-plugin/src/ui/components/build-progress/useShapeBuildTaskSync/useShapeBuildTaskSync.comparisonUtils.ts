@@ -1,16 +1,14 @@
 import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
+import {
+  normalizeUiStageId,
+  toLegacyUiStageId,
+} from '~/ui/components/build-progress/stageIdAliases';
 import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
-import { normalizeUiStageId, toLegacyUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
-const isValidProgressValue = (value: unknown): value is number => (
-  typeof value === 'number'
-  && Number.isFinite(value)
-  && value >= 0
-  && value <= 100
-);
+const isValidProgressValue = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
 
 const assertValidProgressValue = (value: unknown, context: string): number => {
   if (!isValidProgressValue(value)) {
@@ -30,13 +28,12 @@ const assertValidTaskVersion = (value: unknown, context: string): number => {
   return rounded;
 };
 
-export const resolveProgressValue = (value: unknown): number => (
-  assertValidProgressValue(value, 'raw')
-);
+export const resolveProgressValue = (value: unknown): number =>
+  assertValidProgressValue(value, 'raw');
 
 export const areTaskListsEquivalentForView = (
   left: ShapeBuildTaskSummary[],
-  right: ShapeBuildTaskSummary[],
+  right: ShapeBuildTaskSummary[]
 ): boolean => {
   if (left === right) return true;
   if (left.length !== right.length) return false;
@@ -51,7 +48,7 @@ export const areTaskListsEquivalentForView = (
 
 const areMetadataEquivalentForView = (
   left: Record<string, unknown> | undefined,
-  right: Record<string, unknown> | undefined,
+  right: Record<string, unknown> | undefined
 ): boolean => {
   if (left === right) return true;
   if (!left || !right) {
@@ -76,7 +73,7 @@ const resolveTaskMetadataText = (task: ShapeBuildTaskSummary): string => {
 
 const normalizeTaskMetadata = (
   metadata: Record<string, unknown> | undefined,
-  message: unknown,
+  message: unknown
 ): Record<string, unknown> | undefined => {
   if (typeof message !== 'string' || message.trim().length === 0) {
     return metadata;
@@ -94,56 +91,55 @@ const normalizeTaskMetadata = (
 
 export const areTasksEquivalentForView = (
   left: ShapeBuildTaskSummary,
-  right: ShapeBuildTaskSummary,
-): boolean => (
-  left.taskId === right.taskId
-  && left.stage === right.stage
-  && assertValidTaskVersion(left.version, 'view:left') === assertValidTaskVersion(right.version, 'view:right')
-  && left.status === right.status
-  && resolveProgressValue(left.progress) === resolveProgressValue(right.progress)
-  && left.display?.kind === right.display?.kind
-  && left.display?.key === right.display?.key
-  && left.display?.phaseCode === right.display?.phaseCode
-  && left.display?.phaseState === right.display?.phaseState
-  && resolveTaskMetadataText(left) === resolveTaskMetadataText(right)
-  && (left.retryAttempt ?? null) === (right.retryAttempt ?? null)
-  && (left.title ?? null) === (right.title ?? null)
-  && (left.error ?? null) === (right.error ?? null)
-  && (left.errorMessage ?? null) === (right.errorMessage ?? null)
-  && areMetadataEquivalentForView(left.metadata, right.metadata)
-  && (left.index ?? null) === (right.index ?? null)
-  && (left.stagePriority ?? null) === (right.stagePriority ?? null)
-);
+  right: ShapeBuildTaskSummary
+): boolean =>
+  left.taskId === right.taskId &&
+  left.stage === right.stage &&
+  assertValidTaskVersion(left.version, 'view:left') ===
+    assertValidTaskVersion(right.version, 'view:right') &&
+  left.status === right.status &&
+  resolveProgressValue(left.progress) === resolveProgressValue(right.progress) &&
+  left.display?.kind === right.display?.kind &&
+  left.display?.key === right.display?.key &&
+  left.display?.phaseCode === right.display?.phaseCode &&
+  left.display?.phaseState === right.display?.phaseState &&
+  resolveTaskMetadataText(left) === resolveTaskMetadataText(right) &&
+  (left.retryAttempt ?? null) === (right.retryAttempt ?? null) &&
+  (left.title ?? null) === (right.title ?? null) &&
+  (left.error ?? null) === (right.error ?? null) &&
+  (left.errorMessage ?? null) === (right.errorMessage ?? null) &&
+  areMetadataEquivalentForView(left.metadata, right.metadata) &&
+  (left.index ?? null) === (right.index ?? null) &&
+  (left.stagePriority ?? null) === (right.stagePriority ?? null);
 
 export const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => {
   if (!isTerminalTask(task)) return false;
   return resolveProgressValue(task.progress) >= 100;
 };
 
-export const isTerminalTask = (task: ShapeBuildTaskSummary | undefined): boolean => (
-  isTerminalTaskStatus(task?.status) || isTaskSkipped(task?.display, task ? resolveTaskMetadataText(task) : null)
-);
+export const isTerminalTask = (task: ShapeBuildTaskSummary | undefined): boolean =>
+  isTerminalTaskStatus(task?.status) ||
+  isTaskSkipped(task?.display, task ? resolveTaskMetadataText(task) : null);
 
-const isTerminalTaskStatus = (status: ShapeBuildTaskSummary['status'] | undefined): boolean => (
-  status === 'completed' || status === 'failed'
-);
+const isTerminalTaskStatus = (status: ShapeBuildTaskSummary['status'] | undefined): boolean =>
+  status === 'completed' || status === 'failed';
 
-const isTerminalStatus = (task: ShapeBuildTaskSummary | undefined): boolean => (
-  isTerminalTask(task)
-);
+const isTerminalStatus = (task: ShapeBuildTaskSummary | undefined): boolean => isTerminalTask(task);
 
 export const resolveTaskProgress = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   display: ShapeBuildTaskSummary['display'],
   _message: string,
-  progress: number,
+  progress: number
 ): number => {
   const normalizedProgress = assertValidProgressValue(progress, 'resolved');
   if (isTerminalTaskStatus(status) || isTaskSkipped(display, _message)) {
     return 100;
   }
   if (status !== 'running' && normalizedProgress >= 100) {
-    throw new Error(`[ShapeBuildTaskSync] non-running task reached 100 progress: status=${String(status)}`);
+    throw new Error(
+      `[ShapeBuildTaskSync] non-running task reached 100 progress: status=${String(status)}`
+    );
   }
   return normalizedProgress;
 };
@@ -152,7 +148,7 @@ export const resolveTaskDisplayStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   progress: number,
   display: ShapeBuildTaskSummary['display'],
-  _message: string,
+  _message: string
 ): ShapeBuildTaskSummary['status'] => {
   const normalizedProgress = assertValidProgressValue(progress, 'status');
   const resolvedStatus = status ?? 'queued';
@@ -167,7 +163,7 @@ export const resolveTaskDisplayStatus = (
 
 const shouldApplyTaskUpdate = (
   current: ShapeBuildTaskSummary | undefined,
-  next: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary
 ): boolean => {
   if (!current) return true;
   const currentVersion = assertValidTaskVersion(current.version, 'current');
@@ -194,7 +190,7 @@ const shouldApplyTaskUpdate = (
 
 const areDisplaysEqual = (
   left: TaskDisplayPayload | undefined,
-  right: TaskDisplayPayload | undefined,
+  right: TaskDisplayPayload | undefined
 ): boolean => {
   if (left === right) return true;
   if (!left || !right) return false;
@@ -212,14 +208,16 @@ const areDisplaysEqual = (
 
 const shouldPromoteCompletedDisplay = (
   current: ShapeBuildTaskSummary,
-  next: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary
 ): boolean => {
   if (areDisplaysEqual(current.display, next.display)) return false;
   if (!current.display && next.display) return true;
   if (current.display && !next.display) return false;
   if (
-    current.display?.kind === 'phase' && current.display?.phaseCode && next.display
-    && next.display.kind !== 'phase'
+    current.display?.kind === 'phase' &&
+    current.display?.phaseCode &&
+    next.display &&
+    next.display.kind !== 'phase'
   ) {
     return true;
   }
@@ -228,7 +226,7 @@ const shouldPromoteCompletedDisplay = (
 
 const shouldPromoteFailedMessage = (
   current: ShapeBuildTaskSummary,
-  next: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary
 ): boolean => {
   const currentMessage = resolveTaskMetadataText(current);
   const nextMessage = resolveTaskMetadataText(next);
@@ -238,7 +236,7 @@ const shouldPromoteFailedMessage = (
 
 const shouldPromoteCompletedMessage = (
   current: ShapeBuildTaskSummary,
-  next: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary
 ): boolean => {
   if (!areMetadataEquivalentForView(current.metadata, next.metadata)) return true;
   if (shouldPromoteCompletedDisplay(current, next)) return true;
@@ -257,14 +255,12 @@ const shouldPromoteCompletedMessage = (
   return false;
 };
 
-const isRetryableTerminalTask = (task: ShapeBuildTaskSummary): boolean => (
-  task.status === 'failed'
-  || isTaskSkipped(task.display, resolveTaskMetadataText(task))
-);
+const isRetryableTerminalTask = (task: ShapeBuildTaskSummary): boolean =>
+  task.status === 'failed' || isTaskSkipped(task.display, resolveTaskMetadataText(task));
 
 export const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
-  next: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary
 ): boolean => {
   if (isRetryableTerminalTask(current) && (next.status === 'queued' || next.status === 'running')) {
     return true;
@@ -285,7 +281,7 @@ export const shouldPreferNextTask = (
 
 export const replaceSnapshotAndPreserveNonIncomingStages = (
   snapshotTasks: ShapeBuildTaskSummary[],
-  currentMap: Map<string, ShapeBuildTaskSummary>,
+  currentMap: Map<string, ShapeBuildTaskSummary>
 ): ShapeBuildTaskSummary[] => {
   if (snapshotTasks.length === 0) {
     return [...currentMap.values()];
@@ -317,9 +313,9 @@ export const replaceSnapshotAndPreserveNonIncomingStages = (
   return next;
 };
 
-export const replaceSnapshotTasks = (snapshotTasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => (
-  dedupeTasks(snapshotTasks)
-);
+export const replaceSnapshotTasks = (
+  snapshotTasks: ShapeBuildTaskSummary[]
+): ShapeBuildTaskSummary[] => dedupeTasks(snapshotTasks);
 
 const dedupeTasks = (snapshotTasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
   const next: ShapeBuildTaskSummary[] = [];
@@ -338,13 +334,12 @@ const dedupeTasks = (snapshotTasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSumm
 
 export const replaceSnapshotAndPreserveCurrentTasksByStage = (
   snapshotTasks: ShapeBuildTaskSummary[],
-  currentTasks: ShapeBuildTaskSummary[],
-): ShapeBuildTaskSummary[] => (
+  currentTasks: ShapeBuildTaskSummary[]
+): ShapeBuildTaskSummary[] =>
   replaceSnapshotAndPreserveNonIncomingStages(
     snapshotTasks,
-    new Map(currentTasks.map((task) => [task.taskId, task])),
-  )
-);
+    new Map(currentTasks.map((task) => [task.taskId, task]))
+  );
 
 export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskSummary => {
   const stage = resolveTaskStage(task);
@@ -353,7 +348,12 @@ export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskS
   const normalizedMetadata = normalizeTaskMetadata(task.metadata, rawMessage);
   const progress = resolveProgressValue(task.progress);
   const metadataMessage = resolveTaskMetadataMessage(normalizedMetadata) ?? '';
-  const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, metadataMessage);
+  const resolvedStatus = resolveTaskDisplayStatus(
+    task.status,
+    progress,
+    task.display,
+    metadataMessage
+  );
   return {
     ...task,
     version,
@@ -411,6 +411,5 @@ export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
   throw new Error('invalid task stage');
 };
 
-export const isTaskStage = (value: unknown): value is TaskStage => (
-  typeof value === 'string' && taskStages.includes(value as TaskStage)
-);
+export const isTaskStage = (value: unknown): value is TaskStage =>
+  typeof value === 'string' && taskStages.includes(value as TaskStage);

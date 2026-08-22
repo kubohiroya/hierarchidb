@@ -1,6 +1,6 @@
-import { Plugin } from 'vite';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Plugin } from 'vite';
 
 /**
  * Vite plugin to serve favicon.ico at root path

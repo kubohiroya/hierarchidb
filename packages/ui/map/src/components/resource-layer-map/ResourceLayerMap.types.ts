@@ -1,13 +1,24 @@
-import type React from 'react';
-import type { LayerSetId } from '~/preview/layerSetDefinitions';
-import type { MapLibreFilter, MapLibreGeoJSONFeature, MapLibreStyle } from '~/types/maplibre-public';
 import type { SxProps, Theme } from '@mui/material/styles';
-import type { MapLibreMapProps } from '../MapLibreMap.js';
-import type { VectorTileDataSource, VectorTileLayerConfig, BaseMapProps } from '~/types/unified-map-props';
-import type { MapAttributionItem } from '~/types/attribution';
-import type { MapHighlightEntry } from '~/interaction/mapInteractionStore';
-import type { MapSearchTargetDefinition, MapSearchTargetGroup } from '~/preview/mapPreviewSearchTypes';
 import type { FeatureCollection } from 'geojson';
+import type React from 'react';
+import type { MapHighlightEntry } from '~/interaction/mapInteractionStore';
+import type { LayerSetId } from '~/preview/layerSetDefinitions';
+import type {
+  MapSearchTargetDefinition,
+  MapSearchTargetGroup,
+} from '~/preview/mapPreviewSearchTypes';
+import type { MapAttributionItem } from '~/types/attribution';
+import type {
+  MapLibreFilter,
+  MapLibreGeoJSONFeature,
+  MapLibreStyle,
+} from '~/types/maplibre-public';
+import type {
+  BaseMapProps,
+  VectorTileDataSource,
+  VectorTileLayerConfig,
+} from '~/types/unified-map-props';
+import type { MapLibreMapProps } from '../MapLibreMap.js';
 
 export type BasemapStyleEntry = {
   nodeId: string;
@@ -58,7 +69,14 @@ export type ResourceLayerMapProps = BaseMapProps & {
   controls?: MapLibreMapProps['controls'];
   hoveredFeatures?: MapLibreGeoJSONFeature[];
   snackbar?: {
-    position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    position?:
+      | 'top'
+      | 'bottom'
+      | 'bottom-center'
+      | 'top-left'
+      | 'top-right'
+      | 'bottom-left'
+      | 'bottom-right';
     content?: React.ReactNode;
     renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
     autoHideDuration?: number | null;
@@ -93,7 +111,14 @@ export type ResourceLayerMapProps = BaseMapProps & {
     };
     snackbar?: {
       enabled?: boolean;
-      position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+      position?:
+        | 'top'
+        | 'bottom'
+        | 'bottom-center'
+        | 'top-left'
+        | 'top-right'
+        | 'bottom-left'
+        | 'bottom-right';
       content?: React.ReactNode;
       renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
       autoHideDuration?: number | null;

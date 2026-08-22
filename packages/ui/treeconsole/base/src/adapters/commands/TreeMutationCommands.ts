@@ -1,15 +1,15 @@
 /**
-  * TreeMutationCommands Adapter
-  * TreeConsoleCRUDWorkerAPICommandEnvelope
-   */
+ * TreeMutationCommands Adapter
+ * TreeConsoleCRUDWorkerAPICommandEnvelope
+ */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeMutationAPI } from '@hierarchidb/tree-api';
 import type {
   DuplicateNodesPayload,
   MoveNodesPayload,
   MoveToArchivePayload,
   RestoreFromArchivePayload,
+  TreeMutationAPI,
 } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { createCommand } from '~/adapters/commandEnvelopeFactories';
@@ -21,20 +21,19 @@ type RemovePayload = {
 };
 
 export class TreeMutationCommandsAdapter<T> {
-  constructor(private workerAPI: WorkerAPI<T>) {
-  }
+  constructor(private workerAPI: WorkerAPI<T>) {}
 
   /**
-      * moveNodes
-      * @param nodeIds ID
+   * moveNodes
+   * @param nodeIds ID
    * @param targetParentId ID
    * @param options
    * @returns Promise<void>
-      */
+   */
   async moveNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
-    options: CommandAdapterOptions,
+    options: CommandAdapterOptions
   ): Promise<void> {
     try {
       const command = createCommand(
@@ -47,7 +46,7 @@ export class TreeMutationCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
@@ -59,7 +58,7 @@ export class TreeMutationCommandsAdapter<T> {
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
           `Failed to move nodes: ${result?.error || 'Unknown error'}`,
-          'MOVE_NODES_FAILED',
+          'MOVE_NODES_FAILED'
         );
       }
     } catch (error) {
@@ -69,16 +68,16 @@ export class TreeMutationCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Move operation failed for nodes [${nodeIds.join(', ')}]`,
         'MOVE_NODES_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param nodeIds ID
+   * @param nodeIds ID
    * @param options
    * @returns Promise<void>
-      */
+   */
   async deleteNodes(nodeIds: NodeId[], options: CommandAdapterOptions): Promise<void> {
     try {
       const command = createCommand(
@@ -89,7 +88,7 @@ export class TreeMutationCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
@@ -97,7 +96,7 @@ export class TreeMutationCommandsAdapter<T> {
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
           `Failed to delete nodes: ${result?.error || 'Unknown error'}`,
-          'DELETE_NODES_FAILED',
+          'DELETE_NODES_FAILED'
         );
       }
     } catch (error) {
@@ -107,21 +106,21 @@ export class TreeMutationCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Delete operation failed for nodes [${nodeIds.join(', ')}]`,
         'DELETE_NODES_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param nodeIds ID
+   * @param nodeIds ID
    * @param targetParentId ID
    * @param options
    * @returns Promise<void>
-      */
+   */
   async duplicateNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
-    options: CommandAdapterOptions,
+    options: CommandAdapterOptions
   ): Promise<void> {
     try {
       const command = createCommand(
@@ -134,7 +133,7 @@ export class TreeMutationCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
@@ -145,7 +144,7 @@ export class TreeMutationCommandsAdapter<T> {
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
           `Failed to duplicate nodes: ${result?.error || 'Unknown error'}`,
-          'DUPLICATE_NODES_FAILED',
+          'DUPLICATE_NODES_FAILED'
         );
       }
     } catch (error) {
@@ -155,16 +154,16 @@ export class TreeMutationCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Duplicate operation failed for nodes [${nodeIds.join(', ')}]`,
         'DUPLICATE_NODES_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param targetParentId ID
+   * @param targetParentId ID
    * @param options
    * @returns Promise<void>
-      */
+   */
   async pasteNodes(targetParentId: NodeId, _options: CommandAdapterOptions): Promise<void> {
     try {
       // Command creation is no longer needed with the new API
@@ -178,7 +177,7 @@ export class TreeMutationCommandsAdapter<T> {
       if (!result.success) {
         throw new TreeConsoleAdapterError(
           `Failed to paste nodes: Unknown error`,
-          'PASTE_NODES_FAILED',
+          'PASTE_NODES_FAILED'
         );
       }
     } catch (error) {
@@ -188,16 +187,16 @@ export class TreeMutationCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Paste operation failed to parent ${targetParentId}`,
         'PASTE_NODES_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param nodeIds ID
+   * @param nodeIds ID
    * @param options
    * @returns Promise<void>
-      */
+   */
   async removeNodes(nodeIds: NodeId[], options: CommandAdapterOptions): Promise<void> {
     try {
       const command = createCommand(
@@ -208,7 +207,7 @@ export class TreeMutationCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
@@ -216,7 +215,7 @@ export class TreeMutationCommandsAdapter<T> {
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
           `Failed to remove nodes: ${result?.error || 'Unknown error'}`,
-          'PERMANENT_DELETE_FAILED',
+          'PERMANENT_DELETE_FAILED'
         );
       }
     } catch (error) {
@@ -226,21 +225,21 @@ export class TreeMutationCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Permanent delete operation failed for nodes [${nodeIds.join(', ')}]`,
         'PERMANENT_DELETE_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param nodeIds ID
+   * @param nodeIds ID
    * @param targetParentId ID
    * @param options
    * @returns Promise<void>
-      */
+   */
   async restoreFromArchive(
     nodeIds: NodeId[],
     targetParentId: NodeId | undefined,
-    options: CommandAdapterOptions,
+    options: CommandAdapterOptions
   ): Promise<void> {
     try {
       const command = createCommand(
@@ -253,7 +252,7 @@ export class TreeMutationCommandsAdapter<T> {
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
-        },
+        }
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
@@ -264,7 +263,7 @@ export class TreeMutationCommandsAdapter<T> {
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
           `Failed to restore nodes from archive: ${result?.error || 'Unknown error'}`,
-          'RESTORE_FROM_TRASH_FAILED',
+          'RESTORE_FROM_TRASH_FAILED'
         );
       }
     } catch (error) {
@@ -274,7 +273,7 @@ export class TreeMutationCommandsAdapter<T> {
       throw new TreeConsoleAdapterError(
         `Restore operation failed for nodes [${nodeIds.join(', ')}]`,
         'RESTORE_FROM_TRASH_ADAPTER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }

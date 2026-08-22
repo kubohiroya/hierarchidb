@@ -1,7 +1,10 @@
-import { ArrowCircleDown as ArrowCircleDownIcon, ArrowCircleUp as ArrowCircleUpIcon } from '@mui/icons-material';
-import { Box, Skeleton, Stack, Typography, IconButton } from '@mui/material';
-import type { BuildSessionStageCardState } from './useBuildSessionStageCardState.js';
+import {
+  ArrowCircleDown as ArrowCircleDownIcon,
+  ArrowCircleUp as ArrowCircleUpIcon,
+} from '@mui/icons-material';
+import { Box, IconButton, Skeleton, Stack, Typography } from '@mui/material';
 import { TaskItemCardListCard } from '~/ui/components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
+import type { BuildSessionStageCardState } from './useBuildSessionStageCardState.js';
 
 type BuildSessionStageCardViewProps = BuildSessionStageCardState & {
   showHeader?: boolean;
@@ -99,7 +102,10 @@ export const BuildSessionStageCardView = ({
         />
         {showUpArrow ? (
           <IconButton
-            aria-label={t('stage.progress.scrollToRunningUp', 'Scroll up to running or queued task')}
+            aria-label={t(
+              'stage.progress.scrollToRunningUp',
+              'Scroll up to running or queued task'
+            )}
             color="primary"
             onClick={() => handleScrollToDirection('up')}
             sx={{
@@ -124,7 +130,10 @@ export const BuildSessionStageCardView = ({
         ) : null}
         {showDownArrow ? (
           <IconButton
-            aria-label={t('stage.progress.scrollToRunningDown', 'Scroll down to running or queued task')}
+            aria-label={t(
+              'stage.progress.scrollToRunningDown',
+              'Scroll down to running or queued task'
+            )}
             color="primary"
             onClick={() => handleScrollToDirection('down')}
             sx={{

@@ -1,17 +1,4 @@
-import { memo } from 'react';
-import {
-  Box,
-  Button,
-  Chip,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  Toolbar,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { TreeTableSearchInput } from '@hierarchidb/components';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -25,7 +12,20 @@ import {
   ViewComfy as ViewComfyIcon,
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
-import { TreeTableSearchInput } from '@hierarchidb/components';
+import {
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { memo } from 'react';
 
 export interface TreeTableToolbarProps {
   readonly title?: string;
@@ -54,7 +54,9 @@ export interface TreeTableToolbarProps {
   readonly availableFilters: readonly string[];
 }
 
-export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableToolbarProps): React.JSX.Element {
+export const TreeTableToolbar = memo(function TreeTableToolbar(
+  props: TreeTableToolbarProps
+): React.JSX.Element {
   const hasSelection = props.selectedCount > 0;
 
   return (
@@ -160,7 +162,7 @@ export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableT
             onClick={() =>
               props.onSortChange(
                 props.sortBy || 'name',
-                props.sortDirection === 'asc' ? 'desc' : 'asc',
+                props.sortDirection === 'asc' ? 'desc' : 'asc'
               )
             }
             aria-label="Sort"

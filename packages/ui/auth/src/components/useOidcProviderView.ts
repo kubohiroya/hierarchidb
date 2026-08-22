@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import { WebStorageStateStore } from 'oidc-client-ts';
+import { useMemo } from 'react';
 import type { AuthProviderProps } from 'react-oidc-context';
 
 const getOAuthRedirectUri = () => `${window.location.origin}/auth/callback`;

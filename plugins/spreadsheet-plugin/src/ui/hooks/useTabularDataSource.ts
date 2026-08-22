@@ -1,17 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { RefObject } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import type {
-  TabularDataImportProps,
-  TabularProcessingConfig,
-} from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetDraft, SpreadSheetDataSourceType } from '~/common/types/SpreadsheetEntity';
+import type { TabularDataImportProps, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
+import type { RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
+import type { SpreadSheetDataSourceType, SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { createSpreadsheetTabularApi } from '~/services/spreadsheetTabularApiFactory';
 
 const coerceDialogData = (value: unknown): SpreadsheetDraft =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {});
+  typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {};
 
 type ImportMethod = 'file' | 'url';
 
@@ -94,7 +91,7 @@ const normalizeImportUrl = (source?: string): string => {
 
 const resolveImportMethod = (
   type: SpreadSheetDataSourceType['type'] | undefined,
-  source?: string,
+  source?: string
 ): ImportMethod => {
   if (type === 'url') return 'url';
   if (type === 'file') return 'file';
@@ -103,7 +100,7 @@ const resolveImportMethod = (
 
 const clearUrlDownloadState = (
   dialogData: SpreadsheetDraft,
-  source?: string,
+  source?: string
 ): Pick<
   SpreadsheetDraft,
   'spreadsheetMetadataId' | 'dataSource' | 'tabularTableMetadata' | 'file'
@@ -133,7 +130,10 @@ export const useTabularDataSource = ({
   const dialogData = useMemo<SpreadsheetDraft>(() => coerceDialogData(data), [data]);
 
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
-  const derivedImportMethod = resolveImportMethod(dialogData.dataSource?.type, dialogData.dataSource?.source);
+  const derivedImportMethod = resolveImportMethod(
+    dialogData.dataSource?.type,
+    dialogData.dataSource?.source
+  );
   const derivedUrl = normalizeImportUrl(dialogData.dataSource?.source);
   const derivedProcessing = dialogData.tabularProcessingConfig;
   const importMethodRef = useRef<ImportMethod>(derivedImportMethod);
@@ -154,9 +154,13 @@ export const useTabularDataSource = ({
     const hasMetadata = Boolean(dialogData.spreadsheetMetadataId && source);
     const sourceLooksLikeUrl = isLooksLikeUrl(source);
     const persistedAsUrl = dialogData.dataSource?.type === 'url' || derivedImportMethod === 'url';
-    return hasMetadata && (persistedAsUrl || sourceLooksLikeUrl) ? normalizeImportUrl(source) : null;
+    return hasMetadata && (persistedAsUrl || sourceLooksLikeUrl)
+      ? normalizeImportUrl(source)
+      : null;
   });
-  const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig | undefined>(derivedProcessing);
+  const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig | undefined>(
+    derivedProcessing
+  );
   const importSucceeded = Boolean(lastSuccessfulUrl && lastSuccessfulUrl === downloadUrl);
   const hasMetadata = Boolean(dialogData.spreadsheetMetadataId);
   const [importExpanded, setImportExpanded] = useState<boolean>(() => !hasMetadata);
@@ -192,8 +196,8 @@ export const useTabularDataSource = ({
       const isUrlImport = urlImportPendingRef.current || importMethodRef.current === 'url';
       const normalizedDownloadUrl = normalizeImportUrl(downloadUrlRef.current);
       const nextSource = isUrlImport
-        ? (normalizedDownloadUrl || tabularTableMetadata.fileUrl) ?? tabularTableMetadata.filename
-        : tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename;
+        ? ((normalizedDownloadUrl || tabularTableMetadata.fileUrl) ?? tabularTableMetadata.filename)
+        : (tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename);
       const nextType: ImportMethod = isUrlImport ? 'url' : 'file';
       const nextDataSource: SpreadSheetDataSourceType = {
         type: nextType,
@@ -224,7 +228,7 @@ export const useTabularDataSource = ({
       setValid(true);
       setError(null);
     },
-    [dialogData, onChange, processingConfig, setError, setValid],
+    [dialogData, onChange, processingConfig, setError, setValid]
   );
 
   const handleImportError = useCallback(
@@ -233,7 +237,7 @@ export const useTabularDataSource = ({
       setValid(false);
       setError(message);
     },
-    [setError, setValid],
+    [setError, setValid]
   );
 
   useEffect(() => {
@@ -258,15 +262,14 @@ export const useTabularDataSource = ({
     if (!needsBackfill) return;
     onChange({
       ...dialogData,
-      tabularProcessingConfig:
-        processingConfig ?? {
-          delimiter: ',',
-          encoding: 'utf-8',
-          hasHeader: true,
-          quoteChar: '"',
-          escapeChar: '\\',
-          skipEmptyLines: true,
-        },
+      tabularProcessingConfig: processingConfig ?? {
+        delimiter: ',',
+        encoding: 'utf-8',
+        hasHeader: true,
+        quoteChar: '"',
+        escapeChar: '\\',
+        skipEmptyLines: true,
+      },
     });
   }, [dialogData, onChange, processingConfig]);
 
@@ -346,7 +349,8 @@ export const useTabularDataSource = ({
     details: {
       filename: dialogData.dataSource?.filename ?? dialogData.tabularTableMetadata?.filename ?? '—',
       sizeBytes: dialogData.dataSource?.sizeBytes ?? dialogData.tabularTableMetadata?.fileSizeBytes,
-      contentHash: dialogData.dataSource?.contentHash ?? dialogData.tabularTableMetadata?.contentHash,
+      contentHash:
+        dialogData.dataSource?.contentHash ?? dialogData.tabularTableMetadata?.contentHash,
       createdAt: dialogData.tabularTableMetadata?.createdAt ?? null,
     },
   };

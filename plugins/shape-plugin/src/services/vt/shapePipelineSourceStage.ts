@@ -1,16 +1,19 @@
-import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
-import type { TaskStage } from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { DataSourceName, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
+import { type GeometryEngine, geometrySimplify } from '@hierarchidb/gis-sdk';
 import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { listTasksByStage } from '@hierarchidb/vt-orchestrator';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { geojson as geojsonApi } from 'flatgeobuf';
+import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
-import { geometrySimplify, type GeometryEngine } from '@hierarchidb/gis-sdk';
+import type {
+  DataSourceName,
+  SelectedArrayByCountries,
+  ShapeRuntimeBuildConfig,
+  SourceTaskPayload,
+} from '~/common/types/index';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { runShapeSourceStage } from './runShapeSourceStage.js';
 import {
   createPipelineLinkedAbortController,
@@ -84,12 +87,15 @@ const countPolygonVertices = (coordinates: unknown): number => {
 
 const visitPolygons = (
   geometry: Geometry | null | undefined,
-  visit: (polygon: { vertexCount: number; geometry: Polygon }) => void,
+  visit: (polygon: { vertexCount: number; geometry: Polygon }) => void
 ): void => {
   if (!geometry) return;
   if (geometry.type === 'Polygon') {
     const polygonGeometry = geometry as Polygon;
-    visit({ vertexCount: countPolygonVertices(polygonGeometry.coordinates), geometry: polygonGeometry });
+    visit({
+      vertexCount: countPolygonVertices(polygonGeometry.coordinates),
+      geometry: polygonGeometry,
+    });
     return;
   }
   if (geometry.type === 'MultiPolygon') {
@@ -110,7 +116,7 @@ const visitPolygons = (
 };
 
 const findMaxVertexPolygon = (
-  collection: FeatureCollection,
+  collection: FeatureCollection
 ): { vertexCount: number; polygon: Feature<Polygon> } | null => {
   let maxVertexCount = 0;
   let selectedPolygon: Feature<Polygon> | null = null;
@@ -189,22 +195,19 @@ const decodeSourceCacheCollection = async (record: {
 }): Promise<FeatureCollection | null> => {
   const format = record.format ?? 'flatgeobuf';
   if (format === 'topojson') {
-    const decodedBuffer = record.compression === 'gzip'
-      ? await decompressGzip(record.data)
-      : record.data;
+    const decodedBuffer =
+      record.compression === 'gzip' ? await decompressGzip(record.data) : record.data;
     const topology = decodeTopoJson(decodedBuffer);
     return decodeTopoJsonCollection(topology);
   }
-  const decodedBuffer = record.compression === 'gzip'
-    ? await decompressGzip(record.data)
-    : record.data;
+  const decodedBuffer =
+    record.compression === 'gzip' ? await decompressGzip(record.data) : record.data;
   const decoded = geojsonApi.deserialize(new Uint8Array(decodedBuffer));
   return await normalizeFeatureCollection(decoded);
 };
 
-const asRecord = (value: unknown): Record<string, unknown> | null => (
-  typeof value === 'object' && value !== null ? value as Record<string, unknown> : null
-);
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
 
 const readStringField = (record: Record<string, unknown> | null, key: string): string | null => {
   if (!record) return null;
@@ -244,7 +247,11 @@ const findSourceBaseToleranceByBisection = (params: {
   let high = Math.max(0, params.initialHigh);
   let highVertexCount = evaluate(high);
   iterations += 1;
-  while (highVertexCount > params.vertexLimit && high < params.highCap && iterations < params.maxIterations) {
+  while (
+    highVertexCount > params.vertexLimit &&
+    high < params.highCap &&
+    iterations < params.maxIterations
+  ) {
     low = high;
     high = Math.min(params.highCap, high * 2);
     highVertexCount = evaluate(high);
@@ -255,7 +262,7 @@ const findSourceBaseToleranceByBisection = (params: {
   }
   let bestTolerance = high;
   let bestVertexCount = highVertexCount;
-  while (iterations < params.maxIterations && (high - low) > params.epsilon) {
+  while (iterations < params.maxIterations && high - low > params.epsilon) {
     const mid = (low + high) / 2;
     const midVertexCount = evaluate(mid);
     iterations += 1;
@@ -267,10 +274,17 @@ const findSourceBaseToleranceByBisection = (params: {
       low = mid;
     }
   }
-  return { tolerance: bestTolerance, converged: true, iterations, finalVertexCount: bestVertexCount };
+  return {
+    tolerance: bestTolerance,
+    converged: true,
+    iterations,
+    finalVertexCount: bestVertexCount,
+  };
 };
 
-export const runShapeSourceStageSection = async (params: ShapeSourceStageParams): Promise<boolean> => {
+export const runShapeSourceStageSection = async (
+  params: ShapeSourceStageParams
+): Promise<boolean> => {
   const sourceAbortController = createPipelineLinkedAbortController(params.abortSignal);
   if (sourceAbortController.signal.aborted) return true;
   await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
@@ -311,11 +325,10 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
 
     // Handle other errors
     const baseMessage = error instanceof Error ? error.message : String(error);
-    const failedTaskId = error && typeof error === 'object'
-      ? (error as { taskId?: string }).taskId
-      : undefined;
+    const failedTaskId =
+      error && typeof error === 'object' ? (error as { taskId?: string }).taskId : undefined;
     const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
-    
+
     console.error('[ShapeSource][ErrorHandling] Source stage failed with error', {
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
@@ -323,14 +336,14 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       errorMessage: baseMessage,
       failedTaskId,
     });
-    
+
     await finalizePendingStageTasks(
       params.taskQueue,
       params.nodeId,
       'source',
       `aborted: ${reason}`,
       '[ShapeSource][PipelineDiagnostics] source stage aborted',
-      params.pipelineRunId,
+      params.pipelineRunId
     );
     throw error;
   }
@@ -339,17 +352,23 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   }
   let stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
   if (sourceAbortController.signal.aborted) return true;
-  console.warn('[ShapeSource][PipelineDiagnostics] stage source completed', JSON.stringify({
-    nodeId: params.nodeId,
-    runId: params.pipelineRunId ?? null,
-    counts: stageCounts,
-  }));
-  if (!params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
-    console.warn('[ShapeSource][PipelineDiagnostics] source stage left pending tasks on fresh run; retrying queued drain once', JSON.stringify({
+  console.warn(
+    '[ShapeSource][PipelineDiagnostics] stage source completed',
+    JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
       counts: stageCounts,
-    }));
+    })
+  );
+  if (!params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
+    console.warn(
+      '[ShapeSource][PipelineDiagnostics] source stage left pending tasks on fresh run; retrying queued drain once',
+      JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: stageCounts,
+      })
+    );
     await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
     if (sourceAbortController.signal.aborted) return true;
     await runSourcePass(true);
@@ -363,14 +382,18 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
     if (sourceAbortController.signal.aborted) return true;
     if (stageCounts.queued > 0 || stageCounts.running > 0) {
-      console.warn('[ShapeSource][PipelineDiagnostics] source stage left pending tasks during resume; keep queued for next retry', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-        counts: stageCounts,
-      }));
+      console.warn(
+        '[ShapeSource][PipelineDiagnostics] source stage left pending tasks during resume; keep queued for next retry',
+        JSON.stringify({
+          nodeId: params.nodeId,
+          runId: params.pipelineRunId ?? null,
+          counts: stageCounts,
+        })
+      );
     }
   }
-  const shouldFinalizePending = !params.resumeExistingTasks || (stageCounts.queued === 0 && stageCounts.running === 0);
+  const shouldFinalizePending =
+    !params.resumeExistingTasks || (stageCounts.queued === 0 && stageCounts.running === 0);
   if (sourceAbortController.signal.aborted) return true;
   const finalizedPending = await finalizePendingStageTasks(
     params.taskQueue,
@@ -381,7 +404,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     params.pipelineRunId,
     {
       markFailed: shouldFinalizePending,
-    },
+    }
   );
   if (sourceAbortController.signal.aborted) return true;
   if (finalizedPending.authPending > 0) {
@@ -400,51 +423,71 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   const baseToleranceVertexLimit = SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
   fetchTasks.forEach((task) => {
     const metadata = task.metadata;
-    const fetchDetail = (typeof metadata === 'object' && metadata !== null
-      ? (metadata as { fetchDetail?: unknown }).fetchDetail
-      : null) as Record<string, unknown> | null;
-    const features = fetchDetail && typeof fetchDetail.features === 'object' && fetchDetail.features !== null
-      ? fetchDetail.features as Record<string, unknown>
-      : null;
-    const polygons = fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
-      ? fetchDetail.polygons as Record<string, unknown>
-      : (fetchDetail && typeof fetchDetail.polygonsPerFeature === 'object' && fetchDetail.polygonsPerFeature !== null
-        ? fetchDetail.polygonsPerFeature as Record<string, unknown>
-        : null);
-    const fallbackPolygons = fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
-      ? fetchDetail.polygons as Record<string, unknown>
-      : null;
-    const maxPolygonVertexCountDetail = fetchDetail && typeof fetchDetail.maxPolygonVertexCount === 'object' && fetchDetail.maxPolygonVertexCount !== null
-      ? fetchDetail.maxPolygonVertexCount as Record<string, unknown>
-      : null;
-    const featureInput = typeof features?.input === 'number'
-      ? features.input
-      : (typeof features?.output === 'number' ? features.output : null);
-    const polygonInput = typeof polygons?.input === 'number'
-      ? polygons.input
-      : (typeof polygons?.output === 'number' ? polygons.output : null);
-    const polygonFromAverage = (
-      polygonInput === null
-      && typeof fallbackPolygons?.input === 'number'
-      && featureInput !== null
-      && featureInput > 0
-    )
-      ? (fallbackPolygons.input / featureInput)
-      : null;
+    const fetchDetail = (
+      typeof metadata === 'object' && metadata !== null
+        ? (metadata as { fetchDetail?: unknown }).fetchDetail
+        : null
+    ) as Record<string, unknown> | null;
+    const features =
+      fetchDetail && typeof fetchDetail.features === 'object' && fetchDetail.features !== null
+        ? (fetchDetail.features as Record<string, unknown>)
+        : null;
+    const polygons =
+      fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
+        ? (fetchDetail.polygons as Record<string, unknown>)
+        : fetchDetail &&
+            typeof fetchDetail.polygonsPerFeature === 'object' &&
+            fetchDetail.polygonsPerFeature !== null
+          ? (fetchDetail.polygonsPerFeature as Record<string, unknown>)
+          : null;
+    const fallbackPolygons =
+      fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
+        ? (fetchDetail.polygons as Record<string, unknown>)
+        : null;
+    const maxPolygonVertexCountDetail =
+      fetchDetail &&
+      typeof fetchDetail.maxPolygonVertexCount === 'object' &&
+      fetchDetail.maxPolygonVertexCount !== null
+        ? (fetchDetail.maxPolygonVertexCount as Record<string, unknown>)
+        : null;
+    const featureInput =
+      typeof features?.input === 'number'
+        ? features.input
+        : typeof features?.output === 'number'
+          ? features.output
+          : null;
+    const polygonInput =
+      typeof polygons?.input === 'number'
+        ? polygons.input
+        : typeof polygons?.output === 'number'
+          ? polygons.output
+          : null;
+    const polygonFromAverage =
+      polygonInput === null &&
+      typeof fallbackPolygons?.input === 'number' &&
+      featureInput !== null &&
+      featureInput > 0
+        ? fallbackPolygons.input / featureInput
+        : null;
     const featureValue = featureInput;
     const polygonValue = polygonInput ?? polygonFromAverage;
-    const maxPolygonVertexValue = typeof maxPolygonVertexCountDetail?.output === 'number'
-      ? maxPolygonVertexCountDetail.output
-      : (typeof maxPolygonVertexCountDetail?.input === 'number'
-        ? maxPolygonVertexCountDetail.input
-        : null);
+    const maxPolygonVertexValue =
+      typeof maxPolygonVertexCountDetail?.output === 'number'
+        ? maxPolygonVertexCountDetail.output
+        : typeof maxPolygonVertexCountDetail?.input === 'number'
+          ? maxPolygonVertexCountDetail.input
+          : null;
     if (featureValue !== null && Number.isFinite(featureValue) && featureValue > featureMax) {
       featureMax = Math.max(0, Math.round(featureValue));
     }
     if (polygonValue !== null && Number.isFinite(polygonValue) && polygonValue > polygonMax) {
       polygonMax = Math.max(0, Math.round(polygonValue));
     }
-    if (maxPolygonVertexValue !== null && Number.isFinite(maxPolygonVertexValue) && maxPolygonVertexValue > maxPolygonVertexCount) {
+    if (
+      maxPolygonVertexValue !== null &&
+      Number.isFinite(maxPolygonVertexValue) &&
+      maxPolygonVertexValue > maxPolygonVertexCount
+    ) {
       maxPolygonVertexCount = Math.max(0, Math.round(maxPolygonVertexValue));
     }
   });
@@ -452,11 +495,15 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   const geometryEngine: GeometryEngine = params.buildConfig.geometryConfig.geometryEngine ?? 'turf';
   let selectedPolygon: Feature<Polygon> | null = null;
   const sourceCacheIds = new Set<string>();
-  const sourceCacheFormats = new Map<string, { format: 'flatgeobuf' | 'topojson'; compression: 'gzip' | 'none' }>();
+  const sourceCacheFormats = new Map<
+    string,
+    { format: 'flatgeobuf' | 'topojson'; compression: 'gzip' | 'none' }
+  >();
   for (const task of fetchTasks) {
-    const output = typeof task.outputData === 'object' && task.outputData !== null
-      ? task.outputData as Record<string, unknown>
-      : null;
+    const output =
+      typeof task.outputData === 'object' && task.outputData !== null
+        ? (task.outputData as Record<string, unknown>)
+        : null;
     const sourceCacheId = typeof output?.sourceCacheId === 'string' ? output.sourceCacheId : null;
     if (!sourceCacheId) continue;
     sourceCacheIds.add(sourceCacheId);
@@ -517,8 +564,5 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   if (stageCounts.failed > 0 && stageCounts.completed === 0) {
     return true;
   }
-  return shouldStopAfterStage(
-    params.buildContinuationPolicy,
-    stageCounts.failed,
-  );
+  return shouldStopAfterStage(params.buildContinuationPolicy, stageCounts.failed);
 };

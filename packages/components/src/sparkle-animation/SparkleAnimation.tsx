@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useState } from 'react';
+
 import { css } from '@emotion/react';
+import { useEffect, useState } from 'react';
 
 interface SparkleAnimationProps {
   showSparkle: boolean;
@@ -39,4 +40,4 @@ export const SparkleAnimation: React.FC<SparkleAnimationProps> = ({
   if (!isVisible) return null;
 
   return <span css={sparkleStyle}>✨</span>;
-}
+};

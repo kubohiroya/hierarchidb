@@ -11,19 +11,19 @@ export type ViewMode = 'icon' | 'list' | 'column';
 
 /** Sort ordering applied to nodes in the current view. */
 export type SortMode =
-    | 'none'
-    | 'name'
-    | 'type'
-    | 'lastOpened'
-    | 'created'
-    | 'modified'
-    | 'size'
-    | 'tag';
+  | 'none'
+  | 'name'
+  | 'type'
+  | 'lastOpened'
+  | 'created'
+  | 'modified'
+  | 'size'
+  | 'tag';
 
 /** Absolute x/y position of an icon in free-positioning (sortMode "none") mode. */
 export interface IconPosition {
-    x: number;
-    y: number;
+  x: number;
+  y: number;
 }
 
 /**
@@ -33,8 +33,8 @@ export interface IconPosition {
  * at the UI/atom initialisation layer, NOT at the data layer.
  */
 export interface ViewProperties {
-    viewMode?: ViewMode;
-    zoomLevel?: number;
-    sortMode?: SortMode;
-    iconPosition?: IconPosition;
+  viewMode?: ViewMode;
+  zoomLevel?: number;
+  sortMode?: SortMode;
+  iconPosition?: IconPosition;
 }

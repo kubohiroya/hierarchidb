@@ -4,11 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { Alias } from 'vite';
 import { detectNodeTypePlugins } from './detect-plugins.js';
 import { toPosixPath } from './fs-utils.js';
-import type {
-  AliasEntry,
-  CreateAliasPluginOptions,
-  PluginEntryKind,
-} from './types.js';
+import type { AliasEntry, CreateAliasPluginOptions, PluginEntryKind } from './types.js';
 
 interface TsconfigShape {
   compilerOptions?: {
@@ -39,7 +35,10 @@ function collectAliasEntries(rootDir: string, kinds?: PluginEntryKind[]): AliasE
       if (!info.hasExport || !info.sourcePath) continue;
 
       entries.push({
-        find: `${plugin.packageName}${info.exportKey === '.' ? '' : info.exportKey.replace(/^[.]/, '')}`.replace(/\/+/g, '/'),
+        find: `${plugin.packageName}${info.exportKey === '.' ? '' : info.exportKey.replace(/^[.]/, '')}`.replace(
+          /\/+/g,
+          '/'
+        ),
         replacement: info.sourcePath,
         kind: typedKind,
         nodeType: plugin.nodeType,
@@ -58,7 +57,9 @@ function mergeAliasOptions(existing: any, additions: readonly Alias[]): Alias[] 
       ? Object.entries(existing).map(([find, replacement]) => ({ find, replacement }))
       : [];
 
-  const additionKeys = new Set(additions.map((alias) => (typeof alias.find === 'string' ? alias.find : String(alias.find))));
+  const additionKeys = new Set(
+    additions.map((alias) => (typeof alias.find === 'string' ? alias.find : String(alias.find)))
+  );
   const filtered = normalized.filter((alias) => {
     if (typeof alias.find !== 'string') return true;
     return !additionKeys.has(alias.find);
@@ -67,7 +68,11 @@ function mergeAliasOptions(existing: any, additions: readonly Alias[]): Alias[] 
   return [...additions, ...filtered];
 }
 
-function ensureTsconfigPaths(tsconfigPath: string, entries: readonly AliasEntry[], kinds: readonly PluginEntryKind[]): void {
+function ensureTsconfigPaths(
+  tsconfigPath: string,
+  entries: readonly AliasEntry[],
+  kinds: readonly PluginEntryKind[]
+): void {
   if (!fs.existsSync(tsconfigPath)) return;
 
   const raw = fs.readFileSync(tsconfigPath, 'utf-8');
@@ -101,21 +106,32 @@ function ensureTsconfigPaths(tsconfigPath: string, entries: readonly AliasEntry[
 export function createNodeTypeAliasPlugin(options: CreateAliasPluginOptions = {}) {
   const rootDir = options.rootDir ? path.resolve(options.rootDir) : defaultRootDir;
   const allowedKinds = filterKinds(options.kinds);
-  
+
   return {
     name: '@hierarchidb/vite-plugin-hierarchidb-plugin-alias:alias',
     enforce: 'pre' as const,
     config(config: any) {
       const entries = collectAliasEntries(rootDir, allowedKinds);
-      const filteredEntries = options.shouldAlias ? entries.filter((entry) => options.shouldAlias?.(entry) ?? false) : entries;
+      const filteredEntries = options.shouldAlias
+        ? entries.filter((entry) => options.shouldAlias?.(entry) ?? false)
+        : entries;
       if (filteredEntries.length === 0) return;
 
-      const viteAliases: Alias[] = filteredEntries.map(({ find, replacement }) => ({ find, replacement }));
+      const viteAliases: Alias[] = filteredEntries.map(({ find, replacement }) => ({
+        find,
+        replacement,
+      }));
       const merged = mergeAliasOptions(config?.resolve?.alias, viteAliases);
 
       if (options.tsconfigPath) {
-        const tsconfigKinds = options.tsconfigKinds ? filterKinds(options.tsconfigKinds) : allowedKinds;
-        ensureTsconfigPaths(path.resolve(rootDir, options.tsconfigPath), filteredEntries, tsconfigKinds);
+        const tsconfigKinds = options.tsconfigKinds
+          ? filterKinds(options.tsconfigKinds)
+          : allowedKinds;
+        ensureTsconfigPaths(
+          path.resolve(rootDir, options.tsconfigPath),
+          filteredEntries,
+          tsconfigKinds
+        );
       }
 
       return {

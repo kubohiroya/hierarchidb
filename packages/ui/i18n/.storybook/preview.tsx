@@ -1,9 +1,9 @@
+import CssBaseline from '@mui/material/CssBaseline';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import type { Preview } from '@storybook/provider';
+import i18n from 'i18next';
 import React, { Suspense } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
-import i18n from 'i18next';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 
 // Initialize i18n for Storybook
 i18n.use(initReactI18next).init({

@@ -1,12 +1,15 @@
 import type { StageHandlerResult } from '~/types/types';
-import { loadGeojsonVt } from './vtStageFeatureSourceUtils.js';
-import { buildLayerMap } from './vtStageFeatureMetadataUtils.js';
-import { createLayerIndexForTile } from './vtStageTaskLayerBuilderHelpers.js';
-import { decideLayerBuildPolicy } from './vtStageTaskLayerBuilderPolicy.js';
-import type { BuildLayerIndexForTile, VtLayerBuildInput } from './vtStageTaskLayerBuilderTypes.js';
-import type { LayerMap } from './vtStageTaskLayerBuilderTypes.js';
-import type { LayerBuildPolicy } from './vtStageTaskLayerBuilderPolicy.js';
 import { logLayerBuildStart } from './logLayerBuildStart.js';
+import { buildLayerMap } from './vtStageFeatureMetadataUtils.js';
+import { loadGeojsonVt } from './vtStageFeatureSourceUtils.js';
+import { createLayerIndexForTile } from './vtStageTaskLayerBuilderHelpers.js';
+import type { LayerBuildPolicy } from './vtStageTaskLayerBuilderPolicy.js';
+import { decideLayerBuildPolicy } from './vtStageTaskLayerBuilderPolicy.js';
+import type {
+  BuildLayerIndexForTile,
+  LayerMap,
+  VtLayerBuildInput,
+} from './vtStageTaskLayerBuilderTypes.js';
 
 export type PreparedLayerBuildContext = {
   layerMap: LayerMap;
@@ -19,7 +22,7 @@ export type PreparedLayerBuildContext = {
 export const buildLayerBuildExecutionContext = async (
   input: Omit<VtLayerBuildInput, 'completedWithParentInputSummary'> & {
     completedWithParentInputSummary: (message: string) => StageHandlerResult;
-  },
+  }
 ): Promise<PreparedLayerBuildContext> => {
   const {
     context,

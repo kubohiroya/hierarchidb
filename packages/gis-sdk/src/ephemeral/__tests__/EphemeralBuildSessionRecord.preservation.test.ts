@@ -1,28 +1,28 @@
 /**
  * Preservation Property Tests for Ephemeral Session Record Refactor
- * 
+ *
  * **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
- * 
+ *
  * These tests capture the CURRENT behavior that must be preserved after the refactor.
  * They test existing query patterns and external APIs on UNFIXED code.
- * 
+ *
  * EXPECTED OUTCOME: Tests PASS on unfixed code (baseline behavior)
  * After refactor: Tests MUST STILL PASS (no regressions)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { NodeId } from '@hierarchidb/core-types';
 import * as fc from 'fast-check';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EphemeralDB } from '../EphemeralDB';
 import type {
+  BuildSessionHeartbeat,
+  BuildSessionRecord,
+  BuildSessionStatus,
+  BuildStage,
+  BuildStatus,
   EphemeralBuildSessionRecord,
   EphemeralBuildTaskRecord,
-  BuildStatus,
-  BuildStage,
-  BuildSessionRecord,
-  BuildSessionHeartbeat,
-  BuildSessionStatus,
 } from '../EphemeralDBRecordTypes';
-import type { NodeId } from '@hierarchidb/core-types';
 import { getSessionWithDetails } from '../sessionHelpers';
 
 describe('Preservation: Query Interface Compatibility', () => {
@@ -53,7 +53,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Requirement 3.1: Querying current session status returns expected information
-   * 
+   *
    * This test verifies that querying session status through the existing API
    * returns all expected fields with correct values.
    */
@@ -108,7 +108,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Requirement 3.2: UI displays build progress computed from task queues
-   * 
+   *
    * This test verifies that progress information can be computed from task queues
    * and matches the expected structure.
    */
@@ -128,11 +128,51 @@ describe('Preservation: Query Interface Compatibility', () => {
 
     // Create tasks with various statuses
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: 't1', nodeId, version: 0, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: 't2', nodeId, version: 0, status: 'completed', index: 1, stage: 'source', progress: 100 },
-      { taskId: 't3', nodeId, version: 0, status: 'running', index: 2, stage: 'source', progress: 50 },
-      { taskId: 't4', nodeId, version: 0, status: 'queued', index: 3, stage: 'source', progress: 0 },
-      { taskId: 't5', nodeId, version: 0, status: 'failed', index: 4, stage: 'source', progress: 0 },
+      {
+        taskId: 't1',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: 't2',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 1,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: 't3',
+        nodeId,
+        version: 0,
+        status: 'running',
+        index: 2,
+        stage: 'source',
+        progress: 50,
+      },
+      {
+        taskId: 't4',
+        nodeId,
+        version: 0,
+        status: 'queued',
+        index: 3,
+        stage: 'source',
+        progress: 0,
+      },
+      {
+        taskId: 't5',
+        nodeId,
+        version: 0,
+        status: 'failed',
+        index: 4,
+        stage: 'source',
+        progress: 0,
+      },
     ];
 
     for (const task of tasks) {
@@ -143,10 +183,10 @@ describe('Preservation: Query Interface Compatibility', () => {
     const allTasks = await db.buildTasks.where('nodeId').equals(nodeId).toArray();
 
     const total = allTasks.length;
-    const completed = allTasks.filter(t => t.status === 'completed').length;
-    const failed = allTasks.filter(t => t.status === 'failed').length;
-    const running = allTasks.filter(t => t.status === 'running').length;
-    const queued = allTasks.filter(t => t.status === 'queued').length;
+    const completed = allTasks.filter((t) => t.status === 'completed').length;
+    const failed = allTasks.filter((t) => t.status === 'failed').length;
+    const running = allTasks.filter((t) => t.status === 'running').length;
+    const queued = allTasks.filter((t) => t.status === 'queued').length;
 
     // Verify progress computation
     expect(total).toBe(5);
@@ -161,7 +201,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Requirement 3.3: Session resume and cancel operations work correctly
-   * 
+   *
    * This test verifies that session state transitions (pause, resume, cancel)
    * work correctly through the existing API.
    */
@@ -214,7 +254,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Requirement 3.4: Existing code querying ephemeralDB.sessions gets expected data
-   * 
+   *
    * This test verifies that all existing query patterns return expected data structures.
    */
   it('should provide backward-compatible access patterns', async () => {
@@ -255,11 +295,14 @@ describe('Preservation: Query Interface Compatibility', () => {
     // Pattern 2: Query all sessions (query config table and reconstruct)
     const allConfigs = await db.buildSessionConfigs.toArray();
     expect(allConfigs.length).toBeGreaterThan(0);
-    expect(allConfigs.some(s => s.nodeId === nodeId)).toBe(true);
+    expect(allConfigs.some((s) => s.nodeId === nodeId)).toBe(true);
 
     // Pattern 3: Query by status using status table
-    const runningStatuses = await db.buildSessionStatuses.where('status').equals('running').toArray();
-    expect(runningStatuses.some(s => s.nodeId === nodeId)).toBe(true);
+    const runningStatuses = await db.buildSessionStatuses
+      .where('status')
+      .equals('running')
+      .toArray();
+    expect(runningStatuses.some((s) => s.nodeId === nodeId)).toBe(true);
 
     // Pattern 4: Check existence
     const exists = await db.buildSessionConfigs.get(nodeId);
@@ -272,7 +315,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Requirement 3.5: Session cleanup removes all related records atomically
-   * 
+   *
    * This test verifies that deleting a session removes all related records
    * (session, tasks, cache entries) atomically.
    */
@@ -306,8 +349,24 @@ describe('Preservation: Query Interface Compatibility', () => {
 
     // Create related tasks
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: 't1', nodeId, version: 0, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: 't2', nodeId, version: 0, status: 'completed', index: 1, stage: 'source', progress: 100 },
+      {
+        taskId: 't1',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: 't2',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 1,
+        stage: 'source',
+        progress: 100,
+      },
     ];
     for (const task of tasks) {
       await db.buildTasks.add(task);
@@ -337,7 +396,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Property-Based Test: Session state transitions preserve data integrity
-   * 
+   *
    * This test generates random session state transitions and verifies that
    * data integrity is maintained across all transitions.
    */
@@ -351,7 +410,9 @@ describe('Preservation: Query Interface Compatibility', () => {
           transitions: fc.array(
             fc.record({
               status: fc.constantFrom<BuildStatus>('running', 'paused', 'completed', 'failed'),
-              stage: fc.option(fc.constantFrom<BuildStage>('source', 'geometry', 'tileEmit'), { nil: undefined }),
+              stage: fc.option(fc.constantFrom<BuildStage>('source', 'geometry', 'tileEmit'), {
+                nil: undefined,
+              }),
             }),
             { minLength: 1, maxLength: 5 }
           ),
@@ -396,8 +457,11 @@ describe('Preservation: Query Interface Compatibility', () => {
 
             // If stage is specified, upsert stage status with updated startedAt
             if (transition.stage !== undefined) {
-              const existingStages = await db.buildStageStatuses.where('nodeId').equals(nodeId).toArray();
-              const existingStage = existingStages.find(s => s.stage === transition.stage);
+              const existingStages = await db.buildStageStatuses
+                .where('nodeId')
+                .equals(nodeId)
+                .toArray();
+              const existingStage = existingStages.find((s) => s.stage === transition.stage);
 
               if (existingStage) {
                 await db.buildStageStatuses.update(existingStage.id, {
@@ -423,8 +487,11 @@ describe('Preservation: Query Interface Compatibility', () => {
             expect(updated?.status).toBe(transition.status);
             if (transition.stage !== undefined) {
               // Verify the stage exists in stageStatuses.
-              const stageStatuses = await db.buildStageStatuses.where('nodeId').equals(nodeId).toArray();
-              expect(stageStatuses.some(s => s.stage === transition.stage)).toBe(true);
+              const stageStatuses = await db.buildStageStatuses
+                .where('nodeId')
+                .equals(nodeId)
+                .toArray();
+              expect(stageStatuses.some((s) => s.stage === transition.stage)).toBe(true);
             }
           }
 
@@ -443,7 +510,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Property-Based Test: Progress computation consistency
-   * 
+   *
    * This test generates random task configurations and verifies that
    * progress computation is consistent and correct.
    */
@@ -537,8 +604,8 @@ describe('Preservation: Query Interface Compatibility', () => {
           // Compute progress
           const allTasks = await db.buildTasks.where('nodeId').equals(nodeId).toArray();
           const total = allTasks.length;
-          const completed = allTasks.filter(t => t.status === 'completed').length;
-          const failed = allTasks.filter(t => t.status === 'failed').length;
+          const completed = allTasks.filter((t) => t.status === 'completed').length;
+          const failed = allTasks.filter((t) => t.status === 'failed').length;
 
           // Verify progress computation
           expect(total).toBe(taskCount);
@@ -564,7 +631,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Property-Based Test: Various session states and stage configurations
-   * 
+   *
    * This test generates sessions in various states with different stage
    * configurations and verifies query patterns work correctly.
    */
@@ -574,7 +641,9 @@ describe('Preservation: Query Interface Compatibility', () => {
         fc.record({
           nodeId: fc.string({ minLength: 5, maxLength: 20 }).map((s: string) => s as NodeId),
           status: fc.constantFrom<BuildStatus>('idle', 'running', 'paused', 'completed', 'failed'),
-          stage: fc.option(fc.constantFrom<BuildStage>('source', 'geometry', 'tileEmit'), { nil: undefined }),
+          stage: fc.option(fc.constantFrom<BuildStage>('source', 'geometry', 'tileEmit'), {
+            nil: undefined,
+          }),
           hasSelectedArrayByCountries: fc.boolean(),
           hasStageId: fc.boolean(),
         }),
@@ -659,7 +728,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Edge Case: Session with no tasks
-   * 
+   *
    * Verifies that sessions without tasks can be queried correctly.
    */
   it('should handle sessions with no tasks', async () => {
@@ -687,14 +756,14 @@ describe('Preservation: Query Interface Compatibility', () => {
 
     // Progress should be 0/0
     const total = tasks.length;
-    const completed = tasks.filter(t => t.status === 'completed').length;
+    const completed = tasks.filter((t) => t.status === 'completed').length;
     expect(total).toBe(0);
     expect(completed).toBe(0);
   });
 
   /**
    * Edge Case: Session with all tasks completed
-   * 
+   *
    * Verifies that completed sessions are handled correctly.
    */
   it('should handle sessions with all tasks completed', async () => {
@@ -714,9 +783,33 @@ describe('Preservation: Query Interface Compatibility', () => {
 
     // Create all completed tasks
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: 't1', nodeId, version: 0, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: 't2', nodeId, version: 0, status: 'completed', index: 1, stage: 'geometry', progress: 100 },
-      { taskId: 't3', nodeId, version: 0, status: 'completed', index: 2, stage: 'tileEmit', progress: 100 },
+      {
+        taskId: 't1',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: 't2',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 1,
+        stage: 'geometry',
+        progress: 100,
+      },
+      {
+        taskId: 't3',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 2,
+        stage: 'tileEmit',
+        progress: 100,
+      },
     ];
     for (const task of tasks) {
       await db.buildTasks.add(task);
@@ -728,7 +821,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     expect(queried?.completedAt).toBeDefined();
 
     const allTasks = await db.buildTasks.where('nodeId').equals(nodeId).toArray();
-    expect(allTasks.every(t => t.status === 'completed')).toBe(true);
+    expect(allTasks.every((t) => t.status === 'completed')).toBe(true);
 
     const percentage = (allTasks.length / allTasks.length) * 100;
     expect(percentage).toBe(100);
@@ -736,7 +829,7 @@ describe('Preservation: Query Interface Compatibility', () => {
 
   /**
    * Edge Case: Session with mixed task statuses
-   * 
+   *
    * Verifies that sessions with tasks in various states are handled correctly.
    */
   it('should handle sessions with mixed task statuses', async () => {
@@ -763,12 +856,60 @@ describe('Preservation: Query Interface Compatibility', () => {
 
     // Create tasks with mixed statuses across stages
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: 't1', nodeId, version: 0, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: 't2', nodeId, version: 0, status: 'completed', index: 1, stage: 'source', progress: 100 },
-      { taskId: 't3', nodeId, version: 0, status: 'running', index: 2, stage: 'geometry', progress: 50 },
-      { taskId: 't4', nodeId, version: 0, status: 'queued', index: 3, stage: 'geometry', progress: 0 },
-      { taskId: 't5', nodeId, version: 0, status: 'queued', index: 4, stage: 'tileEmit', progress: 0 },
-      { taskId: 't6', nodeId, version: 0, status: 'failed', index: 5, stage: 'source', progress: 0 },
+      {
+        taskId: 't1',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: 't2',
+        nodeId,
+        version: 0,
+        status: 'completed',
+        index: 1,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: 't3',
+        nodeId,
+        version: 0,
+        status: 'running',
+        index: 2,
+        stage: 'geometry',
+        progress: 50,
+      },
+      {
+        taskId: 't4',
+        nodeId,
+        version: 0,
+        status: 'queued',
+        index: 3,
+        stage: 'geometry',
+        progress: 0,
+      },
+      {
+        taskId: 't5',
+        nodeId,
+        version: 0,
+        status: 'queued',
+        index: 4,
+        stage: 'tileEmit',
+        progress: 0,
+      },
+      {
+        taskId: 't6',
+        nodeId,
+        version: 0,
+        status: 'failed',
+        index: 5,
+        stage: 'source',
+        progress: 0,
+      },
     ];
     for (const task of tasks) {
       await db.buildTasks.add(task);
@@ -777,22 +918,22 @@ describe('Preservation: Query Interface Compatibility', () => {
     // Query and compute progress by stage
     const allTasks = await db.buildTasks.where('nodeId').equals(nodeId).toArray();
 
-    const sourceTask = allTasks.filter(t => t.stage === 'source');
-    const geometryTasks = allTasks.filter(t => t.stage === 'geometry');
-    const tileEmitTasks = allTasks.filter(t => t.stage === 'tileEmit');
+    const sourceTask = allTasks.filter((t) => t.stage === 'source');
+    const geometryTasks = allTasks.filter((t) => t.stage === 'geometry');
+    const tileEmitTasks = allTasks.filter((t) => t.stage === 'tileEmit');
 
     expect(sourceTask.length).toBe(3);
     expect(geometryTasks.length).toBe(2);
     expect(tileEmitTasks.length).toBe(1);
 
     // Verify stage-specific progress
-    const sourceCompleted = sourceTask.filter(t => t.status === 'completed').length;
-    const sourceFailed = sourceTask.filter(t => t.status === 'failed').length;
+    const sourceCompleted = sourceTask.filter((t) => t.status === 'completed').length;
+    const sourceFailed = sourceTask.filter((t) => t.status === 'failed').length;
     expect(sourceCompleted).toBe(2);
     expect(sourceFailed).toBe(1);
 
-    const geometryRunning = geometryTasks.filter(t => t.status === 'running').length;
-    const geometryQueued = geometryTasks.filter(t => t.status === 'queued').length;
+    const geometryRunning = geometryTasks.filter((t) => t.status === 'running').length;
+    const geometryQueued = geometryTasks.filter((t) => t.status === 'queued').length;
     expect(geometryRunning).toBe(1);
     expect(geometryQueued).toBe(1);
   });

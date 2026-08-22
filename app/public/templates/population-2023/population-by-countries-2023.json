@@ -28,12 +28,7 @@
                 "retryBackoff": "linear"
               },
               "geometryConfig": {
-                "zoomBandBoundaries": [
-                  1,
-                  2,
-                  3,
-                  6
-                ],
+                "zoomBandBoundaries": [1, 2, 3, 6],
                 "maxConcurrent": 2,
                 "enableFeatureFiltering": true,
                 "featureAreaThreshold": 1,
@@ -57,11 +52,7 @@
                   "maxVerticesForFix": 50000,
                   "maxVerticesForSplit": 15000
                 },
-                "toleranceByBand": [
-                  0.1,
-                  0.1,
-                  0.1
-                ],
+                "toleranceByBand": [0.1, 0.1, 0.1],
                 "areaThreshold": 1,
                 "ringFixConfig": {
                   "minRingVertices": 4,
@@ -111,1398 +102,238 @@
             },
             "licenseAgreement": false,
             "selectedArrayByCountries": {
-              "AF": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "DZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ASM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AND": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AGO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AIA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ATA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ATG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ABW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AZE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BHS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BHR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BD": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BRB": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BLR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BLZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BJ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BMU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BES": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VGB": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BRN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BF": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CPV": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KH": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CYM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CF": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TD": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CN": [
-                true,
-                true,
-                true,
-                false
-              ],
-              "CO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "COK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "HR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CUW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KP": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CD": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "DK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "DJ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "DMA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "DO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "EC": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "EG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SV": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GQ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ER": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "EE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ET": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "FLK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "FRO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "FJ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "FI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "FR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GUF": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PYF": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "DE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GH": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GIB": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GRL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GRD": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GLP": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GUM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GGY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "HT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VAT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "HN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "HU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IN": [
-                true,
-                true,
-                true,
-                false
-              ],
-              "ID": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IQ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IMN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "IT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "JM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "JP": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "JO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "XK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LV": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LB": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MV": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ML": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MHL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MTQ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MYT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MX": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "FM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MC": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ME": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MSR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NP": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NCL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NIU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MNP": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "NO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "OM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PH": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PCN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PRI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "QA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "MD": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "REU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "RO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "RU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "RW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "BLM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SHN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "KN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LC": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VC": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "WS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ST": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "RS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SC": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SI": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SB": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ZA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ES": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "LK": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "PS": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SD": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "CH": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "SY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TW": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TJ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TH": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TKL": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TO": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TT": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TCA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TV": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "UG": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "UA": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "AE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "GB": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "TZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "US": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VIR": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "UY": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "UZ": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VU": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "VN": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "WLF": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "YE": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ZM": [
-                true,
-                true,
-                false,
-                false
-              ],
-              "ZW": [
-                true,
-                true,
-                false,
-                false
-              ]
+              "AF": [true, true, false, false],
+              "AL": [true, true, false, false],
+              "DZ": [true, true, false, false],
+              "ASM": [true, true, false, false],
+              "AND": [true, true, false, false],
+              "AGO": [true, true, false, false],
+              "AIA": [true, true, false, false],
+              "ATA": [true, true, false, false],
+              "ATG": [true, true, false, false],
+              "AR": [true, true, false, false],
+              "AM": [true, true, false, false],
+              "ABW": [true, true, false, false],
+              "AU": [true, true, false, false],
+              "AT": [true, true, false, false],
+              "AZE": [true, true, false, false],
+              "BHS": [true, true, false, false],
+              "BHR": [true, true, false, false],
+              "BD": [true, true, false, false],
+              "BRB": [true, true, false, false],
+              "BLR": [true, true, false, false],
+              "BE": [true, true, false, false],
+              "BLZ": [true, true, false, false],
+              "BJ": [true, true, false, false],
+              "BMU": [true, true, false, false],
+              "BT": [true, true, false, false],
+              "BO": [true, true, false, false],
+              "BES": [true, true, false, false],
+              "BA": [true, true, false, false],
+              "BW": [true, true, false, false],
+              "BR": [true, true, false, false],
+              "VGB": [true, true, false, false],
+              "BRN": [true, true, false, false],
+              "BG": [true, true, false, false],
+              "BF": [true, true, false, false],
+              "BI": [true, true, false, false],
+              "CPV": [true, true, false, false],
+              "KH": [true, true, false, false],
+              "CM": [true, true, false, false],
+              "CA": [true, true, false, false],
+              "CYM": [true, true, false, false],
+              "CF": [true, true, false, false],
+              "TD": [true, true, false, false],
+              "CL": [true, true, false, false],
+              "CN": [true, true, true, false],
+              "CO": [true, true, false, false],
+              "KM": [true, true, false, false],
+              "CG": [true, true, false, false],
+              "COK": [true, true, false, false],
+              "CR": [true, true, false, false],
+              "CI": [true, true, false, false],
+              "HR": [true, true, false, false],
+              "CU": [true, true, false, false],
+              "CUW": [true, true, false, false],
+              "CY": [true, true, false, false],
+              "CZ": [true, true, false, false],
+              "KP": [true, true, false, false],
+              "CD": [true, true, false, false],
+              "DK": [true, true, false, false],
+              "DJ": [true, true, false, false],
+              "DMA": [true, true, false, false],
+              "DO": [true, true, false, false],
+              "EC": [true, true, false, false],
+              "EG": [true, true, false, false],
+              "SV": [true, true, false, false],
+              "GQ": [true, true, false, false],
+              "ER": [true, true, false, false],
+              "EE": [true, true, false, false],
+              "SZ": [true, true, false, false],
+              "ET": [true, true, false, false],
+              "FLK": [true, true, false, false],
+              "FRO": [true, true, false, false],
+              "FJ": [true, true, false, false],
+              "FI": [true, true, false, false],
+              "FR": [true, true, false, false],
+              "GUF": [true, true, false, false],
+              "PYF": [true, true, false, false],
+              "GA": [true, true, false, false],
+              "GM": [true, true, false, false],
+              "GE": [true, true, false, false],
+              "DE": [true, true, false, false],
+              "GH": [true, true, false, false],
+              "GIB": [true, true, false, false],
+              "GR": [true, true, false, false],
+              "GRL": [true, true, false, false],
+              "GRD": [true, true, false, false],
+              "GLP": [true, true, false, false],
+              "GUM": [true, true, false, false],
+              "GT": [true, true, false, false],
+              "GGY": [true, true, false, false],
+              "GN": [true, true, false, false],
+              "GW": [true, true, false, false],
+              "GY": [true, true, false, false],
+              "HT": [true, true, false, false],
+              "VAT": [true, true, false, false],
+              "HN": [true, true, false, false],
+              "HU": [true, true, false, false],
+              "IS": [true, true, false, false],
+              "IN": [true, true, true, false],
+              "ID": [true, true, false, false],
+              "IR": [true, true, false, false],
+              "IQ": [true, true, false, false],
+              "IE": [true, true, false, false],
+              "IMN": [true, true, false, false],
+              "IL": [true, true, false, false],
+              "IT": [true, true, false, false],
+              "JM": [true, true, false, false],
+              "JP": [true, true, false, false],
+              "JO": [true, true, false, false],
+              "KZ": [true, true, false, false],
+              "KE": [true, true, false, false],
+              "KI": [true, true, false, false],
+              "XK": [true, true, false, false],
+              "KW": [true, true, false, false],
+              "KG": [true, true, false, false],
+              "LA": [true, true, false, false],
+              "LV": [true, true, false, false],
+              "LB": [true, true, false, false],
+              "LS": [true, true, false, false],
+              "LR": [true, true, false, false],
+              "LY": [true, true, false, false],
+              "LI": [true, true, false, false],
+              "LT": [true, true, false, false],
+              "LU": [true, true, false, false],
+              "MG": [true, true, false, false],
+              "MW": [true, true, false, false],
+              "MY": [true, true, false, false],
+              "MV": [true, true, false, false],
+              "ML": [true, true, false, false],
+              "MT": [true, true, false, false],
+              "MHL": [true, true, false, false],
+              "MTQ": [true, true, false, false],
+              "MR": [true, true, false, false],
+              "MU": [true, true, false, false],
+              "MYT": [true, true, false, false],
+              "MX": [true, true, false, false],
+              "FM": [true, true, false, false],
+              "MC": [true, true, false, false],
+              "MN": [true, true, false, false],
+              "ME": [true, true, false, false],
+              "MSR": [true, true, false, false],
+              "MA": [true, true, false, false],
+              "MZ": [true, true, false, false],
+              "MM": [true, true, false, false],
+              "NA": [true, true, false, false],
+              "NR": [true, true, false, false],
+              "NP": [true, true, false, false],
+              "NL": [true, true, false, false],
+              "NCL": [true, true, false, false],
+              "NZ": [true, true, false, false],
+              "NI": [true, true, false, false],
+              "NE": [true, true, false, false],
+              "NG": [true, true, false, false],
+              "NIU": [true, true, false, false],
+              "MK": [true, true, false, false],
+              "MNP": [true, true, false, false],
+              "NO": [true, true, false, false],
+              "OM": [true, true, false, false],
+              "PK": [true, true, false, false],
+              "PW": [true, true, false, false],
+              "PA": [true, true, false, false],
+              "PG": [true, true, false, false],
+              "PY": [true, true, false, false],
+              "PE": [true, true, false, false],
+              "PH": [true, true, false, false],
+              "PCN": [true, true, false, false],
+              "PL": [true, true, false, false],
+              "PT": [true, true, false, false],
+              "PRI": [true, true, false, false],
+              "QA": [true, true, false, false],
+              "KR": [true, true, false, false],
+              "MD": [true, true, false, false],
+              "REU": [true, true, false, false],
+              "RO": [true, true, false, false],
+              "RU": [true, true, false, false],
+              "RW": [true, true, false, false],
+              "BLM": [true, true, false, false],
+              "SHN": [true, true, false, false],
+              "KN": [true, true, false, false],
+              "LC": [true, true, false, false],
+              "VC": [true, true, false, false],
+              "WS": [true, true, false, false],
+              "SM": [true, true, false, false],
+              "ST": [true, true, false, false],
+              "SA": [true, true, false, false],
+              "SN": [true, true, false, false],
+              "RS": [true, true, false, false],
+              "SC": [true, true, false, false],
+              "SL": [true, true, false, false],
+              "SG": [true, true, false, false],
+              "SK": [true, true, false, false],
+              "SI": [true, true, false, false],
+              "SB": [true, true, false, false],
+              "SO": [true, true, false, false],
+              "ZA": [true, true, false, false],
+              "SS": [true, true, false, false],
+              "ES": [true, true, false, false],
+              "LK": [true, true, false, false],
+              "PS": [true, true, false, false],
+              "SD": [true, true, false, false],
+              "SR": [true, true, false, false],
+              "SE": [true, true, false, false],
+              "CH": [true, true, false, false],
+              "SY": [true, true, false, false],
+              "TW": [true, true, false, false],
+              "TJ": [true, true, false, false],
+              "TH": [true, true, false, false],
+              "TL": [true, true, false, false],
+              "TG": [true, true, false, false],
+              "TKL": [true, true, false, false],
+              "TO": [true, true, false, false],
+              "TT": [true, true, false, false],
+              "TN": [true, true, false, false],
+              "TR": [true, true, false, false],
+              "TM": [true, true, false, false],
+              "TCA": [true, true, false, false],
+              "TV": [true, true, false, false],
+              "UG": [true, true, false, false],
+              "UA": [true, true, false, false],
+              "AE": [true, true, false, false],
+              "GB": [true, true, false, false],
+              "TZ": [true, true, false, false],
+              "US": [true, true, false, false],
+              "VIR": [true, true, false, false],
+              "UY": [true, true, false, false],
+              "UZ": [true, true, false, false],
+              "VU": [true, true, false, false],
+              "VE": [true, true, false, false],
+              "VN": [true, true, false, false],
+              "WLF": [true, true, false, false],
+              "YE": [true, true, false, false],
+              "ZM": [true, true, false, false],
+              "ZW": [true, true, false, false]
             }
           }
         },

@@ -50,9 +50,14 @@ const isHeapMemoryDetails = (value: unknown): value is HeapMemoryDetails => {
 };
 
 const hasAdvancedMemory = (
-  perf: Performance,
-): perf is Performance & { measureUserAgentSpecificMemory: () => Promise<UserAgentSpecificMemoryResult> } => {
-  return typeof (perf as { measureUserAgentSpecificMemory?: unknown }).measureUserAgentSpecificMemory === 'function';
+  perf: Performance
+): perf is Performance & {
+  measureUserAgentSpecificMemory: () => Promise<UserAgentSpecificMemoryResult>;
+} => {
+  return (
+    typeof (perf as { measureUserAgentSpecificMemory?: unknown }).measureUserAgentSpecificMemory ===
+    'function'
+  );
 };
 
 const getHeapMemoryDetails = (perf: Performance): HeapMemoryDetails | undefined => {
@@ -67,16 +72,16 @@ const getHeapMemoryDetails = (perf: Performance): HeapMemoryDetails | undefined 
 };
 
 /**
-  * :
+ * :
  * :
  * :
  * : React Hooks
-  */
+ */
 export function useMemoryData({
-                                updateInterval = 5000,
-                                maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
-                                enabled = true,
-                              }: UseMemoryDataOptions = {}): UseMemoryDataResult {
+  updateInterval = 5000,
+  maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
+  enabled = true,
+}: UseMemoryDataOptions = {}): UseMemoryDataResult {
   //  :
   const [memoryData, setMemoryData] = useState<MemoryData>({
     used: 0,
@@ -90,57 +95,54 @@ export function useMemoryData({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /**
-      * :
+   * :
    * :
    * : TypeScript
    * :
-      */
-  const categorizeMemory = useCallback(
-    (breakdown?: MemoryBreakdownEntry[]): MemoryBreakdown => {
-      //  :
-      const categories: MemoryBreakdown = {
-        JavaScript: 0,
-        DOM: 0,
-        Images: 0,
-        Styles: 0,
-        Other: 0,
-      };
+   */
+  const categorizeMemory = useCallback((breakdown?: MemoryBreakdownEntry[]): MemoryBreakdown => {
+    //  :
+    const categories: MemoryBreakdown = {
+      JavaScript: 0,
+      DOM: 0,
+      Images: 0,
+      Styles: 0,
+      Other: 0,
+    };
+
+    //  :
+    if (!Array.isArray(breakdown)) return categories;
+
+    //  : forEach
+    breakdown.forEach((entry) => {
+      const bytes = entry.bytes || 0;
+      const types = entry.types || [];
+      const url = entry.url || '';
 
       //  :
-      if (!Array.isArray(breakdown)) return categories;
-
-      //  : forEach
-      breakdown.forEach((entry) => {
-        const bytes = entry.bytes || 0;
-        const types = entry.types || [];
-        const url = entry.url || '';
-
+      if (types.includes('JavaScript')) {
+        categories.JavaScript += bytes;
+      } else if (types.includes('DOM')) {
+        categories.DOM += bytes;
+      } else if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
         //  :
-        if (types.includes('JavaScript')) {
-          categories.JavaScript += bytes;
-        } else if (types.includes('DOM')) {
-          categories.DOM += bytes;
-        } else if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
-          //  :
-          categories.Images += bytes;
-        } else if (url.includes('.css') || types.includes('CSS')) {
-          categories.Styles += bytes;
-        } else {
-          categories.Other += bytes;
-        }
-      });
+        categories.Images += bytes;
+      } else if (url.includes('.css') || types.includes('CSS')) {
+        categories.Styles += bytes;
+      } else {
+        categories.Other += bytes;
+      }
+    });
 
-      return categories;
-    },
-    [],
-  );
+    return categories;
+  }, []);
 
   /**
-      * :
+   * :
    * :
    * : API
    * :
-      */
+   */
   const collectMemoryData = useCallback(async () => {
     //  :
     if (isPaused || !enabled) return;
@@ -157,7 +159,7 @@ export function useMemoryData({
           const result = await perf.measureUserAgentSpecificMemory();
           const totalUsed = result.breakdown.reduce(
             (sum: number, entry: MemoryBreakdownEntry) => sum + (entry.bytes || 0),
-            0,
+            0
           );
 
           let totalMemory = maxMemory;

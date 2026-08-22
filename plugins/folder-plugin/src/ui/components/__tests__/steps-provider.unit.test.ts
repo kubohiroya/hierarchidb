@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
+import { describe, expect, it, vi } from 'vitest';
 import {
   canStartFolderExport,
   createFolderExportFilename,
-  resolveFolderExportNodes,
   type FolderExportDraftData,
+  resolveFolderExportNodes,
 } from '../steps-provider';
 
 type TestNode = {
@@ -29,7 +29,13 @@ describe('folder-export steps provider', () => {
 
     const steps = provider.getCreateStepConfigs();
     expect(steps).toHaveLength(5);
-    expect(steps.map((step) => step.id)).toEqual(['purpose', 'target', 'format', 'options', 'review']);
+    expect(steps.map((step) => step.id)).toEqual([
+      'purpose',
+      'target',
+      'format',
+      'options',
+      'review',
+    ]);
   });
 
   it('build eligibility matches export mode and options', () => {
@@ -72,11 +78,13 @@ describe('folder-export steps provider', () => {
 describe('resolveFolderExportNodes', () => {
   it('collects descendants only for shapeOnly scope', async () => {
     const queryAPI = {
-      getNode: vi.fn(async (nodeId: NodeId): Promise<TestNode | undefined> => ({
-        id: toNodeId(nodeId),
-        nodeType: 'folder',
-        metadata: {},
-      })),
+      getNode: vi.fn(
+        async (nodeId: NodeId): Promise<TestNode | undefined> => ({
+          id: toNodeId(nodeId),
+          nodeType: 'folder',
+          metadata: {},
+        })
+      ),
       listDescendants: vi.fn(async () => [
         { id: toNodeId('shape-1'), nodeType: 'shape', metadata: {} },
         { id: toNodeId('route-1'), nodeType: 'route', metadata: {} },

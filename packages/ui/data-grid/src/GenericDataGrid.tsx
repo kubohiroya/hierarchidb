@@ -5,7 +5,14 @@
  * This component is purely UI-focused and knows nothing about HierarchiDB's data structures.
  */
 
-import React, { type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import {
+  Download,
+  FilterList,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  Refresh,
+  Search,
+} from '@mui/icons-material';
 import {
   Box,
   Checkbox,
@@ -25,10 +32,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
-import { useGenericDataGridView } from './useGenericDataGridView.js';
+import React, { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { useGenericDataGridControlId } from './useGenericDataGridControlId.js';
+import { useGenericDataGridView } from './useGenericDataGridView.js';
 
 /**
  * Generic column definition
@@ -38,7 +45,7 @@ type RowRecord = { id?: string | number } & Record<PropertyKey, unknown>;
 
 const getCellValue = <T extends RowRecord>(row: T, columnId: GridColumn<T>['id']): unknown => {
   const propertyKey = columnId as PropertyKey;
-  return  Object.hasOwn(row, propertyKey) ? row[propertyKey] : undefined;
+  return Object.hasOwn(row, propertyKey) ? row[propertyKey] : undefined;
 };
 
 const toDefaultRowId = <T extends RowRecord>(row: T, index?: number): string | number => {
@@ -263,64 +270,64 @@ export interface RowState<T extends RowRecord = RowRecord> {
  * Generic data grid component
  */
 export function GenericDataGrid<T extends RowRecord = RowRecord>({
-                                           columns,
-                                           rows,
-                                           totalRows,
-                                           loading = false,
-                                           error,
-                                           getRowId = toDefaultRowId,
-                                           page = 0,
-                                           rowsPerPage = 50,
-                                           rowsPerPageOptions = [25, 50, 100, 250],
-                                           onPageChange,
-                                           onRowsPerPageChange,
-                                           sortColumn,
-                                           sortDirection = 'asc',
-                                           onSort,
-                                           filters = {},
-                                           onFilterChange,
-                                           searchValue = '',
-                                           onSearchChange,
-                                           showSearch = true,
-                                           showFilterToggle = true,
-                                           showRowCount = true,
-                                           onRowSummaryChange,
-                                           selectable = false,
-                                           selectionMode = 'multiple',
-                                           selectedRows = new Set(),
-                                           onSelectionChange,
-                                           onExport,
-                                           onRefresh,
-                                           onRowClick,
-                                           onRowDoubleClick,
-                                           onRowHover,
-                                           onRowLeave,
-                                           onCellContextMenu,
-                                           onCellClick,
-                                           enableVirtualization = false,
-                                           rowHeight = 38,
-                                           maxHeight = 600,
-                                           tableContainerSx,
-                                           stopWheelPropagation = false,
-                                           dense = false,
-                                           stickyHeader = true,
-                                           showGridLines = false,
-                                           striped = false,
-                                           hover = true,
-                                           disabledRows,
-                                           matchedRows,
-                                           hoveredRows,
-                                           draggingRows,
-                                           dropTargetRows,
-                                           rowStyle,
-                                           rowClassName,
-                                           rowSx,
-                                           emptyComponent,
-                                           loadingComponent,
-                                          errorComponent,
-                                          toolbarComponent,
-                                          headerCellSx,
-                                        }: GenericDataGridProps<T>): ReactElement {
+  columns,
+  rows,
+  totalRows,
+  loading = false,
+  error,
+  getRowId = toDefaultRowId,
+  page = 0,
+  rowsPerPage = 50,
+  rowsPerPageOptions = [25, 50, 100, 250],
+  onPageChange,
+  onRowsPerPageChange,
+  sortColumn,
+  sortDirection = 'asc',
+  onSort,
+  filters = {},
+  onFilterChange,
+  searchValue = '',
+  onSearchChange,
+  showSearch = true,
+  showFilterToggle = true,
+  showRowCount = true,
+  onRowSummaryChange,
+  selectable = false,
+  selectionMode = 'multiple',
+  selectedRows = new Set(),
+  onSelectionChange,
+  onExport,
+  onRefresh,
+  onRowClick,
+  onRowDoubleClick,
+  onRowHover,
+  onRowLeave,
+  onCellContextMenu,
+  onCellClick,
+  enableVirtualization = false,
+  rowHeight = 38,
+  maxHeight = 600,
+  tableContainerSx,
+  stopWheelPropagation = false,
+  dense = false,
+  stickyHeader = true,
+  showGridLines = false,
+  striped = false,
+  hover = true,
+  disabledRows,
+  matchedRows,
+  hoveredRows,
+  draggingRows,
+  dropTargetRows,
+  rowStyle,
+  rowClassName,
+  rowSx,
+  emptyComponent,
+  loadingComponent,
+  errorComponent,
+  toolbarComponent,
+  headerCellSx,
+}: GenericDataGridProps<T>): ReactElement {
   const controlId = useGenericDataGridControlId();
   const parentRef = React.useRef<HTMLDivElement>(null);
   const {
@@ -450,9 +457,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
 
       {/* Loading indicator */}
       <Box sx={{ minHeight: 4 }}>
-        <Box sx={{ visibility: loading ? 'visible' : 'hidden' }}>
-          {loadingIndicator}
-        </Box>
+        <Box sx={{ visibility: loading ? 'visible' : 'hidden' }}>{loadingIndicator}</Box>
       </Box>
 
       {/* Table */}
@@ -546,125 +551,145 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
           <TableBody>
             {enableVirtualization && paddingTop > 0 && (
               <TableRow>
-                <TableCell colSpan={padColSpan} sx={{ height: paddingTop, padding: 0, border: 0 }} />
+                <TableCell
+                  colSpan={padColSpan}
+                  sx={{ height: paddingTop, padding: 0, border: 0 }}
+                />
               </TableRow>
             )}
-            {(enableVirtualization ? virtualRows : displayRows.map((_, index) => ({ index }))).map((virtualRow, index) => {
-              const row = displayRows[virtualRow.index];
-              if (!row) return null;
-              const globalRowIndex = enableVirtualization ? virtualRow.index : page * rowsPerPage + index;
-              const rowId = getRowId(row, globalRowIndex);
-              const state: RowState<T> = {
-                row,
-                rowId,
-                index: virtualRow.index,
-                selected: selectedRows.has(rowId),
-                disabled: !!disabledRows?.has(rowId),
-                matched: !!matchedRows?.has(rowId),
-                hovered: !!hoveredRows?.has(rowId),
-                dragging: !!draggingRows?.has(rowId),
-                dropTarget: !!dropTargetRows?.has(rowId),
-              };
+            {(enableVirtualization ? virtualRows : displayRows.map((_, index) => ({ index }))).map(
+              (virtualRow, index) => {
+                const row = displayRows[virtualRow.index];
+                if (!row) return null;
+                const globalRowIndex = enableVirtualization
+                  ? virtualRow.index
+                  : page * rowsPerPage + index;
+                const rowId = getRowId(row, globalRowIndex);
+                const state: RowState<T> = {
+                  row,
+                  rowId,
+                  index: virtualRow.index,
+                  selected: selectedRows.has(rowId),
+                  disabled: !!disabledRows?.has(rowId),
+                  matched: !!matchedRows?.has(rowId),
+                  hovered: !!hoveredRows?.has(rowId),
+                  dragging: !!draggingRows?.has(rowId),
+                  dropTarget: !!dropTargetRows?.has(rowId),
+                };
 
-              const layeredSx: SxProps<Theme>[] = [];
-              if (striped && state.index % 2 === 0) {
-                layeredSx.push({ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.03) });
-              }
-              if (state.matched) layeredSx.push({ boxShadow: 'inset 3px 0 0 0 rgba(25, 118, 210, 0.9)' });
-              if (state.selected) layeredSx.push({ backgroundColor: 'primary.light', '&:hover': { backgroundColor: 'primary.light' } });
-              if (state.hovered) layeredSx.push({ outline: '1px solid rgba(0,0,0,0.15)' });
-              if (state.dragging) layeredSx.push({ opacity: 0.7 });
-              if (state.dropTarget) layeredSx.push({ outline: '2px dashed rgba(25,118,210,0.8)' });
-              if (state.disabled) layeredSx.push({ opacity: 0.5, pointerEvents: 'none', filter: 'grayscale(0.2)' });
-              if (rowSx) {
-                const sx = rowSx(state);
-                if (sx) {
-                  if (Array.isArray(sx)) {
-                    layeredSx.push(...(sx as SxProps<Theme>[]));
-                  } else {
-                    layeredSx.push(sx);
+                const layeredSx: SxProps<Theme>[] = [];
+                if (striped && state.index % 2 === 0) {
+                  layeredSx.push({
+                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.03),
+                  });
+                }
+                if (state.matched)
+                  layeredSx.push({ boxShadow: 'inset 3px 0 0 0 rgba(25, 118, 210, 0.9)' });
+                if (state.selected)
+                  layeredSx.push({
+                    backgroundColor: 'primary.light',
+                    '&:hover': { backgroundColor: 'primary.light' },
+                  });
+                if (state.hovered) layeredSx.push({ outline: '1px solid rgba(0,0,0,0.15)' });
+                if (state.dragging) layeredSx.push({ opacity: 0.7 });
+                if (state.dropTarget)
+                  layeredSx.push({ outline: '2px dashed rgba(25,118,210,0.8)' });
+                if (state.disabled)
+                  layeredSx.push({ opacity: 0.5, pointerEvents: 'none', filter: 'grayscale(0.2)' });
+                if (rowSx) {
+                  const sx = rowSx(state);
+                  if (sx) {
+                    if (Array.isArray(sx)) {
+                      layeredSx.push(...(sx as SxProps<Theme>[]));
+                    } else {
+                      layeredSx.push(sx);
+                    }
                   }
                 }
-              }
 
-              const sxParts: SxProps<Theme>[] = [];
-              if (onRowClick || onRowDoubleClick) {
-                sxParts.push({ cursor: 'pointer' });
-              }
-              if (layeredSx.length > 0) {
-                sxParts.push(...layeredSx);
-              }
-              const sxValue: SxProps<Theme> | undefined = sxParts.length > 0
-                ? (sxParts as SxProps<Theme>)
-                : undefined;
+                const sxParts: SxProps<Theme>[] = [];
+                if (onRowClick || onRowDoubleClick) {
+                  sxParts.push({ cursor: 'pointer' });
+                }
+                if (layeredSx.length > 0) {
+                  sxParts.push(...layeredSx);
+                }
+                const sxValue: SxProps<Theme> | undefined =
+                  sxParts.length > 0 ? (sxParts as SxProps<Theme>) : undefined;
 
-              const rowInlineStyle = rowStyle?.(state);
-              const resolvedRowStyle = enableVirtualization
-                ? { ...rowInlineStyle, height: rowInlineStyle?.height ?? rowHeight }
-                : rowInlineStyle;
+                const rowInlineStyle = rowStyle?.(state);
+                const resolvedRowStyle = enableVirtualization
+                  ? { ...rowInlineStyle, height: rowInlineStyle?.height ?? rowHeight }
+                  : rowInlineStyle;
 
-              return (
-                <TableRow
-                  key={rowId}
-                  hover={hover}
-                  selected={state.selected}
-                  onClick={() => !state.disabled && onRowClick?.(row)}
-                  onDoubleClick={() => !state.disabled && onRowDoubleClick?.(row)}
-                  onMouseEnter={() => !state.disabled && onRowHover?.(row, rowId)}
-                  onMouseLeave={() => !state.disabled && onRowLeave?.(row, rowId)}
-                  className={rowClassName?.(state)}
-                  sx={sxValue}
-                  style={resolvedRowStyle}
-                >
-                  {selectable && (
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={state.selected}
-                        disabled={state.disabled}
-                        onChange={() => handleSelectRow(row, globalRowIndex)}
-                      />
-                    </TableCell>
-                  )}
-                  {visibleColumns.map((column) => {
-                    const value = getCellValue(row, column.id);
-                    const cellContent = column.format ? column.format(value, row) : renderDefaultCell(value);
-                    return (
-                      <TableCell
-                        key={String(column.id)}
-                        align={column.align}
-                        sx={onCellClick || onCellContextMenu ? { cursor: 'pointer' } : undefined}
-                        onClick={(e) => {
-                          if (!onCellClick) return;
-                          onCellClick({
-                            event: e,
-                            row,
-                            rowId,
-                            columnId: String(column.id),
-                            value,
-                          });
-                        }}
-                        onContextMenu={(e) => {
-                          if (!onCellContextMenu) return;
-                          e.preventDefault();
-                          onCellContextMenu({
-                            event: e,
-                            row,
-                            rowId,
-                            columnId: String(column.id),
-                            value,
-                          });
-                        }}
-                      >
-                        {cellContent}
+                return (
+                  <TableRow
+                    key={rowId}
+                    hover={hover}
+                    selected={state.selected}
+                    onClick={() => !state.disabled && onRowClick?.(row)}
+                    onDoubleClick={() => !state.disabled && onRowDoubleClick?.(row)}
+                    onMouseEnter={() => !state.disabled && onRowHover?.(row, rowId)}
+                    onMouseLeave={() => !state.disabled && onRowLeave?.(row, rowId)}
+                    className={rowClassName?.(state)}
+                    sx={sxValue}
+                    style={resolvedRowStyle}
+                  >
+                    {selectable && (
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={state.selected}
+                          disabled={state.disabled}
+                          onChange={() => handleSelectRow(row, globalRowIndex)}
+                        />
                       </TableCell>
-                    );
-                  })}
-                </TableRow>
-              );
-            })}
+                    )}
+                    {visibleColumns.map((column) => {
+                      const value = getCellValue(row, column.id);
+                      const cellContent = column.format
+                        ? column.format(value, row)
+                        : renderDefaultCell(value);
+                      return (
+                        <TableCell
+                          key={String(column.id)}
+                          align={column.align}
+                          sx={onCellClick || onCellContextMenu ? { cursor: 'pointer' } : undefined}
+                          onClick={(e) => {
+                            if (!onCellClick) return;
+                            onCellClick({
+                              event: e,
+                              row,
+                              rowId,
+                              columnId: String(column.id),
+                              value,
+                            });
+                          }}
+                          onContextMenu={(e) => {
+                            if (!onCellContextMenu) return;
+                            e.preventDefault();
+                            onCellContextMenu({
+                              event: e,
+                              row,
+                              rowId,
+                              columnId: String(column.id),
+                              value,
+                            });
+                          }}
+                        >
+                          {cellContent}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              }
+            )}
             {enableVirtualization && paddingBottom > 0 && (
               <TableRow>
-                <TableCell colSpan={padColSpan} sx={{ height: paddingBottom, padding: 0, border: 0 }} />
+                <TableCell
+                  colSpan={padColSpan}
+                  sx={{ height: paddingBottom, padding: 0, border: 0 }}
+                />
               </TableRow>
             )}
           </TableBody>

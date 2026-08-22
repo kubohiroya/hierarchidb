@@ -1,8 +1,11 @@
-import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
+import type {
+  BuildContinuationPolicy,
+  StageHandler,
+  TaskQueueRecord,
+  TaskStage,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildStableJsonSignature, type EphemeralDB } from '@hierarchidb/gis-sdk';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import type { CountryMetadata } from '~/common/types/index';
 import {
   createGeometryStageHandler,
   listTasksByStage,
@@ -10,9 +13,10 @@ import {
   runStageTasks,
   type VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
+import type { CountryMetadata, ShapeRuntimeBuildConfig } from '~/common/types/index';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeGeometryByBandTaskInput } from './shapePipelineShared.ts';
 import { resolveGeometryConfig } from './shapePipelineShared.ts';
-import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
   createPipelineLinkedAbortController,
   finalizePendingStageTasks,
@@ -23,13 +27,13 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setGeometryPlannedTotal } from './shapeProgressPlanUtils.ts';
+import { resolveSourceArtifactHashById } from './shapeSourceArtifactHashUtils.ts';
+import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
   buildGeometryTaskCacheIdentity,
   requireShapeSourceBaseTolerance,
   resolveTaskCacheIdentity,
 } from './shapeTaskCacheIdentity.ts';
-import { resolveSourceArtifactHashById } from './shapeSourceArtifactHashUtils.ts';
-import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 export type ShapeGeometryStageParams = {
   nodeId: NodeId;
@@ -89,17 +93,13 @@ type GeometryStepMemorySnapshot = {
 };
 
 const GEOMETRY_TASK_PUT_CHUNK_SIZE = 500;
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === 'object' && value !== null
-);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
-const readString = (value: unknown): string | null => (
-  typeof value === 'string' ? value : null
-);
+const readString = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 
-const readNumber = (value: unknown): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
+const readNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const readMetricCount = (value: unknown, key: 'input' | 'output'): number | undefined => {
   if (!isRecord(value)) return undefined;
@@ -108,9 +108,8 @@ const readMetricCount = (value: unknown, key: 'input' | 'output'): number | unde
   return Math.round(parsed);
 };
 
-const toMemoryValue = (value: number | undefined): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
+const toMemoryValue = (value: number | undefined): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const captureGeometryStepMemorySnapshot = (): GeometryStepMemorySnapshot => {
   const memory = (
@@ -138,7 +137,7 @@ const subtractMemoryValue = (start: number | null, finish: number | null): numbe
 
 const calculateMemoryDelta = (
   start: GeometryStepMemorySnapshot,
-  finish: GeometryStepMemorySnapshot,
+  finish: GeometryStepMemorySnapshot
 ): GeometryStepMemorySnapshot => ({
   usedJSHeapSize: subtractMemoryValue(start.usedJSHeapSize, finish.usedJSHeapSize),
   totalJSHeapSize: subtractMemoryValue(start.totalJSHeapSize, finish.totalJSHeapSize),
@@ -154,69 +153,83 @@ const assertGeometryPipelineActive = (params: ShapeGeometryStageParams): void =>
 const runGeometryStep = async <T>(
   params: ShapeGeometryStageParams,
   step: string,
-  action: () => Promise<T>,
+  action: () => Promise<T>
 ): Promise<T> => {
   assertGeometryPipelineActive(params);
   const startedAt = Date.now();
   const memoryAtStart = captureGeometryStepMemorySnapshot();
-  console.warn('[ShapeGeometry][Transition] step start', JSON.stringify({
-    nodeId: params.nodeId,
-    runId: params.pipelineRunId ?? null,
-    step,
-    startedAt,
-    memoryAtStart,
-  }));
+  console.warn(
+    '[ShapeGeometry][Transition] step start',
+    JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      step,
+      startedAt,
+      memoryAtStart,
+    })
+  );
   try {
     const result = await action();
     assertGeometryPipelineActive(params);
     const finishedAt = Date.now();
     const memoryAtFinish = captureGeometryStepMemorySnapshot();
-    console.warn('[ShapeGeometry][Transition] step finish', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-      step,
-      outcome: 'success',
-      startedAt,
-      finishedAt,
-      durationMs: finishedAt - startedAt,
-      memoryAtStart,
-      memoryAtFinish,
-      memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
-    }));
+    console.warn(
+      '[ShapeGeometry][Transition] step finish',
+      JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        step,
+        outcome: 'success',
+        startedAt,
+        finishedAt,
+        durationMs: finishedAt - startedAt,
+        memoryAtStart,
+        memoryAtFinish,
+        memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
+      })
+    );
     return result;
   } catch (error) {
     const finishedAt = Date.now();
     const memoryAtFinish = captureGeometryStepMemorySnapshot();
-    console.warn('[ShapeGeometry][Transition] step finish', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-      step,
-      outcome: 'error',
-      errorMessage: error instanceof Error ? error.message : String(error),
-      startedAt,
-      finishedAt,
-      durationMs: finishedAt - startedAt,
-      memoryAtStart,
-      memoryAtFinish,
-      memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
-    }));
+    console.warn(
+      '[ShapeGeometry][Transition] step finish',
+      JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        step,
+        outcome: 'error',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        startedAt,
+        finishedAt,
+        durationMs: finishedAt - startedAt,
+        memoryAtStart,
+        memoryAtFinish,
+        memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
+      })
+    );
     throw error;
   }
 };
 
-export const runShapeGeometryStageSection = async (params: ShapeGeometryStageParams): Promise<boolean> => {
-  console.warn('[ShapeGeometry][PipelineDiagnostics] geometry stage start', JSON.stringify({
-    nodeId: params.nodeId,
-    runId: params.pipelineRunId ?? null,
-    resumeExistingTasks: params.resumeExistingTasks,
-    maxConcurrent: params.buildConfig.geometryConfig.maxConcurrent,
-    geometryEngine: params.buildConfig.geometryConfig.geometryEngine ?? 'turf',
-    bands: params.bands.length,
-  }));
+export const runShapeGeometryStageSection = async (
+  params: ShapeGeometryStageParams
+): Promise<boolean> => {
+  console.warn(
+    '[ShapeGeometry][PipelineDiagnostics] geometry stage start',
+    JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      resumeExistingTasks: params.resumeExistingTasks,
+      maxConcurrent: params.buildConfig.geometryConfig.maxConcurrent,
+      geometryEngine: params.buildConfig.geometryConfig.geometryEngine ?? 'turf',
+      bands: params.bands.length,
+    })
+  );
   let existingGeometryByBandTasks = params.resumeExistingTasks
-    ? await runGeometryStep(params, 'load-existing-geometry-tasks', async () => (
-      listTasksByStage(params.taskQueue, params.nodeId, 'geometry')
-    ))
+    ? await runGeometryStep(params, 'load-existing-geometry-tasks', async () =>
+        listTasksByStage(params.taskQueue, params.nodeId, 'geometry')
+      )
     : [];
   existingGeometryByBandTasks.forEach((task) => {
     resolveTaskCacheIdentity(task);
@@ -225,18 +238,21 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
   const geometryConfigSignature = buildStableJsonSignature(geometryConfig);
   const bandsAscending = [...params.bands].sort((a, b) => a.zMax - b.zMax);
 
-  const fetchTasks = await runGeometryStep(params, 'load-source-stage-tasks', async () => (
+  const fetchTasks = await runGeometryStep(params, 'load-source-stage-tasks', async () =>
     listTasksByStage(params.taskQueue, params.nodeId, 'source')
-  ));
-  console.warn('[ShapeGeometry][PipelineDiagnostics] geometry stage source inputs loaded', JSON.stringify({
-    nodeId: params.nodeId,
-    runId: params.pipelineRunId ?? null,
-    fetchTasks: fetchTasks.length,
-    existingGeometryTasks: existingGeometryByBandTasks.length,
-  }));
-  const sessionRecord = await runGeometryStep(params, 'load-build-session', async () => (
+  );
+  console.warn(
+    '[ShapeGeometry][PipelineDiagnostics] geometry stage source inputs loaded',
+    JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      fetchTasks: fetchTasks.length,
+      existingGeometryTasks: existingGeometryByBandTasks.length,
+    })
+  );
+  const sessionRecord = await runGeometryStep(params, 'load-build-session', async () =>
     shapeQueryAPIImpl.getBuildSessionRecord(params.nodeId)
-  ));
+  );
   const sourceStageMaxima = sessionRecord?.sourceStageMaxima;
   const buffers = await runGeometryStep(params, 'build-geometry-buffer-metadata', async () => {
     const next: GeometryBufferMeta[] = [];
@@ -244,8 +260,9 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       const output = isRecord(task.outputData) ? task.outputData : null;
       const sourceCacheId = readString(output?.sourceCacheId);
       if (!sourceCacheId) continue;
-      const sourceArtifactHash = readString(output?.sourceArtifactHash)
-        ?? await resolveSourceArtifactHashById(params.ephemeralStore, sourceCacheId);
+      const sourceArtifactHash =
+        readString(output?.sourceArtifactHash) ??
+        (await resolveSourceArtifactHashById(params.ephemeralStore, sourceCacheId));
       if (!sourceArtifactHash) continue;
       const input = isRecord(task.inputData) ? task.inputData : null;
       const sourceKey = readString(input?.sourceKey);
@@ -272,7 +289,8 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         countryCode: readString(input?.countryCode) ?? undefined,
         dataSource: readString(input?.dataSource) ?? undefined,
         sourceUrl: readString(input?.url) ?? undefined,
-        sourceCountryCode: readString(input?.urlCountryCode) ?? readString(input?.countryCode) ?? undefined,
+        sourceCountryCode:
+          readString(input?.urlCountryCode) ?? readString(input?.countryCode) ?? undefined,
         sourceFeatureInputCount,
         sourceFeatureOutputCount,
         sourcePolygonInputCount,
@@ -287,50 +305,57 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     return next;
   });
   if (buffers.length === 0) {
-    console.warn('[ShapeGeometry][PipelineDiagnostics] geometry stage skipped (no buffers)', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
+    console.warn(
+      '[ShapeGeometry][PipelineDiagnostics] geometry stage skipped (no buffers)',
+      JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+      })
+    );
     return false;
   }
   const sourceBaseTolerance = requireShapeSourceBaseTolerance(
-    isRecord(sourceStageMaxima) ? sourceStageMaxima.baseTolerance : undefined,
+    isRecord(sourceStageMaxima) ? sourceStageMaxima.baseTolerance : undefined
   );
 
-  const { buffersByCountry, orderedCountries } = await runGeometryStep(params, 'group-buffers-by-country', async () => {
-    const countryTotals = new Map<string, number>();
-    const grouped = new Map<string, GeometryBufferMeta[]>();
-    buffers.forEach((buffer) => {
-      const countryKey = buffer.countryCode?.trim().toUpperCase() ?? buffer.sourceKey;
-      const currentTotal = countryTotals.get(countryKey) ?? 0;
-      const vertexCount = buffer.inputVertexCount ?? buffer.vertexCount ?? 0;
-      countryTotals.set(countryKey, currentTotal + vertexCount);
-      const bucket = grouped.get(countryKey);
-      if (bucket) {
-        bucket.push(buffer);
-      } else {
-        grouped.set(countryKey, [buffer]);
-      }
-    });
-    const sortedCountries = [...grouped.keys()].sort((a, b) => {
-      const totalA = countryTotals.get(a) ?? 0;
-      const totalB = countryTotals.get(b) ?? 0;
-      if (totalA !== totalB) return totalB - totalA;
-      const nameA = params.countryLookup.get(a)?.countryName ?? a;
-      const nameB = params.countryLookup.get(b)?.countryName ?? b;
-      return nameA.localeCompare(nameB);
-    });
-    return {
-      buffersByCountry: grouped,
-      orderedCountries: sortedCountries,
-    };
-  });
+  const { buffersByCountry, orderedCountries } = await runGeometryStep(
+    params,
+    'group-buffers-by-country',
+    async () => {
+      const countryTotals = new Map<string, number>();
+      const grouped = new Map<string, GeometryBufferMeta[]>();
+      buffers.forEach((buffer) => {
+        const countryKey = buffer.countryCode?.trim().toUpperCase() ?? buffer.sourceKey;
+        const currentTotal = countryTotals.get(countryKey) ?? 0;
+        const vertexCount = buffer.inputVertexCount ?? buffer.vertexCount ?? 0;
+        countryTotals.set(countryKey, currentTotal + vertexCount);
+        const bucket = grouped.get(countryKey);
+        if (bucket) {
+          bucket.push(buffer);
+        } else {
+          grouped.set(countryKey, [buffer]);
+        }
+      });
+      const sortedCountries = [...grouped.keys()].sort((a, b) => {
+        const totalA = countryTotals.get(a) ?? 0;
+        const totalB = countryTotals.get(b) ?? 0;
+        if (totalA !== totalB) return totalB - totalA;
+        const nameA = params.countryLookup.get(a)?.countryName ?? a;
+        const nameB = params.countryLookup.get(b)?.countryName ?? b;
+        return nameA.localeCompare(nameB);
+      });
+      return {
+        buffersByCountry: grouped,
+        orderedCountries: sortedCountries,
+      };
+    }
+  );
 
   const buildTasksForCountryBand = (
     countryKey: string,
     countryIndex: number,
     band: { bandIndex: number; zMin: number; zMax: number },
-    startIndex: number,
+    startIndex: number
   ): { tasks: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>; nextIndex: number } => {
     const countryBuffers = buffersByCountry.get(countryKey) ?? [];
     if (countryBuffers.length === 0) {
@@ -395,8 +420,10 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
           sourceCountryCode: buffer.sourceCountryCode,
           sourceFeatureInputCount: buffer.sourceFeatureInputCount ?? buffer.featureCount,
           sourceFeatureOutputCount: buffer.sourceFeatureOutputCount ?? buffer.featureCount,
-          sourcePolygonInputCount: buffer.sourcePolygonInputCount ?? buffer.inputPolygonCount ?? buffer.polygonCount,
-          sourcePolygonOutputCount: buffer.sourcePolygonOutputCount ?? buffer.polygonCount ?? buffer.inputPolygonCount,
+          sourcePolygonInputCount:
+            buffer.sourcePolygonInputCount ?? buffer.inputPolygonCount ?? buffer.polygonCount,
+          sourcePolygonOutputCount:
+            buffer.sourcePolygonOutputCount ?? buffer.polygonCount ?? buffer.inputPolygonCount,
           configSignature: geometryConfigSignature,
           cacheKey: cacheIdentity.cacheKey,
           inputHash: cacheIdentity.inputHash,
@@ -429,7 +456,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
               countryKey,
               countryIndex,
               band,
-              nextIndex,
+              nextIndex
             );
             nextIndex = updatedIndex;
             if (tasks.length === 0) continue;
@@ -447,25 +474,29 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         return { planned, existing: 0, missing };
       });
     } else {
-      const desiredGeometryTasks = await runGeometryStep(params, 'build-desired-geometry-tasks', async () => {
-        const desired: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>> = [];
-        let nextIndex = 0;
-        orderedCountries.forEach((countryKey, countryIndex) => {
-          bandsAscending.forEach((band) => {
-            const { tasks, nextIndex: updatedIndex } = buildTasksForCountryBand(
-              countryKey,
-              countryIndex,
-              band,
-              nextIndex,
-            );
-            if (tasks.length > 0) {
-              desired.push(...tasks);
-            }
-            nextIndex = updatedIndex;
+      const desiredGeometryTasks = await runGeometryStep(
+        params,
+        'build-desired-geometry-tasks',
+        async () => {
+          const desired: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>> = [];
+          let nextIndex = 0;
+          orderedCountries.forEach((countryKey, countryIndex) => {
+            bandsAscending.forEach((band) => {
+              const { tasks, nextIndex: updatedIndex } = buildTasksForCountryBand(
+                countryKey,
+                countryIndex,
+                band,
+                nextIndex
+              );
+              if (tasks.length > 0) {
+                desired.push(...tasks);
+              }
+              nextIndex = updatedIndex;
+            });
           });
-        });
-        return desired;
-      });
+          return desired;
+        }
+      );
       preparation = await runGeometryStep(params, 'reconcile-geometry-tasks', async () => {
         const reconciled = await applyStageTaskReconcile({
           taskQueue: params.taskQueue,
@@ -475,8 +506,12 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
           existingTasks: existingGeometryByBandTasks,
           resumeExistingTasks: true,
         });
-        existingGeometryByBandTasks = reconciled.existingTasks as Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>;
-        const missingGeometryTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>;
+        existingGeometryByBandTasks = reconciled.existingTasks as Array<
+          TaskQueueRecord<ShapeGeometryByBandTaskInput>
+        >;
+        const missingGeometryTasks = reconciled.missingTasks as Array<
+          TaskQueueRecord<ShapeGeometryByBandTaskInput>
+        >;
         return {
           planned: desiredGeometryTasks.length,
           existing: existingGeometryByBandTasks.length,
@@ -489,13 +524,16 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     } else {
       clearStagePlan(params.nodeId);
     }
-    console.warn('[ShapeGeometry][PipelineDiagnostics] geometry stage tasks prepared', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-      planned: preparation.planned,
-      existing: preparation.existing,
-      missing: preparation.missing,
-    }));
+    console.warn(
+      '[ShapeGeometry][PipelineDiagnostics] geometry stage tasks prepared',
+      JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        planned: preparation.planned,
+        existing: preparation.existing,
+        missing: preparation.missing,
+      })
+    );
     if (preparation.planned === 0 || (preparation.existing === 0 && preparation.missing === 0)) {
       return false;
     }
@@ -522,16 +560,19 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     }
 
     const geometryByBandAbortController = createPipelineLinkedAbortController(params.abortSignal);
-    const geometryByBandHandler = await runGeometryStep(params, 'create-geometry-handler', async () => (
-      createGeometryStageHandler({
-        ephemeralDB: params.ephemeralStore,
-        geometryConfig,
-        bands: params.bands,
-        sourceBaseTolerance,
-        featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
-        abortSignal: geometryByBandAbortController.signal,
-      })
-    ));
+    const geometryByBandHandler = await runGeometryStep(
+      params,
+      'create-geometry-handler',
+      async () =>
+        createGeometryStageHandler({
+          ephemeralDB: params.ephemeralStore,
+          geometryConfig,
+          bands: params.bands,
+          sourceBaseTolerance,
+          featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
+          abortSignal: geometryByBandAbortController.signal,
+        })
+    );
     try {
       await runGeometryStep(params, 'run-geometry-stage-tasks', async () => {
         await runStageTasks<ShapeGeometryByBandTaskInput>({
@@ -559,11 +600,10 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
 
       // Handle other errors
       const baseMessage = error instanceof Error ? error.message : String(error);
-      const failedTaskId = error && typeof error === 'object'
-        ? (error as { taskId?: string }).taskId
-        : undefined;
+      const failedTaskId =
+        error && typeof error === 'object' ? (error as { taskId?: string }).taskId : undefined;
       const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
-      
+
       console.error('[ShapeGeometry][ErrorHandling] Geometry stage failed with error', {
         nodeId: params.nodeId,
         runId: params.pipelineRunId ?? null,
@@ -571,14 +611,14 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         errorMessage: baseMessage,
         failedTaskId,
       });
-      
+
       await finalizePendingStageTasks(
         params.taskQueue,
         params.nodeId,
         'geometry',
         `aborted: ${reason}`,
         '[ShapeGeometry][PipelineDiagnostics] geometry stage aborted',
-        params.pipelineRunId,
+        params.pipelineRunId
       );
       throw error;
     }
@@ -590,13 +630,16 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     const completedStageCounts = await runGeometryStep(
       params,
       'summarize-completed-geometry-stage',
-      async () => summarizeStageCounts(params.taskQueue, params.nodeId, 'geometry'),
+      async () => summarizeStageCounts(params.taskQueue, params.nodeId, 'geometry')
     );
-    console.warn('[ShapeGeometry][PipelineDiagnostics] stage geometry completed', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-      counts: completedStageCounts,
-    }));
+    console.warn(
+      '[ShapeGeometry][PipelineDiagnostics] stage geometry completed',
+      JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: completedStageCounts,
+      })
+    );
     await runGeometryStep(params, 'finalize-pending-geometry-tasks', async () => {
       await finalizePendingStageTasks(
         params.taskQueue,
@@ -604,14 +647,14 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         'geometry',
         'aborted: geometry stage completed with pending tasks',
         '[ShapeGeometry][PipelineDiagnostics] geometry stage finalized pending tasks',
-        params.pipelineRunId,
+        params.pipelineRunId
       );
     });
     const shouldStop = shouldStopAfterStage(
       params.buildContinuationPolicy,
-      await runGeometryStep(params, 'count-failed-geometry-tasks', async () => (
+      await runGeometryStep(params, 'count-failed-geometry-tasks', async () =>
         getFailedTaskCount(params.taskQueue, params.nodeId, 'geometry')
-      )),
+      )
     );
     if (params.buildConfig.sourceConfig.deleteOnComplete) {
       await runGeometryStep(params, 'cleanup-source-cache-after-geometry', async () => {

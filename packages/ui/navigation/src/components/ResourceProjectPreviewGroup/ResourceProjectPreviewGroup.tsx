@@ -3,12 +3,15 @@
  * @description Unified button group for Resources, Projects, and PreviewStep navigation
  */
 
-import type { ReactElement } from 'react';
-import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
+import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import type { ButtonGroupOrientation, ButtonGroupSize } from '../TreeToggleButtonGroup/TreeToggleButtonGroup.js';
+import type { ReactElement } from 'react';
+import type {
+  ButtonGroupOrientation,
+  ButtonGroupSize,
+} from '../TreeToggleButtonGroup/TreeToggleButtonGroup.js';
 
 export type ResourceProjectType = 'resources' | 'projects';
 
@@ -39,16 +42,16 @@ function getPageButtonColor(pageType: ResourceProjectType): 'primary' | 'seconda
 }
 
 export function ResourceProjectPreviewGroup({
-                                              selected,
-                                              currentPageNodeId,
-                                              appPrefix: _appPrefix,
-                                              getSavedPageNodeId,
-                                              savePageNodeId,
-                                              previewEnabled: _previewEnabled = false,
-                                              onPreviewClick: _onPreviewClick,
-                                              orientation = 'horizontal',
-                                              size = 'medium',
-                                            }: ResourceProjectPreviewGroupProps): ReactElement {
+  selected,
+  currentPageNodeId,
+  appPrefix: _appPrefix,
+  getSavedPageNodeId,
+  savePageNodeId,
+  previewEnabled: _previewEnabled = false,
+  onPreviewClick: _onPreviewClick,
+  orientation = 'horizontal',
+  size = 'medium',
+}: ResourceProjectPreviewGroupProps): ReactElement {
   const navigate = useNavigate();
 
   const handleToggle = (targetType: ResourceProjectType) => {
@@ -62,9 +65,11 @@ export function ResourceProjectPreviewGroup({
 
     // Navigate to target page (don't include appPrefix since it's already in basename)
     const basePath = targetType === 'resources' ? 'r' : 'p';
-    const targetPath = savedPageNodeId ? `/f/${basePath}/${savedPageNodeId}/-/folder/list` : `/f/${basePath}`;
+    const targetPath = savedPageNodeId
+      ? `/f/${basePath}/${savedPageNodeId}/-/folder/list`
+      : `/f/${basePath}`;
 
-    navigate({to: targetPath, replace: true });
+    navigate({ to: targetPath, replace: true });
   };
 
   return (
@@ -76,12 +81,12 @@ export function ResourceProjectPreviewGroup({
       sx={{
         ...(orientation === 'vertical'
           ? {
-            '& .MuiButton-root': {
-              justifyContent: 'flex-start',
-              textTransform: 'none',
-              width: '100%',
-            },
-          }
+              '& .MuiButton-root': {
+                justifyContent: 'flex-start',
+                textTransform: 'none',
+                width: '100%',
+              },
+            }
           : undefined),
         // Apply rounded corners
         '& .MuiButtonGroup-grouped': {

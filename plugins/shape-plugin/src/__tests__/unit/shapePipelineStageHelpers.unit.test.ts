@@ -1,25 +1,22 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it } from 'vitest';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   listTasksByStageAndStatus,
   putTasks,
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   createPipelineLinkedAbortController,
   finalizePendingStageTasks,
 } from '../../services/vt/shapePipelineStageHelpers';
-import type { TaskQueueRecord } from '@hierarchidb/build-api';
-import type { NodeId } from '@hierarchidb/core-types';
 
 const NODE_ID = 'shape-stage-helper-test-node' as NodeId;
 const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 
-const createTask = (
-  taskId: string,
-  status: TaskQueueRecord['status'],
-): TaskQueueRecord => ({
+const createTask = (taskId: string, status: TaskQueueRecord['status']): TaskQueueRecord => ({
   taskId,
   nodeId: NODE_ID,
   stage: 'source',
@@ -78,7 +75,7 @@ describe('shapePipelineStageHelpers', () => {
       'source',
       failureReason,
       '[test] finalizePendingStageTasks',
-      'run-1',
+      'run-1'
     );
 
     const failed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed');
@@ -101,7 +98,7 @@ describe('shapePipelineStageHelpers', () => {
       'source',
       failureReason,
       '[test] finalizePendingStageTasks',
-      'run-auth-pending',
+      'run-auth-pending'
     );
 
     const failed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed');

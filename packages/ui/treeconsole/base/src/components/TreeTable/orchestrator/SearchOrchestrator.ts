@@ -1,14 +1,18 @@
 /**
-  * SearchOrchestrator
-   * -
+ * SearchOrchestrator
  * -
  * -
-  */
+ * -
+ */
 
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
+import {
+  filteredDataAtom,
+  searchTermAtom,
+  tableDataAtom,
+} from '~/components/TreeTable/state/index';
 import type { TreeViewController } from '~/types/index';
-import { filteredDataAtom, searchTermAtom, tableDataAtom } from '~/components/TreeTable/state/index';
 
 export interface SearchOrchestratorResult {
   // State
@@ -23,9 +27,9 @@ export interface SearchOrchestratorResult {
 }
 
 /**
-    */
+ */
 export function useSearchOrchestrator(
-  controller: TreeViewController | null,
+  controller: TreeViewController | null
 ): SearchOrchestratorResult {
   // State atoms
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
@@ -37,7 +41,7 @@ export function useSearchOrchestrator(
   const isSearchingRef = useRef(false);
 
   /**
-            */
+   */
   const updateSearchTerm = useCallback(
     (term: string) => {
       setSearchTerm(term);
@@ -47,11 +51,11 @@ export function useSearchOrchestrator(
         controller?.handleSearchTextChange?.('');
       }
     },
-    [setSearchTerm, controller],
+    [setSearchTerm, controller]
   );
 
   /**
-            */
+   */
   const clearSearch = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -66,7 +70,7 @@ export function useSearchOrchestrator(
   }, [setSearchTerm, controller]);
 
   /**
-            */
+   */
   const searchWithDebounce = useCallback(
     (term: string, delay: number = 300) => {
       //  UI
@@ -90,7 +94,7 @@ export function useSearchOrchestrator(
         debounceTimerRef.current = null;
       }, delay);
     },
-    [setSearchTerm, controller],
+    [setSearchTerm, controller]
   );
 
   useEffect(() => {

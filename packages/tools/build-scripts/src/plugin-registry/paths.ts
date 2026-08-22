@@ -31,6 +31,9 @@ export const registryUiLoadersFile = path.join(registryGeneratedDir, 'ui-loaders
 export const registryWorkerLoadersFile = path.join(registryGeneratedDir, 'worker-loaders.ts');
 export const registryIconLoadersFile = path.join(registryGeneratedDir, 'icon-loaders.ts');
 export const registryDatabaseLoadersFile = path.join(registryGeneratedDir, 'database-loaders.ts');
-export const registryPluginDefinitionsFile = path.join(registryGeneratedDir, 'plugin-definitions.ts');
+export const registryPluginDefinitionsFile = path.join(
+  registryGeneratedDir,
+  'plugin-definitions.ts'
+);
 export const registryDerivationsFile = path.join(registryGeneratedDir, 'derivations.ts');
 export const registryOutputDir = path.dirname(registryOutputFile);

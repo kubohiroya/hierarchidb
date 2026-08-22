@@ -1,20 +1,11 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
-  "files": [
-    "types/plugin-modules.d.ts"
-  ],
+  "files": ["types/plugin-modules.d.ts"],
   "compilerOptions": {
     "jsx": "react-jsx",
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "typeRoots": [
-      "./types",
-      "../../node_modules/@types"
-    ]
+    "typeRoots": ["./types", "../../node_modules/@types"]
   },
-  "include": [
-    "src/**/*",
-    "generated/**/*",
-    "types/**/*.d.ts"
-  ]
+  "include": ["src/**/*", "generated/**/*", "types/**/*.d.ts"]
 }

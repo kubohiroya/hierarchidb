@@ -15,9 +15,9 @@ import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveDeveloperMode } from '~/utils/developerModeUtils';
 import { useIndexedDbReset } from './useIndexedDbReset';
+import { useTreeConsoleArchiveWatcher } from './useTreeConsoleArchiveWatcher';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog';
 import { useTreeConsoleToolbarActions } from './useTreeConsoleToolbarActions';
-import { useTreeConsoleArchiveWatcher } from './useTreeConsoleArchiveWatcher';
 
 type TreeConsolePanelProps = BaseTreeConsolePanelProps;
 type TreeConsoleBreadcrumbProps = React.ComponentProps<
@@ -143,13 +143,15 @@ export function useTreeConsoleIntegrationInner({
     const patch: Record<string, unknown> = {};
     if (initialViewMode && initialViewMode !== ssotViewMode) patch.viewMode = initialViewMode;
     if (initialSortMode && initialSortMode !== ssotSortMode) patch.sortMode = initialSortMode;
-    if (initialZoomLevel !== undefined && initialZoomLevel !== ssotZoomLevel) patch.zoomLevel = initialZoomLevel;
+    if (initialZoomLevel !== undefined && initialZoomLevel !== ssotZoomLevel)
+      patch.zoomLevel = initialZoomLevel;
     if (Object.keys(patch).length > 0) {
       actions.handleViewModeChange?.(viewMode);
       if (sortMode !== 'none') actions.handleSortModeChange?.(sortMode);
       if (zoomLevel !== 50) actions.handleZoomLevelChange?.(zoomLevel);
     }
-  }, []); const runtimeContext = useOptionalBuildSessionRuntimeContext();
+  }, []);
+  const runtimeContext = useOptionalBuildSessionRuntimeContext();
   const buildSessionIndicator = useMemo(
     () => ({
       runningNodeIds: runtimeContext?.runningNodeIds
@@ -269,11 +271,11 @@ export function useTreeConsoleIntegrationInner({
         },
         draftMetadata: breadcrumbNode.draftMetadata
           ? {
-            name: breadcrumbNode.draftMetadata.name,
-            description: breadcrumbNode.draftMetadata.description,
-            tags: breadcrumbNode.draftMetadata.tags ?? [],
-            buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
-          }
+              name: breadcrumbNode.draftMetadata.name,
+              description: breadcrumbNode.draftMetadata.description,
+              tags: breadcrumbNode.draftMetadata.tags ?? [],
+              buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
+            }
           : null,
         visible: breadcrumbNode.visible,
         data: null,
@@ -445,7 +447,10 @@ export function useTreeConsoleIntegrationInner({
     resolveOpenSteps,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
-    onIconPositionChange: async (nodeId: import('@hierarchidb/core-types').NodeId, position: { x: number; y: number }) => {
+    onIconPositionChange: async (
+      nodeId: import('@hierarchidb/core-types').NodeId,
+      position: { x: number; y: number }
+    ) => {
       if (!client) return;
       try {
         const updaterAPI = await client.getTreeNodeUpdaterAPI();
@@ -475,10 +480,10 @@ export function useTreeConsoleIntegrationInner({
   const tagsLeftSlot =
     treeId && pageNodeId
       ? createElement(TagsLinkButton, {
-        treeId: String(treeId),
-        pageNodeId: String(pageNodeId),
-        onNavigate: handleTagsNavigate,
-      })
+          treeId: String(treeId),
+          pageNodeId: String(pageNodeId),
+          onNavigate: handleTagsNavigate,
+        })
       : undefined;
 
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {

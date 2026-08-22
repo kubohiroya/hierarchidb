@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
+import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
 import { getBuildDatabasePrefix } from '@hierarchidb/util';
+import { proxy } from 'comlink';
+import { useEffect, useMemo, useRef } from 'react';
 import type { LocationEntity } from '~/common/types/index';
-import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { BASE_LOCATION_TYPES } from '~/ui/components/steps/locationTypes';
 import { updateIdeGsmProgress } from '~/ui/state/ideGsmProgressUtils';
-import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '~/ui/utils/ideGsmSelectionUtils';
+import {
+  buildIdeGsmSelectionEntries,
+  buildIdeGsmSelectionHash,
+} from '~/ui/utils/ideGsmSelectionUtils';
 
 const debugPrefix = '[LocationIdeGsmImport]';
 const inFlightByNode = new Map<string, boolean>();
@@ -82,47 +85,53 @@ export const useIdeGsmImportOnEntry = ({
   const iso = useIsoCountries();
   const selection = draft.selectedArrayByCountries ?? {};
   const selectionHash = useMemo(() => buildIdeGsmSelectionHash(selection), [selection]);
-  const fallbackCountries = useMemo(() => (
-    Object.keys(selection).map((code) => ({ code, name: code, continent: 'XX' as const }))
-  ), [selection]);
+  const fallbackCountries = useMemo(
+    () => Object.keys(selection).map((code) => ({ code, name: code, continent: 'XX' as const })),
+    [selection]
+  );
   const ideGsmSources = useMemo<IdeGsmSourceEntry[]>(() => {
     if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
       return draft.ideGsmSources;
     }
     if (draft.tabularSourceId) {
-      return [{
-        fileName: draft.ideGsmFileName ?? '',
-        tabularSourceId: draft.tabularSourceId,
-      }];
+      return [
+        {
+          fileName: draft.ideGsmFileName ?? '',
+          tabularSourceId: draft.tabularSourceId,
+        },
+      ];
     }
     return [];
   }, [draft.ideGsmFileName, draft.ideGsmSources, draft.tabularSourceId]);
   const validSources = useMemo(
-    () => ideGsmSources.filter((source) => typeof source.tabularSourceId === 'string' && source.tabularSourceId.length > 0),
-    [ideGsmSources],
+    () =>
+      ideGsmSources.filter(
+        (source) => typeof source.tabularSourceId === 'string' && source.tabularSourceId.length > 0
+      ),
+    [ideGsmSources]
   );
   const sourceKey = useMemo(
-    () => validSources.map((source) => source.tabularSourceId).sort().join('|'),
-    [validSources],
+    () =>
+      validSources
+        .map((source) => source.tabularSourceId)
+        .sort()
+        .join('|'),
+    [validSources]
   );
   const sourceIds = useMemo(
     () => sourceKey.split('|').filter((value) => value.length > 0),
-    [sourceKey],
+    [sourceKey]
   );
   const tabularDbPrefix = useMemo(() => getBuildDatabasePrefix(), []);
   const combinedHash = useMemo(
     () => (selectionHash ? `${selectionHash}::${sourceKey}` : `__all__::${sourceKey}`),
-    [selectionHash, sourceKey],
+    [selectionHash, sourceKey]
   );
   const inFlightRef = useRef(false);
   const onUpdateRef = useRef<typeof onUpdate>(onUpdate);
   const mountedRef = useRef(true);
   const activeRunRef = useRef<{ nodeKey: string; combinedHash: string } | null>(null);
-  const {
-    api: workerApi,
-    loading: workerLoading,
-    error: workerError,
-  } = useWorkerAPI();
+  const { api: workerApi, loading: workerLoading, error: workerError } = useWorkerAPI();
   const workerApiRef = useRef(workerApi);
   const workerReady = !workerLoading && !workerError && Boolean(workerApi);
 
@@ -134,9 +143,12 @@ export const useIdeGsmImportOnEntry = ({
     workerApiRef.current = workerApi;
   }, [workerApi]);
 
-  useEffect(() => () => {
-    mountedRef.current = false;
-  }, []);
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    []
+  );
 
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
@@ -147,10 +159,7 @@ export const useIdeGsmImportOnEntry = ({
     if (draft.processingStatus === 'processing') return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
     const failedRecord = lastFailedByNode.get(nodeKey);
-    if (
-      failedRecord
-      && failedRecord.combinedHash === combinedHash
-    ) {
+    if (failedRecord && failedRecord.combinedHash === combinedHash) {
       return;
     }
     if (lastCompletedByNode.get(nodeKey) === combinedHash) return;
@@ -160,7 +169,7 @@ export const useIdeGsmImportOnEntry = ({
     const selectionEntries = buildIdeGsmSelectionEntries(
       selection,
       iso.status === 'ready' ? iso.countries : fallbackCountries,
-      BASE_LOCATION_TYPES,
+      BASE_LOCATION_TYPES
     );
     if (selectionEntries.length === 0 && selectionHash) return;
 
@@ -214,9 +223,13 @@ export const useIdeGsmImportOnEntry = ({
                 chunk: safeProgress.chunk,
               });
               updateIdeGsmProgress(nodeId, safeProgress);
-            }),
+            })
           );
-          console.info(debugPrefix, 'import-result', { nodeId, tabularSourceId: sourceId, total: result.total });
+          console.info(debugPrefix, 'import-result', {
+            nodeId,
+            tabularSourceId: sourceId,
+            total: result.total,
+          });
         }
         if (!canApplyResult()) {
           lastCompletedByNode.set(nodeKey, combinedHash);

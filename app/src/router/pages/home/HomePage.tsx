@@ -175,7 +175,6 @@ export default function HomePage() {
               }}
             />
           </Box>
-
         </Box>
 
         <div

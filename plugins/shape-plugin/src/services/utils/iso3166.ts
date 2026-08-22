@@ -1,8 +1,8 @@
 import {
+  type EnsureIsoOptions,
   ensureIso3166Data,
   getCountry,
   resolveIso3166CsvUrl,
-  type EnsureIsoOptions,
 } from '@hierarchidb/gen-iso3166-2/browser';
 
 export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN' | 'XX';
@@ -32,11 +32,9 @@ const inferBasePathFromWorkerLocation = (pathname: string): string | null => {
 
 export const resolveShapeIso3166CsvUrlFromPath = (
   fallbackUrl: string,
-  locationPathname?: string,
+  locationPathname?: string
 ): string => {
-  const inferredBase = locationPathname
-    ? inferBasePathFromWorkerLocation(locationPathname)
-    : null;
+  const inferredBase = locationPathname ? inferBasePathFromWorkerLocation(locationPathname) : null;
   if (!inferredBase || inferredBase === '/') return fallbackUrl;
   return `${inferredBase}${ISO3166_CSV_FILE}`;
 };
@@ -48,18 +46,13 @@ const resolveGlobalLocationPathname = (): string | undefined => {
 
 export const DEFAULT_ISO3166_CSV_URL = resolveShapeIso3166CsvUrlFromPath(
   resolveIso3166CsvUrl(),
-  resolveGlobalLocationPathname(),
+  resolveGlobalLocationPathname()
 );
 
-const isOffline = (): boolean => (
-  typeof navigator !== 'undefined' && navigator.onLine === false
-);
+const isOffline = (): boolean => typeof navigator !== 'undefined' && navigator.onLine === false;
 
-const resolveEnsureOptions = (options?: EnsureIsoOptions): EnsureIsoOptions => (
-  isOffline()
-    ? { ...options, csvUrl: undefined }
-    : { csvUrl: DEFAULT_ISO3166_CSV_URL, ...options }
-);
+const resolveEnsureOptions = (options?: EnsureIsoOptions): EnsureIsoOptions =>
+  isOffline() ? { ...options, csvUrl: undefined } : { csvUrl: DEFAULT_ISO3166_CSV_URL, ...options };
 
 const CONTINENT_NAMES: Record<ContinentCode, string> = {
   AF: 'Africa',
@@ -81,15 +74,25 @@ const resolveContinentCodeFromLocation = (location?: string): ContinentCode => {
   }
   if (upper === 'N/A' || upper === 'UNKNOWN') return 'XX';
   const lower = trimmed.toLowerCase();
-  const includesAny = (haystack: string, needles: string[]) => needles.some((needle) => haystack.includes(needle));
+  const includesAny = (haystack: string, needles: string[]) =>
+    needles.some((needle) => haystack.includes(needle));
 
   if (includesAny(lower, ['africa']) || includesAny(trimmed, ['アフリカ'])) return 'AF';
-  if (includesAny(lower, ['asia', 'middle east']) || includesAny(trimmed, ['アジア', '中東'])) return 'AS';
+  if (includesAny(lower, ['asia', 'middle east']) || includesAny(trimmed, ['アジア', '中東']))
+    return 'AS';
   if (includesAny(lower, ['europe']) || includesAny(trimmed, ['ヨーロッパ', '欧州'])) return 'EU';
-  if (includesAny(lower, ['south america']) || includesAny(trimmed, ['南アメリカ', '中南アメリカ'])) return 'SA';
-  if (includesAny(lower, ['north america', 'central america', 'caribbean', 'americas', 'america'])
-    || includesAny(trimmed, ['北アメリカ', '中央アメリカ', 'アメリカ'])) return 'NA';
-  if (includesAny(lower, ['oceania', 'australia']) || includesAny(trimmed, ['オセアニア', '大洋州'])) return 'OC';
+  if (includesAny(lower, ['south america']) || includesAny(trimmed, ['南アメリカ', '中南アメリカ']))
+    return 'SA';
+  if (
+    includesAny(lower, ['north america', 'central america', 'caribbean', 'americas', 'america']) ||
+    includesAny(trimmed, ['北アメリカ', '中央アメリカ', 'アメリカ'])
+  )
+    return 'NA';
+  if (
+    includesAny(lower, ['oceania', 'australia']) ||
+    includesAny(trimmed, ['オセアニア', '大洋州'])
+  )
+    return 'OC';
   if (includesAny(lower, ['antarctica']) || includesAny(trimmed, ['南極', '南極大陸'])) return 'AN';
   if (includesAny(lower, ['russia', 'mediterranean', 'indian ocean'])) return 'EU';
   return 'XX';
@@ -107,7 +110,7 @@ export type IsoCodeFormat = 'iso2' | 'iso3';
 export async function convertIsoCountryCode(
   code: string,
   target: IsoCodeFormat,
-  options?: EnsureIsoOptions,
+  options?: EnsureIsoOptions
 ): Promise<string | null> {
   const trimmed = code.trim();
   if (!trimmed) return null;
@@ -124,7 +127,7 @@ export async function convertIsoCountryCode(
 export async function normalizeCountryCodeFormat(
   code: string,
   target: IsoCodeFormat,
-  options?: EnsureIsoOptions,
+  options?: EnsureIsoOptions
 ): Promise<string> {
   const normalized = code.trim().toUpperCase();
   if (!normalized) return code;
@@ -136,7 +139,7 @@ export async function normalizeCountryCodeFormat(
 
 export async function resolveCountryContinentName(
   code: string,
-  options?: EnsureIsoOptions,
+  options?: EnsureIsoOptions
 ): Promise<string> {
   const trimmed = code.trim();
   if (!trimmed) return CONTINENT_NAMES.XX;
@@ -149,7 +152,7 @@ export async function resolveCountryContinentName(
 
 export async function resolveCountryName(
   code: string,
-  options?: EnsureIsoOptions,
+  options?: EnsureIsoOptions
 ): Promise<string> {
   const trimmed = code.trim();
   if (!trimmed) return '';
@@ -160,7 +163,7 @@ export async function resolveCountryName(
 
 export async function resolveCountryContinentCode(
   code: string,
-  options?: EnsureIsoOptions,
+  options?: EnsureIsoOptions
 ): Promise<ContinentCode> {
   const trimmed = code.trim();
   if (!trimmed) return 'XX';
@@ -169,14 +172,13 @@ export async function resolveCountryContinentCode(
   return resolveContinentCodeFromLocation(result?.country?.location);
 }
 
-export const getContinentNameFromCode = (code: ContinentCode): string => (
-  CONTINENT_NAMES[code] ?? CONTINENT_NAMES.XX
-);
+export const getContinentNameFromCode = (code: ContinentCode): string =>
+  CONTINENT_NAMES[code] ?? CONTINENT_NAMES.XX;
 
 export async function normalizeCountryCodeForDataSource(
   code: string,
   target: IsoCodeFormat,
-  options?: EnsureIsoOptions,
+  options?: EnsureIsoOptions
 ): Promise<string> {
   const normalized = await normalizeCountryCodeFormat(code, target, options);
   return normalized;

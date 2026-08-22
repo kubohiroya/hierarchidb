@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
 import type { SelectChangeEvent } from '@mui/material';
+import { useCallback } from 'react';
 import type { LanguageConfig } from '~/provider/LanguageProvider';
 
 export interface UseLanguageSelectorViewParams {
@@ -20,12 +20,12 @@ export function useLanguageSelectorView({
     (event: SelectChangeEvent<string>) => {
       changeLanguage(event.target.value);
     },
-    [changeLanguage],
+    [changeLanguage]
   );
 
   const getLanguageLabelText = useCallback(
     (lang: LanguageConfig) => (showNativeNames ? lang.nativeName : lang.name),
-    [showNativeNames],
+    [showNativeNames]
   );
 
   return {

@@ -34,26 +34,28 @@ const createDbMock = (params?: {
   const activeTaskCountByNode = params?.activeTaskCountByNode ?? {};
 
   const update = vi.fn(async () => 1);
-  const bulkGetStatuses = vi.fn(async (nodeIds: NodeId[]) => (
+  const bulkGetStatuses = vi.fn(async (nodeIds: NodeId[]) =>
     nodeIds.map((nodeId) => statuses.find((status) => status?.nodeId === nodeId))
-  ));
+  );
   const statusWhere = vi.fn(() => ({
     equals: vi.fn(() => ({
-      toArray: vi.fn(async () => statuses.filter((status): status is { nodeId: NodeId; status: string } => Boolean(status))),
+      toArray: vi.fn(async () =>
+        statuses.filter((status): status is { nodeId: NodeId; status: string } => Boolean(status))
+      ),
     })),
   }));
-  const bulkGetHeartbeats = vi.fn(async (nodeIds: NodeId[]) => (
+  const bulkGetHeartbeats = vi.fn(async (nodeIds: NodeId[]) =>
     nodeIds.map((nodeId) => {
       const value = heartbeatByNode[String(nodeId)];
       return typeof value === 'number' ? { nodeId, lastHeartbeatAt: value } : undefined;
     })
-  ));
-  const bulkGetConfigs = vi.fn(async (nodeIds: NodeId[]) => (
+  );
+  const bulkGetConfigs = vi.fn(async (nodeIds: NodeId[]) =>
     nodeIds.map((nodeId) => {
       const value = startedAtByNode[String(nodeId)];
       return typeof value === 'number' ? { nodeId, startedAt: value } : undefined;
     })
-  ));
+  );
   const whereTasks = vi.fn((_index: '[nodeId+status]') => ({
     anyOf: (keys: Array<[NodeId, 'running']>) => {
       const nodeId = keys[0]?.[0];

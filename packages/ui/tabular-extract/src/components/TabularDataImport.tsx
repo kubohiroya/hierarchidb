@@ -3,7 +3,15 @@
  * @description File import interface for Tabular processing
  */
 
-import type React from 'react';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { ModalSelect } from '@hierarchidb/ui-modal-select';
+import {
+  CloudUpload,
+  Download,
+  DownloadDone,
+  Downloading,
+  InsertDriveFile,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -19,16 +27,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  CloudUpload,
-  Download,
-  DownloadDone,
-  Downloading,
-  InsertDriveFile,
-} from '@mui/icons-material';
+import type React from 'react';
 import type { TabularProcessingConfig } from '../types/index';
-import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { ModalSelect } from '@hierarchidb/ui-modal-select';
 import { useTabularDataImport } from './useTabularDataImport.js';
 
 export interface TabularDataImportProps {
@@ -51,23 +51,23 @@ export interface TabularDataImportProps {
 }
 
 export const TabularDataImport: React.FC<TabularDataImportProps> = ({
-                                                                      onFileImported,
-                                                                      onError,
-                                                                      disabled = false,
-                                                                      acceptedFileTypes = ['.csv', '.tsv', '.txt'],
-                                                                      maxFileSize = 50 * 1024 * 1024, // 50MB default
-                                                                      pluginId,
-                                                                      nodeId,
-                                                                      menuContainer,
-                                                                      initialImportMethod = 'file',
-                                                                      initialUrl = '',
-                                                                      initialProcessingConfig,
-                                                                      onProcessingConfigChange,
-                                                                      onImportMethodChange,
-                                                                      onUrlChange,
-                                                                      importSucceeded = false,
-                                                                      autoStartDownload = false,
-                                                                    }) => {
+  onFileImported,
+  onError,
+  disabled = false,
+  acceptedFileTypes = ['.csv', '.tsv', '.txt'],
+  maxFileSize = 50 * 1024 * 1024, // 50MB default
+  pluginId,
+  nodeId,
+  menuContainer,
+  initialImportMethod = 'file',
+  initialUrl = '',
+  initialProcessingConfig,
+  onProcessingConfigChange,
+  onImportMethodChange,
+  onUrlChange,
+  importSucceeded = false,
+  autoStartDownload = false,
+}) => {
   const view = useTabularDataImport({
     onFileImported,
     onError,
@@ -90,12 +90,14 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-      Choose a file or provide a URL to import tabular data.
+        Choose a file or provide a URL to import tabular data.
       </Typography>
 
       {/* Import Method Selection */}
       <FormControl sx={{ mb: 3, minWidth: 200 }}>
-        <InputLabel id={view.importMethodLabelId} htmlFor={view.importMethodSelectId}>Import Method</InputLabel>
+        <InputLabel id={view.importMethodLabelId} htmlFor={view.importMethodSelectId}>
+          Import Method
+        </InputLabel>
         <ModalSelect
           id={view.importMethodSelectId}
           labelId={view.importMethodLabelId}
@@ -106,19 +108,19 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
           disabled={disabled || view.isImporting}
           menuContainer={view.modalRoot}
         >
-        <MenuItem value="file">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InsertDriveFile fontSize="small" />
-            Local File Import
-          </Box>
-        </MenuItem>
-        <MenuItem value="url">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Download fontSize="small" />
-            URL Download
-          </Box>
-        </MenuItem>
-      </ModalSelect>
+          <MenuItem value="file">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <InsertDriveFile fontSize="small" />
+              Local File Import
+            </Box>
+          </MenuItem>
+          <MenuItem value="url">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Download fontSize="small" />
+              URL Download
+            </Box>
+          </MenuItem>
+        </ModalSelect>
       </FormControl>
 
       {/* File Import Section */}
@@ -129,12 +131,19 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
             p: 1.25,
             mb: 2,
             border: '2px dashed',
-            borderColor: view.dragError ? 'error.main' : view.dragActive ? 'success.main' : 'divider',
+            borderColor: view.dragError
+              ? 'error.main'
+              : view.dragActive
+                ? 'success.main'
+                : 'divider',
             cursor: disabled || view.isImporting ? 'not-allowed' : 'pointer',
-            '&:hover': disabled || view.isImporting ? {} : {
-              borderColor: 'primary.main',
-              bgcolor: 'action.hover',
-            },
+            '&:hover':
+              disabled || view.isImporting
+                ? {}
+                : {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover',
+                  },
           }}
           onClick={disabled || view.isImporting ? undefined : view.handleImportClick}
           onDragOver={view.handleDragOver}
@@ -203,7 +212,15 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
             <Button
               color="secondary"
               variant="contained"
-              endIcon={view.isImporting ? <Downloading /> : view.showDownloadSuccess ? <DownloadDone /> : <Download />}
+              endIcon={
+                view.isImporting ? (
+                  <Downloading />
+                ) : view.showDownloadSuccess ? (
+                  <DownloadDone />
+                ) : (
+                  <Download />
+                )
+              }
               onClick={view.handleUrlDownload}
               disabled={disabled || view.isImporting || !view.urlInput.trim()}
             >
@@ -230,7 +247,9 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         }}
       >
         <FormControl size="small" sx={{ minWidth: 140 }}>
-        <InputLabel id={view.delimiterLabelId} htmlFor={view.delimiterSelectId}>Delimiter</InputLabel>
+          <InputLabel id={view.delimiterLabelId} htmlFor={view.delimiterSelectId}>
+            Delimiter
+          </InputLabel>
           <ModalSelect
             id={view.delimiterSelectId}
             labelId={view.delimiterLabelId}
@@ -249,7 +268,9 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id={view.encodingLabelId} htmlFor={view.encodingSelectId}>Encoding</InputLabel>
+          <InputLabel id={view.encodingLabelId} htmlFor={view.encodingSelectId}>
+            Encoding
+          </InputLabel>
           <ModalSelect
             id={view.encodingSelectId}
             labelId={view.encodingLabelId}
@@ -267,7 +288,9 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id={view.quoteLabelId} htmlFor={view.quoteSelectId}>Quote Character</InputLabel>
+          <InputLabel id={view.quoteLabelId} htmlFor={view.quoteSelectId}>
+            Quote Character
+          </InputLabel>
           <ModalSelect
             id={view.quoteSelectId}
             labelId={view.quoteLabelId}
@@ -284,7 +307,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
           </ModalSelect>
         </FormControl>
         <FormControlLabel
-          control={(
+          control={
             <Switch
               id={view.hasHeaderSwitchId}
               checked={view.processingConfig.hasHeader}
@@ -295,12 +318,12 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
                 name: 'has-header',
               }}
             />
-          )}
+          }
           label="Has Header Row"
         />
 
         <FormControlLabel
-          control={(
+          control={
             <Switch
               id={view.skipEmptyLinesSwitchId}
               checked={view.processingConfig.skipEmptyLines}
@@ -311,7 +334,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
                 name: 'skip-empty-lines',
               }}
             />
-          )}
+          }
           label="Skip Empty Lines"
         />
       </Box>

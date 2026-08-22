@@ -1,4 +1,4 @@
-import { chromium, firefox, FullConfig } from '@playwright/test';
+import { chromium, FullConfig, firefox } from '@playwright/test';
 import { resolveE2EUrlContract } from './utils/e2e-url-contract';
 
 const e2eUrlContract = resolveE2EUrlContract();
@@ -6,9 +6,10 @@ const SERVER_READY_TIMEOUT_MS = 180000;
 const NAVIGATION_TIMEOUT_MS = 120000;
 const FIREFOX_LAUNCH_PROBE_TIMEOUT_MS = 30_000;
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
-  setTimeout(resolve, ms);
-});
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 const waitForServerReady = async (serverUrl: string, timeoutMs: number): Promise<void> => {
   const startedAt = Date.now();
@@ -70,7 +71,7 @@ const probeFirefoxLaunchIfSelected = async (config: FullConfig): Promise<void> =
     const details = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Firefox launch probe failed before running E2E test bodies. ` +
-        `This is an environment/browser startup failure, not an application assertion failure. ${details}`,
+        `This is an environment/browser startup failure, not an application assertion failure. ${details}`
     );
   }
 };
@@ -94,7 +95,9 @@ async function globalSetup(config: FullConfig) {
   try {
     // Wait for the development server to be ready
     if (skipWebServer) {
-      console.log(`⏳ PLAYWRIGHT_SKIP_WEBSERVER=1 が設定済み。既存サーバー (${serverUrl}) への接続を試みます。`);
+      console.log(
+        `⏳ PLAYWRIGHT_SKIP_WEBSERVER=1 が設定済み。既存サーバー (${serverUrl}) への接続を試みます。`
+      );
     } else {
       console.log(`⏳ Preview サーバー起動を待機中 (${serverUrl})...`);
     }

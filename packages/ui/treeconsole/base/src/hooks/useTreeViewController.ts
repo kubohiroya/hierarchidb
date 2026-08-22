@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { WorkerAPIAdapter } from '~/adapters/index';
-import type { CRUDResult, SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '~/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { RowSelectionState } from '@tanstack/react-table';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { WorkerAPIAdapter } from '~/adapters/index';
+import type {
+  CRUDResult,
+  SelectionMode,
+  TreeViewController,
+  UndoRedoCommand,
+  UndoRedoResult,
+} from '~/types/index';
 import {
   type ClipboardData,
   type CopyResult,
@@ -12,9 +18,9 @@ import {
   type PasteResult,
   useCopyPasteOperations,
 } from './useCopyPasteOperations.js';
-import { useUndoRedoOperations } from './useUndoRedoOperations.js';
-import { useCRUDOperations } from './useCRUDOperations.js';
 import type { UseCRUDOperationsOptions } from './useCRUDOperations.js';
+import { useCRUDOperations } from './useCRUDOperations.js';
+import { useUndoRedoOperations } from './useUndoRedoOperations.js';
 
 export interface TreeViewControllerProps {
   /** TreeTypes ID */
@@ -33,7 +39,6 @@ export interface UseTreeViewControllerOptions<T> {
 }
 
 export interface UseTreeViewControllerReturn extends TreeViewController {
-
   currentNode: TreeNode | null;
   selectedNodes: NodeId[];
   selectedNodeIds: NodeId[]; // Alias for compatibility
@@ -54,7 +59,7 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   expandedRowIds?: Set<NodeId>;
   selectNode: (
     nodeId: NodeId,
-    options?: { ctrlKey?: boolean; shiftKey?: boolean },
+    options?: { ctrlKey?: boolean; shiftKey?: boolean }
   ) => Promise<void>;
   selectMultipleNodes: (nodeIds: NodeId[]) => void;
   expandNode: (nodeId: NodeId) => void;
@@ -94,10 +99,10 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
 }
 
 /**
-  * TreeViewController hook
-    */
+ * TreeViewController hook
+ */
 export function useTreeViewController<T>(
-  props: TreeViewControllerProps & UseTreeViewControllerOptions<T> = { treeId: '' },
+  props: TreeViewControllerProps & UseTreeViewControllerOptions<T> = { treeId: '' }
 ): UseTreeViewControllerReturn {
   const {
     rootNodeId: _rootNodeId,
@@ -117,9 +122,7 @@ export function useTreeViewController<T>(
     return client != null && typeof client === 'object' && 'getAPI' in client;
   };
 
-  const api: WorkerAPI<T> | null = hasGetAPI(workerClient)
-    ? workerClient.getAPI()
-    : null;
+  const api: WorkerAPI<T> | null = hasGetAPI(workerClient) ? workerClient.getAPI() : null;
 
   //  WorkerAPIAdapter
   const workerAdapter = useMemo(() => {
@@ -196,7 +199,7 @@ export function useTreeViewController<T>(
   const normalizeToken = useCallback((id: NodeId): NodeId => {
     const s = String(id);
     if (s.startsWith('$')) {
-      return (`node-${s.slice(1)}`) as NodeId;
+      return `node-${s.slice(1)}` as NodeId;
     }
     return id;
   }, []);
@@ -252,14 +255,18 @@ export function useTreeViewController<T>(
         // Get all children from atoms manager (mocked in tests)
         // TODO: Implement getChildren when API is available
         // Type guard for stateManager with getChildren method
-        const hasGetChildren = (manager: unknown): manager is { getChildren(id: string): Promise<TreeNode[]> } => {
+        const hasGetChildren = (
+          manager: unknown
+        ): manager is { getChildren(id: string): Promise<TreeNode[]> } => {
           return manager != null && typeof manager === 'object' && 'getChildren' in manager;
         };
 
         if (hasGetChildren(stateManager)) {
           const children = await stateManager.getChildren('root');
           if (children && Array.isArray(children)) {
-            const nodeIds = children.map((child: unknown) => normalizeToken((child as TreeNode).id as NodeId));
+            const nodeIds = children.map((child: unknown) =>
+              normalizeToken((child as TreeNode).id as NodeId)
+            );
             const startIdx = nodeIds.indexOf(normalizeToken(lastSelectedNode));
             const endIdx = nodeIds.indexOf(normalized);
             if (startIdx !== -1 && endIdx !== -1) {
@@ -285,7 +292,9 @@ export function useTreeViewController<T>(
       // Fetch and set current node
       // TODO: Implement getNode when API is available
       // Type guard for stateManager with getNode method
-      const hasGetNode = (manager: unknown): manager is { getNode(id: string): Promise<TreeNode> } => {
+      const hasGetNode = (
+        manager: unknown
+      ): manager is { getNode(id: string): Promise<TreeNode> } => {
         return manager != null && typeof manager === 'object' && 'getNode' in manager;
       };
 
@@ -301,7 +310,9 @@ export function useTreeViewController<T>(
       } else if (api && !ctrlKey && !shiftKey) {
         try {
           // Type guard for api with getNode method
-          const hasApiGetNode = (obj: unknown): obj is { getNode: (id: string) => Promise<TreeNode> } => {
+          const hasApiGetNode = (
+            obj: unknown
+          ): obj is { getNode: (id: string) => Promise<TreeNode> } => {
             return obj != null && typeof obj === 'object' && 'getNode' in obj;
           };
 
@@ -316,27 +327,33 @@ export function useTreeViewController<T>(
         }
       }
     },
-    [api, stateManager, lastSelectedNode, normalizeToken],
+    [api, stateManager, lastSelectedNode, normalizeToken]
   );
 
   const selectMultipleNodes = useCallback((nodeIds: NodeId[]) => {
     setSelectedNodes(nodeIds);
   }, []);
 
-  const expandNode = useCallback((nodeId: NodeId) => {
-    const normalized = normalizeToken(nodeId);
-    setExpandedNodes((prev) => {
-      if (prev.includes(normalized)) {
-        return prev; // Already expanded
-      }
-      return [...prev, normalized];
-    });
-  }, [normalizeToken]);
+  const expandNode = useCallback(
+    (nodeId: NodeId) => {
+      const normalized = normalizeToken(nodeId);
+      setExpandedNodes((prev) => {
+        if (prev.includes(normalized)) {
+          return prev; // Already expanded
+        }
+        return [...prev, normalized];
+      });
+    },
+    [normalizeToken]
+  );
 
-  const collapseNode = useCallback((nodeId: NodeId) => {
-    const normalized = normalizeToken(nodeId);
-    setExpandedNodes((prev) => prev.filter((id) => id !== normalized));
-  }, [normalizeToken]);
+  const collapseNode = useCallback(
+    (nodeId: NodeId) => {
+      const normalized = normalizeToken(nodeId);
+      setExpandedNodes((prev) => prev.filter((id) => id !== normalized));
+    },
+    [normalizeToken]
+  );
 
   //  IndexedDB
   const handleSearchTextChange = useCallback((newSearchText: string) => {
@@ -465,7 +482,7 @@ export function useTreeViewController<T>(
           (event) => {
             void handleEvent(event);
           },
-          { viewId: 'treeconsole-view' },
+          { viewId: 'treeconsole-view' }
         );
 
         if (cancelled) {
@@ -491,13 +508,7 @@ export function useTreeViewController<T>(
       subscriptionCleanupRef.current?.();
       subscriptionCleanupRef.current = null;
     };
-  }, [
-    api,
-    normalizeToken,
-    workerAdapter,
-    _rootNodeId,
-    updateData,
-  ]);
+  }, [api, normalizeToken, workerAdapter, _rootNodeId, updateData]);
 
   return {
     currentNode,

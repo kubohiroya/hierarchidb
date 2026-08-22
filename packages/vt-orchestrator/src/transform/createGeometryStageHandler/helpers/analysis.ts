@@ -11,12 +11,22 @@ export type ErrorLineProperties = {
 
 export const buildErrorLineFeatures = (
   geometry: Geometry,
-  featureId?: string,
-): { features: Array<Feature<LineString, ErrorLineProperties>>; polygonCount: number; ringCount: number; geometryType: string } | null => {
+  featureId?: string
+): {
+  features: Array<Feature<LineString, ErrorLineProperties>>;
+  polygonCount: number;
+  ringCount: number;
+  geometryType: string;
+} | null => {
   const features: Array<Feature<LineString, ErrorLineProperties>> = [];
   let polygonCount = 0;
   let ringCount = 0;
-  const pushRing = (ring: number[][], ringRole: ErrorRingRole, polygonIndex: number, ringIndex: number) => {
+  const pushRing = (
+    ring: number[][],
+    ringRole: ErrorRingRole,
+    polygonIndex: number,
+    ringIndex: number
+  ) => {
     if (!Array.isArray(ring) || ring.length < 2) return;
     features.push({
       type: 'Feature',
@@ -44,19 +54,22 @@ export const buildErrorLineFeatures = (
   } else {
     return null;
   }
-  return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
+  return features.length
+    ? { features, polygonCount, ringCount, geometryType: geometry.type }
+    : null;
 };
 
 export const resolveFeatureIdentifier = (
   feature: Feature | null | undefined,
   featureIndex: number,
-  sourceKey?: string,
+  sourceKey?: string
 ): string => {
   const properties = (feature?.properties ?? null) as Record<string, unknown> | null;
   const metadataFeatureId = properties?.__hdbFeatureId;
-  const rawFeatureId = (typeof metadataFeatureId === 'string' && metadataFeatureId.trim().length > 0)
-    ? metadataFeatureId
-    : (feature?.id ?? (properties && 'id' in properties ? String(properties.id) : undefined));
+  const rawFeatureId =
+    typeof metadataFeatureId === 'string' && metadataFeatureId.trim().length > 0
+      ? metadataFeatureId
+      : (feature?.id ?? (properties && 'id' in properties ? String(properties.id) : undefined));
   if (rawFeatureId != null) {
     return String(rawFeatureId);
   }
@@ -126,17 +139,21 @@ export const computeRingArea = (ring: number[][]): number | null => {
     const x2 = coord2[0];
     const y2 = coord2[1];
     if (x1 === undefined || y1 === undefined || x2 === undefined || y2 === undefined) continue;
-    if (!Number.isFinite(x1) || !Number.isFinite(y1) || !Number.isFinite(x2) || !Number.isFinite(y2)) {
+    if (
+      !Number.isFinite(x1) ||
+      !Number.isFinite(y1) ||
+      !Number.isFinite(x2) ||
+      !Number.isFinite(y2)
+    ) {
       continue;
     }
-    sum += (x1 * y2) - (x2 * y1);
+    sum += x1 * y2 - x2 * y1;
   }
   return sum / 2;
 };
 
-export const countSelfIntersections = (geometry: Geometry, geometryOps: GeometryOps): number => (
-  geometryOps.countSelfIntersections(geometry)
-);
+export const countSelfIntersections = (geometry: Geometry, geometryOps: GeometryOps): number =>
+  geometryOps.countSelfIntersections(geometry);
 
 export const analyzePolygonRing = (ring: number[][]): PolygonRingSummary => {
   const ringVertices = ring.length;
@@ -157,17 +174,18 @@ export const analyzePolygonRing = (ring: number[][]): PolygonRingSummary => {
     const first = ring[0];
     const last = ring[ringVertices - 1];
     if (!first || !last) return 0;
-    return (first[0] !== last[0] || first[1] !== last[1]) ? 1 : 0;
+    return first[0] !== last[0] || first[1] !== last[1] ? 1 : 0;
   })();
   const ringArea = computeRingArea(ring);
   const degenerateRingCount = ringArea !== null && Math.abs(ringArea) < 1e-12 ? 1 : 0;
   const duplicateVertexCount = countDuplicateVertices(ring);
-  const hasIssue = emptyRingCount > 0
-    || invalidRingCount > 0
-    || openRingCount > 0
-    || nonFiniteCoordCount > 0
-    || degenerateRingCount > 0
-    || duplicateVertexCount > 0;
+  const hasIssue =
+    emptyRingCount > 0 ||
+    invalidRingCount > 0 ||
+    openRingCount > 0 ||
+    nonFiniteCoordCount > 0 ||
+    degenerateRingCount > 0 ||
+    duplicateVertexCount > 0;
   return {
     emptyRingCount,
     invalidRingCount,
@@ -263,7 +281,10 @@ export const buildEmptyGeometrySummary = (geometryType: string): GeometryIssueSu
   selfIntersectionCount: 0,
 });
 
-export const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geometryOps: GeometryOps): GeometryIssueSummary => {
+export const analyzeGeometryIssues = (
+  geometry: Geometry | null | undefined,
+  geometryOps: GeometryOps
+): GeometryIssueSummary => {
   if (!geometry) return buildEmptyGeometrySummary('none');
 
   if (geometry.type === 'GeometryCollection') {
@@ -284,24 +305,28 @@ export const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geo
       acc.duplicateVertexCount += childSummary.duplicateVertexCount;
       acc.selfIntersectionCount += childSummary.selfIntersectionCount;
       if (childSummary.minRingVertices !== null) {
-        acc.minRingVertices = acc.minRingVertices === null
-          ? childSummary.minRingVertices
-          : Math.min(acc.minRingVertices, childSummary.minRingVertices);
+        acc.minRingVertices =
+          acc.minRingVertices === null
+            ? childSummary.minRingVertices
+            : Math.min(acc.minRingVertices, childSummary.minRingVertices);
       }
       if (childSummary.maxRingVertices !== null) {
-        acc.maxRingVertices = acc.maxRingVertices === null
-          ? childSummary.maxRingVertices
-          : Math.max(acc.maxRingVertices, childSummary.maxRingVertices);
+        acc.maxRingVertices =
+          acc.maxRingVertices === null
+            ? childSummary.maxRingVertices
+            : Math.max(acc.maxRingVertices, childSummary.maxRingVertices);
       }
       if (childSummary.minRingArea !== null) {
-        acc.minRingArea = acc.minRingArea === null
-          ? childSummary.minRingArea
-          : Math.min(acc.minRingArea, childSummary.minRingArea);
+        acc.minRingArea =
+          acc.minRingArea === null
+            ? childSummary.minRingArea
+            : Math.min(acc.minRingArea, childSummary.minRingArea);
       }
       if (childSummary.maxRingArea !== null) {
-        acc.maxRingArea = acc.maxRingArea === null
-          ? childSummary.maxRingArea
-          : Math.max(acc.maxRingArea, childSummary.maxRingArea);
+        acc.maxRingArea =
+          acc.maxRingArea === null
+            ? childSummary.maxRingArea
+            : Math.max(acc.maxRingArea, childSummary.maxRingArea);
       }
       if (childSummary.avgRingVertices !== null && childSummary.ringCount > 0) {
         ringVertexTotal += childSummary.avgRingVertices * childSummary.ringCount;
@@ -314,20 +339,22 @@ export const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geo
     return summary;
   }
 
-    if (geometry.type === 'Polygon') {
-      const rings = Array.isArray(geometry.coordinates)
-        ? (geometry.coordinates as number[][][])
-        : [];
-      const summary = {
-        geometryType: 'Polygon',
-        ...analyzePolygon(rings),
-        selfIntersectionCount: countSelfIntersections(geometry, geometryOps),
-      };
-      if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
-        summary.errorPolygonCount = summary.polygonCount;
-      }
-      return summary;
+  if (geometry.type === 'Polygon') {
+    const rings = Array.isArray(geometry.coordinates) ? (geometry.coordinates as number[][][]) : [];
+    const summary = {
+      geometryType: 'Polygon',
+      ...analyzePolygon(rings),
+      selfIntersectionCount: countSelfIntersections(geometry, geometryOps),
+    };
+    if (
+      summary.selfIntersectionCount > 0 &&
+      summary.errorPolygonCount === 0 &&
+      summary.polygonCount > 0
+    ) {
+      summary.errorPolygonCount = summary.polygonCount;
     }
+    return summary;
+  }
 
   if (geometry.type === 'MultiPolygon') {
     const polygons = Array.isArray(geometry.coordinates)
@@ -348,24 +375,28 @@ export const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geo
       acc.degenerateRingCount += child.degenerateRingCount;
       acc.duplicateVertexCount += child.duplicateVertexCount;
       if (child.minRingVertices !== null) {
-        acc.minRingVertices = acc.minRingVertices === null
-          ? child.minRingVertices
-          : Math.min(acc.minRingVertices, child.minRingVertices);
+        acc.minRingVertices =
+          acc.minRingVertices === null
+            ? child.minRingVertices
+            : Math.min(acc.minRingVertices, child.minRingVertices);
       }
       if (child.maxRingVertices !== null) {
-        acc.maxRingVertices = acc.maxRingVertices === null
-          ? child.maxRingVertices
-          : Math.max(acc.maxRingVertices, child.maxRingVertices);
+        acc.maxRingVertices =
+          acc.maxRingVertices === null
+            ? child.maxRingVertices
+            : Math.max(acc.maxRingVertices, child.maxRingVertices);
       }
       if (child.minRingArea !== null) {
-        acc.minRingArea = acc.minRingArea === null
-          ? child.minRingArea
-          : Math.min(acc.minRingArea, child.minRingArea);
+        acc.minRingArea =
+          acc.minRingArea === null
+            ? child.minRingArea
+            : Math.min(acc.minRingArea, child.minRingArea);
       }
       if (child.maxRingArea !== null) {
-        acc.maxRingArea = acc.maxRingArea === null
-          ? child.maxRingArea
-          : Math.max(acc.maxRingArea, child.maxRingArea);
+        acc.maxRingArea =
+          acc.maxRingArea === null
+            ? child.maxRingArea
+            : Math.max(acc.maxRingArea, child.maxRingArea);
       }
       if (child.avgRingVertices !== null && child.ringCount > 0) {
         ringVertexTotal += child.avgRingVertices * child.ringCount;
@@ -374,7 +405,11 @@ export const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geo
       return acc;
     }, buildEmptyGeometrySummary('MultiPolygon'));
     summary.selfIntersectionCount = countSelfIntersections(geometry, geometryOps);
-    if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
+    if (
+      summary.selfIntersectionCount > 0 &&
+      summary.errorPolygonCount === 0 &&
+      summary.polygonCount > 0
+    ) {
       summary.errorPolygonCount = summary.polygonCount;
     }
     summary.avgRingVertices = ringCount > 0 ? ringVertexTotal / ringCount : null;
@@ -384,16 +419,16 @@ export const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geo
   return buildEmptyGeometrySummary(geometry.type);
 };
 
-
-export const isGeometryBooleanValid = (geometry: Geometry | null | undefined, geometryOps: GeometryOps): boolean => (
-  geometryOps.isValid(geometry)
-);
+export const isGeometryBooleanValid = (
+  geometry: Geometry | null | undefined,
+  geometryOps: GeometryOps
+): boolean => geometryOps.isValid(geometry);
 
 export const filterFeaturesByAspectRatioAndArea = (
   features: Feature[],
   aspectRatioThreshold: number,
   areaThreshold: number,
-  geometryOps: GeometryOps,
+  geometryOps: GeometryOps
 ): Feature[] => {
   if (aspectRatioThreshold <= 0 && areaThreshold <= 0) return features;
   return features.filter((feature) => {
@@ -408,7 +443,10 @@ export const filterFeaturesByAspectRatioAndArea = (
       const [minX, minY, maxX, maxY] = bbox;
       const width = Math.abs(maxX - minX);
       const height = Math.abs(maxY - minY);
-      const ratio = width === 0 || height === 0 ? Number.POSITIVE_INFINITY : Math.max(width / height, height / width);
+      const ratio =
+        width === 0 || height === 0
+          ? Number.POSITIVE_INFINITY
+          : Math.max(width / height, height / width);
       if (ratio > aspectRatioThreshold) return false;
     }
     return true;

@@ -2,7 +2,8 @@
  * Style configuration panel for Location preview.
  */
 
-import type React from 'react';
+import type { SvgIconComponent } from '@mui/icons-material';
+import { Anchor, FlightTakeoff, ForkRight, LocationCity, Subway } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -16,19 +17,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import type {
-  LocationEntity,
-  LocationIconId,
-  LocationType,
-} from '~/common/types/index';
-import {
-  Anchor,
-  FlightTakeoff,
-  ForkRight,
-  LocationCity,
-  Subway,
-} from '@mui/icons-material';
-import type { SvgIconComponent } from '@mui/icons-material';
+import type React from 'react';
+import type { LocationEntity, LocationIconId, LocationType } from '~/common/types/index';
 import { useLocationStyleConfigPanel } from './useLocationStyleConfigPanel.ts';
 
 interface LocationStyleConfigPanelProps {
@@ -77,7 +67,10 @@ const normalizeRange = (value: number[] | number, min: number, max: number): [nu
   return first <= second ? [first, second] : [second, first];
 };
 
-const normalizeZoomStops = (values: number[], maxZoom: number): [number, number, number, number] => {
+const normalizeZoomStops = (
+  values: number[],
+  maxZoom: number
+): [number, number, number, number] => {
   const clamped = values.map((value) => clamp(Math.round(value), MIN_ZOOM_LEVEL, maxZoom));
   const normalized: number[] = [];
   let last = MIN_ZOOM_LEVEL;
@@ -89,19 +82,13 @@ const normalizeZoomStops = (values: number[], maxZoom: number): [number, number,
   return normalized as [number, number, number, number];
 };
 
-
 export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> = ({
   draft: draftProp,
   onUpdate,
   disabled,
 }) => {
-  const {
-    t,
-    tilesMaxZoom,
-    representationConfig,
-    iconConfig,
-    labelConfig,
-  } = useLocationStyleConfigPanel(draftProp, onUpdate);
+  const { t, tilesMaxZoom, representationConfig, iconConfig, labelConfig } =
+    useLocationStyleConfigPanel(draftProp, onUpdate);
 
   const handleRepresentationChange = (type: LocationType, value: number | number[]) => {
     if (!Array.isArray(value)) return;
@@ -194,7 +181,10 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
           {t('processing.displayConfig.title', 'Display Settings')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {t('processing.displayConfig.description', 'Configure representation, icon, and label settings for each location type.')}
+          {t(
+            'processing.displayConfig.description',
+            'Configure representation, icon, and label settings for each location type.'
+          )}
         </Typography>
 
         <Card variant="outlined">
@@ -203,7 +193,10 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
               {t('processing.displayConfig.representation.title', 'Representation by Zoom Level')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {t('processing.displayConfig.representation.description', 'Adjust when points, polygons, and icons appear as you zoom.')}
+              {t(
+                'processing.displayConfig.representation.description',
+                'Adjust when points, polygons, and icons appear as you zoom.'
+              )}
             </Typography>
             <Grid container spacing={2} columns={{ xs: 12 }} sx={sliderContainerSx}>
               {LOCATION_TYPES.map((type) => {
@@ -216,9 +209,7 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
                 ];
                 return (
                   <Grid key={`representation-${type}`} size={{ xs: 12, md: 6 }}>
-                    <Typography variant="subtitle2">
-                      {t(`locationTypes.${type}`, type)}
-                    </Typography>
+                    <Typography variant="subtitle2">{t(`locationTypes.${type}`, type)}</Typography>
                     <Slider
                       min={MIN_ZOOM_LEVEL}
                       max={tilesMaxZoom}
@@ -239,16 +230,28 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
             </Grid>
             <Box mt={1} display="flex" flexDirection="column" gap={0.5}>
               <Typography variant="caption">
-                {t('processing.displayConfig.representation.pointLabel', 'Point rendering (1px) starts from this zoom.')}
+                {t(
+                  'processing.displayConfig.representation.pointLabel',
+                  'Point rendering (1px) starts from this zoom.'
+                )}
               </Typography>
               <Typography variant="caption">
-                {t('processing.displayConfig.representation.polygonLabel', 'Scaled polygon rendering starts from this zoom.')}
+                {t(
+                  'processing.displayConfig.representation.polygonLabel',
+                  'Scaled polygon rendering starts from this zoom.'
+                )}
               </Typography>
               <Typography variant="caption">
-                {t('processing.displayConfig.representation.iconLabel', 'Scaled SVG icon rendering starts from this zoom.')}
+                {t(
+                  'processing.displayConfig.representation.iconLabel',
+                  'Scaled SVG icon rendering starts from this zoom.'
+                )}
               </Typography>
               <Typography variant="caption">
-                {t('processing.displayConfig.representation.iconFixedLabel', 'Icons stop scaling and become fixed size from this zoom.')}
+                {t(
+                  'processing.displayConfig.representation.iconFixedLabel',
+                  'Icons stop scaling and become fixed size from this zoom.'
+                )}
               </Typography>
             </Box>
           </CardContent>
@@ -260,7 +263,10 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
               {t('processing.displayConfig.icon.title', 'Icon Settings')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {t('processing.displayConfig.icon.description', 'Configure icon colors, symbols, and size range.')}
+              {t(
+                'processing.displayConfig.icon.description',
+                'Configure icon colors, symbols, and size range.'
+              )}
             </Typography>
             <Grid container spacing={2} columns={{ xs: 12 }} sx={sliderContainerSx}>
               {LOCATION_TYPES.map((type) => {
@@ -293,11 +299,16 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
                             labelId={labelId}
                             value={entry.iconId}
                             label={t('processing.displayConfig.icon.iconLabel', 'Icon')}
-                            onChange={(event) => handleIconIdChange(type, event.target.value as LocationIconId)}
+                            onChange={(event) =>
+                              handleIconIdChange(type, event.target.value as LocationIconId)
+                            }
                           >
                             {ICON_OPTIONS.map((option) => {
                               const Icon = option.Icon;
-                              const iconLabel = t(`processing.displayConfig.icon.options.${option.labelKey}`, option.labelKey);
+                              const iconLabel = t(
+                                `processing.displayConfig.icon.options.${option.labelKey}`,
+                                option.labelKey
+                              );
                               return (
                                 <MenuItem key={option.id} value={option.id}>
                                   <Box display="flex" alignItems="center" gap={1}>
@@ -318,7 +329,10 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
                           min={MIN_ICON_SIZE}
                           max={MAX_ICON_SIZE}
                           step={1}
-                          marks={[{ value: 0, label: '0' }, { value: 12, label: '12' }]}
+                          marks={[
+                            { value: 0, label: '0' },
+                            { value: 12, label: '12' },
+                          ]}
                           sx={sliderSx}
                           value={range}
                           valueLabelDisplay="auto"
@@ -340,12 +354,17 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
               {t('processing.displayConfig.label.title', 'Label Settings')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {t('processing.displayConfig.label.description', 'Configure label colors, size range, and zoom thresholds.')}
+              {t(
+                'processing.displayConfig.label.description',
+                'Configure label colors, size range, and zoom thresholds.'
+              )}
             </Typography>
             <Grid container spacing={2} columns={{ xs: 12 }} sx={sliderContainerSx}>
               {LOCATION_TYPES.map((type) => {
                 const entry = labelConfig[type];
-                const zoomRange = entry.zoomRange ?? normalizeRange([0, tilesMaxZoom], MIN_ZOOM_LEVEL, tilesMaxZoom);
+                const zoomRange =
+                  entry.zoomRange ??
+                  normalizeRange([0, tilesMaxZoom], MIN_ZOOM_LEVEL, tilesMaxZoom);
                 const sizeRange = entry.sizeRange ?? DEFAULT_LABEL_SIZE_RANGE;
                 return (
                   <Grid key={`label-${type}`} size={{ xs: 12 }}>
@@ -387,7 +406,10 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
                           min={MIN_LABEL_SIZE}
                           max={MAX_LABEL_SIZE}
                           step={1}
-                          marks={[{ value: 0, label: '0' }, { value: 12, label: '12' }]}
+                          marks={[
+                            { value: 0, label: '0' },
+                            { value: 12, label: '12' },
+                          ]}
                           sx={sliderSx}
                           value={sizeRange}
                           valueLabelDisplay="auto"
@@ -402,16 +424,21 @@ export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> =
             </Grid>
             <Box mt={1} display="flex" flexDirection="column" gap={0.5}>
               <Typography variant="caption">
-                {t('processing.displayConfig.label.zoomStartLabel', 'Scaled label rendering starts from the first zoom value.')}
+                {t(
+                  'processing.displayConfig.label.zoomStartLabel',
+                  'Scaled label rendering starts from the first zoom value.'
+                )}
               </Typography>
               <Typography variant="caption">
-                {t('processing.displayConfig.label.zoomFixedLabel', 'Labels become fixed size from the second zoom value.')}
+                {t(
+                  'processing.displayConfig.label.zoomFixedLabel',
+                  'Labels become fixed size from the second zoom value.'
+                )}
               </Typography>
             </Box>
           </CardContent>
         </Card>
       </Box>
-
     </Box>
   );
 };

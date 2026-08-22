@@ -1,7 +1,7 @@
-import { alpha, styled } from '@mui/material/styles';
+import type { StyledComponent } from '@emotion/styled';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { type MenuProps } from '@mui/material';
-import type { StyledComponent } from '@emotion/styled';
+import { alpha, styled } from '@mui/material/styles';
 
 export const StyledMenu: StyledComponent<MenuProps> = styled((props: MenuProps) => (
   <DialogSafeMenu

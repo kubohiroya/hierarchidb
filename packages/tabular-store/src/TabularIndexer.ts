@@ -15,9 +15,8 @@ function makeKey(pluginId: string, tableId: string, column: string, value: strin
 export class TabularIndexer {
   constructor(
     private readonly pluginId: string,
-    private readonly rowStoreDbName: string,
-  ) {
-  }
+    private readonly rowStoreDbName: string
+  ) {}
 
   async indexRows(tableId: string, columns: string[], _chunkSize = 2000): Promise<void> {
     const db = getRowStoreDB(this.rowStoreDbName);

@@ -2,13 +2,16 @@ import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
-export type StageTaskScan = Record<string, {
-  hasRunning: boolean;
-  failedTask: ShapeBuildTaskSummary | null;
-  runningCount: number;
-  queuedCount: number;
-  totalCount: number;
-}>;
+export type StageTaskScan = Record<
+  string,
+  {
+    hasRunning: boolean;
+    failedTask: ShapeBuildTaskSummary | null;
+    runningCount: number;
+    queuedCount: number;
+    totalCount: number;
+  }
+>;
 
 export type FailureInfo = {
   stageId?: string;
@@ -18,8 +21,8 @@ export type FailureInfo = {
 
 export const buildStageTaskScan = (
   stages: BuildStage[],
-  tasksByStage: Record<string, ShapeBuildTaskSummary[]>,
-): StageTaskScan => (
+  tasksByStage: Record<string, ShapeBuildTaskSummary[]>
+): StageTaskScan =>
   stages.reduce<StageTaskScan>((acc, stage) => {
     const stageTasks = resolveStageAliasArray(tasksByStage, stage.id);
     let hasRunning = false;
@@ -48,5 +51,4 @@ export const buildStageTaskScan = (
       totalCount: stageTasks.length,
     };
     return acc;
-  }, {})
-);
+  }, {});

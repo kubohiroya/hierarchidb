@@ -26,8 +26,10 @@ export interface TabularStorePort<TMeta = any> {
 
   writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void>;
 
-  commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<TMeta>>;
+  commit(
+    session: TabularIngestSession,
+    summary: TabularIngestSummary
+  ): Promise<TabularIngestResult<TMeta>>;
 
   abort(session: TabularIngestSession, reason?: string): Promise<void>;
 }
-

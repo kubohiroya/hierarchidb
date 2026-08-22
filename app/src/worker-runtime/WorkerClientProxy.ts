@@ -1,5 +1,5 @@
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { Remote } from 'comlink';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { WorkerInitializationProgress, WorkerRuntimeState } from './WorkerStateStore.js';
 
 export type { WorkerInitializationProgress, WorkerRuntimeState } from './WorkerStateStore.js';

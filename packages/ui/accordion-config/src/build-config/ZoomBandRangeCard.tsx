@@ -1,15 +1,12 @@
-import type { ReactNode, SyntheticEvent } from 'react';
-import { Card, CardContent, Grid, Slider, Stack, Typography } from '@mui/material';
+import { buildEvenZoomBandBoundaries, normalizeZoomBandBoundaries } from '@hierarchidb/util';
 import {
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
-import {
-  buildEvenZoomBandBoundaries,
-  normalizeZoomBandBoundaries,
-} from '@hierarchidb/util';
+import { Card, CardContent, Grid, Slider, Stack, Typography } from '@mui/material';
+import type { ReactNode, SyntheticEvent } from 'react';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 type ZoomBandRangeCardProps = {
@@ -53,12 +50,9 @@ export const ZoomBandRangeCard = ({
     boundaries,
     minZoom,
     maxZoomLimit,
-    maxRanges,
+    maxRanges
   );
-  const rangeCount = Math.min(
-    Math.max(normalizedBoundaries.length - 1, minRanges),
-    maxRanges,
-  );
+  const rangeCount = Math.min(Math.max(normalizedBoundaries.length - 1, minRanges), maxRanges);
   const sliderValues = normalizedBoundaries;
   const isHorizontal = sliderLayout === 'horizontal';
 
@@ -76,7 +70,12 @@ export const ZoomBandRangeCard = ({
     if (nextValues.length > 0) {
       nextValues[0] = minZoom;
     }
-    const nextBoundaries = normalizeZoomBandBoundaries(nextValues, minZoom, maxZoomLimit, maxRanges);
+    const nextBoundaries = normalizeZoomBandBoundaries(
+      nextValues,
+      minZoom,
+      maxZoomLimit,
+      maxRanges
+    );
     onChange(nextBoundaries);
   };
 
@@ -102,15 +101,17 @@ export const ZoomBandRangeCard = ({
             </Typography>
           </Stack>
           <Grid container rowSpacing={2}>
-            <Grid
-              size={{ xs: 12, md: isHorizontal ? 6 : 12 }}
-              sx={{ pr: isHorizontal ? 2 : 0 }}
-            >
+            <Grid size={{ xs: 12, md: isHorizontal ? 6 : 12 }} sx={{ pr: isHorizontal ? 2 : 0 }}>
               <Stack spacing={1}>
                 <Typography variant="body2" fontWeight={600}>
                   {rangeCountLabel}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: '24px', pt: '24px' }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ mt: '24px', pt: '24px' }}
+                >
                   <RemoveCircleIcon fontSize="small" color="action" />
                   <Slider
                     sx={{ flex: 1 }}
@@ -131,15 +132,17 @@ export const ZoomBandRangeCard = ({
                 </Typography>
               </Stack>
             </Grid>
-            <Grid
-              size={{ xs: 12, md: isHorizontal ? 6 : 12 }}
-              sx={{ pl: isHorizontal ? 2 : 0 }}
-            >
+            <Grid size={{ xs: 12, md: isHorizontal ? 6 : 12 }} sx={{ pl: isHorizontal ? 2 : 0 }}>
               <Stack spacing={1}>
                 <Typography variant="body2" fontWeight={600}>
                   {boundariesLabel}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: '24px', pt: '24px' }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ mt: '24px', pt: '24px' }}
+                >
                   <ZoomOutIcon fontSize="small" color="action" />
                   <Slider
                     sx={{ flex: 1 }}

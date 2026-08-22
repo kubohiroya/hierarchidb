@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
 import type {
   GetResourceResponse,
   RequestParameters,
   SourceSpecification,
   VectorSourceSpecification,
 } from 'maplibre-gl';
+import { useEffect, useRef, useState } from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type { FeatureStateRecord, VectorTileProps } from '~/types/unified-map-props';
 import { loadMapLibreModule } from '~/utils/maplibre-loader';
@@ -50,8 +50,17 @@ export function useVectorTileLayer({
   const paintRef = useRef<Record<string, unknown>>(normalizePaintLiteralArrays(paint ?? {}));
   const layoutRef = useRef<Record<string, unknown>>({});
   const filterRef = useRef<unknown>(filter ?? null);
-  const sourceConfigRef = useRef<{ sourceId?: string; tilesKey?: string; promoteId?: unknown } | null>(null);
-  const layerConfigRef = useRef<{ layerId?: string; sourceId?: string; layerType?: string; sourceLayer?: string } | null>(null);
+  const sourceConfigRef = useRef<{
+    sourceId?: string;
+    tilesKey?: string;
+    promoteId?: unknown;
+  } | null>(null);
+  const layerConfigRef = useRef<{
+    layerId?: string;
+    sourceId?: string;
+    layerType?: string;
+    sourceLayer?: string;
+  } | null>(null);
 
   useEffect(() => {
     onTileRequestRef.current = onTileRequest;
@@ -91,7 +100,7 @@ export function useVectorTileLayer({
             'dexie',
             async (
               params: RequestParameters,
-              _abortController: AbortController,
+              _abortController: AbortController
             ): Promise<GetResourceResponse<ArrayBuffer>> => {
               const urlParts = params.url.replace('dexie://', '').split('/').filter(Boolean);
               const [dbNameFromUrl, nodeIdFromUrl, z, x, y] = urlParts;
@@ -140,7 +149,7 @@ export function useVectorTileLayer({
                   expires: null,
                 };
               }
-            },
+            }
           );
           protocolRegistered = true;
         } catch {
@@ -168,10 +177,11 @@ export function useVectorTileLayer({
     const mapRef = map;
     const tilesKey = computedTiles.join('|');
     const prevConfig = sourceConfigRef.current;
-    const needsReplace = !prevConfig
-      || prevConfig.sourceId !== sourceId
-      || prevConfig.tilesKey !== tilesKey
-      || prevConfig.promoteId !== promoteId;
+    const needsReplace =
+      !prevConfig ||
+      prevConfig.sourceId !== sourceId ||
+      prevConfig.tilesKey !== tilesKey ||
+      prevConfig.promoteId !== promoteId;
 
     if (!needsReplace && mapRef.getSource(sourceId)) {
       setSourceAdded(true);
@@ -237,12 +247,16 @@ export function useVectorTileLayer({
     if (!sourceId || !mapRef.getSource || !mapRef.getSource(sourceId)) return;
     if (layerId && mapRef.getLayer && !mapRef.getLayer(layerId)) return;
 
-    type FeatureStateTarget = { source: string; id: string | number; sourceLayer?: string; key?: string };
-    const buildFeatureStateTarget = (id: string | number, key?: string): FeatureStateTarget => (
+    type FeatureStateTarget = {
+      source: string;
+      id: string | number;
+      sourceLayer?: string;
+      key?: string;
+    };
+    const buildFeatureStateTarget = (id: string | number, key?: string): FeatureStateTarget =>
       sourceLayer
         ? { source: sourceId, sourceLayer, id, ...(key ? { key } : {}) }
-        : { source: sourceId, id, ...(key ? { key } : {}) }
-    );
+        : { source: sourceId, id, ...(key ? { key } : {}) };
 
     const removeStateKeys = (id: string | number, state: FeatureStateRecord) => {
       Object.keys(state).forEach((key) => {
@@ -255,7 +269,9 @@ export function useVectorTileLayer({
     };
 
     if (featureState.length === 0) {
-      prevFeatureStateRef.current.forEach((state, id) => { removeStateKeys(id, state); });
+      prevFeatureStateRef.current.forEach((state, id) => {
+        removeStateKeys(id, state);
+      });
       prevFeatureStateRef.current = new Map();
       return;
     }
@@ -299,11 +315,12 @@ export function useVectorTileLayer({
     const mapRef = map;
     const prevLayerConfig = layerConfigRef.current;
     const layerConfigKey = { layerId, sourceId, layerType, sourceLayer };
-    const needsReplace = !prevLayerConfig
-      || prevLayerConfig.layerId !== layerConfigKey.layerId
-      || prevLayerConfig.sourceId !== layerConfigKey.sourceId
-      || prevLayerConfig.layerType !== layerConfigKey.layerType
-      || prevLayerConfig.sourceLayer !== layerConfigKey.sourceLayer;
+    const needsReplace =
+      !prevLayerConfig ||
+      prevLayerConfig.layerId !== layerConfigKey.layerId ||
+      prevLayerConfig.sourceId !== layerConfigKey.sourceId ||
+      prevLayerConfig.layerType !== layerConfigKey.layerType ||
+      prevLayerConfig.sourceLayer !== layerConfigKey.sourceLayer;
 
     if (!needsReplace && mapRef.getLayer(layerId)) {
       setLayerAdded(true);
@@ -358,7 +375,10 @@ export function useVectorTileLayer({
 
   useEffect(() => {
     if (!layerId || !map || !map.getLayer || !map.getLayer(layerId)) return;
-    const nextLayout: Record<string, unknown> = { visibility: visible ? 'visible' : 'none', ...layout };
+    const nextLayout: Record<string, unknown> = {
+      visibility: visible ? 'visible' : 'none',
+      ...layout,
+    };
     const prevLayout: Record<string, unknown> = layoutRef.current;
     layoutRef.current = nextLayout;
     const keys = new Set([...Object.keys(prevLayout), ...Object.keys(nextLayout)]);

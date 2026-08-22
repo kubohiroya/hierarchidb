@@ -1,4 +1,4 @@
-import { vi, afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -66,11 +66,23 @@ const runtimeWorkerMocks = vi.hoisted(() => {
     }
   }
   const getTreeNode = async (db: CoreDB, id: NodeId) => db.nodes.data.get(id) ?? null;
-  const updateTreeNodeDraftMetadata = async (db: CoreDB, id: NodeId, patch: Record<string, unknown>) => {
+  const updateTreeNodeDraftMetadata = async (
+    db: CoreDB,
+    id: NodeId,
+    patch: Record<string, unknown>
+  ) => {
     const node = db.nodes.data.get(id);
-    if (node) db.nodes.data.set(id as string, { ...node, draftMetadata: { ...(node.draftMetadata ?? {}), ...patch } } as TreeNode);
+    if (node)
+      db.nodes.data.set(
+        id as string,
+        { ...node, draftMetadata: { ...(node.draftMetadata ?? {}), ...patch } } as TreeNode
+      );
   };
-  const updateTreeNodeDraftData = async (db: CoreDB, id: NodeId, patch: Record<string, unknown>) => {
+  const updateTreeNodeDraftData = async (
+    db: CoreDB,
+    id: NodeId,
+    patch: Record<string, unknown>
+  ) => {
     const node = db.nodes.data.get(id);
     if (node) {
       const draftData = node.draftData ?? {};
@@ -79,9 +91,19 @@ const runtimeWorkerMocks = vi.hoisted(() => {
   };
   const discardTreeNodeDraft = async (db: CoreDB, id: NodeId) => {
     const node = db.nodes.data.get(id);
-    if (node) db.nodes.data.set(id as string, { ...node, draftData: undefined, draftMetadata: null } as TreeNode);
+    if (node)
+      db.nodes.data.set(
+        id as string,
+        { ...node, draftData: undefined, draftMetadata: null } as TreeNode
+      );
   };
-  return { CoreDB, getTreeNode, updateTreeNodeDraftData, updateTreeNodeDraftMetadata, discardTreeNodeDraft };
+  return {
+    CoreDB,
+    getTreeNode,
+    updateTreeNodeDraftData,
+    updateTreeNodeDraftMetadata,
+    discardTreeNodeDraft,
+  };
 });
 vi.mock('@hierarchidb/runtime-worker', () => runtimeWorkerMocks);
 const { CoreDB } = runtimeWorkerMocks;

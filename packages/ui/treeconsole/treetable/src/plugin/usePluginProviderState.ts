@@ -75,7 +75,9 @@ function isDevRuntime(): boolean {
   try {
     return (
       (typeof globalThis !== 'undefined' &&
-        (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } })?.import?.meta?.env?.DEV) || false
+        (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } })?.import?.meta?.env
+          ?.DEV) ||
+      false
     );
   } catch {
     return false;
@@ -135,7 +137,10 @@ export function usePluginProviderState({
 
   useEffect(() => {
     const handlePluginEvent = (event: unknown) => {
-      const payload = (typeof event === 'object' && event !== null) ? (event as Record<string, unknown>) : undefined;
+      const payload =
+        typeof event === 'object' && event !== null
+          ? (event as Record<string, unknown>)
+          : undefined;
       const pluginEvent: PluginEvent<unknown> = {
         type: (payload?.type as string | undefined) ?? 'unknown',
         plugin: (payload?.plugin as string | undefined) ?? 'unknown',
@@ -167,7 +172,7 @@ export function usePluginProviderState({
     ) => {
       return registry.executeHook(hookName, ...args);
     },
-    [registry],
+    [registry]
   );
 
   useEffect(() => {
@@ -198,7 +203,7 @@ export function usePluginProviderState({
       registry,
       executeHook,
     }),
-    [registry, executeHook],
+    [registry, executeHook]
   );
 
   return {

@@ -1,4 +1,4 @@
-import type { VtOutputTileStats, VtInputTileStats } from './vtStageTaskOutputHelpers.js';
+import type { VtInputTileStats, VtOutputTileStats } from './vtStageTaskOutputHelpers.js';
 
 export type VtTileInputTotals = {
   inputBytes: number;
@@ -62,7 +62,7 @@ export const createVtOutputTotals = (): VtTileOutputAggregates => ({
 
 export const recordInputTileStats = (
   aggregate: VtTileOutputAggregates,
-  inputStats: VtInputTileStats,
+  inputStats: VtInputTileStats
 ): void => {
   aggregate.totalInputStats.inputBytes += inputStats.inputBytes;
   aggregate.totalInputStats.featureCount += inputStats.featureCount;
@@ -73,7 +73,7 @@ export const recordInputTileStats = (
 
 export const recordOutputTileStats = (
   aggregate: VtTileOutputAggregates,
-  outputStats: VtOutputTileStats,
+  outputStats: VtOutputTileStats
 ): void => {
   aggregate.totalOutputStats.featureCount += outputStats.featureCount;
   aggregate.totalOutputStats.polygonCount += outputStats.polygonCount;
@@ -85,7 +85,7 @@ export const recordEncodeStats = (
   aggregate: VtTileOutputAggregates,
   tileCount: number,
   bytes: number,
-  duration: number,
+  duration: number
 ): void => {
   aggregate.encodeStats.tileCount += tileCount;
   aggregate.encodeStats.bytes += bytes;
@@ -96,10 +96,9 @@ export const recordStoreStats = (
   aggregate: VtTileOutputAggregates,
   tileCount: number,
   bytes: number,
-  duration: number,
+  duration: number
 ): void => {
   aggregate.storeStats.tileCount += tileCount;
   aggregate.storeStats.bytes += bytes;
   aggregate.storeStats.duration += duration;
 };
-

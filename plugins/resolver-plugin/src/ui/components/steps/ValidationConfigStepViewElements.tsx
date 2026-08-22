@@ -1,6 +1,14 @@
-import type { ReactElement } from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Grid';
+import type { ReactElement } from 'react';
 import type { ValidationRule } from '~/common/types/index';
 
 export type ValidationRuleTypeOption = {
@@ -31,9 +39,7 @@ export const ValidationRuleTypeMenu = ({ options }: ValidationRuleTypeMenuProps)
 export type ValidationRuleParameterFieldsProps = {
   ruleType: ValidationRule['ruleType'];
   parameters: Record<string, unknown>;
-  updateRuleFormData: (updates: {
-    parameters?: Record<string, unknown>;
-  }) => void;
+  updateRuleFormData: (updates: { parameters?: Record<string, unknown> }) => void;
 };
 
 export const ValidationRuleParameterFields = ({
@@ -48,9 +54,11 @@ export const ValidationRuleParameterFields = ({
           <InputLabel>Expected Type</InputLabel>
           <Select
             value={parameters.expectedType || 'string'}
-            onChange={(e) => updateRuleFormData({
-              parameters: { ...parameters, expectedType: e.target.value },
-            })}
+            onChange={(e) =>
+              updateRuleFormData({
+                parameters: { ...parameters, expectedType: e.target.value },
+              })
+            }
             label="Expected Type"
           >
             <MenuItem value="string">String</MenuItem>
@@ -71,9 +79,11 @@ export const ValidationRuleParameterFields = ({
               label="Minimum Value"
               type="number"
               value={parameters.min || ''}
-              onChange={(e) => updateRuleFormData({
-                parameters: { ...parameters, min: parseFloat(e.target.value) || undefined },
-              })}
+              onChange={(e) =>
+                updateRuleFormData({
+                  parameters: { ...parameters, min: parseFloat(e.target.value) || undefined },
+                })
+              }
             />
           </Grid>
           <Grid size={{ xs: 6 }}>
@@ -82,9 +92,11 @@ export const ValidationRuleParameterFields = ({
               label="Maximum Value"
               type="number"
               value={parameters.max || ''}
-              onChange={(e) => updateRuleFormData({
-                parameters: { ...parameters, max: parseFloat(e.target.value) || undefined },
-              })}
+              onChange={(e) =>
+                updateRuleFormData({
+                  parameters: { ...parameters, max: parseFloat(e.target.value) || undefined },
+                })
+              }
             />
           </Grid>
         </Grid>
@@ -96,9 +108,11 @@ export const ValidationRuleParameterFields = ({
           fullWidth
           label="Regex Pattern"
           value={parameters.pattern || ''}
-          onChange={(e) => updateRuleFormData({
-            parameters: { ...parameters, pattern: e.target.value },
-          })}
+          onChange={(e) =>
+            updateRuleFormData({
+              parameters: { ...parameters, pattern: e.target.value },
+            })
+          }
           placeholder="^[A-Z][a-z]+$"
           helperText="Enter a JavaScript regular expression"
           sx={{ mb: 2 }}
@@ -113,9 +127,11 @@ export const ValidationRuleParameterFields = ({
           rows={3}
           label="Custom Validation Function"
           value={parameters.function || ''}
-          onChange={(e) => updateRuleFormData({
-            parameters: { ...parameters, function: e.target.value },
-          })}
+          onChange={(e) =>
+            updateRuleFormData({
+              parameters: { ...parameters, function: e.target.value },
+            })
+          }
           placeholder="function validate(value) { return value.length > 0; }"
           helperText="JavaScript function that returns true for valid values"
           sx={{ mb: 2 }}

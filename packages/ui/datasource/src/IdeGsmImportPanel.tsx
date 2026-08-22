@@ -1,10 +1,5 @@
-import {
-  Add,
-  ArrowDropDown,
-  Close,
-  CloudDownload,
-  InsertDriveFile,
-} from '@mui/icons-material';
+import { FileInputWithUrl } from '@hierarchidb/ui-file';
+import { Add, ArrowDropDown, Close, CloudDownload, InsertDriveFile } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -19,7 +14,6 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { FileInputWithUrl } from '@hierarchidb/ui-file';
 import { useIdeGsmImportPanel } from './useIdeGsmImportPanel.js';
 
 export type IdeGsmFileEntry = {
@@ -87,7 +81,12 @@ const IdeGsmFileCard: React.FC<{
   removeLabel: string;
   disabled?: boolean;
 }> = ({ entry, sizeLabel, onRemove, removeLabel, disabled }) => {
-  const icon = entry.sourceType === 'remote' ? <CloudDownload fontSize="small" /> : <InsertDriveFile fontSize="small" />;
+  const icon =
+    entry.sourceType === 'remote' ? (
+      <CloudDownload fontSize="small" />
+    ) : (
+      <InsertDriveFile fontSize="small" />
+    );
   return (
     <Box
       display="inline-flex"
@@ -131,12 +130,7 @@ const IdeGsmFileCard: React.FC<{
 };
 
 export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
-  const {
-    disabled = false,
-    labels,
-    defaultDownloadUrl,
-    accept = '.csv,.xlsx,.xls',
-  } = props;
+  const { disabled = false, labels, defaultDownloadUrl, accept = '.csv,.xlsx,.xls' } = props;
   const view = useIdeGsmImportPanel({ props, labels });
 
   return (
@@ -190,10 +184,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
               >
                 {view.mainButtonLabel}
               </Button>
-              <Button
-                onClick={view.handleMenuButtonClick}
-                disabled={disabled}
-              >
+              <Button onClick={view.handleMenuButtonClick} disabled={disabled}>
                 <ArrowDropDown />
               </Button>
             </ButtonGroup>
@@ -202,17 +193,13 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
               open={view.menuOpen}
               onClose={() => view.setMenuAnchor(null)}
             >
-              <MenuItem
-                onClick={view.handleSelectLocal}
-              >
+              <MenuItem onClick={view.handleSelectLocal}>
                 <ListItemIcon>
                   <InsertDriveFile fontSize="small" />
                 </ListItemIcon>
                 {labels.importLocal}
               </MenuItem>
-              <MenuItem
-                onClick={view.handleSelectRemote}
-              >
+              <MenuItem onClick={view.handleSelectRemote}>
                 <ListItemIcon>
                   <CloudDownload fontSize="small" />
                 </ListItemIcon>
@@ -222,8 +209,21 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
           </Box>
         </Stack>
       </Box>
-      <Dialog open={view.localDialogOpen} onClose={() => view.setLocalDialogOpen(false)} fullWidth maxWidth="sm">
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
+      <Dialog
+        open={view.localDialogOpen}
+        onClose={() => view.setLocalDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            pt: 2,
+          }}
+        >
           <Typography variant="subtitle1">{labels.importLocal}</Typography>
           <IconButton aria-label="Close" onClick={() => view.setLocalDialogOpen(false)} autoFocus>
             <Close />
@@ -240,8 +240,21 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
           />
         </DialogContent>
       </Dialog>
-      <Dialog open={view.remoteDialogOpen} onClose={() => view.setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
+      <Dialog
+        open={view.remoteDialogOpen}
+        onClose={() => view.setRemoteDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            pt: 2,
+          }}
+        >
           <Typography variant="subtitle1">{labels.importRemote}</Typography>
           <IconButton aria-label="Close" onClick={() => view.setRemoteDialogOpen(false)} autoFocus>
             <Close />

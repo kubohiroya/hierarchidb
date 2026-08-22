@@ -1,7 +1,7 @@
+import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import type React from 'react';
 import { describe, expect, it } from 'vitest';
-import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
-import type { RouteEntity } from '@hierarchidb/route-api';
 import '../steps-provider';
 
 type RouteStepData = Partial<RouteEntity>;
@@ -20,7 +20,7 @@ const getRouteCreateConfigs = () => {
 
 const createStepProps = (
   initialData: RouteStepData,
-  onChange: (data: RouteStepData) => void,
+  onChange: (data: RouteStepData) => void
 ): PluginStepProps<RouteStepData> => ({
   mode: 'create',
   nodeId: 'route-node',
@@ -45,7 +45,7 @@ describe('route steps provider', () => {
     const element = dataSourceConfig.componentFactory(
       createStepProps({}, (next) => {
         latestData = next;
-      }),
+      })
     ) as React.ReactElement;
 
     element.props.onUpdate({ dataSourceName: 'ide-gsm' });

@@ -3,15 +3,15 @@
  * @module @hierarchidb/ui-lru-splitview/components
  */
 
-import type React from 'react';
-import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
+import { Box } from '@mui/material';
 import { Allotment } from 'allotment';
+import type React from 'react';
 import 'allotment/dist/style.css';
 
 import { useLRUPanes } from '~/hooks/useLRUPanes';
-import { PaneHeader } from './PaneHeader.js';
 import type { LRUSplitViewConfig } from '~/types/LRUSplitView';
+import { PaneHeader } from './PaneHeader.js';
 import { useLRUSplitViewLayout } from './useLRUSplitViewLayout.js';
 
 export interface LRUSplitViewProps extends LRUSplitViewConfig {
@@ -35,21 +35,21 @@ export interface LRUSplitViewProps extends LRUSplitViewConfig {
  * - Smooth animations and transitions
  */
 export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
-                                                            panes,
-                                                            maxExpandedPanes = 2,
-                                                            responsiveBreakpoints,
-                                                            initialPaneSizesByBreakpoint,
-                                                            autoCloseCountsByBreakpoint,
-                                                            defaultCollapsedSize = 60,
-                                                            vertical = false,
-                                                            autoExpand,
-                                                            progress = [],
-                                                            onPaneToggle,
-                                                            onPaneReorder,
-                                                            height = '100%',
-                                                            width = '100%',
-                                                            sx,
-                                                          }) => {
+  panes,
+  maxExpandedPanes = 2,
+  responsiveBreakpoints,
+  initialPaneSizesByBreakpoint,
+  autoCloseCountsByBreakpoint,
+  defaultCollapsedSize = 60,
+  vertical = false,
+  autoExpand,
+  progress = [],
+  onPaneToggle,
+  onPaneReorder,
+  height = '100%',
+  width = '100%',
+  sx,
+}) => {
   const layout = useLRUSplitViewLayout({
     panes,
     maxExpandedPanes,
@@ -60,11 +60,7 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
     progress,
   });
 
-  const {
-    paneStates,
-    togglePane,
-    getSizes,
-  } = useLRUPanes({
+  const { paneStates, togglePane, getSizes } = useLRUPanes({
     panes,
     maxExpandedPanes: layout.responsiveMaxExpandedPanes,
     initialSizes: layout.responsiveInitialSizes,

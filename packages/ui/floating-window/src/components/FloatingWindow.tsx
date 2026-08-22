@@ -3,17 +3,17 @@
  * @description Main floating window component with drag and resize functionality
  */
 
-import type React from 'react';
-import { createPortal } from 'react-dom';
-import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
 import {
   Close as CloseIcon,
-  FilterNone as RestoreIcon,
-  Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
+  Fullscreen as FullscreenIcon,
   Minimize as MinimizeIcon,
+  FilterNone as RestoreIcon,
   Window as WindowIcon,
 } from '@mui/icons-material';
+import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
+import type React from 'react';
+import { createPortal } from 'react-dom';
 import type { FloatingWindowProps } from '~/types/WindowState';
 import { useFloatingWindowController } from './useFloatingWindowController.js';
 
@@ -164,14 +164,22 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = (props) => {
             onClick={controller.handleMinimize}
             sx={{ color: 'inherit', padding: '2px' }}
           >
-            {controller.state.isMinimized ? <RestoreIcon fontSize="small" /> : <MinimizeIcon fontSize="small" />}
+            {controller.state.isMinimized ? (
+              <RestoreIcon fontSize="small" />
+            ) : (
+              <MinimizeIcon fontSize="small" />
+            )}
           </IconButton>
           <IconButton
             size="small"
             onClick={controller.handleFullscreen}
             sx={{ color: 'inherit', padding: '2px' }}
           >
-            {controller.state.isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+            {controller.state.isFullscreen ? (
+              <FullscreenExitIcon fontSize="small" />
+            ) : (
+              <FullscreenIcon fontSize="small" />
+            )}
           </IconButton>
           <IconButton
             size="small"
@@ -185,20 +193,42 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = (props) => {
 
       {!controller.state.isMinimized && (
         <>
-          <WindowContent>
-            {children}
-          </WindowContent>
+          <WindowContent>{children}</WindowContent>
 
           {resizable && (
             <>
-              <ResizeHandle className="resize-n" onPointerDown={controller.handleResizeMouseDown('n')} />
-              <ResizeHandle className="resize-ne" onPointerDown={controller.handleResizeMouseDown('ne')} />
-              <ResizeHandle className="resize-e" onPointerDown={controller.handleResizeMouseDown('e')} />
-              <ResizeHandle className="resize-se" onPointerDown={controller.handleResizeMouseDown('se')} />
-              <ResizeHandle className="resize-s" onPointerDown={controller.handleResizeMouseDown('s')} />
-              <ResizeHandle className="resize-sw" onPointerDown={controller.handleResizeMouseDown('sw')} />
-              <ResizeHandle className="resize-w" onPointerDown={controller.handleResizeMouseDown('w')} />
-              <ResizeHandle className="resize-nw" onPointerDown={controller.handleResizeMouseDown('nw')} />
+              <ResizeHandle
+                className="resize-n"
+                onPointerDown={controller.handleResizeMouseDown('n')}
+              />
+              <ResizeHandle
+                className="resize-ne"
+                onPointerDown={controller.handleResizeMouseDown('ne')}
+              />
+              <ResizeHandle
+                className="resize-e"
+                onPointerDown={controller.handleResizeMouseDown('e')}
+              />
+              <ResizeHandle
+                className="resize-se"
+                onPointerDown={controller.handleResizeMouseDown('se')}
+              />
+              <ResizeHandle
+                className="resize-s"
+                onPointerDown={controller.handleResizeMouseDown('s')}
+              />
+              <ResizeHandle
+                className="resize-sw"
+                onPointerDown={controller.handleResizeMouseDown('sw')}
+              />
+              <ResizeHandle
+                className="resize-w"
+                onPointerDown={controller.handleResizeMouseDown('w')}
+              />
+              <ResizeHandle
+                className="resize-nw"
+                onPointerDown={controller.handleResizeMouseDown('nw')}
+              />
             </>
           )}
         </>
@@ -213,7 +243,9 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = (props) => {
         : controller.overlayActive
           ? overlayNode
           : null}
-      {controller.portalHostRef.current ? createPortal(windowNode, controller.portalHostRef.current) : windowNode}
+      {controller.portalHostRef.current
+        ? createPortal(windowNode, controller.portalHostRef.current)
+        : windowNode}
     </>
   );
 };

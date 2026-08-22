@@ -4,17 +4,12 @@
  */
 
 import type React from 'react';
-import { MapLibreMap, type MapLibreMapProps } from './MapLibreMap.js';
 import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
+import { MapLibreMap, type MapLibreMapProps } from './MapLibreMap.js';
 
 export type SimpleMapDisplayProps = MapLibreMapProps;
 
 export const SimpleMapDisplay: React.FC<SimpleMapDisplayProps> = ({
   mapOptions = DEFAULT_MAP_CONFIG.interactionOptions,
   ...props
-}) => (
-  <MapLibreMap
-    mapOptions={mapOptions}
-    {...props}
-  />
-);
+}) => <MapLibreMap mapOptions={mapOptions} {...props} />;

@@ -256,11 +256,21 @@ describe('PluginDialogHeader', () => {
       </ThemeProvider>
     );
 
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-1')).getByTestId('CloudDownloadIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-2')).getByTestId('PaletteIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-3')).getByTestId('PublicIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-4')).getByTestId('ConstructionIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-5')).getByTestId('VisibilityIcon')).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('plugin-dialog-step-icon-1')).getByTestId('CloudDownloadIcon')
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('plugin-dialog-step-icon-2')).getByTestId('PaletteIcon')
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('plugin-dialog-step-icon-3')).getByTestId('PublicIcon')
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('plugin-dialog-step-icon-4')).getByTestId('ConstructionIcon')
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('plugin-dialog-step-icon-5')).getByTestId('VisibilityIcon')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('plugin-dialog-step-icon-6')).toHaveTextContent('6');
   });
 

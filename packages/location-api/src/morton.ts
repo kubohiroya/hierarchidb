@@ -22,8 +22,7 @@ export const MORTON_KEY_HEX_LENGTH = Math.ceil((MORTON_MAX_BITS * 2) / 4);
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
-const clampLatitude = (latitude: number): number =>
-  clamp(latitude, -MAX_LATITUDE, MAX_LATITUDE);
+const clampLatitude = (latitude: number): number => clamp(latitude, -MAX_LATITUDE, MAX_LATITUDE);
 
 const clampLongitude = (longitude: number): number =>
   clamp(longitude, MIN_LONGITUDE, MAX_LONGITUDE);
@@ -34,7 +33,7 @@ export const clampMortonZoom = (zoom: number): number =>
 export const lonLatToTileXY = (
   longitude: number,
   latitude: number,
-  zoom: number,
+  zoom: number
 ): { x: number; y: number } => {
   const z = clampMortonZoom(zoom);
   const lon = clampLongitude(longitude);
@@ -42,7 +41,7 @@ export const lonLatToTileXY = (
   const n = 2 ** z;
   const latRad = (lat * Math.PI) / 180;
   const x = Math.floor(((lon + 180) / 360) * n);
-  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  const y = Math.floor(((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n);
   return {
     x: clamp(x, 0, n - 1),
     y: clamp(y, 0, n - 1),
@@ -61,16 +60,15 @@ const interleaveBits = (x: bigint, y: bigint, bits: number): bigint => {
   return result;
 };
 
-const toHex = (value: bigint): string =>
-  value.toString(16).padStart(MORTON_KEY_HEX_LENGTH, '0');
+const toHex = (value: bigint): string => value.toString(16).padStart(MORTON_KEY_HEX_LENGTH, '0');
 
-export const formatTileId = (zoom: number, x: number, y: number): string => (`${zoom}/${x}/${y}`);
+export const formatTileId = (zoom: number, x: number, y: number): string => `${zoom}/${x}/${y}`;
 
 export const buildTileIdByZoom = (
   longitude: number,
   latitude: number,
   minZoom = 0,
-  maxZoom = 9,
+  maxZoom = 9
 ): LocationTileIdByZoom => {
   const clampedMin = Math.max(0, Math.floor(minZoom));
   const clampedMax = Math.max(clampedMin, Math.floor(maxZoom));
@@ -91,7 +89,7 @@ export const mortonKeyFromLonLat = (longitude: number, latitude: number): string
 export const mortonRangeForTile = (
   x: number,
   y: number,
-  zoom: number,
+  zoom: number
 ): { start: string; end: string } => {
   const bits = clampMortonZoom(zoom);
   const prefix = interleaveBits(BigInt(x), BigInt(y), bits);

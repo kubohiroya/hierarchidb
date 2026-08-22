@@ -36,7 +36,8 @@ export function prepareFilters(rules: TabularFilterRule[]): PreparedFilter[] {
     });
 }
 
-const isNullish = (value: unknown): boolean => value === null || value === undefined || value === '';
+const isNullish = (value: unknown): boolean =>
+  value === null || value === undefined || value === '';
 
 const toComparableNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -76,7 +77,7 @@ const endsWith = (source: unknown, target: string): boolean => {
 const compareNumber = (
   rowValue: unknown,
   filter: PreparedFilter,
-  comparator: (row: number, target: number) => boolean,
+  comparator: (row: number, target: number) => boolean
 ): boolean => {
   if (typeof filter.value === 'number') {
     const rowNumber = toComparableNumber(rowValue);

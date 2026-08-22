@@ -1,4 +1,7 @@
 import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
+import { hasLocationReferencesToShapes } from '@hierarchidb/location-store';
+import { hasRouteReferencesToLocations } from '@hierarchidb/route-store';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import type {
   CommandEnvelope,
   CommandResult as CoreCommandResult,
@@ -10,19 +13,16 @@ import type {
   TreeNode,
   UndoPayload,
 } from '@hierarchidb/tree-api';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
-import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
 import { PERFORMANCE_CONFIG } from '~/utils/PERFORMANCE_CONFIG';
+import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import { createNewName } from './DraftTreeNodeOperations.js';
 import { generateNodeId } from './generateNodeId.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
 import { reconcileRunningBuildSessions } from './utils/reconcileStaleBuildSessions.js';
-import { hasRouteReferencesToLocations } from '@hierarchidb/route-store';
-import { hasLocationReferencesToShapes } from '@hierarchidb/location-store';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
   if (result.success) return fallback;
@@ -118,7 +118,6 @@ export class TreeMutationService implements TreeMutationAPI {
       cursor = parent.parentId;
     }
   }
-
 
   private async checkArchiveReferenceGuard(
     nodeIds: NodeId[]
@@ -383,7 +382,10 @@ export class TreeMutationService implements TreeMutationAPI {
           await this.recomputeDepthForSubtree(params.toParentId, rootId);
         }
       } catch (error) {
-        this.logRecoverableWarning('restoreNodesFromArchive: recomputeDepthForSubtree failed', error);
+        this.logRecoverableWarning(
+          'restoreNodesFromArchive: recomputeDepthForSubtree failed',
+          error
+        );
       }
     } else {
       await this.ensureAncestorsHaveChildrenFromNodes(params.nodeIds);
@@ -639,7 +641,10 @@ export class TreeMutationService implements TreeMutationAPI {
         const generated = newName === 'Untitled';
         if ((onNameConflict === 'auto-rename' || generated) && existingNames.has(newName)) {
           newName = this.resolveNameConflictEfficiently(newName, existingNames);
-        } else if ((onNameConflict === 'error' || onNameConflict === 'overwrite') && existingNames.has(newName)) {
+        } else if (
+          (onNameConflict === 'error' || onNameConflict === 'overwrite') &&
+          existingNames.has(newName)
+        ) {
           return {
             success: false,
             error: `Name conflict: '${newName}' already exists`,
@@ -743,7 +748,8 @@ export class TreeMutationService implements TreeMutationAPI {
       if (runningBuildGuard.blocked) {
         return {
           success: false,
-          error: runningBuildGuard.message ?? 'Cannot move to archive while build session is running.',
+          error:
+            runningBuildGuard.message ?? 'Cannot move to archive while build session is running.',
         };
       }
 

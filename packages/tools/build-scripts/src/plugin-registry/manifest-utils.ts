@@ -65,20 +65,22 @@ export function normalizeDatabasePrewarmValue(raw: unknown): NormalizedDatabaseP
     }
     if (typeof value === 'object') {
       const record = value as Record<string, unknown>;
-      const exportRaw = typeof record.export === 'string'
-        ? record.export
-        : typeof record.exportName === 'string'
-          ? record.exportName
-          : typeof record.name === 'string'
-            ? record.name
-            : null;
+      const exportRaw =
+        typeof record.export === 'string'
+          ? record.export
+          : typeof record.exportName === 'string'
+            ? record.exportName
+            : typeof record.name === 'string'
+              ? record.name
+              : null;
       const trimmedExport = exportRaw?.trim();
       if (!trimmedExport) return;
-      const specifierRaw = typeof record.specifier === 'string'
-        ? record.specifier
-        : typeof record.module === 'string'
-          ? record.module
-          : undefined;
+      const specifierRaw =
+        typeof record.specifier === 'string'
+          ? record.specifier
+          : typeof record.module === 'string'
+            ? record.module
+            : undefined;
       const trimmedSpecifier = specifierRaw?.trim();
       const entry: NormalizedDatabasePrewarmEntry = { export: trimmedExport };
       if (trimmedSpecifier && trimmedSpecifier.length > 0) {
@@ -93,7 +95,7 @@ export function normalizeDatabasePrewarmValue(raw: unknown): NormalizedDatabaseP
 
 export function buildDatabasePrewarmTargets(
   raw: unknown,
-  fallbackSpecifier: string,
+  fallbackSpecifier: string
 ): DatabasePrewarmTarget[] {
   const result: DatabasePrewarmTarget[] = [];
   if (!raw) return result;
@@ -108,20 +110,22 @@ export function buildDatabasePrewarmTargets(
     }
     if (typeof item === 'object') {
       const record = item as Record<string, unknown>;
-      const exportRaw = typeof record.export === 'string'
-        ? record.export
-        : typeof record.exportName === 'string'
-          ? record.exportName
-          : typeof record.name === 'string'
-            ? record.name
-            : null;
+      const exportRaw =
+        typeof record.export === 'string'
+          ? record.export
+          : typeof record.exportName === 'string'
+            ? record.exportName
+            : typeof record.name === 'string'
+              ? record.name
+              : null;
       const exportName = exportRaw?.trim();
       if (!exportName) continue;
-      const specifierRaw = typeof record.specifier === 'string'
-        ? record.specifier
-        : typeof record.module === 'string'
-          ? record.module
-          : null;
+      const specifierRaw =
+        typeof record.specifier === 'string'
+          ? record.specifier
+          : typeof record.module === 'string'
+            ? record.module
+            : null;
       const specifier = specifierRaw?.trim() || fallbackSpecifier;
       if (!specifier) continue;
       result.push({ exportName, specifier });
@@ -131,7 +135,9 @@ export function buildDatabasePrewarmTargets(
 }
 
 export function filterValidDependencies(values: Array<string | null>): string[] {
-  return values.filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  return values.filter(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0
+  );
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -146,7 +152,7 @@ export function sanitizeDependencies(pkgJson: unknown): string[] {
 
 export function sanitizeManifest(
   manifest: unknown,
-  { packageDescription }: { packageDescription?: string } = {},
+  { packageDescription }: { packageDescription?: string } = {}
 ): Record<string, unknown> | null {
   if (!isRecord(manifest)) return null;
   const result: Record<string, unknown> = {};
@@ -166,7 +172,11 @@ export function sanitizeManifest(
   addString(result, 'description', manifest.description);
   addString(result, 'extends', manifest.extends);
 
-  if (!result.description && typeof packageDescription === 'string' && packageDescription.trim().length > 0) {
+  if (
+    !result.description &&
+    typeof packageDescription === 'string' &&
+    packageDescription.trim().length > 0
+  ) {
     result.description = packageDescription.trim();
   }
 
@@ -205,14 +215,16 @@ export function sanitizeManifest(
 
     const componentConfig = (manifest.icon as Record<string, unknown>).component;
     if (isRecord(componentConfig)) {
-      const specifier = typeof componentConfig.specifier === 'string'
-        ? componentConfig.specifier.trim()
-        : undefined;
-      const exportName = typeof componentConfig.exportName === 'string'
-        ? componentConfig.exportName.trim()
-        : typeof componentConfig.export === 'string'
-          ? componentConfig.export.trim()
+      const specifier =
+        typeof componentConfig.specifier === 'string'
+          ? componentConfig.specifier.trim()
           : undefined;
+      const exportName =
+        typeof componentConfig.exportName === 'string'
+          ? componentConfig.exportName.trim()
+          : typeof componentConfig.export === 'string'
+            ? componentConfig.export.trim()
+            : undefined;
       if (specifier) {
         const component: Record<string, string> = { specifier };
         if (exportName) {
@@ -232,7 +244,10 @@ export function sanitizeManifest(
   } else if (isRecord(manifest.category)) {
     const category: Record<string, unknown> = {};
     addString(category, 'menuGroup', manifest.category.menuGroup);
-    if (typeof manifest.category.createOrder === 'number' && Number.isFinite(manifest.category.createOrder)) {
+    if (
+      typeof manifest.category.createOrder === 'number' &&
+      Number.isFinite(manifest.category.createOrder)
+    ) {
       category.createOrder = manifest.category.createOrder;
     }
     addString(category, 'treeId', manifest.category.treeId);
@@ -262,7 +277,9 @@ export function sanitizeManifest(
     const worker: Record<string, unknown> = {};
     if (Array.isArray(manifest.worker.preload)) {
       const preload = manifest.worker.preload
-        .map((value: unknown) => (typeof value === 'string' && value.trim().length > 0 ? value.trim() : null))
+        .map((value: unknown) =>
+          typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+        )
         .filter((value): value is string => value !== null);
       if (preload.length > 0) {
         worker.preload = preload;
@@ -277,7 +294,10 @@ export function sanitizeManifest(
     const database: Record<string, unknown> = {};
     addString(database, 'dbName', manifest.database.dbName);
     addString(database, 'tableName', manifest.database.tableName);
-    if (typeof manifest.database.version === 'number' && Number.isFinite(manifest.database.version)) {
+    if (
+      typeof manifest.database.version === 'number' &&
+      Number.isFinite(manifest.database.version)
+    ) {
       database.version = manifest.database.version;
     }
     if (isRecord(manifest.database.schema)) {

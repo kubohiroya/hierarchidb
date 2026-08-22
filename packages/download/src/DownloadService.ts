@@ -14,17 +14,21 @@ export interface DownloadResult {
 }
 
 export class DownloadService {
-  constructor(private net: NetworkPort, private store: StoragePort, private integrity?: IntegrityPort) {
-  }
+  constructor(
+    private net: NetworkPort,
+    private store: StoragePort,
+    private integrity?: IntegrityPort
+  ) {}
 
   async download(url: string, fileId: string, opts: DownloadOptions = {}): Promise<DownloadResult> {
     // Use chunked download if partSize is provided
     const partSize = opts.partSize ?? 0;
-    if (partSize > 0) return await this.downloadChunked(url, fileId, {
-      ...opts,
-      partSize,
-      concurrency: opts.concurrency ?? 4,
-    });
+    if (partSize > 0)
+      return await this.downloadChunked(url, fileId, {
+        ...opts,
+        partSize,
+        concurrency: opts.concurrency ?? 4,
+      });
 
     // Serial download
     const res = await this.net.get(url, buildInit(opts.signal));
@@ -40,7 +44,11 @@ export class DownloadService {
     return { fileId, sizeBytes: buf.byteLength, hash };
   }
 
-  private async downloadChunked(url: string, fileId: string, opts: Required<Pick<DownloadOptions, 'partSize' | 'concurrency'>> & DownloadOptions): Promise<DownloadResult> {
+  private async downloadChunked(
+    url: string,
+    fileId: string,
+    opts: Required<Pick<DownloadOptions, 'partSize' | 'concurrency'>> & DownloadOptions
+  ): Promise<DownloadResult> {
     if (opts.signal?.aborted) throw abortError();
     const head = await this.net.head(url, buildInit(opts.signal));
     // Fallback when HEAD not allowed
@@ -62,10 +70,12 @@ export class DownloadService {
         if (opts.signal?.aborted) throw abortError();
         const idx = next++;
         const byteStart = totalSize === 0 ? 0 : idx * partSize;
-        const byteEnd = totalSize === 0 ? undefined : Math.min((idx + 1) * partSize - 1, totalSize - 1);
-        const res = byteEnd !== undefined
-          ? await this.net.getRange(url, byteStart, byteEnd, buildInit(opts.signal))
-          : await this.net.get(url, buildInit(opts.signal));
+        const byteEnd =
+          totalSize === 0 ? undefined : Math.min((idx + 1) * partSize - 1, totalSize - 1);
+        const res =
+          byteEnd !== undefined
+            ? await this.net.getRange(url, byteStart, byteEnd, buildInit(opts.signal))
+            : await this.net.get(url, buildInit(opts.signal));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buf = await res.arrayBuffer();
         await this.store.putChunk(fileId, idx, buf);
@@ -86,9 +96,8 @@ export class DownloadService {
   }
 }
 
-const buildInit = (signal?: AbortSignal): RequestInit | undefined => (
-  signal ? { signal } : undefined
-);
+const buildInit = (signal?: AbortSignal): RequestInit | undefined =>
+  signal ? { signal } : undefined;
 
 function abortError(): Error {
   if (typeof DOMException === 'function') {

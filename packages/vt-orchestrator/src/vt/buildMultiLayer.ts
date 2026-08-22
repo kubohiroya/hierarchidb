@@ -3,9 +3,7 @@ import { buildLayerResultFromBranch } from './vtStageTaskLayerBuilderFlowModesUt
 import type { LayerBuildFlowInput } from './vtStageTaskLayerBuilderFlowTypes.js';
 import type { VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
 
-export const buildMultiLayer = async (
-  input: LayerBuildFlowInput,
-): Promise<VtLayerBuildResult> => {
+export const buildMultiLayer = async (input: LayerBuildFlowInput): Promise<VtLayerBuildResult> => {
   const {
     context,
     taskContext,

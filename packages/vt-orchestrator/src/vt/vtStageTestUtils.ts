@@ -4,13 +4,13 @@ import {
   resolveVtDebugFocusMatch,
 } from './vtStageDebug.js';
 import {
+  buildAdminFeatureSummary,
   buildGeojsonVtEmptyTileReason,
   buildGeojsonVtEmptyTileSummaryReason,
   buildSkippedMessage,
   buildTileSummary,
-  computeOutputTileTotals,
-  buildAdminFeatureSummary,
   buildVtParentInputSummary,
+  computeOutputTileTotals,
 } from './vtStageSummary.js';
 
 export const vtStageTestUtils = {

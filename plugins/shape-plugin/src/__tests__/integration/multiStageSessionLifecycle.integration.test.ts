@@ -1,21 +1,21 @@
 /**
  * Multi-Stage Session Lifecycle Integration Tests
- * 
+ *
  * Tests complete session lifecycle with pause/resume across all stages:
  * start → source stage → geometry stage → tile-emit stage → completion
- * 
+ *
  * Validates Requirements 9.16, 9.17, 8.1, 8.2, 8.3
  */
 
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
-import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStage } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { taskStateProtection } from '../../worker/api/taskStateProtection.js';
-import { 
-  updateBuildTaskProtected,
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
   ensureSessionTaskConsistency,
+  updateBuildTaskProtected,
 } from '../../worker/api/protectedTaskMutationUtils.js';
+import { taskStateProtection } from '../../worker/api/taskStateProtection.js';
 
 // Mock session configuration for multi-stage testing
 interface MockSessionConfig {
@@ -72,7 +72,12 @@ const createMultiStageSessionConfig = (nodeId: NodeId): MockSessionConfig => ({
 });
 
 // Mock task creation helper
-const createStageTask = (taskId: string, nodeId: NodeId, stage: BuildStage, status: 'queued' | 'running' | 'completed' | 'failed' = 'queued') => ({
+const createStageTask = (
+  taskId: string,
+  nodeId: NodeId,
+  stage: BuildStage,
+  status: 'queued' | 'running' | 'completed' | 'failed' = 'queued'
+) => ({
   taskId,
   nodeId,
   status,
@@ -117,11 +122,11 @@ class SessionEventTracker {
   }
 
   getEventsByStage(stage: string): EventSequence[] {
-    return this.events.filter(e => e.stage === stage);
+    return this.events.filter((e) => e.stage === stage);
   }
 
   getEventsByType(eventType: EventSequence['eventType']): EventSequence[] {
-    return this.events.filter(e => e.eventType === eventType);
+    return this.events.filter((e) => e.eventType === eventType);
   }
 
   validateEventSequence(): { isValid: boolean; violations: string[] } {
@@ -131,14 +136,18 @@ class SessionEventTracker {
     if (this.stageTransitions.length > 0) {
       const expectedStageOrder = ['source', 'geometry', 'tileEmit'];
       const actualStageOrder = this.stageTransitions
-        .map(t => t.split('->')[1])
+        .map((t) => t.split('->')[1])
         .filter((stage, index, arr) => arr.indexOf(stage) === index);
 
       // Only validate if we have multiple stages
       if (actualStageOrder.length > 1) {
-        const expectedSubset = expectedStageOrder.filter(stage => actualStageOrder.includes(stage));
+        const expectedSubset = expectedStageOrder.filter((stage) =>
+          actualStageOrder.includes(stage)
+        );
         if (JSON.stringify(actualStageOrder) !== JSON.stringify(expectedSubset)) {
-          violations.push(`Invalid stage order: expected ${expectedSubset.join('->')}, got ${actualStageOrder.join('->')}`);
+          violations.push(
+            `Invalid stage order: expected ${expectedSubset.join('->')}, got ${actualStageOrder.join('->')}`
+          );
         }
       }
     }
@@ -148,23 +157,27 @@ class SessionEventTracker {
     const cacheWrites = this.getEventsByType('cache-write');
 
     for (const cacheWrite of cacheWrites) {
-      const correspondingComplete = taskCompletes.find(tc => tc.taskId === cacheWrite.taskId);
+      const correspondingComplete = taskCompletes.find((tc) => tc.taskId === cacheWrite.taskId);
       if (!correspondingComplete) {
-        violations.push(`Cache write for task ${cacheWrite.taskId} without corresponding task completion`);
+        violations.push(
+          `Cache write for task ${cacheWrite.taskId} without corresponding task completion`
+        );
       } else if (correspondingComplete.timestamp > cacheWrite.timestamp) {
-        violations.push(`Cache write for task ${cacheWrite.taskId} occurred before task completion`);
+        violations.push(
+          `Cache write for task ${cacheWrite.taskId} occurred before task completion`
+        );
       }
     }
 
     // Validate seqNum ordering (simplified - just check monotonic increase)
     const allEventsWithSeqNum = this.events
-      .filter(e => e.seqNum !== undefined)
+      .filter((e) => e.seqNum !== undefined)
       .sort((a, b) => a.seqNum! - b.seqNum!);
 
     for (let i = 1; i < allEventsWithSeqNum.length; i++) {
       const prev = allEventsWithSeqNum[i - 1];
       const curr = allEventsWithSeqNum[i];
-      
+
       if (curr.seqNum! <= prev.seqNum!) {
         violations.push(`Non-monotonic seqNum sequence: ${prev.seqNum} -> ${curr.seqNum}`);
       }
@@ -212,9 +225,15 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
 
     // Create tasks for all stages
     const allTasks = [
-      ...sessionConfig.stages.source.tasks.map((t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'source')),
-      ...sessionConfig.stages.geometry.tasks.map((t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'geometry')),
-      ...sessionConfig.stages.tileEmit.tasks.map((t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'tileEmit')),
+      ...sessionConfig.stages.source.tasks.map((t: { taskId: string; type: string }) =>
+        createStageTask(t.taskId, nodeId, 'source')
+      ),
+      ...sessionConfig.stages.geometry.tasks.map((t: { taskId: string; type: string }) =>
+        createStageTask(t.taskId, nodeId, 'geometry')
+      ),
+      ...sessionConfig.stages.tileEmit.tasks.map((t: { taskId: string; type: string }) =>
+        createStageTask(t.taskId, nodeId, 'tileEmit')
+      ),
     ];
 
     // Store all tasks
@@ -226,7 +245,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
 
     for (let stageIndex = 0; stageIndex < stages.length; stageIndex++) {
       const currentStage = stages[stageIndex];
-      const stageTasks = allTasks.filter(t => t.stage === currentStage);
+      const stageTasks = allTasks.filter((t) => t.stage === currentStage);
 
       // Record stage transition
       if (stageIndex > 0) {
@@ -247,11 +266,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
           seqNum: currentSeqNum++,
         });
 
-        await updateBuildTaskProtected(
-          task.taskId,
-          { status: 'running' },
-          abortController.signal
-        );
+        await updateBuildTaskProtected(task.taskId, { status: 'running' }, abortController.signal);
 
         // Simulate progress updates
         for (let progress = 25; progress <= 75; progress += 25) {
@@ -264,11 +279,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
             data: { progress },
           });
 
-          await updateBuildTaskProtected(
-            task.taskId,
-            { progress },
-            abortController.signal
-          );
+          await updateBuildTaskProtected(task.taskId, { progress }, abortController.signal);
         }
 
         // Complete task
@@ -282,8 +293,8 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
 
         await updateBuildTaskProtected(
           task.taskId,
-          { 
-            status: 'completed', 
+          {
+            status: 'completed',
             progress: 100,
           },
           abortController.signal
@@ -334,8 +345,8 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
     const sessionConfig = createMultiStageSessionConfig(nodeId);
 
     // Create tasks for source stage only (for focused testing)
-    const sourceTasks = sessionConfig.stages.source.tasks.map((t: { taskId: string; type: string }) => 
-      createStageTask(t.taskId, nodeId, 'source')
+    const sourceTasks = sessionConfig.stages.source.tasks.map(
+      (t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'source')
     );
 
     await ephemeralDB.buildTasks.bulkPut(sourceTasks as any);
@@ -354,11 +365,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
       seqNum: currentSeqNum++,
     });
 
-    await updateBuildTaskProtected(
-      firstTask.taskId,
-      { status: 'running' },
-      abortController.signal
-    );
+    await updateBuildTaskProtected(firstTask.taskId, { status: 'running' }, abortController.signal);
 
     // Simulate pause during task processing
     const pauseController = new AbortController();
@@ -382,11 +389,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
       data: { progress: 50 },
     });
 
-    await updateBuildTaskProtected(
-      firstTask.taskId,
-      { progress: 50 },
-      resumeController.signal
-    );
+    await updateBuildTaskProtected(firstTask.taskId, { progress: 50 }, resumeController.signal);
 
     // Complete first task
     eventTracker.recordEvent({
@@ -462,11 +465,11 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
     const sessionConfig = createMultiStageSessionConfig(nodeId);
 
     // Create tasks for source and geometry stages
-    const sourceTasks = sessionConfig.stages.source.tasks.map((t: { taskId: string; type: string }) => 
-      createStageTask(t.taskId, nodeId, 'source')
+    const sourceTasks = sessionConfig.stages.source.tasks.map(
+      (t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'source')
     );
-    const geometryTasks = sessionConfig.stages.geometry.tasks.map((t: { taskId: string; type: string }) => 
-      createStageTask(t.taskId, nodeId, 'geometry')
+    const geometryTasks = sessionConfig.stages.geometry.tasks.map(
+      (t: { taskId: string; type: string }) => createStageTask(t.taskId, nodeId, 'geometry')
     );
 
     await ephemeralDB.buildTasks.bulkPut([...sourceTasks, ...geometryTasks] as any);
@@ -485,11 +488,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
         seqNum: currentSeqNum++,
       });
 
-      await updateBuildTaskProtected(
-        task.taskId,
-        { status: 'running' },
-        abortController.signal
-      );
+      await updateBuildTaskProtected(task.taskId, { status: 'running' }, abortController.signal);
 
       eventTracker.recordEvent({
         timestamp: Date.now(),
@@ -508,7 +507,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
 
     // Simulate worker restart between stages
     eventTracker.recordStageTransition('source', 'geometry');
-    
+
     // Simulate new worker instance (new abort controller)
     const newWorkerController = new AbortController();
 
@@ -585,11 +584,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
       seqNum: currentSeqNum++,
     });
 
-    await updateBuildTaskProtected(
-      task.taskId,
-      { status: 'running' },
-      abortController.signal
-    );
+    await updateBuildTaskProtected(task.taskId, { status: 'running' }, abortController.signal);
 
     // Complete task first
     const completionTime = Date.now();
@@ -608,7 +603,7 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
     );
 
     // Simulate cache write after completion (with slight delay to ensure ordering)
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     eventTracker.recordEvent({
       timestamp: Date.now(),
@@ -643,8 +638,10 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
 
     // Create tasks for all stages
     const allTasks = [
-      ...sessionConfig.stages.source.tasks.map(t => createStageTask(t.taskId, nodeId, 'source')),
-      ...sessionConfig.stages.geometry.tasks.map(t => createStageTask(t.taskId, nodeId, 'geometry')),
+      ...sessionConfig.stages.source.tasks.map((t) => createStageTask(t.taskId, nodeId, 'source')),
+      ...sessionConfig.stages.geometry.tasks.map((t) =>
+        createStageTask(t.taskId, nodeId, 'geometry')
+      ),
     ];
 
     await ephemeralDB.buildTasks.bulkPut(allTasks as any);
@@ -671,14 +668,11 @@ describe('Multi-Stage Session Lifecycle Integration Tests', () => {
           seqNum: currentSeqNum++,
         });
 
-        await updateBuildTaskProtected(
-          task.taskId,
-          { status: 'running' },
-          controller.signal
-        );
+        await updateBuildTaskProtected(task.taskId, { status: 'running' }, controller.signal);
 
         // Simulate pause after starting (but don't abort the update itself)
-        if (cycle < 2) { // Don't pause on last cycle
+        if (cycle < 2) {
+          // Don't pause on last cycle
           // Just mark that we would pause here, but complete the task normally
           // In real scenario, the abort would happen between operations
         }

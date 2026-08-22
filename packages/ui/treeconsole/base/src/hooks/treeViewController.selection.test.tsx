@@ -3,11 +3,11 @@
  * @description TDD tests for TreeViewController selection behavior
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type NodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import { type NodeId } from '@hierarchidb/core-types';
 
 type MockStateManager = {
   [name: string]: ReturnType<typeof vi.fn>;
@@ -150,7 +150,7 @@ describe('useTreeViewController', () => {
       expect(mockOnStateChange).toHaveBeenCalledWith(
         expect.objectContaining({
           selectedNodeIds: ['node-1'],
-        }),
+        })
       );
     });
   });

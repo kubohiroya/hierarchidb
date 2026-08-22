@@ -1,17 +1,17 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import {
   type CreateTagRequest,
-  type TagId,
-  type TagAPI,
-  type TagAssociationRequest,
-  type TagSuggestion,
-  type UpdateTagRequest,
   type NodeTagAssociation,
   type NodeTagAssociationId,
+  type TagAPI,
+  type TagAssociationRequest,
   type TagEntity,
+  type TagId,
+  type TagSuggestion,
   toTagId,
+  type UpdateTagRequest,
 } from '@hierarchidb/tag-api';
-import { SingletonMixin, generateId } from '@hierarchidb/util';
+import { generateId, SingletonMixin } from '@hierarchidb/util';
 import type { TagDBPort } from './types.js';
 
 /**
@@ -23,15 +23,12 @@ export class TagService implements TagAPI {
     return SingletonMixin.getSingleton('TagService', async () => new TagService(db));
   }
 
-  constructor(private db: TagDBPort) {
-  }
+  constructor(private db: TagDBPort) {}
 
   async createTag(request: CreateTagRequest): Promise<TagEntity> {
     const now = Date.now() as Timestamp;
     const uuid =
-      typeof globalThis.crypto?.randomUUID === 'function'
-        ? globalThis.crypto.randomUUID()
-        : null;
+      typeof globalThis.crypto?.randomUUID === 'function' ? globalThis.crypto.randomUUID() : null;
     if (!uuid) {
       throw new Error('crypto.randomUUID is not available');
     }
@@ -108,11 +105,7 @@ export class TagService implements TagAPI {
     const tag = await this.getTag(request.tagId);
     if (!tag) throw new Error(`Tag ${request.tagId} not found`);
 
-    const existing = await this.db.getTagAssociation(
-      request.nodeId,
-      request.tagId,
-      request.scope
-    );
+    const existing = await this.db.getTagAssociation(request.nodeId, request.tagId, request.scope);
     if (existing) return existing;
 
     const association: NodeTagAssociation = {
@@ -138,8 +131,7 @@ export class TagService implements TagAPI {
         }
         const nodeAssociations = await this.db.getTagAssociationsForNode(association.nodeId);
         const matched = nodeAssociations.find(
-          (assoc) =>
-            assoc.tagId === association.tagId && assoc.scope === association.scope
+          (assoc) => assoc.tagId === association.tagId && assoc.scope === association.scope
         );
         if (matched) {
           return matched;
@@ -205,9 +197,7 @@ export class TagService implements TagAPI {
     return toTagId(`tag_${generateId()}`);
   }
 
-  private selectEffectiveAssociations(
-    associations: NodeTagAssociation[]
-  ): NodeTagAssociation[] {
+  private selectEffectiveAssociations(associations: NodeTagAssociation[]): NodeTagAssociation[] {
     const byNode = new Map<string, NodeTagAssociation[]>();
     for (const assoc of associations) {
       const key = String(assoc.nodeId);

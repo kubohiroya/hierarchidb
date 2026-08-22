@@ -31,12 +31,12 @@ export interface DropdownMenuProps {
 }
 
 export const DropdownMenu = ({
-                               id,
-                               items,
-                               disabled,
-                               color,
-                               children,
-                             }: DropdownMenuProps): ReactElement => {
+  id,
+  items,
+  disabled,
+  color,
+  children,
+}: DropdownMenuProps): ReactElement => {
   const [anchorElem, setAnchorElem] = useState<null | HTMLElement>(null);
   const handleMenuOpenButtonClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -44,7 +44,7 @@ export const DropdownMenu = ({
         setAnchorElem(event.currentTarget);
       }
     },
-    [disabled],
+    [disabled]
   );
   const handleMenuItemClick = useCallback((onClick: (() => void) | undefined) => {
     if (onClick) {
@@ -59,7 +59,12 @@ export const DropdownMenu = ({
       <Box style={{ marginTop: '-1.775px' }} onClick={handleMenuOpenButtonClick}>
         {children}
       </Box>
-      <DialogSafeMenu id={id + '-menu'} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
+      <DialogSafeMenu
+        id={id + '-menu'}
+        anchorEl={anchorElem}
+        open={open}
+        onClose={() => setAnchorElem(null)}
+      >
         {items.map((item: DropdownMenuItemType | null, index: number) =>
           item ? (
             <MenuItem
@@ -83,7 +88,7 @@ export const DropdownMenu = ({
             </MenuItem>
           ) : (
             <MenuItem key={index} divider />
-          ),
+          )
         )}
       </DialogSafeMenu>
     </>

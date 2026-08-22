@@ -1,11 +1,15 @@
 import { Skeleton } from '@mui/material';
-import {
-  useBuildSessionStageProgressBarState,
-  type BuildSessionStageProgressBarProps,
-} from './useBuildSessionStageProgressBarState.js';
 import { BuildSessionStageProgressBarView } from './BuildSessionStageProgressBarView.tsx';
+import {
+  type BuildSessionStageProgressBarProps,
+  useBuildSessionStageProgressBarState,
+} from './useBuildSessionStageProgressBarState.js';
 
-export type { BuildSessionStageProgressBarProps, BuildSessionStageProgressBarData, BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarState.js';
+export type {
+  BuildSessionStageProgressBarData,
+  BuildSessionStageProgressBarProps,
+  BuildSessionStageProgressBarSegment,
+} from './useBuildSessionStageProgressBarState.js';
 
 export const BuildSessionStageProgressBar = (props: BuildSessionStageProgressBarProps) => {
   const state = useBuildSessionStageProgressBarState(props);

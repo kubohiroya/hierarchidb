@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MapViewState } from '../types/unified-map-props';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
@@ -39,7 +39,6 @@ describe('MapLibreMap zoom clamp', () => {
     const props = mapProps[0] as { initialViewState?: MapViewState };
     expect(props.initialViewState?.zoom).toBe(2);
   });
-
 
   it('applies default min/max zoom when mapOptions omit them', () => {
     render(

@@ -23,7 +23,6 @@ export type TileSourceProvider =
       template: string; // e.g. 'https://tiles.example.com/{z}/{x}/{y}.pbf'
     }
   | {
-    kind: 'function';
-    getTile(z: number, x: number, y: number): Promise<ArrayBuffer>;
-  };
-
+      kind: 'function';
+      getTile(z: number, x: number, y: number): Promise<ArrayBuffer>;
+    };

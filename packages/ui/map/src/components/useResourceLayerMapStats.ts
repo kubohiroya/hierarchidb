@@ -59,10 +59,13 @@ const resolveStatsPositionStyle = (position: StatsPosition) => {
 const safeQuerySourceFeatures = (
   map: MapLibreMapInstance,
   sourceId: string,
-  sourceLayer?: string,
+  sourceLayer?: string
 ): MapLibreGeoJSONFeature[] => {
   const mapWithSource = map as MapLibreMapInstance & {
-    querySourceFeatures?: (sourceId: string, params: { sourceLayer?: string }) => MapLibreGeoJSONFeature[];
+    querySourceFeatures?: (
+      sourceId: string,
+      params: { sourceLayer?: string }
+    ) => MapLibreGeoJSONFeature[];
   };
   if (!mapWithSource.querySourceFeatures) return [];
   try {
@@ -82,7 +85,7 @@ type VectorLayerFeatureCounts = Record<string, number>;
 
 export const resolveVectorLayerFeatureCounts = (
   map: MapLibreMapInstance,
-  vectorLayerEntries: VectorLayerFeatureCounterEntry[],
+  vectorLayerEntries: VectorLayerFeatureCounterEntry[]
 ): VectorLayerFeatureCounts => {
   const nextCounts: VectorLayerFeatureCounts = {};
   vectorLayerEntries.forEach((entry) => {
@@ -111,7 +114,7 @@ export const resolveVectorLayerFeatureCounts = (
 };
 
 export const useResourceLayerMapStats = (
-  args: UseResourceLayerMapStatsArgs,
+  args: UseResourceLayerMapStatsArgs
 ): UseResourceLayerMapStatsResult => {
   const { mapInstance, orderedLayers, vectorLayerEntries, statsEnabled, statsPosition } = args;
 
@@ -126,11 +129,14 @@ export const useResourceLayerMapStats = (
     listeners: new Set<() => void>(),
   });
 
-  const statsPositionStyle = useMemo(() => resolveStatsPositionStyle(statsPosition), [statsPosition]);
+  const statsPositionStyle = useMemo(
+    () => resolveStatsPositionStyle(statsPosition),
+    [statsPosition]
+  );
 
   const hasDexieLayers = useMemo(
     () => orderedLayers.some((layer) => Boolean(layer.dbName && layer.tileDataProvider)),
-    [orderedLayers],
+    [orderedLayers]
   );
   const statsActive = statsEnabled && hasDexieLayers;
 
@@ -150,55 +156,76 @@ export const useResourceLayerMapStats = (
     };
   }, []);
 
-  const getSnapshot = useCallback<MapStatsStore['getSnapshot']>(() => statsStoreRef.current.snapshot, []);
+  const getSnapshot = useCallback<MapStatsStore['getSnapshot']>(
+    () => statsStoreRef.current.snapshot,
+    []
+  );
 
   const notifyStats = useCallback(() => {
-    statsStoreRef.current.listeners.forEach((listener) => { listener(); });
+    statsStoreRef.current.listeners.forEach((listener) => {
+      listener();
+    });
   }, []);
 
   const setStatsSnapshot = useCallback((next: MapStatsSnapshot) => {
     const current = statsStoreRef.current.snapshot;
-    if (current.tileStats === next.tileStats && current.featureCounts === next.featureCounts) return;
+    if (current.tileStats === next.tileStats && current.featureCounts === next.featureCounts)
+      return;
     statsStoreRef.current.snapshot = next;
   }, []);
 
   const resetTileStats = useCallback(() => {
     const next = { requests: 0, bytes: 0 };
     tileStatsRef.current = next;
-    setStatsSnapshot({ tileStats: next, featureCounts: statsStoreRef.current.snapshot.featureCounts });
+    setStatsSnapshot({
+      tileStats: next,
+      featureCounts: statsStoreRef.current.snapshot.featureCounts,
+    });
     notifyStats();
   }, [notifyStats, setStatsSnapshot]);
 
-  const setFeatureCountsIfChanged = useCallback((nextCounts: Record<string, number>) => {
-    const prev = statsStoreRef.current.snapshot.featureCounts;
-    const nextKeys = Object.keys(nextCounts);
-    const prevKeys = Object.keys(prev);
-    if (nextKeys.length === prevKeys.length) {
-      let same = true;
-      for (const key of nextKeys) {
-        if (prev[key] !== nextCounts[key]) {
-          same = false;
-          break;
+  const setFeatureCountsIfChanged = useCallback(
+    (nextCounts: Record<string, number>) => {
+      const prev = statsStoreRef.current.snapshot.featureCounts;
+      const nextKeys = Object.keys(nextCounts);
+      const prevKeys = Object.keys(prev);
+      if (nextKeys.length === prevKeys.length) {
+        let same = true;
+        for (const key of nextKeys) {
+          if (prev[key] !== nextCounts[key]) {
+            same = false;
+            break;
+          }
         }
+        if (same) return;
       }
-      if (same) return;
-    }
-    setStatsSnapshot({ tileStats: statsStoreRef.current.snapshot.tileStats, featureCounts: nextCounts });
-    notifyStats();
-  }, [notifyStats, setStatsSnapshot]);
-
-  const handleTileRequest = useCallback((statsEntry: { bytes: number }) => {
-    if (!statsActive) return;
-    tileStatsRef.current.requests += 1;
-    tileStatsRef.current.bytes += Math.max(0, statsEntry.bytes);
-    if (tileStatsTimerRef.current !== null) return;
-    tileStatsTimerRef.current = window.setTimeout(() => {
-      tileStatsTimerRef.current = null;
-      const nextStats = { ...tileStatsRef.current };
-      setStatsSnapshot({ tileStats: nextStats, featureCounts: statsStoreRef.current.snapshot.featureCounts });
+      setStatsSnapshot({
+        tileStats: statsStoreRef.current.snapshot.tileStats,
+        featureCounts: nextCounts,
+      });
       notifyStats();
-    }, 250);
-  }, [notifyStats, setStatsSnapshot, statsActive]);
+    },
+    [notifyStats, setStatsSnapshot]
+  );
+
+  const handleTileRequest = useCallback(
+    (statsEntry: { bytes: number }) => {
+      if (!statsActive) return;
+      tileStatsRef.current.requests += 1;
+      tileStatsRef.current.bytes += Math.max(0, statsEntry.bytes);
+      if (tileStatsTimerRef.current !== null) return;
+      tileStatsTimerRef.current = window.setTimeout(() => {
+        tileStatsTimerRef.current = null;
+        const nextStats = { ...tileStatsRef.current };
+        setStatsSnapshot({
+          tileStats: nextStats,
+          featureCounts: statsStoreRef.current.snapshot.featureCounts,
+        });
+        notifyStats();
+      }, 250);
+    },
+    [notifyStats, setStatsSnapshot, statsActive]
+  );
 
   useEffect(() => {
     if (!statsActive) {
@@ -238,12 +265,15 @@ export const useResourceLayerMapStats = (
     };
   }, [mapInstance, setFeatureCountsIfChanged, statsActive, vectorLayerEntries]);
 
-  useEffect(() => () => {
-    if (tileStatsTimerRef.current !== null) {
-      window.clearTimeout(tileStatsTimerRef.current);
-      tileStatsTimerRef.current = null;
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (tileStatsTimerRef.current !== null) {
+        window.clearTimeout(tileStatsTimerRef.current);
+        tileStatsTimerRef.current = null;
+      }
+    },
+    []
+  );
 
   const statsStore = useMemo(() => ({ subscribe, getSnapshot }), [getSnapshot, subscribe]);
 

@@ -1,21 +1,24 @@
-import { useEffect, useRef } from 'react';
-import type { MutableRefObject } from 'react';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import type { MutableRefObject } from 'react';
+import { useEffect, useRef } from 'react';
+import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 import {
   isShapeBuildPanelDebugEnabled,
   logRunningResiduePanel,
 } from './useBuildProgressPanelState.utils.js';
-import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
 type StageTask = {
   taskId: string;
   status: string;
 };
 
-type StageScan = Record<string, {
-  runningCount: number;
-  hasRunning: boolean;
-}>;
+type StageScan = Record<
+  string,
+  {
+    runningCount: number;
+    hasRunning: boolean;
+  }
+>;
 
 type CompletionData = {
   completionStageLabel: string;
@@ -48,13 +51,15 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   completionSnapshotData: CompletionData;
   activeStageId: string | null;
   setCompletionDialogOpen: (open: boolean) => void;
-  setCompletionSnapshot: (snapshot: {
-    status: Summary['buildStatus'];
-    stageLabel: string;
-    taskTitle?: string;
-    taskMessage?: string;
-    reason?: string;
-  } | null) => void;
+  setCompletionSnapshot: (
+    snapshot: {
+      status: Summary['buildStatus'];
+      stageLabel: string;
+      taskTitle?: string;
+      taskMessage?: string;
+      reason?: string;
+    } | null
+  ) => void;
   completionKeyRef: MutableRefObject<string | null>;
   mismatchSignatureRef: MutableRefObject<Map<string, string>>;
 }) => {
@@ -76,7 +81,8 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   const previousBuildStatusRef = useRef<Summary['buildStatus'] | null>(null);
   const lastNodeIdRef = useRef<string | undefined>(undefined);
   const hasProgressRef = useRef(false);
-  const isTerminalStatus = (status: Summary['buildStatus'] | null) => status === 'completed' || status === 'failed';
+  const isTerminalStatus = (status: Summary['buildStatus'] | null) =>
+    status === 'completed' || status === 'failed';
 
   useEffect(() => {
     if (lastNodeIdRef.current === nodeId) return;
@@ -93,7 +99,8 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     const wasTerminal = isTerminalStatus(previousBuildStatus);
 
     if (previousBuildStatus === null) {
-      hasProgressRef.current = summary.buildStatus === 'running' || summary.buildStatus === 'paused';
+      hasProgressRef.current =
+        summary.buildStatus === 'running' || summary.buildStatus === 'paused';
       setCompletionDialogOpen(false);
       setCompletionSnapshot(null);
       completionKeyRef.current = null;
@@ -148,8 +155,9 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     }
 
     if (summary.buildStatus === 'failed' && completionSnapshotData.completionTaskMessage) {
-      const key = `${summary.buildStatus}:${completionSnapshotData.completionFailedStageLabel}:`
-        + `${completionSnapshotData.completionTaskTitle}:${completionSnapshotData.completionTaskMessage}`;
+      const key =
+        `${summary.buildStatus}:${completionSnapshotData.completionFailedStageLabel}:` +
+        `${completionSnapshotData.completionTaskTitle}:${completionSnapshotData.completionTaskMessage}`;
       if (completionKeyRef.current === key) {
         previousBuildStatusRef.current = summary.buildStatus;
         return;
@@ -192,7 +200,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
       const runningCount = scan?.runningCount ?? 0;
       const indicatorIsRunning = Boolean(indicator?.isRunning);
       const reasons: string[] = [];
-      if (summary.buildStatus === 'running' && indicatorIsRunning !== (runningCount > 0)) {
+      if (summary.buildStatus === 'running' && indicatorIsRunning !== runningCount > 0) {
         reasons.push('indicator_running_mismatch');
       }
       if (summary.buildStatus !== 'running' && runningCount > 0) {
@@ -256,7 +264,10 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     mismatchSignatureRef,
   ]);
 
-  useEffect(() => () => {
-    mismatchSignatureRef.current = new Map<string, string>();
-  }, [mismatchSignatureRef]);
+  useEffect(
+    () => () => {
+      mismatchSignatureRef.current = new Map<string, string>();
+    },
+    [mismatchSignatureRef]
+  );
 };

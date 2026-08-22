@@ -3,18 +3,26 @@
  * @description Map component that composes basemap, vector layers, and style overrides.
  */
 
+import { FloatingWindow } from '@hierarchidb/components';
+import {
+  Close as CloseIcon,
+  FitScreen as FitScreenIcon,
+  Tune as TuneIcon,
+} from '@mui/icons-material';
 import { Box, Button, IconButton, Snackbar } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { createPortal } from 'react-dom';
-import type { ResourceGeoJsonLayer, ResourceLayerMapProps, ResourceVectorLayer } from './resource-layer-map/ResourceLayerMap.types.js';
-import { VectorTileLayer } from './VectorTileLayer.js';
-import { MapLibreMap } from './MapLibreMap.js';
-import { FloatingWindow } from '@hierarchidb/components';
 import { MapPreviewSearchPanel } from '~/preview/MapPreviewSearchPanel';
 import { MapPreviewSearchSettingsDialog } from '~/preview/MapPreviewSearchSettingsDialog';
+import { MapLibreMap } from './MapLibreMap.js';
 import { MapStatsPanel } from './resource-layer-map/MapStatsPanel.js';
+import type {
+  ResourceGeoJsonLayer,
+  ResourceLayerMapProps,
+  ResourceVectorLayer,
+} from './resource-layer-map/ResourceLayerMap.types.js';
 import { useResourceLayerMap } from './useResourceLayerMap.js';
+import { VectorTileLayer } from './VectorTileLayer.js';
 
 export type { ResourceLayerMapProps, ResourceVectorLayer, ResourceGeoJsonLayer };
 
@@ -98,25 +106,25 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             />
           ))}
       </MapLibreMap>
-      {statsActive && statsDisplay === 'overlay' && statsContainer ? (
-        createPortal(
-          <Box
-            sx={{
-              position: 'absolute',
-              zIndex: 2,
-              pointerEvents: 'none',
-              ...statsPositionStyle,
-            }}
-          >
-            <MapStatsPanel
-              store={statsStore}
-              vectorLayerEntries={vectorLayerEntries}
-              renderExtra={stats?.renderExtra}
-            />
-          </Box>,
-          statsContainer,
-        )
-      ) : null}
+      {statsActive && statsDisplay === 'overlay' && statsContainer
+        ? createPortal(
+            <Box
+              sx={{
+                position: 'absolute',
+                zIndex: 2,
+                pointerEvents: 'none',
+                ...statsPositionStyle,
+              }}
+            >
+              <MapStatsPanel
+                store={statsStore}
+                vectorLayerEntries={vectorLayerEntries}
+                renderExtra={stats?.renderExtra}
+              />
+            </Box>,
+            statsContainer
+          )
+        : null}
       {statsActive && statsDisplay === 'floating' && statsWindowOpen ? (
         <FloatingWindow
           title={statsWindowTitle}
@@ -139,7 +147,10 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           />
         </FloatingWindow>
       ) : null}
-      {statsActive && statsDisplay === 'floating' && statsToggleButtonVisible && !statsWindowOpen ? (
+      {statsActive &&
+      statsDisplay === 'floating' &&
+      statsToggleButtonVisible &&
+      !statsWindowOpen ? (
         <Box sx={{ position: 'absolute', zIndex: 3, ...resolvedStatsToggleButtonPosition }}>
           <Button
             variant="contained"
@@ -162,7 +173,9 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             onOpenSettings={() => setSearchSettingsOpen(true)}
             clearIcon={<CloseIcon fontSize="small" />}
             settingsIcon={<TuneIcon fontSize="small" />}
-            showSettingsButton={searchConfig.showSettings ?? Boolean(searchConfig.targetGroups?.length)}
+            showSettingsButton={
+              searchConfig.showSettings ?? Boolean(searchConfig.targetGroups?.length)
+            }
             placeholder={searchConfig.placeholder}
             showFitScreenButton={false}
           />
@@ -178,40 +191,42 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           ) : null}
         </>
       ) : null}
-      {fitSelectionEnabled && fitControlContainer ? (
-        createPortal(
-          <IconButton
-            aria-label="Fit selection"
-            onClick={handleFitSelection}
-            disabled={selectedMatches.length === 0}
-            data-variant="compound"
-            sx={{
-              width: 29,
-              height: 48,
-              minWidth: 29,
-              minHeight: 48,
-              p: 0,
-              pr: 0.5,
-              m: 0,
-              borderRadius: 0,
-              bgcolor: 'background.paper',
-              color: (theme) =>
-                theme.palette.mode === 'dark' ? theme.palette.grey[300] : theme.palette.text.primary,
-              '& .MuiSvgIcon-root': { color: 'inherit' },
-              '&.Mui-disabled': {
+      {fitSelectionEnabled && fitControlContainer
+        ? createPortal(
+            <IconButton
+              aria-label="Fit selection"
+              onClick={handleFitSelection}
+              disabled={selectedMatches.length === 0}
+              data-variant="compound"
+              sx={{
+                width: 29,
+                height: 48,
+                minWidth: 29,
+                minHeight: 48,
+                p: 0,
+                pr: 0.5,
+                m: 0,
+                borderRadius: 0,
+                bgcolor: 'background.paper',
                 color: (theme) =>
                   theme.palette.mode === 'dark'
-                    ? theme.palette.grey[600]
-                    : theme.palette.action.disabled,
-              },
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-          >
-            <FitScreenIcon fontSize="small" />
-          </IconButton>,
-          fitControlContainer,
-        )
-      ) : null}
+                    ? theme.palette.grey[300]
+                    : theme.palette.text.primary,
+                '& .MuiSvgIcon-root': { color: 'inherit' },
+                '&.Mui-disabled': {
+                  color: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.grey[600]
+                      : theme.palette.action.disabled,
+                },
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <FitScreenIcon fontSize="small" />
+            </IconButton>,
+            fitControlContainer
+          )
+        : null}
       {effectiveSnackbar && (
         <Snackbar
           open={snackbarOpen}

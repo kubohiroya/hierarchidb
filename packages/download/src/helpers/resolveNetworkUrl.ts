@@ -78,7 +78,10 @@ function isBrowserRuntime(): boolean {
   if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
     return true;
   }
-  if (typeof self !== 'undefined' && typeof (self as { location?: Location }).location !== 'undefined') {
+  if (
+    typeof self !== 'undefined' &&
+    typeof (self as { location?: Location }).location !== 'undefined'
+  ) {
     return true;
   }
   return false;
@@ -88,9 +91,10 @@ function getOrigin(): string | null {
   try {
     const workerScope = typeof self !== 'undefined' ? (self as { location?: Location }) : undefined;
     const globalScope = globalThis as { location?: Location };
-    const candidate = typeof window !== 'undefined'
-      ? window.location
-      : workerScope?.location ?? globalScope.location;
+    const candidate =
+      typeof window !== 'undefined'
+        ? window.location
+        : (workerScope?.location ?? globalScope.location);
     if (!candidate) return null;
     return `${candidate.protocol}//${candidate.host}`;
   } catch {

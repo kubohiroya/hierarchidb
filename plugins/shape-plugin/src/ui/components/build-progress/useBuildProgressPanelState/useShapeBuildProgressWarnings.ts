@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ShapeEntity } from '~/common/types/index';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
 import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '~/ui/utils/buildWarnings';
@@ -40,7 +40,7 @@ export const useShapeBuildProgressWarnings = ({
         title: t('stage.warning.title', 'Build warning'),
         message: t(
           'stage.warning.unknownStage',
-          'A previous stage ended without a completion record. Consider lowering concurrency if it happens again.',
+          'A previous stage ended without a completion record. Consider lowering concurrency if it happens again.'
         ),
       };
     }
@@ -76,7 +76,7 @@ export const useShapeBuildProgressWarnings = ({
           ratio: ratioText,
           value: currentValue ?? '-',
           threshold: warning.threshold ?? '-',
-        },
+        }
       ),
     };
   }, [crashInsight, data?.processingConfig, stages, t]);
@@ -87,12 +87,12 @@ export const useShapeBuildProgressWarnings = ({
     if (!crashInsight.memoryPressure) {
       return t(
         'stage.warning.genericHint',
-        'A previous stage ended without a completion record. Consider reducing concurrency if it happens again.',
+        'A previous stage ended without a completion record. Consider reducing concurrency if it happens again.'
       );
     }
     const stageLabel = crashInsight.stage
-      ? stages.find((candidate) => candidate.id === crashInsight.stage)?.title
-        ?? crashInsight.stage
+      ? (stages.find((candidate) => candidate.id === crashInsight.stage)?.title ??
+        crashInsight.stage)
       : t('stage.warning.unknownStageShort', 'unknown stage');
     const ratioText = crashInsight.peakRatio
       ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`
@@ -100,7 +100,7 @@ export const useShapeBuildProgressWarnings = ({
     return t(
       'stage.warning.memoryHint',
       'Previous stage likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
-      { stage: stageLabel, ratio: ratioText },
+      { stage: stageLabel, ratio: ratioText }
     );
   }, [crashInsight, isDev, stages, t]);
 

@@ -1,15 +1,27 @@
-import { AppBar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Toolbar, Typography } from '@mui/material';
-import AppLogoIcon from '~/components/AppLogoIcon';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
+import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
+import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ReplayIcon from '@mui/icons-material/Replay';
 import {
-  BuildSessionQueuePanelBadgeButton,
+  AppBar,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Toolbar,
+  Typography,
+} from '@mui/material';
+import AppLogoIcon from '~/components/AppLogoIcon';
+import {
   BuildSessionQueuePanel,
+  BuildSessionQueuePanelBadgeButton,
 } from '~/components/BuildSessionQueuePanel';
-import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
-import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { useTreeConsoleAppBar } from './hooks/useTreeConsoleAppBar';
 
 type TreeConsoleAppBarProps = {
@@ -49,7 +61,10 @@ export function TreeConsoleAppBar({
           onClick={onGoHome}
           edge="start"
           color="primary"
-          aria-label={t('treeConsole.toolbar.resumeQueueDialog.ariaLabelHome', 'Go to HierarchiDB home')}
+          aria-label={t(
+            'treeConsole.toolbar.resumeQueueDialog.ariaLabelHome',
+            'Go to HierarchiDB home'
+          )}
           sx={{ marginLeft: '-20px' }}
         >
           <AppLogoIcon size={28} />
@@ -63,26 +78,21 @@ export function TreeConsoleAppBar({
 
         <Stack direction="row" spacing={2} alignItems="center">
           {data.tree?.id ? (
-          <BuildSessionQueuePanelBadgeButton
-            nodeType={resumeSessionNodeType}
-            onNavigateToBuild={handleNavigateToBuild}
-            autoStartTopSession={isQueueAutoStartEnabled}
-            onEntriesChange={handleResumeDialogEntriesChange}
-          />
+            <BuildSessionQueuePanelBadgeButton
+              nodeType={resumeSessionNodeType}
+              onNavigateToBuild={handleNavigateToBuild}
+              autoStartTopSession={isQueueAutoStartEnabled}
+              onEntriesChange={handleResumeDialogEntriesChange}
+            />
           ) : null}
-          {isUserMenuReady ? (
-            <UserLoginButton onOpenMaintenance={onOpenMaintenance} />
-          ) : null}
+          {isUserMenuReady ? <UserLoginButton onOpenMaintenance={onOpenMaintenance} /> : null}
         </Stack>
       </Toolbar>
-      <Dialog
-        open={isResumeDialogOpen}
-        onClose={handleSkipResumeDialog}
-        fullWidth
-        maxWidth="md"
-      >
+      <Dialog open={isResumeDialogOpen} onClose={handleSkipResumeDialog} fullWidth maxWidth="md">
         <DialogTitle>
-          {t('treeConsole.toolbar.resumeQueueDialog.title', 'Build sessions: {{count}} sessions', { count: resumeDialogRows.length })}
+          {t('treeConsole.toolbar.resumeQueueDialog.title', 'Build sessions: {{count}} sessions', {
+            count: resumeDialogRows.length,
+          })}
         </DialogTitle>
         <DialogContent dividers>
           <BuildSessionQueuePanel
@@ -108,7 +118,10 @@ export function TreeConsoleAppBar({
             startIcon={<ReplayIcon />}
             disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
           >
-            {t('treeConsole.toolbar.resumeQueueDialog.resumeQueue', 'Resume execution of the first session')}
+            {t(
+              'treeConsole.toolbar.resumeQueueDialog.resumeQueue',
+              'Resume execution of the first session'
+            )}
           </Button>
           <Button onClick={handleSkipResumeDialog}>
             {t('treeConsole.toolbar.resumeQueueDialog.close', '× Close')}

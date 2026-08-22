@@ -1,17 +1,18 @@
-import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { rainbowColors } from '@hierarchidb/ui-theme';
-import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
-import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { rainbowColors } from '@hierarchidb/ui-theme';
+import { cleanup, render, screen } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
+import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 
 const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
 const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, ...props }: React.ComponentProps<'a'>) => React.createElement('a', props, children),
+  Link: ({ children, ...props }: React.ComponentProps<'a'>) =>
+    React.createElement('a', props, children),
 }));
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
@@ -24,8 +25,10 @@ vi.mock('../components/TreeTableStyles.js', async () => {
   const actual = await vi.importActual<any>('../components/TreeTableStyles.js');
   return {
     ...actual,
-    NameCell: ({ children }: { children: React.ReactNode }) => React.createElement('div', null, children),
-    IndentSpace: ({ depth }: { depth: number }) => React.createElement('span', { 'data-testid': 'indent-space', 'data-depth': depth }),
+    NameCell: ({ children }: { children: React.ReactNode }) =>
+      React.createElement('div', null, children),
+    IndentSpace: ({ depth }: { depth: number }) =>
+      React.createElement('span', { 'data-testid': 'indent-space', 'data-depth': depth }),
   };
 });
 

@@ -1,19 +1,23 @@
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import * as Comlink from 'comlink';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
+} from '@hierarchidb/shape-api';
 import { unpackTileId } from '@hierarchidb/vt-orchestrator';
+import * as Comlink from 'comlink';
 
-vi.mock('comlink', async () => (
-  await vi.importActual('comlink')
-));
+vi.mock('comlink', async () => await vi.importActual('comlink'));
+
 import { describe, expect, it, vi } from 'vitest';
-vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('@hierarchidb/gis-sdk')
-));
+
+vi.mock('@hierarchidb/gis-sdk', async () => await import('@hierarchidb/gis-sdk'));
 
 vi.mock('@hierarchidb/vt-orchestrator', async () => {
-  const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>('@hierarchidb/vt-orchestrator');
+  const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>(
+    '@hierarchidb/vt-orchestrator'
+  );
   //const { unpackTileId } = await import('@hierarchidb/vt-orchestrator');
   const createVtHandler: typeof actual.createVtHandler = (context) => {
     type HandlerTask = Parameters<ReturnType<typeof actual.createVtHandler>>[0];

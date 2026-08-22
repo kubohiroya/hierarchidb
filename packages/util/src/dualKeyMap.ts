@@ -1,4 +1,8 @@
-export interface DualKeyMapEntry<PrimaryKey extends PropertyKey, SecondaryKey extends PropertyKey, Value> {
+export interface DualKeyMapEntry<
+  PrimaryKey extends PropertyKey,
+  SecondaryKey extends PropertyKey,
+  Value,
+> {
   readonly primaryKey: PrimaryKey;
   readonly secondaryKey: SecondaryKey;
   readonly value: Value;
@@ -9,7 +13,9 @@ export interface DualKeyMapEntry<PrimaryKey extends PropertyKey, SecondaryKey ex
  * The secondary index stores the set of primary keys for a given secondary key, allowing
  * efficient inverse lookups such as "all node IDs that share the same parent".
  */
-export class DualKeyMap<PrimaryKey extends PropertyKey, SecondaryKey extends PropertyKey, Value> implements Iterable<DualKeyMapEntry<PrimaryKey, SecondaryKey, Value>> {
+export class DualKeyMap<PrimaryKey extends PropertyKey, SecondaryKey extends PropertyKey, Value>
+  implements Iterable<DualKeyMapEntry<PrimaryKey, SecondaryKey, Value>>
+{
   private readonly primaryMap = new Map<PrimaryKey, { value: Value; secondaryKey: SecondaryKey }>();
   private readonly secondaryIndex = new Map<SecondaryKey, Set<PrimaryKey>>();
 
@@ -106,7 +112,9 @@ export class DualKeyMap<PrimaryKey extends PropertyKey, SecondaryKey extends Pro
       next: (): IteratorResult<DualKeyMapEntry<PrimaryKey, SecondaryKey, Value>> => {
         const { value, done } = iterator.next();
         if (done) {
-          return { done: true, value: undefined } as IteratorResult<DualKeyMapEntry<PrimaryKey, SecondaryKey, Value>>;
+          return { done: true, value: undefined } as IteratorResult<
+            DualKeyMapEntry<PrimaryKey, SecondaryKey, Value>
+          >;
         }
         const [primaryKey, payload] = value;
         return {

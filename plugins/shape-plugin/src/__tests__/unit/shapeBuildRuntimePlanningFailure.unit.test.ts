@@ -1,5 +1,5 @@
-import type { NodeId } from '@hierarchidb/core-types';
 import { AuthRequiredError } from '@hierarchidb/auth';
+import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SourceTaskPayload } from '../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/index.js';
@@ -246,9 +246,7 @@ describe('shape build runtime zero-task planning failure', () => {
       stopReason: 'failed' as const,
       canResume: false,
     };
-    getBuildSessionRecordMock
-      .mockResolvedValueOnce(pausedSession)
-      .mockResolvedValue(failedSession);
+    getBuildSessionRecordMock.mockResolvedValueOnce(pausedSession).mockResolvedValue(failedSession);
 
     await expect(startBuildSession()).rejects.toThrow(expectedErrorMessage);
 

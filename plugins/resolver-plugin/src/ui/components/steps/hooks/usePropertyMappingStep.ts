@@ -46,11 +46,21 @@ export const usePropertyMappingStep = ({
           const targetProperty = simpleMatch[2]?.trim() || '';
           const transformFunction = simpleMatch[4]?.trim();
 
-          if (sourceSchema && !sourceSchema.properties?.some((p: PropertyInfo) => p.name === sourceProperty)) {
-            errors.push(`Line ${index + 1}: Source property "${sourceProperty}" not found in source schema`);
+          if (
+            sourceSchema &&
+            !sourceSchema.properties?.some((p: PropertyInfo) => p.name === sourceProperty)
+          ) {
+            errors.push(
+              `Line ${index + 1}: Source property "${sourceProperty}" not found in source schema`
+            );
           }
-          if (targetSchema && !targetSchema.properties?.some((p: PropertyInfo) => p.name === targetProperty)) {
-            errors.push(`Line ${index + 1}: Target property "${targetProperty}" not found in target schema`);
+          if (
+            targetSchema &&
+            !targetSchema.properties?.some((p: PropertyInfo) => p.name === targetProperty)
+          ) {
+            errors.push(
+              `Line ${index + 1}: Target property "${targetProperty}" not found in target schema`
+            );
           }
 
           rules.push({
@@ -119,7 +129,9 @@ export const usePropertyMappingStep = ({
     const suggestions: string[] = [];
 
     sourceSchema.properties.forEach((sourceProp: PropertyInfo) => {
-      const exactMatch = targetSchema.properties.find((targetProp: PropertyInfo) => targetProp.name === sourceProp.name);
+      const exactMatch = targetSchema.properties.find(
+        (targetProp: PropertyInfo) => targetProp.name === sourceProp.name
+      );
       if (exactMatch) {
         suggestions.push(`${sourceProp.name} -> ${exactMatch.name}`);
       }
@@ -154,21 +166,25 @@ export const usePropertyMappingStep = ({
     const mockPreview: MappingPreviewResult = {
       success: true,
       mappedData:
-        sourceSchema.sampleData
-          ?.slice(0, 3)
-          .map((sample: Record<string, unknown>) => {
-            const mapped: Record<string, unknown> = {};
-            draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
-              if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
-                mapped[rule.targetProperty] = (sample as Record<string, unknown>)[rule.sourceProperty];
-              }
-            });
-            return mapped;
-          }) || [],
-      unmappedProperties:
-        sourceSchema.properties
-          .filter((prop: PropertyInfo) => !draftData.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
-          .map((prop: PropertyInfo) => prop.name),
+        sourceSchema.sampleData?.slice(0, 3).map((sample: Record<string, unknown>) => {
+          const mapped: Record<string, unknown> = {};
+          draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
+            if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
+              mapped[rule.targetProperty] = (sample as Record<string, unknown>)[
+                rule.sourceProperty
+              ];
+            }
+          });
+          return mapped;
+        }) || [],
+      unmappedProperties: sourceSchema.properties
+        .filter(
+          (prop: PropertyInfo) =>
+            !draftData.mappingRules!.some(
+              (rule: PropertyMappingRule) => rule.sourceProperty === prop.name
+            )
+        )
+        .map((prop: PropertyInfo) => prop.name),
       errors: mappingErrors.map((message) => ({ property: 'mapping', message })),
       statistics: {
         totalRecords: sourceSchema.sampleData?.length || 0,

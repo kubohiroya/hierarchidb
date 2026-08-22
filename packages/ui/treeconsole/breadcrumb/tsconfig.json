@@ -2,13 +2,8 @@
   "extends": "../../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": [
-      "ES2020",
-      "DOM"
-    ],
+    "lib": ["ES2020", "DOM"],
     "jsx": "react-jsx"
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

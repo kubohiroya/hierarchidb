@@ -1,10 +1,18 @@
-import React, { useMemo } from 'react';
-import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton, Paper } from '@mui/material';
-import { ExpandMore, ChevronRight } from '@mui/icons-material';
+import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import {
-  flexRender,
-  type ColumnDef,
-} from '@tanstack/react-table';
+  Box,
+  IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
+import { type ColumnDef, flexRender } from '@tanstack/react-table';
+import React, { useMemo } from 'react';
 import { formatJsonNodeValue, type JsonNode, useJsonTreeView } from './useJsonTreeView';
 
 type JsonTreeViewProps = {
@@ -18,49 +26,56 @@ export const JsonTreeView: React.FC<JsonTreeViewProps> = ({
   defaultExpandedDepth = 1,
   maxHeight = 360,
 }) => {
-  const columns = useMemo<ColumnDef<JsonNode>[]>(() => [
-    {
-      id: 'key',
-      header: 'Key',
-      cell: ({ row }) => {
-        const canExpand = row.getCanExpand();
-        return (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              pl: row.depth * 16,
-              minWidth: 0,
-            }}
-          >
-            {canExpand ? (
-              <IconButton
-                size="small"
-                onClick={row.getToggleExpandedHandler()}
-                aria-label={row.getIsExpanded() ? 'Collapse' : 'Expand'}
-              >
-                {row.getIsExpanded() ? <ExpandMore fontSize="small" /> : <ChevronRight fontSize="small" />}
-              </IconButton>
-            ) : (
-              <Box sx={{ width: 32 }} />
-            )}
-            <Typography variant="body2" noWrap>
-              {row.original.key}
-            </Typography>
-          </Box>
-        );
+  const columns = useMemo<ColumnDef<JsonNode>[]>(
+    () => [
+      {
+        id: 'key',
+        header: 'Key',
+        cell: ({ row }) => {
+          const canExpand = row.getCanExpand();
+          return (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                pl: row.depth * 16,
+                minWidth: 0,
+              }}
+            >
+              {canExpand ? (
+                <IconButton
+                  size="small"
+                  onClick={row.getToggleExpandedHandler()}
+                  aria-label={row.getIsExpanded() ? 'Collapse' : 'Expand'}
+                >
+                  {row.getIsExpanded() ? (
+                    <ExpandMore fontSize="small" />
+                  ) : (
+                    <ChevronRight fontSize="small" />
+                  )}
+                </IconButton>
+              ) : (
+                <Box sx={{ width: 32 }} />
+              )}
+              <Typography variant="body2" noWrap>
+                {row.original.key}
+              </Typography>
+            </Box>
+          );
+        },
       },
-    },
-    {
-      id: 'value',
-      header: 'Value',
-      cell: ({ row }) => (
-        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-          {formatJsonNodeValue(row.original.value, row.original.type)}
-        </Typography>
-      ),
-    },
-  ], []);
+      {
+        id: 'value',
+        header: 'Value',
+        cell: ({ row }) => (
+          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+            {formatJsonNodeValue(row.original.value, row.original.type)}
+          </Typography>
+        ),
+      },
+    ],
+    []
+  );
 
   const { table, rowModel } = useJsonTreeView({
     data,

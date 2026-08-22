@@ -1,6 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
-import { createClient } from 'graphql-ws';
 import type { Client as WsClient } from 'graphql-ws';
+import { createClient } from 'graphql-ws';
 import { ideGsmGraphqlDocuments } from './ideGsmGraphqlDocuments.js';
 import type {
   CalibrateCommandInput,

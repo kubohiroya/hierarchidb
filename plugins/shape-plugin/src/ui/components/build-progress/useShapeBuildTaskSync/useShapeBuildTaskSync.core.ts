@@ -2,9 +2,13 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { resolveProgressValue } from './useShapeBuildTaskSync.comparisonUtils.js';
 import { resetTaskSyncDebugLogCounters } from './useShapeBuildTaskSync.debugConstants.js';
 import { useShapeBuildTaskSyncResolver } from './useShapeBuildTaskSyncResolver.js';
-import type { RawTaskSummary, SyncArgs, SyncResult } from './useShapeBuildTaskSyncTypes.js';
 import { useShapeBuildTaskSyncScheduling } from './useShapeBuildTaskSyncScheduling.js';
-import type { HandlerRefs } from './useShapeBuildTaskSyncTypes.js';
+import type {
+  HandlerRefs,
+  RawTaskSummary,
+  SyncArgs,
+  SyncResult,
+} from './useShapeBuildTaskSyncTypes.js';
 
 type CoreDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];

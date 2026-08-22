@@ -1,5 +1,4 @@
 export { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from './IdeGsmClient.js';
-export { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';
 export type {
   CalibrateCommandInput,
   ExportFilter,
@@ -19,3 +18,4 @@ export type {
   TaskStatus,
   TaskStatusListener,
 } from './ideGsmTypes.js';
+export { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';

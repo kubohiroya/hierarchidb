@@ -17,15 +17,15 @@ export function normalizeIconComponent(
     const candidate = value;
 
     if (
-      typeof Reflect.get(candidate, '$$typeof') === 'symbol'
-      || typeof Reflect.get(candidate, 'render') === 'function'
+      typeof Reflect.get(candidate, '$$typeof') === 'symbol' ||
+      typeof Reflect.get(candidate, 'render') === 'function'
     ) {
       return value as ComponentType<SvgIconProps>;
     }
 
     if (
-      typeof Reflect.get(candidate, 'type') === 'function'
-      || typeof Reflect.get(candidate, 'type') === 'object'
+      typeof Reflect.get(candidate, 'type') === 'function' ||
+      typeof Reflect.get(candidate, 'type') === 'object'
     ) {
       return value as ComponentType<SvgIconProps>;
     }

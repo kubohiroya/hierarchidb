@@ -1,17 +1,12 @@
 {
   "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "types": [
-      "node",
-      "vite/client"
-    ],
+    "types": ["node", "vite/client"],
     "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "UI transitive types; reduce when upstream types stabilize."
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

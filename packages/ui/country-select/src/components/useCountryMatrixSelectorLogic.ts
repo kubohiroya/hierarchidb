@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SelectionMatrixColumn, SelectionMatrixRow } from '@hierarchidb/components';
 import type { PrimitiveAtom } from 'jotai';
 import { atom } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { SelectionMatrixColumn, SelectionMatrixRow } from '@hierarchidb/components';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Country } from '~/types/Country';
 import { CONTINENTS } from '~/types/Country';
 import type { MatrixConfig, MatrixSelection } from '~/types/MatrixColumn';
@@ -69,7 +69,7 @@ export function useCountryMatrixSelectorLogic({
 
   const disabledColumnIdSet = useMemo(
     () => new Set(matrixConfig.disabledColumnIds ?? []),
-    [matrixConfig.disabledColumnIds],
+    [matrixConfig.disabledColumnIds]
   );
 
   const selectionColumns: SelectionMatrixColumn[] = useMemo(
@@ -82,7 +82,7 @@ export function useCountryMatrixSelectorLogic({
         width: column.width,
         disabled: disabledColumnIdSet.has(column.id),
       })),
-    [disabledColumnIdSet, matrixConfig.columns],
+    [disabledColumnIdSet, matrixConfig.columns]
   );
 
   const scrollToRowIndex = useCallback(
@@ -113,7 +113,11 @@ export function useCountryMatrixSelectorLogic({
               const targetTop = afterState.scrollTop ?? startTop;
               const delta = targetTop - startTop;
               if (Math.abs(delta) < 2) {
-                handle.scrollToIndex({ index: targetIndex, align: 'start', behavior: scrollBehavior });
+                handle.scrollToIndex({
+                  index: targetIndex,
+                  align: 'start',
+                  behavior: scrollBehavior,
+                });
                 return;
               }
 
@@ -137,50 +141,56 @@ export function useCountryMatrixSelectorLogic({
         });
       });
     },
-    [indexScrollDurationMs, jumpInsteadOfScroll, scrollBehavior],
+    [indexScrollDurationMs, jumpInsteadOfScroll, scrollBehavior]
   );
 
-  const continentAliases: Record<string, keyof typeof CONTINENTS> = useMemo(() => ({
-    'north america': 'NA',
-    'south america': 'SA',
-    'central america': 'NA',
-    europe: 'EU',
-    asia: 'AS',
-    oceania: 'OC',
-    australia: 'OC',
-    africa: 'AF',
-    antarctica: 'AN',
-    'n/a': 'XX',
-    unknown: 'XX',
-    unspecified: 'XX',
-    none: 'XX',
-    アフリカ: 'AF',
-    アメリカ: 'NA',
-    北アメリカ: 'NA',
-    南アメリカ: 'SA',
-    中南アメリカ: 'SA',
-    ヨーロッパ: 'EU',
-    欧州: 'EU',
-    オセアニア: 'OC',
-    大洋州: 'OC',
-    アジア: 'AS',
-    中東: 'AS',
-    南極: 'AN',
-    南極大陸: 'AN',
-    不明: 'XX',
-    不詳: 'XX',
-  }), []);
+  const continentAliases: Record<string, keyof typeof CONTINENTS> = useMemo(
+    () => ({
+      'north america': 'NA',
+      'south america': 'SA',
+      'central america': 'NA',
+      europe: 'EU',
+      asia: 'AS',
+      oceania: 'OC',
+      australia: 'OC',
+      africa: 'AF',
+      antarctica: 'AN',
+      'n/a': 'XX',
+      unknown: 'XX',
+      unspecified: 'XX',
+      none: 'XX',
+      アフリカ: 'AF',
+      アメリカ: 'NA',
+      北アメリカ: 'NA',
+      南アメリカ: 'SA',
+      中南アメリカ: 'SA',
+      ヨーロッパ: 'EU',
+      欧州: 'EU',
+      オセアニア: 'OC',
+      大洋州: 'OC',
+      アジア: 'AS',
+      中東: 'AS',
+      南極: 'AN',
+      南極大陸: 'AN',
+      不明: 'XX',
+      不詳: 'XX',
+    }),
+    []
+  );
 
-  const toRegionLabel = useCallback((continent?: string) => {
-    if (!continent) return '-';
-    const key = continent.toLowerCase().trim();
-    const alias = continentAliases[key];
-    if (alias && CONTINENTS[alias]) return CONTINENTS[alias].name;
-    if (CONTINENTS[continent as keyof typeof CONTINENTS]) {
-      return CONTINENTS[continent as keyof typeof CONTINENTS].name;
-    }
-    return continent;
-  }, [continentAliases]);
+  const toRegionLabel = useCallback(
+    (continent?: string) => {
+      if (!continent) return '-';
+      const key = continent.toLowerCase().trim();
+      const alias = continentAliases[key];
+      if (alias && CONTINENTS[alias]) return CONTINENTS[alias].name;
+      if (CONTINENTS[continent as keyof typeof CONTINENTS]) {
+        return CONTINENTS[continent as keyof typeof CONTINENTS].name;
+      }
+      return continent;
+    },
+    [continentAliases]
+  );
 
   const flagFromCode = useCallback((code?: string) => {
     if (!code || code.length !== 2) return '';
@@ -198,7 +208,8 @@ export function useCountryMatrixSelectorLogic({
     const keyword = search.trim().toLowerCase();
     const enriched = countries.map((country, index) => {
       const regionLabel = toRegionLabel(country.continent as string | undefined);
-      const native = country.nativeName && country.nativeName !== country.name ? country.nativeName : undefined;
+      const native =
+        country.nativeName && country.nativeName !== country.name ? country.nativeName : undefined;
       const code = country.code?.length === 2 ? country.code : '';
       const flag = country.flag || flagFromCode(code);
       const label = `${flag ? `${flag} ` : ''}${country.name}${code ? ` (${code})` : ''}${native ? ` / ${native}` : ''}`;
@@ -213,9 +224,9 @@ export function useCountryMatrixSelectorLogic({
     const filtered = enriched.filter(({ country }) => {
       if (!keyword) return true;
       return (
-        country.name.toLowerCase().includes(keyword)
-        || country.nativeName?.toLowerCase?.().includes(keyword)
-        || country.code.toLowerCase().includes(keyword)
+        country.name.toLowerCase().includes(keyword) ||
+        country.nativeName?.toLowerCase?.().includes(keyword) ||
+        country.code.toLowerCase().includes(keyword)
       );
     });
 
@@ -228,9 +239,12 @@ export function useCountryMatrixSelectorLogic({
       }
       if (sortState.kind === 'column' && sortState.columnId) {
         const activeSelectionMap = selectionMapForSort ?? selectionMap;
-        const leftSelected = activeSelectionMap.get(left.country.code)?.[sortState.columnId] ?? false;
-        const rightSelected = activeSelectionMap.get(right.country.code)?.[sortState.columnId] ?? false;
-        if (leftSelected === rightSelected) return compare(left.country.name, right.country.name, 'asc');
+        const leftSelected =
+          activeSelectionMap.get(left.country.code)?.[sortState.columnId] ?? false;
+        const rightSelected =
+          activeSelectionMap.get(right.country.code)?.[sortState.columnId] ?? false;
+        if (leftSelected === rightSelected)
+          return compare(left.country.name, right.country.name, 'asc');
         return sortState.direction === 'desc'
           ? Number(rightSelected) - Number(leftSelected)
           : Number(leftSelected) - Number(rightSelected);
@@ -239,7 +253,17 @@ export function useCountryMatrixSelectorLogic({
     });
 
     return filtered;
-  }, [countries, flagFromCode, search, selectionMap, selectionMapForSort, sortState.columnId, sortState.direction, sortState.kind, toRegionLabel]);
+  }, [
+    countries,
+    flagFromCode,
+    search,
+    selectionMap,
+    selectionMapForSort,
+    sortState.columnId,
+    sortState.direction,
+    sortState.kind,
+    toRegionLabel,
+  ]);
 
   const rows: SelectionMatrixRow<{ country: Country; sourceIndex: number }>[] = useMemo(
     () =>
@@ -249,12 +273,14 @@ export function useCountryMatrixSelectorLogic({
         subLabel: regionLabel,
         data: { country, sourceIndex: index },
       })),
-    [filteredRows],
+    [filteredRows]
   );
 
   const matrixState = useMemo(() => {
     return rows.map((row) =>
-      selectionColumns.map((column) => selectionMap.get(row.data.country.code)?.[column.id] ?? false),
+      selectionColumns.map(
+        (column) => selectionMap.get(row.data.country.code)?.[column.id] ?? false
+      )
     );
   }, [rows, selectionColumns, selectionMap]);
 
@@ -287,14 +313,18 @@ export function useCountryMatrixSelectorLogic({
 
   const setMatrixFromSelections = useCallback(
     (nextSelections: MatrixSelection[]) => {
-      const selectionByCode = new Map(nextSelections.map((selection) => [selection.countryCode, selection.selections]));
+      const selectionByCode = new Map(
+        nextSelections.map((selection) => [selection.countryCode, selection.selections])
+      );
       const nextMatrix = rows.map((row) =>
-        selectionColumns.map((column) => Boolean(selectionByCode.get(row.data.country.code)?.[column.id])),
+        selectionColumns.map((column) =>
+          Boolean(selectionByCode.get(row.data.country.code)?.[column.id])
+        )
       );
       pendingSyncRef.current = true;
       store.set(matrixStateAtom, nextMatrix);
     },
-    [matrixStateAtom, rows, selectionColumns, store],
+    [matrixStateAtom, rows, selectionColumns, store]
   );
 
   useEffect(() => {
@@ -307,14 +337,17 @@ export function useCountryMatrixSelectorLogic({
     store.set(matrixStateAtom, matrixState);
   }, [isMatrixEqual, matrixState, matrixStateAtom, store]);
 
-  const handleSortToggle = useCallback((kind: 'country' | 'region' | 'column', columnId?: string) => {
-    setSortState((prev) => {
-      if (prev.kind === kind && prev.columnId === columnId) {
-        return { kind, columnId, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
-      }
-      return { kind, columnId, direction: 'asc' };
-    });
-  }, []);
+  const handleSortToggle = useCallback(
+    (kind: 'country' | 'region' | 'column', columnId?: string) => {
+      setSortState((prev) => {
+        if (prev.kind === kind && prev.columnId === columnId) {
+          return { kind, columnId, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+        }
+        return { kind, columnId, direction: 'asc' };
+      });
+    },
+    []
+  );
 
   const handleSelectionChange = useCallback(
     (rowIndex: number, colIndex: number, checked: boolean) => {
@@ -332,7 +365,7 @@ export function useCountryMatrixSelectorLogic({
       setMatrixFromSelections(normalized);
       onSelectionsChange(normalized);
     },
-    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections],
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections]
   );
 
   const handleSelectAllColumn = useCallback(
@@ -363,7 +396,7 @@ export function useCountryMatrixSelectorLogic({
         });
       }
     },
-    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections],
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections]
   );
 
   const handleSelectRow = useCallback(
@@ -387,7 +420,7 @@ export function useCountryMatrixSelectorLogic({
       setMatrixFromSelections(normalized);
       onSelectionsChange(normalized);
     },
-    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections],
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections]
   );
 
   const alphabetIndex = useMemo(() => {
@@ -399,7 +432,11 @@ export function useCountryMatrixSelectorLogic({
     });
     return Object.entries(groups)
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([letter, value]) => ({ label: letter, count: value.count, firstRowId: value.firstRowId }));
+      .map(([letter, value]) => ({
+        label: letter,
+        count: value.count,
+        firstRowId: value.firstRowId,
+      }));
   }, [rows]);
 
   const alphabetIndexSelections = useMemo(() => {
@@ -407,7 +444,9 @@ export function useCountryMatrixSelectorLogic({
     rows.forEach((row) => {
       const letter = (row.data.country.name?.[0] ?? '#').toUpperCase();
       const selectionsByColumn = selectionMap.get(row.data.country.code);
-      const hasSelection = Boolean(selectionsByColumn && Object.values(selectionsByColumn).some(Boolean));
+      const hasSelection = Boolean(
+        selectionsByColumn && Object.values(selectionsByColumn).some(Boolean)
+      );
       if (hasSelection) {
         selectedByLetter.set(letter, true);
         return;
@@ -434,7 +473,7 @@ export function useCountryMatrixSelectorLogic({
   const isCellEnabledWrapper = useCallback(
     (row: SelectionMatrixRow<{ country: Country }>, column: SelectionMatrixColumn) =>
       !disabledColumnIdSet.has(column.id) && isCellEnabled(row.data.country, column.id),
-    [disabledColumnIdSet, isCellEnabled],
+    [disabledColumnIdSet, isCellEnabled]
   );
 
   const getColumnSortDirection = useCallback(
@@ -443,7 +482,7 @@ export function useCountryMatrixSelectorLogic({
       if (!column || sortState.kind !== 'column' || sortState.columnId !== column.id) return 'none';
       return sortState.direction;
     },
-    [selectionColumns, sortState],
+    [selectionColumns, sortState]
   );
 
   const getRowMetaSortDirection = useCallback(
@@ -452,7 +491,7 @@ export function useCountryMatrixSelectorLogic({
       if (metaIndex === 1 && sortState.kind === 'country') return sortState.direction;
       return 'none';
     },
-    [sortState],
+    [sortState]
   );
 
   return {

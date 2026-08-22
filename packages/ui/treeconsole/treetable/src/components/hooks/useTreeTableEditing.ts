@@ -3,10 +3,10 @@
  * Centralises inline editing atoms and helpers for TreeTable rows.
  */
 
-import { useCallback, useState } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
 import { getTreeNodeDescription, getTreeNodeName } from '@hierarchidb/tree-api';
-import type { TreeTableController, TreeNodeInUI } from '~/types';
+import type { Dispatch, SetStateAction } from 'react';
+import { useCallback, useState } from 'react';
+import type { TreeNodeInUI, TreeTableController } from '~/types';
 
 interface UseTreeTableEditingParams {
   controller: TreeTableController | null;
@@ -21,11 +21,16 @@ interface UseTreeTableEditingResult {
   setEditingValue: Dispatch<SetStateAction<string>>;
   editingError: string | null;
   setEditingError: Dispatch<SetStateAction<string | null>>;
-  validateInline: (field: 'name' | 'description', value: string) => { ok: boolean; message?: string };
+  validateInline: (
+    field: 'name' | 'description',
+    value: string
+  ) => { ok: boolean; message?: string };
   handleStartEdit: (node: TreeNodeInUI, field?: 'name' | 'description') => void;
 }
 
-export function useTreeTableEditing({ controller }: UseTreeTableEditingParams): UseTreeTableEditingResult {
+export function useTreeTableEditing({
+  controller,
+}: UseTreeTableEditingParams): UseTreeTableEditingResult {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<'name' | 'description' | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -42,13 +47,16 @@ export function useTreeTableEditing({ controller }: UseTreeTableEditingParams): 
     return { ok: true };
   }, []);
 
-  const handleStartEdit = useCallback((node: TreeNodeInUI, field: 'name' | 'description' = 'name') => {
-    setEditingNodeId(node.id);
-    setEditingField(field);
-    const initial = field === 'name' ? getTreeNodeName(node) : getTreeNodeDescription(node);
-    setEditingValue(initial);
-    controller?.startEdit?.(node.id);
-  }, [controller]);
+  const handleStartEdit = useCallback(
+    (node: TreeNodeInUI, field: 'name' | 'description' = 'name') => {
+      setEditingNodeId(node.id);
+      setEditingField(field);
+      const initial = field === 'name' ? getTreeNodeName(node) : getTreeNodeDescription(node);
+      setEditingValue(initial);
+      controller?.startEdit?.(node.id);
+    },
+    [controller]
+  );
 
   return {
     editingNodeId,

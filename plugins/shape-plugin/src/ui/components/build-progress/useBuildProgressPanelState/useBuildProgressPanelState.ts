@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useMemo } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { isDev, logStartTrace } from './useBuildProgressPanelState.utils.js';
 import { useBuildProgressPanelStateActions } from './useBuildProgressPanelStateActions.js';
 import { useBuildProgressPanelStateRuntimeState } from './useBuildProgressPanelStateRuntimeState.js';
 import { useShapeBuildProgressWarnings } from './useShapeBuildProgressWarnings.js';
-import { isDev, logStartTrace } from './useBuildProgressPanelState.utils.js';
 
 export const useBuildProgressPanelState = (params: {
   data?: Partial<ShapeEntity>;
@@ -50,16 +50,17 @@ export const useBuildProgressPanelState = (params: {
     t,
   });
 
-  const { mergedControls, handleStartClick, handleConfirmStart } = useBuildProgressPanelStateActions({
-    resolvedNodeId: runtimeState.nodeIdForLog ? runtimeState.nodeIdForLog as NodeId : undefined,
-    buildStatus: summary.buildStatus,
-    startWarning: Boolean(startWarning),
-    warningMessage,
-    controls,
-    localStartPending,
-    setWarningDialogOpen,
-    setPendingUserAction,
-  });
+  const { mergedControls, handleStartClick, handleConfirmStart } =
+    useBuildProgressPanelStateActions({
+      resolvedNodeId: runtimeState.nodeIdForLog ? (runtimeState.nodeIdForLog as NodeId) : undefined,
+      buildStatus: summary.buildStatus,
+      startWarning: Boolean(startWarning),
+      warningMessage,
+      controls,
+      localStartPending,
+      setWarningDialogOpen,
+      setPendingUserAction,
+    });
 
   useMemo(() => {
     if (nodeIdForLog) {
@@ -127,8 +128,8 @@ export const useBuildProgressPanelState = (params: {
 };
 
 export {
-  resolveCompletionFailedStageLabel,
-  resolveActiveRunningStageId,
   isDev,
   logStartTrace,
+  resolveActiveRunningStageId,
+  resolveCompletionFailedStageLabel,
 } from './useBuildProgressPanelState.utils.js';

@@ -1,5 +1,5 @@
-export { VectorTileDbBase } from './VectorTileDbBase.js';
 export type {
-  FeatureMetadataRow,
   DataSourceMetadataRow,
+  FeatureMetadataRow,
 } from './VectorTileDbBase.js';
+export { VectorTileDbBase } from './VectorTileDbBase.js';

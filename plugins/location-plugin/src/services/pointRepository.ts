@@ -1,11 +1,11 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import { buildTileIdByZoom } from '@hierarchidb/location-store';
-import { LocationDB } from '~/worker/locationEntitiesDB';
-import { toGroupRow, fromGroupRow } from '~/worker/normalizerUtils';
-import type { LocationGroupItemData } from '~/common/types/entities';
-import type { LocationPointProperties } from '~/common/entities/LocationPoint';
+import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
+import type { LocationGroupItemData } from '~/common/types/entities';
+import { LocationDB } from '~/worker/locationEntitiesDB';
+import { fromGroupRow, toGroupRow } from '~/worker/normalizerUtils';
 
 type PointItem = FeatureItemBase<LocationGroupItemData>;
 type PointProperties = LocationPointProperties;
@@ -33,14 +33,13 @@ async function getDb(): Promise<LocationDB> {
 const toItem = (point: PointProperties): PointItem => {
   const longitude = point.longitude;
   const latitude = point.latitude;
-  const withTiles = (
-    typeof longitude === 'number'
-    && Number.isFinite(longitude)
-    && typeof latitude === 'number'
-    && Number.isFinite(latitude)
-  )
-    ? { ...point, ...buildTileIdByZoom(longitude, latitude) }
-    : point;
+  const withTiles =
+    typeof longitude === 'number' &&
+    Number.isFinite(longitude) &&
+    typeof latitude === 'number' &&
+    Number.isFinite(latitude)
+      ? { ...point, ...buildTileIdByZoom(longitude, latitude) }
+      : point;
   return {
     id: crypto.randomUUID(),
     data: { ...withTiles },
@@ -48,7 +47,10 @@ const toItem = (point: PointProperties): PointItem => {
   };
 };
 
-export async function appendLocationPoints(nodeId: NodeId, points: PointProperties[]): Promise<void> {
+export async function appendLocationPoints(
+  nodeId: NodeId,
+  points: PointProperties[]
+): Promise<void> {
   if (!points.length) return;
   const db = await getDb();
   const now = Date.now();
@@ -56,7 +58,10 @@ export async function appendLocationPoints(nodeId: NodeId, points: PointProperti
   await db.features.bulkPut(rows);
 }
 
-export async function replaceLocationPoints(nodeId: NodeId, points: PointProperties[]): Promise<void> {
+export async function replaceLocationPoints(
+  nodeId: NodeId,
+  points: PointProperties[]
+): Promise<void> {
   const db = await getDb();
   await db.transaction('rw', db.features, async () => {
     await db.features.where('nodeId').equals(nodeId).delete();
@@ -73,7 +78,7 @@ export async function replaceLocationPointsChunked(
   options?: {
     chunkSize?: number;
     onProgress?: (progress: LocationPointWriteProgress) => void;
-  },
+  }
 ): Promise<void> {
   const db = await getDb();
   const chunkSize = Math.max(1, options?.chunkSize ?? 1000);

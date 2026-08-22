@@ -1,34 +1,34 @@
-import { memo, useEffect, useState } from 'react';
+import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
+import type { IconRegistryValue } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import LayersIcon from '@mui/icons-material/Layers';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import PauseCircleIcon from '@mui/icons-material/PauseCircle';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ReplayIcon from '@mui/icons-material/Replay';
+import TuneIcon from '@mui/icons-material/Tune';
 import {
   Box,
   CircularProgress,
   IconButton,
+  LinearProgress,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  LinearProgress,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import LayersIcon from '@mui/icons-material/Layers';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseCircleIcon from '@mui/icons-material/PauseCircle';
-import ReplayIcon from '@mui/icons-material/Replay';
-import TuneIcon from '@mui/icons-material/Tune';
-import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import type { NodeId } from '@hierarchidb/core-types';
 import type { DragEvent, MouseEvent } from 'react';
+import { memo, useEffect, useState } from 'react';
 import type { BuildSessionQueueEntry } from './hooks/useBuildSessionListQueue';
-import type { IconRegistryValue } from '@hierarchidb/components';
 
 type BuildSessionQueueSessionRowProps = {
   row: BuildSessionQueueEntry;
@@ -38,7 +38,10 @@ type BuildSessionQueueSessionRowProps = {
   isRunning: boolean;
   onNavigate: (row: BuildSessionQueueEntry) => void;
   onDeleteRequest: (row: BuildSessionQueueEntry) => void;
-  onStartStoppedSession: (row: BuildSessionQueueEntry, event: MouseEvent<HTMLButtonElement>) => void;
+  onStartStoppedSession: (
+    row: BuildSessionQueueEntry,
+    event: MouseEvent<HTMLButtonElement>
+  ) => void;
   onDragStart: (event: DragEvent<HTMLElement>, nodeId: NodeId) => void;
   onDragEnd: () => void;
   onDragOver: (event: DragEvent, nodeId: NodeId) => void;
@@ -86,13 +89,12 @@ const resolveStageIcon = (stage: string | undefined) => {
   return null;
 };
 
-const formatTemplate = (text: string, values: Record<string, string>): string => (
-  Object.entries(values).reduce((next, [key, value]) => next.replaceAll(`{{${key}}}`, value), text)
-);
+const formatTemplate = (text: string, values: Record<string, string>): string =>
+  Object.entries(values).reduce((next, [key, value]) => next.replaceAll(`{{${key}}}`, value), text);
 
 const getTotalElapsedText = (
   t: (key: string, fallback: string) => string,
-  elapsedText: string,
+  elapsedText: string
 ): string => {
   return formatTemplate(t('buildSessionQueue.totalElapsed', '(総経過時間 {{elapsed}})'), {
     elapsed: elapsedText,
@@ -102,7 +104,7 @@ const getTotalElapsedText = (
 const resolveStatusText = (
   t: (key: string, fallback: string) => string,
   session: BuildSessionRuntimeRecord,
-  status: BuildSessionStatusView,
+  status: BuildSessionStatusView
 ): string => {
   if (status.mode === 'running') {
     return t('buildSessionQueue.statusRunning', '実行中');
@@ -122,7 +124,7 @@ const resolveStatusText = (
 const resolveStatusCaptionText = (
   t: (key: string, fallback: string) => string,
   session: BuildSessionRuntimeRecord,
-  isRunning: boolean,
+  isRunning: boolean
 ): string => {
   if (isRunning) {
     return t('buildSessionQueue.statusRunning', 'Running');
@@ -164,30 +166,35 @@ const BuildSessionQueueSessionRowInner = ({
   const [runningNow, setRunningNow] = useState<number>(() => Date.now());
   const { session, node } = row;
   const isTerminalStatus = session.status === 'completed' || session.status === 'failed';
-  const isActiveRuntimeStatus = session.status === 'starting' || session.status === 'running'
-    || session.status === 'resuming' || session.status === 'finalizing';
+  const isActiveRuntimeStatus =
+    session.status === 'starting' ||
+    session.status === 'running' ||
+    session.status === 'resuming' ||
+    session.status === 'finalizing';
   const inactiveMs = session.inactiveMs ?? 0;
   const startedAt = session.startedAt ?? session.updatedAt ?? runningNow;
   const baseEndAt = isActiveRuntimeStatus
     ? runningNow
     : session.status === 'paused'
-      ? session.lastHeartbeatAt ?? session.updatedAt ?? runningNow
+      ? (session.lastHeartbeatAt ?? session.updatedAt ?? runningNow)
       : isTerminalStatus
-        ? session.completedAt ?? session.updatedAt ?? runningNow
-        : session.updatedAt ?? startedAt;
+        ? (session.completedAt ?? session.updatedAt ?? runningNow)
+        : (session.updatedAt ?? startedAt);
   const elapsed = formatElapsed(Math.max(0, baseEndAt - startedAt - inactiveMs));
   const isPaused = session.status === 'paused';
   const isFailed = session.status === 'failed';
   const isCompleted = session.status === 'completed';
   const canRestart = isPaused || isFailed || isCompleted;
   const stageIcon = resolveStageIcon(session.progress?.stage);
-  const percentageText = isRunning ? `${Math.round(session.progress?.percentage ?? 0)}%` : undefined;
+  const percentageText = isRunning
+    ? `${Math.round(session.progress?.percentage ?? 0)}%`
+    : undefined;
   const statusLine = isRunning
     ? resolveStatusText(t, session, {
-      mode: 'running',
-      elapsedText: elapsed,
-      percentageText,
-    })
+        mode: 'running',
+        elapsedText: elapsed,
+        percentageText,
+      })
     : '';
   const statusCaption = resolveStatusCaptionText(t, session, isRunning);
   const status: BuildSessionStatusView = {
@@ -219,9 +226,13 @@ const BuildSessionQueueSessionRowInner = ({
     <Tooltip title={nodePath} arrow placement="right">
       <ListItem
         disablePadding
-        onDragOver={compactSummary ? undefined : (event) => {
-          onDragOver(event, session.nodeId);
-        }}
+        onDragOver={
+          compactSummary
+            ? undefined
+            : (event) => {
+                onDragOver(event, session.nodeId);
+              }
+        }
         sx={{
           border: 1,
           borderColor: 'divider',
@@ -259,7 +270,10 @@ const BuildSessionQueueSessionRowInner = ({
                   }}
                   onDragEnd={onDragEnd}
                   onMouseDown={(event) => event.stopPropagation()}
-                  sx={{ cursor: canDrag ? 'grab' : 'default', color: canDrag ? 'text.secondary' : 'text.disabled' }}
+                  sx={{
+                    cursor: canDrag ? 'grab' : 'default',
+                    color: canDrag ? 'text.secondary' : 'text.disabled',
+                  }}
                   aria-label={t('buildSessionQueue.dragHandle', 'Drag queue row')}
                 >
                   <DragIndicatorIcon fontSize="small" />
@@ -267,11 +281,7 @@ const BuildSessionQueueSessionRowInner = ({
               ) : null}
             </ListItemIcon>
             <ListItemIcon>{resolveIcon({ nodeType: node?.nodeType ?? 'folder' })}</ListItemIcon>
-            <ListItemText
-              primary={nodeName}
-              secondary={statusLine}
-              sx={{ minWidth: 0 }}
-            />
+            <ListItemText primary={nodeName} secondary={statusLine} sx={{ minWidth: 0 }} />
           </Stack>
 
           <Stack
@@ -296,15 +306,20 @@ const BuildSessionQueueSessionRowInner = ({
             <Stack direction="row" alignItems="center" spacing={0.5}>
               {isRunning ? stageIcon : null}
               <Typography variant="body2">{statusCaption}</Typography>
-              {isRunning ? <Typography variant="body2">{status.percentageText ?? ''}</Typography> : null}
+              {isRunning ? (
+                <Typography variant="body2">{status.percentageText ?? ''}</Typography>
+              ) : null}
             </Stack>
-            <Typography variant="body2" sx={{ minWidth: compactSummary ? 84 : 100, textAlign: 'right' }}>
+            <Typography
+              variant="body2"
+              sx={{ minWidth: compactSummary ? 84 : 100, textAlign: 'right' }}
+            >
               {getTotalElapsedText(t, status.elapsedText)}
             </Typography>
             {compactSummary ? <MoreVertIcon fontSize="small" /> : null}
           </Stack>
         </ListItemButton>
-        {(!compactSummary && isRunning) ? (
+        {!compactSummary && isRunning ? (
           <Box sx={{ px: 1.5, pb: 1 }}>
             <LinearProgress
               variant="determinate"
@@ -335,9 +350,11 @@ const BuildSessionQueueSessionRowInner = ({
         ) : null}
         {!compactSummary && canRestart ? (
           <Tooltip
-            title={index === 0
-              ? t('buildSessionQueue.resumeSession', 'このセッションの実行を再開')
-              : t('buildSessionQueue.prioritizeSession', 'このセッションを優先して実行')}
+            title={
+              index === 0
+                ? t('buildSessionQueue.resumeSession', 'このセッションの実行を再開')
+                : t('buildSessionQueue.prioritizeSession', 'このセッションを優先して実行')
+            }
           >
             <IconButton
               className="queue-action-icon queue-start-icon"
@@ -349,9 +366,11 @@ const BuildSessionQueueSessionRowInner = ({
                 color: 'primary.main',
                 mr: 1,
               }}
-              aria-label={index === 0
-                ? t('buildSessionQueue.resumeSession', 'このセッションの実行を再開')
-                : t('buildSessionQueue.prioritizeSession', 'このセッションを優先して実行')}
+              aria-label={
+                index === 0
+                  ? t('buildSessionQueue.resumeSession', 'このセッションの実行を再開')
+                  : t('buildSessionQueue.prioritizeSession', 'このセッションを優先して実行')
+              }
             >
               {index === 0 ? <ReplayIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
             </IconButton>

@@ -1,11 +1,11 @@
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import { configureWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import { pluginRegistry } from '~/plugin-loaders/index';
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
-import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 import { APP_WORKER_STORE_PRELOADS } from '~/plugin-runtime/storeSelectionUtils';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 // NOTE: Worker runtime-worker and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the

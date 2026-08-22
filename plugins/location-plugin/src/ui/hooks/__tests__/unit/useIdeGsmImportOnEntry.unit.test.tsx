@@ -1,7 +1,7 @@
+import { toNodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useCallback, useState } from 'react';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { toNodeId } from '@hierarchidb/core-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../../common/types/index';
 import { useIdeGsmImportOnEntry } from '../../useIdeGsmImportOnEntry';
 
@@ -82,7 +82,7 @@ describe('useIdeGsmImportOnEntry', () => {
         await deferred.promise;
         onProgress({ phase: 'completed', processed: 1, total: 1, chunk: 1 });
         return { total: 1 };
-      },
+      }
     );
 
     const nodeId = toNodeId('location-import-node-1');
@@ -91,11 +91,14 @@ describe('useIdeGsmImportOnEntry', () => {
       const [callbackVersion, setCallbackVersion] = useState(0);
       const [updatesLog, setUpdatesLog] = useState<Array<Partial<LocationEntity>>>([]);
 
-      const onUpdate = useCallback((updates: Partial<LocationEntity>) => {
-        setUpdatesLog((prev) => [...prev, updates]);
-        setDraft((prev) => ({ ...prev, ...updates }));
-        setCallbackVersion((prev) => prev + 1);
-      }, [callbackVersion]);
+      const onUpdate = useCallback(
+        (updates: Partial<LocationEntity>) => {
+          setUpdatesLog((prev) => [...prev, updates]);
+          setDraft((prev) => ({ ...prev, ...updates }));
+          setCallbackVersion((prev) => prev + 1);
+        },
+        [callbackVersion]
+      );
 
       useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
       return { draft, updatesLog };
@@ -116,8 +119,12 @@ describe('useIdeGsmImportOnEntry', () => {
     });
 
     expect(mocks.importIdeGsmLocations).toHaveBeenCalledTimes(1);
-    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'processing')).toBe(true);
-    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'completed')).toBe(true);
+    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'processing')).toBe(
+      true
+    );
+    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'completed')).toBe(
+      true
+    );
   });
 
   it('does not retry endlessly when the same hash failed once', async () => {
@@ -147,7 +154,9 @@ describe('useIdeGsmImportOnEntry', () => {
     });
 
     expect(mocks.importIdeGsmLocations).toHaveBeenCalledTimes(1);
-    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'failed')).toBe(true);
+    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'failed')).toBe(
+      true
+    );
   });
 
   it('keeps single run when draft selection reference churns with same hash', async () => {

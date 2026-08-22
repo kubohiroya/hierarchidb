@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import type { I18nInstance } from '@hierarchidb/ui-i18n';
+import { useEffect, useState } from 'react';
 
 export function useI18nReadyVersion(i18n: I18nInstance): number {
   const [version, setVersion] = useState(0);

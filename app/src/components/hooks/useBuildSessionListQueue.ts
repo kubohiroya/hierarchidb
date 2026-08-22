@@ -1,11 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent } from 'react';
+import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
-import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
+import type { TreeNode } from '@hierarchidb/tree-api';
+import { useWorkerQueryAPI } from '@hierarchidb/ui-build-sessions';
 import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useWorkerQueryAPI } from '@hierarchidb/ui-build-sessions';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import {
+  type DragEvent,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 export type BuildSessionQueueEntry = {
   session: BuildSessionRuntimeRecord;
@@ -61,7 +69,7 @@ const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =
 const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
   session.isActive && SESSION_TIMER_ACTIVE_STATUSES.has(session.status);
 
-  const createRuntimeRecordSignature = (session: BuildSessionRuntimeRecord): string => {
+const createRuntimeRecordSignature = (session: BuildSessionRuntimeRecord): string => {
   const progress = session.progress;
   const progressSignature = progress
     ? `${progress.stage ?? ''}:${progress.percentage ?? ''}:${progress.total ?? ''}`
@@ -70,17 +78,11 @@ const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
     ? `${session.revision}|${session.updatedAt ?? ''}|${progressSignature}`
     : '';
 
-  return [
-    session.nodeId,
-    session.status,
-    session.isActive ? 1 : 0,
-    runtimeSignature,
-  ].join('|');
+  return [session.nodeId, session.status, session.isActive ? 1 : 0, runtimeSignature].join('|');
 };
 
-const createQueueRowSignature = (row: QueueRow): string => (
-  `${createRuntimeRecordSignature(row.session)}|${row.node?.id ?? ''}|${row.nodePath}`
-);
+const createQueueRowSignature = (row: QueueRow): string =>
+  `${createRuntimeRecordSignature(row.session)}|${row.node?.id ?? ''}|${row.nodePath}`;
 
 const isSameQueueRows = (left: QueueRow[], right: QueueRow[]): boolean => {
   if (left.length !== right.length) {
@@ -110,7 +112,10 @@ const normalizeWaitingFirst = (rows: QueueRow[]): QueueRow[] => {
   return [...running, ...waiting];
 };
 
-const mergeSessionOrder = (previous: QueueRow[], incoming: BuildSessionRuntimeRecord[]): QueueRow[] => {
+const mergeSessionOrder = (
+  previous: QueueRow[],
+  incoming: BuildSessionRuntimeRecord[]
+): QueueRow[] => {
   if (incoming.length === 0) {
     return [];
   }
@@ -202,7 +207,9 @@ export function useBuildSessionListQueue({
             if (disposed) {
               return;
             }
-            const filtered = nextSessions.filter((session) => QUEUE_STATUSES.includes(session.status));
+            const filtered = nextSessions.filter((session) =>
+              QUEUE_STATUSES.includes(session.status)
+            );
             setRows((current) => {
               const nextRows = normalizeWaitingFirst(mergeSessionOrder(current, filtered));
               return isSameQueueRows(current, nextRows) ? current : nextRows;
@@ -245,12 +252,14 @@ export function useBuildSessionListQueue({
         return;
       }
 
-      await Promise.all(Array.from(missingNodeIds).map(async (nodeId) => {
-        const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
-        const node = pathNodes[pathNodes.length - 1] ?? null;
-        const nodePath = pathNodes.length > 0 ? toNodePathLabel(pathNodes) : nodeId;
-        cache.set(nodeId, { node, nodePath });
-      }));
+      await Promise.all(
+        Array.from(missingNodeIds).map(async (nodeId) => {
+          const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
+          const node = pathNodes[pathNodes.length - 1] ?? null;
+          const nodePath = pathNodes.length > 0 ? toNodePathLabel(pathNodes) : nodeId;
+          cache.set(nodeId, { node, nodePath });
+        })
+      );
 
       nodeCacheRef.current = cache;
 
@@ -290,17 +299,18 @@ export function useBuildSessionListQueue({
   }, [getQueryAPIOrNull, rows]);
 
   const entries = useMemo(
-    () => rows.map((row) => ({
-      session: row.session,
-      node: row.node,
-      nodePath: row.nodePath,
-    }) satisfies BuildSessionQueueEntry),
+    () =>
+      rows.map(
+        (row) =>
+          ({
+            session: row.session,
+            node: row.node,
+            nodePath: row.nodePath,
+          }) satisfies BuildSessionQueueEntry
+      ),
     [rows]
   );
-  const entriesSignature = useMemo(
-    () => rows.map(createQueueRowSignature).join('||'),
-    [rows]
-  );
+  const entriesSignature = useMemo(() => rows.map(createQueueRowSignature).join('||'), [rows]);
   const lastEntriesSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -312,21 +322,24 @@ export function useBuildSessionListQueue({
     onEntriesChange(entries);
   }, [entries, entriesSignature, onEntriesChange]);
 
-  const startTopSession = useCallback(async (nodeId: NodeId) => {
-    if (autoStartingNodeRef.current === nodeId) {
-      return;
-    }
+  const startTopSession = useCallback(
+    async (nodeId: NodeId) => {
+      if (autoStartingNodeRef.current === nodeId) {
+        return;
+      }
 
-    autoStartingNodeRef.current = nodeId;
-    try {
-      const bridge = bridgeRef.current;
-      await bridge.startBuildSession(nodeType, nodeId);
-    } catch (error) {
-      console.warn('[BuildSessionQueueList] failed to auto-start queued session', error);
-    } finally {
-      autoStartingNodeRef.current = null;
-    }
-  }, [nodeType]);
+      autoStartingNodeRef.current = nodeId;
+      try {
+        const bridge = bridgeRef.current;
+        await bridge.startBuildSession(nodeType, nodeId);
+      } catch (error) {
+        console.warn('[BuildSessionQueueList] failed to auto-start queued session', error);
+      } finally {
+        autoStartingNodeRef.current = null;
+      }
+    },
+    [nodeType]
+  );
 
   useEffect(() => {
     if (!autoStartTopSession) {
@@ -359,17 +372,20 @@ export function useBuildSessionListQueue({
     void startTopSession(headSession.session.nodeId);
   }, [autoStartTopSession, rows, startTopSession]);
 
-  const handleNavigate = useCallback((row: QueueRow) => {
-    if (!onNavigateToBuild) {
-      return;
-    }
+  const handleNavigate = useCallback(
+    (row: QueueRow) => {
+      if (!onNavigateToBuild) {
+        return;
+      }
 
-    onNavigateToBuild({
-      session: row.session,
-      node: row.node,
-      nodePath: row.nodePath,
-    });
-  }, [onNavigateToBuild]);
+      onNavigateToBuild({
+        session: row.session,
+        node: row.node,
+        nodePath: row.nodePath,
+      });
+    },
+    [onNavigateToBuild]
+  );
 
   const handleDeleteRequest = useCallback((row: QueueRow) => {
     setDeleteTarget(row);
@@ -407,7 +423,9 @@ export function useBuildSessionListQueue({
     setIsDeleting(true);
     try {
       const bridge = bridgeRef.current;
-      await Promise.allSettled(rows.map((row) => bridge.deleteBuildSession(nodeType, row.session.nodeId)));
+      await Promise.allSettled(
+        rows.map((row) => bridge.deleteBuildSession(nodeType, row.session.nodeId))
+      );
     } catch (error) {
       console.error('[BuildSessionQueueList] delete all sessions failed', error);
     } finally {
@@ -424,79 +442,95 @@ export function useBuildSessionListQueue({
     void startTopSession(firstSession.session.nodeId);
   }, [rows, startTopSession]);
 
-  const handleStartStoppedSession = useCallback((row: QueueRow, event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    const nodeId = String(row.session.nodeId);
+  const handleStartStoppedSession = useCallback(
+    (row: QueueRow, event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      const nodeId = String(row.session.nodeId);
 
-    setRows((current) => {
-      const sourceIndex = current.findIndex((item) => String(item.session.nodeId) === nodeId);
-      if (sourceIndex <= 0) {
-        return current;
-      }
+      setRows((current) => {
+        const sourceIndex = current.findIndex((item) => String(item.session.nodeId) === nodeId);
+        if (sourceIndex <= 0) {
+          return current;
+        }
 
-      const next = [...current];
-      const [moving] = next.splice(sourceIndex, 1);
-      if (!moving) {
-        return current;
-      }
-      next.unshift(moving);
-      return normalizeWaitingFirst(next);
-    });
+        const next = [...current];
+        const [moving] = next.splice(sourceIndex, 1);
+        if (!moving) {
+          return current;
+        }
+        next.unshift(moving);
+        return normalizeWaitingFirst(next);
+      });
 
-    void startTopSession(row.session.nodeId);
-  }, [startTopSession]);
+      void startTopSession(row.session.nodeId);
+    },
+    [startTopSession]
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggingNodeId(null);
   }, []);
 
-  const handleDragStart = useCallback((event: DragEvent<HTMLElement>, nodeId: NodeId) => {
-    const row = rows.find((item) => String(item.session.nodeId) === String(nodeId));
-    if (!row) {
-      return;
-    }
-    const rowIndex = rows.findIndex((item) => String(item.session.nodeId) === String(nodeId));
-    const isRunning = isSessionTimerActive(row.session);
-    if (isRunning || rowIndex === 0) {
+  const handleDragStart = useCallback(
+    (event: DragEvent<HTMLElement>, nodeId: NodeId) => {
+      const row = rows.find((item) => String(item.session.nodeId) === String(nodeId));
+      if (!row) {
+        return;
+      }
+      const rowIndex = rows.findIndex((item) => String(item.session.nodeId) === String(nodeId));
+      const isRunning = isSessionTimerActive(row.session);
+      if (isRunning || rowIndex === 0) {
+        event.preventDefault();
+        return;
+      }
+      setDraggingNodeId(nodeId);
+      event.dataTransfer.effectAllowed = 'move';
+    },
+    [rows]
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragEvent, nodeId: NodeId) => {
       event.preventDefault();
-      return;
-    }
-    setDraggingNodeId(nodeId);
-    event.dataTransfer.effectAllowed = 'move';
-  }, [rows]);
-
-  const handleDragOver = useCallback((event: DragEvent, nodeId: NodeId) => {
-    event.preventDefault();
-    if (!draggingNodeId || draggingNodeId === nodeId) {
-      return;
-    }
-
-    setRows((current) => {
-      const sourceIndex = current.findIndex((row) => String(row.session.nodeId) === String(draggingNodeId));
-      const targetIndex = current.findIndex((row) => String(row.session.nodeId) === String(nodeId));
-
-      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === 0 || targetIndex === 0) {
-        return current;
-      }
-      const sourceRow = current[sourceIndex];
-      const targetRow = current[targetIndex];
-      if (!sourceRow || !targetRow) {
-        return current;
-      }
-      if (isSessionRunningByStatus(sourceRow.session) || isSessionRunningByStatus(targetRow.session)) {
-        return current;
+      if (!draggingNodeId || draggingNodeId === nodeId) {
+        return;
       }
 
-      const next = [...current];
-      const [moving] = next.splice(sourceIndex, 1);
-      if (!moving) {
-        return current;
-      }
-      const safeTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
-      next.splice(safeTargetIndex, 0, moving);
-      return normalizeWaitingFirst(next);
-    });
-  }, [draggingNodeId]);
+      setRows((current) => {
+        const sourceIndex = current.findIndex(
+          (row) => String(row.session.nodeId) === String(draggingNodeId)
+        );
+        const targetIndex = current.findIndex(
+          (row) => String(row.session.nodeId) === String(nodeId)
+        );
+
+        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === 0 || targetIndex === 0) {
+          return current;
+        }
+        const sourceRow = current[sourceIndex];
+        const targetRow = current[targetIndex];
+        if (!sourceRow || !targetRow) {
+          return current;
+        }
+        if (
+          isSessionRunningByStatus(sourceRow.session) ||
+          isSessionRunningByStatus(targetRow.session)
+        ) {
+          return current;
+        }
+
+        const next = [...current];
+        const [moving] = next.splice(sourceIndex, 1);
+        if (!moving) {
+          return current;
+        }
+        const safeTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+        next.splice(safeTargetIndex, 0, moving);
+        return normalizeWaitingFirst(next);
+      });
+    },
+    [draggingNodeId]
+  );
 
   const handleOpenAll = useCallback((event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

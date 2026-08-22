@@ -1,6 +1,10 @@
-import type React from 'react';
-import { memo } from 'react';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import {
+  ChevronRight as ChevronRightIcon,
+  ExpandMore as ExpandMoreIcon,
+  InsertDriveFile as FileIcon,
+  Folder as FolderIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Checkbox,
@@ -16,12 +20,8 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
-import {
-  ChevronRight as ChevronRightIcon,
-  ExpandMore as ExpandMoreIcon,
-  Folder as FolderIcon,
-  InsertDriveFile as FileIcon,
-} from '@mui/icons-material';
+import type React from 'react';
+import { memo } from 'react';
 import type { HierarchicalTreeNode } from '~/types/index';
 import { useTreeTableViewState } from './useTreeTableViewState.js';
 
@@ -70,7 +70,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     onNodeSelect,
     onNodeExpand,
     onSort,
-    
+
     multiSelect: _multiSelect = true,
     showCheckboxes = true,
     showIcons = true,
@@ -149,7 +149,8 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                 ...(column.width && { width: column.width }),
                 paddingLeft: isFirstColumn ? `${level * 24 + 8}px` : '8px',
                 paddingRight: '8px',
-                borderRight: columnIndex < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
+                borderRight:
+                  columnIndex < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
                 borderBottom: '1px solid rgba(224, 224, 224, 1)',
               }}
             >
@@ -208,12 +209,15 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     return Array.from({ length: 5 }).map((_, index) => (
       <TableRow key={`skeleton-${String(index)}`}>
         {showCheckboxes && (
-          <TableCell padding="checkbox" style={{ padding: '4px 6px', width: 49, minWidth: 49, maxWidth: 49 }}>
+          <TableCell
+            padding="checkbox"
+            style={{ padding: '4px 6px', width: 49, minWidth: 49, maxWidth: 49 }}
+          >
             <Skeleton variant="rectangular" width={20} height={20} />
           </TableCell>
         )}
         {columns.map((column) => (
-          <TableCell key={column.id} sx={{padding: '0px 3px 0px 3px'}}>
+          <TableCell key={column.id} sx={{ padding: '0px 3px 0px 3px' }}>
             <Skeleton variant="text" width="80%" />
           </TableCell>
         ))}
@@ -262,7 +266,8 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                     fontWeight: 600,
                     ...(column.width && { width: column.width }),
                     borderTop: '1px solid rgba(224, 224, 224, 1)',
-                    borderRight: index < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
+                    borderRight:
+                      index < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
                     borderBottom: '2px solid rgba(224, 224, 224, 1)',
                     padding: '0px 3px 0px 3px',
                   }}

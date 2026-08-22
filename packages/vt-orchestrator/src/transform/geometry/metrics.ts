@@ -1,6 +1,6 @@
-import type { Geometry, Polygon } from 'geojson';
-import { geometryArea } from '@hierarchidb/gis-sdk';
 import type { GeometryEngine } from '@hierarchidb/gis-sdk';
+import { geometryArea } from '@hierarchidb/gis-sdk';
+import type { Geometry, Polygon } from 'geojson';
 
 export type LonLat = [number, number];
 export type Mercator = [number, number];
@@ -80,7 +80,9 @@ export const computeOuterRingArea = (coords: number[][][], engine: GeometryEngin
   return computePolygonArea([outer], engine);
 };
 
-export const computeOuterRingBounds = (coords: number[][][]): { widthMeters: number; heightMeters: number } => {
+export const computeOuterRingBounds = (
+  coords: number[][][]
+): { widthMeters: number; heightMeters: number } => {
   const outer = coords[0];
   if (!outer || outer.length === 0) {
     return { widthMeters: 0, heightMeters: 0 };
@@ -98,7 +100,12 @@ export const computeOuterRingBounds = (coords: number[][][]): { widthMeters: num
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
   }
-  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(minY) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(maxY)
+  ) {
     return { widthMeters: 0, heightMeters: 0 };
   }
   return { widthMeters: Math.max(0, maxX - minX), heightMeters: Math.max(0, maxY - minY) };

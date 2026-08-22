@@ -4,10 +4,7 @@ import type {
   MapLibreMapMouseEvent,
   MapLibrePoint,
 } from '~/types/maplibre-public';
-import type {
-  MapFeatureIdentifyConfig,
-  MapFeatureIdentifier,
-} from '~/types/unified-map-props';
+import type { MapFeatureIdentifier, MapFeatureIdentifyConfig } from '~/types/unified-map-props';
 
 export const DEFAULT_IDENTIFY_RADIUS = 5;
 
@@ -23,7 +20,7 @@ const FALLBACK_ID_PROPERTY_KEYS = [
 ];
 
 export const defaultFeatureIdAccessor = (
-  feature: MapLibreGeoJSONFeature | null | undefined,
+  feature: MapLibreGeoJSONFeature | null | undefined
 ): MapFeatureIdentifier | undefined => {
   if (!feature) return undefined;
 
@@ -58,17 +55,23 @@ const toQueryGeometry = (point: MapLibrePoint, radius: number) => {
 const pickQueriedFeatures = (
   map: MapLibreMapInstance | null,
   event: MapLibreMapMouseEvent,
-  config: MapFeatureIdentifyConfig,
+  config: MapFeatureIdentifyConfig
 ): MapLibreGeoJSONFeature[] | undefined => {
   if (!map || !event.point) {
     return undefined;
   }
 
-  const radius = typeof config.radius === 'number' && config.radius >= 0 ? config.radius : DEFAULT_IDENTIFY_RADIUS;
+  const radius =
+    typeof config.radius === 'number' && config.radius >= 0
+      ? config.radius
+      : DEFAULT_IDENTIFY_RADIUS;
 
   try {
     const geometry = toQueryGeometry(event.point, radius);
-    const options = config.layerIds || config.filter ? { layers: config.layerIds, filter: config.filter } : undefined;
+    const options =
+      config.layerIds || config.filter
+        ? { layers: config.layerIds, filter: config.filter }
+        : undefined;
     const result = map.queryRenderedFeatures(geometry, options);
     return Array.isArray(result) ? result : undefined;
   } catch (error) {
@@ -79,7 +82,7 @@ const pickQueriedFeatures = (
 
 const filterFeaturesByLayer = (
   features: MapLibreGeoJSONFeature[] | undefined,
-  layerIds?: string[],
+  layerIds?: string[]
 ): MapLibreGeoJSONFeature[] => {
   if (!features || features.length === 0) {
     return [];
@@ -100,7 +103,7 @@ const filterFeaturesByLayer = (
 
 const dedupeFeatures = (
   features: MapLibreGeoJSONFeature[],
-  getFeatureId: (feature: MapLibreGeoJSONFeature) => MapFeatureIdentifier | null | undefined,
+  getFeatureId: (feature: MapLibreGeoJSONFeature) => MapFeatureIdentifier | null | undefined
 ) => {
   const seenIds = new Set<MapFeatureIdentifier>();
   const dedupedFeatures: MapLibreGeoJSONFeature[] = [];
@@ -136,7 +139,7 @@ export interface MapFeatureIdentifyCandidates {
 export const resolveIdentifyCandidates = (
   map: MapLibreMapInstance | null,
   event: MapLibreMapMouseEvent,
-  config: MapFeatureIdentifyConfig,
+  config: MapFeatureIdentifyConfig
 ): MapFeatureIdentifyCandidates => {
   const queriedFeatures = pickQueriedFeatures(map, event, config);
 

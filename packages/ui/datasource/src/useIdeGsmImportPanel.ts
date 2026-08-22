@@ -1,4 +1,4 @@
-import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { type MouseEvent as ReactMouseEvent, useMemo, useState } from 'react';
 import type {
   IdeGsmFileEntry,
   IdeGsmImportPanelProps,
@@ -10,10 +10,7 @@ interface UseIdeGsmImportPanelArgs {
   labels: IdeGsmImportPanelProps['labels'];
 }
 
-export const useIdeGsmImportPanel = ({
-  props,
-  labels,
-}: UseIdeGsmImportPanelArgs) => {
+export const useIdeGsmImportPanel = ({ props, labels }: UseIdeGsmImportPanelArgs) => {
   const [localDialogOpen, setLocalDialogOpen] = useState(false);
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
@@ -27,12 +24,14 @@ export const useIdeGsmImportPanel = ({
     }
     if (props.fileName || props.sourceId) {
       const sourceId = props.sourceId ?? '';
-      return [{
-        fileName: props.fileName ?? labels.fileFallback,
-        sourceId,
-        sourceType: 'local',
-        sizeBytes: props.sizeBytes,
-      }];
+      return [
+        {
+          fileName: props.fileName ?? labels.fileFallback,
+          sourceId,
+          sourceType: 'local',
+          sizeBytes: props.sizeBytes,
+        },
+      ];
     }
     return [];
   }, [isMulti, labels.fileFallback, props]);

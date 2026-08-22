@@ -1,10 +1,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
-import {
-  DEFAULT_MAP_CONFIG,
-  type VectorTileLayerConfig,
-} from '~/types/unified-map-props';
+import { DEFAULT_MAP_CONFIG, type VectorTileLayerConfig } from '~/types/unified-map-props';
 import type { MapLibreMapProps } from './MapLibreMap.js';
 import type { MapWithVectorTilesProps } from './MapWithVectorTiles.js';
 
@@ -81,7 +78,7 @@ export const useMapWithVectorTiles = ({
       onLoad?.(map);
       onMapLoad?.(map);
     },
-    [onLoad, onMapLoad],
+    [onLoad, onMapLoad]
   );
 
   const fallbackStyle: React.CSSProperties = {

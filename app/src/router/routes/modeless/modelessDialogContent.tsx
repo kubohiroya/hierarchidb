@@ -15,11 +15,13 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   LayerSetVisibilityPanel,
-  MapPreviewFloatingTable,  useVectorTilePreviewSearch,
-  type MapHighlightEntry,  mapHoverMatchesAtom,
+  type MapHighlightEntry,
+  MapPreviewFloatingTable,
+  mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
+  useVectorTilePreviewSearch,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { getDBName } from '@hierarchidb/util';
 import {
@@ -40,15 +42,17 @@ import { useTheme } from '@mui/material/styles';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MapStylerSummary } from '~/router/routes/map/types';
 import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '~/state/mapSearch.atoms';
+import { mapLayerInfoAtom } from '~/state/mapSearch.atoms';
 import {
-  MAX_ROWS,
+  buildSearchTextFromRow,
   type DataGridPagination,
   type DataGridRow,
   type DataGridRowSx,
   type DataGridState,
-  buildSearchTextFromRow,
   isMapNodeType,
+  MAX_ROWS,
   normalizeRowId,
   useLocationTableData,
   useMapHighlightSelection,
@@ -57,8 +61,6 @@ import {
   useShapeTableData,
   useViewportIdSet,
 } from './modelessDialogContentData.js';
-import { mapLayerInfoAtom } from '~/state/mapSearch.atoms';
-import type { MapStylerSummary } from '~/router/routes/map/types';
 
 export type MapInfoSummary = {
   name?: string | null;
@@ -106,7 +108,9 @@ const formatLogicalCode = (value: unknown) => {
 const formatBBox = (bbox?: [number, number, number, number]) => {
   if (!bbox || bbox.length !== 4) return '';
   const [minX, minY, maxX, maxY] = bbox;
-  if ([minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+  if (
+    [minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))
+  ) {
     return '';
   }
   return `${minX.toFixed(4)}, ${minY.toFixed(4)}, ${maxX.toFixed(4)}, ${maxY.toFixed(4)}`;
@@ -179,7 +183,14 @@ export const MapLayerContent: React.FC<{
   layerSets: LayerSetDefinition[];
   layerSetVisibility: LayerSetVisibility;
   onToggleLayerSet: (id: LayerSetId) => void;
-}> = ({ basemapStyles, vectorLayers, geoJsonLayers, layerSets, layerSetVisibility, onToggleLayerSet }) => (
+}> = ({
+  basemapStyles,
+  vectorLayers,
+  geoJsonLayers,
+  layerSets,
+  layerSetVisibility,
+  onToggleLayerSet,
+}) => (
   <Stack spacing={2}>
     <Box>
       <Typography variant="subtitle2">Layer Sets</Typography>
@@ -270,7 +281,7 @@ const formatHierarchyLabel = (value?: number): string | undefined => {
 
 const buildLayerSetItemsFromLayers = (
   vectorLayers: ResourceVectorLayer[],
-  geoJsonLayers: ResourceGeoJsonLayer[],
+  geoJsonLayers: ResourceGeoJsonLayer[]
 ): LayerSetListItem[] => {
   const items: LayerSetListItem[] = [];
   vectorLayers.forEach((layer) => {
@@ -830,27 +841,37 @@ export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
     return mapped;
   }, [matchedIds, rows, searchKeyword]);
 
-  const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
-    { id: 'featureId', label: 'Feature ID', width: 220, sortable: true },
-    { id: 'countryName', label: 'Country', width: 180, sortable: true },
-    { id: 'countryCode', label: 'Country Code', width: 120, sortable: true },
-    { id: 'adminName', label: 'Admin Name', width: 180, sortable: true },
-    {
-      id: 'adminLevel',
-      label: 'Admin Level',
-      width: 120,
-      align: 'right',
-      sortable: true,
-      groupingValue: (row) => normalizeAdminLevelGroup(String(row.adminLevel ?? '')),
-    },
-    { id: 'adminCode', label: 'Admin Code', width: 120, sortable: true },
-    { id: 'dataSource', label: 'Data Source', width: 140, sortable: true },
-    { id: 'createdAt', label: 'Created At', width: 180, sortable: true },
-    { id: 'vertexCount', label: 'Vertices', width: 120, align: 'right', sortable: true },
-    { id: 'polygonCount', label: 'Polygons', width: 120, align: 'right', sortable: true },
-    { id: 'bbox', label: 'Bounding Box', width: 220, sortable: true },
-    { id: 'area', label: 'Area', width: 140, align: 'right', sortable: true, format: formatLogicalCode },
-  ]), [normalizeAdminLevelGroup]);
+  const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(
+    () => [
+      { id: 'featureId', label: 'Feature ID', width: 220, sortable: true },
+      { id: 'countryName', label: 'Country', width: 180, sortable: true },
+      { id: 'countryCode', label: 'Country Code', width: 120, sortable: true },
+      { id: 'adminName', label: 'Admin Name', width: 180, sortable: true },
+      {
+        id: 'adminLevel',
+        label: 'Admin Level',
+        width: 120,
+        align: 'right',
+        sortable: true,
+        groupingValue: (row) => normalizeAdminLevelGroup(String(row.adminLevel ?? '')),
+      },
+      { id: 'adminCode', label: 'Admin Code', width: 120, sortable: true },
+      { id: 'dataSource', label: 'Data Source', width: 140, sortable: true },
+      { id: 'createdAt', label: 'Created At', width: 180, sortable: true },
+      { id: 'vertexCount', label: 'Vertices', width: 120, align: 'right', sortable: true },
+      { id: 'polygonCount', label: 'Polygons', width: 120, align: 'right', sortable: true },
+      { id: 'bbox', label: 'Bounding Box', width: 220, sortable: true },
+      {
+        id: 'area',
+        label: 'Area',
+        width: 140,
+        align: 'right',
+        sortable: true,
+        format: formatLogicalCode,
+      },
+    ],
+    [normalizeAdminLevelGroup]
+  );
 
   const resolvedCountText = useMemo(() => {
     const keyword = searchKeyword.trim();
@@ -873,28 +894,28 @@ export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
   );
 
   return (
-      <MapPreviewFloatingTable
-        title={`shape一覧 (${resolvedCountText})`}
-        showTitle
-        rows={tableRows}
-        columns={columns}
-        persistKeyBase="hierarchidb:grid:/map:shape:features"
-        defaultGrouping={['adminLevel']}
-        defaultSorting={[{ id: 'featureId', desc: false }]}
-        search={{
-          value: searchKeyword,
-          onChange: setSearchKeyword,
-          placeholder: 'Search metadata',
-          ariaLabel: 'Search metadata',
-        }}
+    <MapPreviewFloatingTable
+      title={`shape一覧 (${resolvedCountText})`}
+      showTitle
+      rows={tableRows}
+      columns={columns}
+      persistKeyBase="hierarchidb:grid:/map:shape:features"
+      defaultGrouping={['adminLevel']}
+      defaultSorting={[{ id: 'featureId', desc: false }]}
+      search={{
+        value: searchKeyword,
+        onChange: setSearchKeyword,
+        placeholder: 'Search metadata',
+        ariaLabel: 'Search metadata',
+      }}
       loading={loading}
       error={error}
       matchedRows={matchedIds}
-        selectable
-        selectionMode="multiple"
-        selectedRows={new Set(Array.from(getSelectedRows('shape')).map(String))}
-        onSelectionChange={(next) => setSelectedRows('shape', next)}
-        rowSx={(state) => {
+      selectable
+      selectionMode="multiple"
+      selectedRows={new Set(Array.from(getSelectedRows('shape')).map(String))}
+      onSelectionChange={(next) => setSelectedRows('shape', next)}
+      rowSx={(state) => {
         if (state.selected) {
           const selectedBg = theme.palette.primary.light;
           const selectedText = theme.palette.getContrastText(selectedBg);
@@ -947,17 +968,16 @@ export const MapLocationListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId })
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedRowIds, setMatchedRowIds] = useState<string[]>([]);
 
-  const rowsWithId = useMemo(() => (
-    locationState.rows.map((row, index) => ({
-      id: normalizeRowId(row, index),
-      ...row,
-    }))
-  ), [locationState.rows]);
-
-  const getRowId = useCallback(
-    (row: DataGridRow & { id: string | number }) => String(row.id),
-    []
+  const rowsWithId = useMemo(
+    () =>
+      locationState.rows.map((row, index) => ({
+        id: normalizeRowId(row, index),
+        ...row,
+      })),
+    [locationState.rows]
   );
+
+  const getRowId = useCallback((row: DataGridRow & { id: string | number }) => String(row.id), []);
 
   useVectorTilePreviewSearch(
     Boolean(nodeId),
@@ -968,10 +988,7 @@ export const MapLocationListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId })
     setMatchedRowIds
   );
 
-  const matchedIds = useMemo(
-    () => new Set(matchedRowIds),
-    [matchedRowIds]
-  );
+  const matchedIds = useMemo(() => new Set(matchedRowIds), [matchedRowIds]);
 
   const selectedRows = useMemo(
     () => new Set(Array.from(getSelectedRows('location')).map(String)),
@@ -1018,17 +1035,16 @@ export const MapRouteListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedRowIds, setMatchedRowIds] = useState<string[]>([]);
 
-  const rowsWithId = useMemo(() => (
-    routeState.rows.map((row, index) => ({
-      id: normalizeRowId(row, index),
-      ...row,
-    }))
-  ), [routeState.rows]);
-
-  const getRowId = useCallback(
-    (row: DataGridRow & { id: string | number }) => String(row.id),
-    []
+  const rowsWithId = useMemo(
+    () =>
+      routeState.rows.map((row, index) => ({
+        id: normalizeRowId(row, index),
+        ...row,
+      })),
+    [routeState.rows]
   );
+
+  const getRowId = useCallback((row: DataGridRow & { id: string | number }) => String(row.id), []);
 
   useVectorTilePreviewSearch(
     Boolean(nodeId),
@@ -1039,10 +1055,7 @@ export const MapRouteListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
     setMatchedRowIds
   );
 
-  const matchedIds = useMemo(
-    () => new Set(matchedRowIds),
-    [matchedRowIds]
-  );
+  const matchedIds = useMemo(() => new Set(matchedRowIds), [matchedRowIds]);
 
   const selectedRows = useMemo(
     () => new Set(Array.from(getSelectedRows('route')).map(String)),

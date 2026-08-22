@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CoreDB } from '../../services/CoreDB';
 import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService';
 
@@ -105,9 +105,9 @@ describe('TreeNodeUpdaterService getTreeNode normalization (shape)', () => {
     expect((node?.draftData as { buildConfig?: unknown } | undefined)?.buildConfig).toEqual(
       DEFAULT_BUILD_CONFIG
     );
-    expect((node?.draftData as { processingConfig?: unknown } | undefined)?.processingConfig).toEqual(
-      DEFAULT_PROCESSING_CONFIG
-    );
+    expect(
+      (node?.draftData as { processingConfig?: unknown } | undefined)?.processingConfig
+    ).toEqual(DEFAULT_PROCESSING_CONFIG);
 
     const stored = await core.nodes.get(nodeId);
     expect((stored as { draftData?: unknown }).draftData).toBeUndefined();

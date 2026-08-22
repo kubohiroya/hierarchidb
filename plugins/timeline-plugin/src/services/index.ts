@@ -15,9 +15,13 @@ export class TimelineFramesService {
     return f;
   }
 
-  getFrames(): TimelineFrame[] { return [...this.frames]; }
+  getFrames(): TimelineFrame[] {
+    return [...this.frames];
+  }
 
-  clear(): void { this.frames = []; }
+  clear(): void {
+    this.frames = [];
+  }
 
   /** Return indices [i0, i1] for frames bracketing time t */
   bracket(t: number): [number, number] | null {

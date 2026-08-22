@@ -8,16 +8,17 @@ type LayerBuildStartInput = {
   totalTiles: number;
 };
 
-export const logLayerBuildStart = (
-  input: LayerBuildStartInput,
-): void => {
+export const logLayerBuildStart = (input: LayerBuildStartInput): void => {
   const { taskContext, band, parent, totalTiles } = input;
 
-  console.info('[tileEmit] tiling start', JSON.stringify({
-    ...taskContext,
-    zRange: [band.zMin, band.zMax],
-    totalTiles,
-    parentTile: parent,
-    heap: null,
-  }));
+  console.info(
+    '[tileEmit] tiling start',
+    JSON.stringify({
+      ...taskContext,
+      zRange: [band.zMin, band.zMax],
+      totalTiles,
+      parentTile: parent,
+      heap: null,
+    })
+  );
 };

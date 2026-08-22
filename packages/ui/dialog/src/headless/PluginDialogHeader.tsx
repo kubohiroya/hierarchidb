@@ -1,9 +1,11 @@
-import { memo } from 'react';
 import type { ReactElement } from 'react';
+import { memo } from 'react';
 import { useDialogContext } from '../hooks/useDialogContext.js';
-import type { HeadlessHeaderRenderProps, HeadlessDialogHeaderProps } from './types.js';
+import type { HeadlessDialogHeaderProps, HeadlessHeaderRenderProps } from './types.js';
 
-function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessHeaderRenderProps<TData> {
+function buildHeaderRenderProps<TData>(
+  ctx: ReturnType<typeof useDialogContext<TData>>
+): HeadlessHeaderRenderProps<TData> {
   return {
     steps: ctx.stepComponents,
     activeStepIndex: ctx.activeStepIndex,
@@ -33,6 +35,6 @@ function PluginDialogHeaderComponent<TData>({ children }: HeadlessDialogHeaderPr
 
 PluginDialogHeaderComponent.displayName = 'HeadlessPluginDialogHeader';
 
-export const PluginDialogHeader = memo(PluginDialogHeaderComponent) as <TData,>(
-  props: HeadlessDialogHeaderProps<TData>,
+export const PluginDialogHeader = memo(PluginDialogHeaderComponent) as <TData>(
+  props: HeadlessDialogHeaderProps<TData>
 ) => ReactElement | null;

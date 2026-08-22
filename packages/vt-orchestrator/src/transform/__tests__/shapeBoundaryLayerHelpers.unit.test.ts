@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import type { Tile } from 'geojson-vt';
-import { buildBoundaryDiagnostics } from '../createGeometryStageHandler/helpers/collection';
+import { describe, expect, it } from 'vitest';
 import { collectLayerForTile } from '../../vt/vtStageTaskLayerBuilderLayerHelpers';
+import { buildBoundaryDiagnostics } from '../createGeometryStageHandler/helpers/collection';
 
 const squarePolygon = {
   type: 'Polygon' as const,
@@ -37,15 +37,16 @@ describe('shape boundary helper behavior', () => {
 });
 
 describe('collectLayerForTile boundary detection', () => {
-  const buildTile = (linePairs: number[][][]): Tile => ({
-    features: [
-      {
-        type: 2,
-        geometry: linePairs,
-        tags: {},
-      },
-    ] as unknown as Tile['features'],
-  } as Tile);
+  const buildTile = (linePairs: number[][][]): Tile =>
+    ({
+      features: [
+        {
+          type: 2,
+          geometry: linePairs,
+          tags: {},
+        },
+      ] as unknown as Tile['features'],
+    }) as Tile;
 
   const buildIndex = (tile: Tile | null) => ({
     getTile: (_z: number, _x: number, _y: number) => tile,
@@ -63,12 +64,12 @@ describe('collectLayerForTile boundary detection', () => {
       ],
     ]);
     const collected = collectLayerForTile(
-      buildIndex(tile) as { getTile: () => Tile | null; },
+      buildIndex(tile) as { getTile: () => Tile | null },
       '1-b',
       0,
       0,
       0,
-      true,
+      true
     );
     const geometry = collected?.features?.[0];
     expect(collected).not.toBeNull();
@@ -88,12 +89,12 @@ describe('collectLayerForTile boundary detection', () => {
       ],
     ]);
     const collected = collectLayerForTile(
-      buildIndex(tile) as { getTile: () => Tile | null; },
+      buildIndex(tile) as { getTile: () => Tile | null },
       '1',
       0,
       0,
       0,
-      true,
+      true
     );
     const geometry = collected?.features?.[0];
     expect(collected).not.toBeNull();

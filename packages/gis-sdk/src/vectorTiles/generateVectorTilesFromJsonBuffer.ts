@@ -3,9 +3,9 @@
 // ============================================================
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { VTGenerateConfig, VTGenerateResult, VectorTileProgress } from './types.js';
-import { throwIfAborted, decodeFeatureCollectionFromJsonBuffer } from './utils.js';
 import { generateVectorTilesFromFeatureCollection } from './generateVectorTilesFromFeatureCollection.js';
+import type { VectorTileProgress, VTGenerateConfig, VTGenerateResult } from './types.js';
+import { decodeFeatureCollectionFromJsonBuffer, throwIfAborted } from './utils.js';
 
 export const generateVectorTilesFromJsonBuffer = async (
   nodeId: NodeId,

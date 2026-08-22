@@ -1,12 +1,12 @@
 /**
  * Protected Task Mutation Service
- * 
+ *
  * Wraps task mutations with state protection during AbortController termination
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildTaskRecordUpdate } from '@hierarchidb/shape-api';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import type { ShapeBuildTaskRecordUpdate } from '@hierarchidb/shape-api';
 import { taskStateProtection } from './taskStateProtection.js';
 
 /**
@@ -56,12 +56,12 @@ export async function updateBuildTasksBatch(
     }
   }
 
-  const failed = results.filter(r => !r.success);
+  const failed = results.filter((r) => !r.success);
   if (failed.length > 0) {
     console.warn('[ProtectedTaskMutation] Batch update completed with failures:', {
       total: updates.length,
       failed: failed.length,
-      failures: failed.map(f => ({ taskId: f.taskId, error: f.error?.message })),
+      failures: failed.map((f) => ({ taskId: f.taskId, error: f.error?.message })),
     });
   }
 }
@@ -107,10 +107,7 @@ export async function ensureSessionTaskConsistency(nodeId: NodeId): Promise<void
 /**
  * Mark task as started with state protection
  */
-export async function markTaskStarted(
-  taskId: string,
-  abortSignal?: AbortSignal
-): Promise<void> {
+export async function markTaskStarted(taskId: string, abortSignal?: AbortSignal): Promise<void> {
   const updates: ShapeBuildTaskRecordUpdate = {
     status: 'running',
     startedAt: Date.now(),
@@ -174,7 +171,9 @@ export async function updateTaskProgress(
 ): Promise<void> {
   // Validate progress value (contract enforcement)
   if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
-    throw new Error(`Invalid progress value: ${progress}. Must be finite number between 0 and 100.`);
+    throw new Error(
+      `Invalid progress value: ${progress}. Must be finite number between 0 and 100.`
+    );
   }
 
   const updates: ShapeBuildTaskRecordUpdate = {

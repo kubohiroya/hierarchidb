@@ -25,9 +25,8 @@ export const isRunningResidueDebugEnabled = (): boolean => {
   return config.all === true || config.runningResidue === true;
 };
 
-export const isTaskInFlight = (task: { status: string }): boolean => (
-  task.status === 'running' || task.status === 'queued'
-);
+export const isTaskInFlight = (task: { status: string }): boolean =>
+  task.status === 'running' || task.status === 'queued';
 
 export const logRunningResidueDrop = (payload: {
   nodeId: string | null;
@@ -41,13 +40,13 @@ export const logRunningResidueDrop = (payload: {
     return;
   }
   console.log(
-    `${RUNNING_RESIDUE_LOG_PREFIX} STALE_DROP`
-      + ` nodeId=${payload.nodeId ?? '-'}`
-      + ` source=${payload.source}`
-      + ` eventType=${payload.eventType}`
-      + ` taskId=${payload.taskId ?? '-'}`
-      + ` reason=${payload.reason ?? '-'}`
-      + ` timestamp=${Date.now()}`,
-    payload,
+    `${RUNNING_RESIDUE_LOG_PREFIX} STALE_DROP` +
+      ` nodeId=${payload.nodeId ?? '-'}` +
+      ` source=${payload.source}` +
+      ` eventType=${payload.eventType}` +
+      ` taskId=${payload.taskId ?? '-'}` +
+      ` reason=${payload.reason ?? '-'}` +
+      ` timestamp=${Date.now()}`,
+    payload
   );
 };

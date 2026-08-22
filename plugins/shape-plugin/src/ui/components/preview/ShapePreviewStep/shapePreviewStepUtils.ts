@@ -6,7 +6,7 @@ export const isFiniteNumber = (value: unknown): value is number =>
 
 export const arePreviewViewsClose = (
   a?: ShapePreviewMapView | null,
-  b?: ShapePreviewMapView | null,
+  b?: ShapePreviewMapView | null
 ): boolean => {
   if (!a || !b) return false;
   const eps = 1e-6;
@@ -25,6 +25,5 @@ export const toPreviewMapView = (viewState: MapViewState): ShapePreviewMapView |
   return { longitude, latitude, zoom };
 };
 
-export const isShapeLayerParentToggle = (toggleId: string): boolean => (
-  toggleId === 'adm0' || toggleId === 'adm1' || toggleId === 'adm2'
-);
+export const isShapeLayerParentToggle = (toggleId: string): boolean =>
+  toggleId === 'adm0' || toggleId === 'adm1' || toggleId === 'adm2';

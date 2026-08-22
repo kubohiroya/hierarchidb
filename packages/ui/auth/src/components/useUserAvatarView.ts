@@ -11,12 +11,7 @@ const preloadImage = (url: string): Promise<boolean> => {
 
 const getGoogleImageVariants = (url: string): string[] => {
   const baseUrl = url.split('=')[0];
-  return [
-    `${baseUrl}=s96-c`,
-    `${baseUrl}=s64-c`,
-    `${baseUrl}=s32-c`,
-    url,
-  ];
+  return [`${baseUrl}=s96-c`, `${baseUrl}=s64-c`, `${baseUrl}=s32-c`, url];
 };
 
 interface UseUserAvatarViewArgs {
@@ -45,7 +40,7 @@ export const useUserAvatarView = ({
 }: UseUserAvatarViewArgs): UseUserAvatarViewResult => {
   const gravatarOverrideEnabled = useMemo(
     () => String(import.meta.env.VITE_GRAVATAR_OVERRIDE || '').toLowerCase() === 'true',
-    [],
+    []
   );
   const [googleImageFailed, setGoogleImageFailed] = useState(false);
   const [gravatarFailed, setGravatarFailed] = useState(false);

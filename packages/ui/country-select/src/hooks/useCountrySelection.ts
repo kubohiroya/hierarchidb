@@ -45,51 +45,57 @@ export interface UseCountrySelectionResult {
  * Hook for managing country matrix selections with utilities
  */
 export function useCountrySelection({
-                                      initialSelections = [],
+  initialSelections = [],
 
-                                      minSelections = 1,
-                                    }: UseCountrySelectionOptions = {}): UseCountrySelectionResult {
+  minSelections = 1,
+}: UseCountrySelectionOptions = {}): UseCountrySelectionResult {
   const [selections, setSelections] = useState<MatrixSelection[]>(initialSelections);
 
   // Update a specific selection
-  const updateSelection = useCallback((countryCode: string, columnId: string, selected: boolean) => {
-    setSelections(prev => {
-      const newSelections = [...prev];
-      const existingIndex = newSelections.findIndex(s => s.countryCode === countryCode);
+  const updateSelection = useCallback(
+    (countryCode: string, columnId: string, selected: boolean) => {
+      setSelections((prev) => {
+        const newSelections = [...prev];
+        const existingIndex = newSelections.findIndex((s) => s.countryCode === countryCode);
 
-      if (existingIndex >= 0) {
-        const existing = newSelections[existingIndex];
-        if (existing) {
-          newSelections[existingIndex] = {
-            countryCode: existing.countryCode,
-            selections: {
-              ...existing.selections,
-              [columnId]: selected,
-            },
-          };
+        if (existingIndex >= 0) {
+          const existing = newSelections[existingIndex];
+          if (existing) {
+            newSelections[existingIndex] = {
+              countryCode: existing.countryCode,
+              selections: {
+                ...existing.selections,
+                [columnId]: selected,
+              },
+            };
+          }
+        } else if (selected) {
+          newSelections.push({
+            countryCode,
+            selections: { [columnId]: selected },
+          });
         }
-      } else if (selected) {
-        newSelections.push({
-          countryCode,
-          selections: { [columnId]: selected },
-        });
-      }
 
-      return newSelections;
-    });
-  }, []);
+        return newSelections;
+      });
+    },
+    []
+  );
 
   // Select all for specific countries and columns
   const selectAllForCountries = useCallback((countryCodes: string[], columnIds: string[]) => {
-    setSelections(prev => {
+    setSelections((prev) => {
       const newSelections = [...prev];
 
-      countryCodes.forEach(countryCode => {
-        const existingIndex = newSelections.findIndex(s => s.countryCode === countryCode);
-        const selections = columnIds.reduce((acc, columnId) => {
-          acc[columnId] = true;
-          return acc;
-        }, {} as Record<string, boolean>);
+      countryCodes.forEach((countryCode) => {
+        const existingIndex = newSelections.findIndex((s) => s.countryCode === countryCode);
+        const selections = columnIds.reduce(
+          (acc, columnId) => {
+            acc[columnId] = true;
+            return acc;
+          },
+          {} as Record<string, boolean>
+        );
 
         if (existingIndex >= 0) {
           const existing = newSelections[existingIndex];
@@ -118,26 +124,32 @@ export function useCountrySelection({
 
   // Clear selections for specific countries
   const clearForCountries = useCallback((countryCodes: string[]) => {
-    setSelections(prev => prev.filter(s => !countryCodes.includes(s.countryCode)));
+    setSelections((prev) => prev.filter((s) => !countryCodes.includes(s.countryCode)));
   }, []);
 
   // Check if a specific selection is active
-  const isSelected = useCallback((countryCode: string, columnId: string) => {
-    const countrySelection = selections.find(s => s.countryCode === countryCode);
-    return countrySelection?.selections[columnId] || false;
-  }, [selections]);
+  const isSelected = useCallback(
+    (countryCode: string, columnId: string) => {
+      const countrySelection = selections.find((s) => s.countryCode === countryCode);
+      return countrySelection?.selections[columnId] || false;
+    },
+    [selections]
+  );
 
   // Get selections for a specific country
-  const getCountrySelections = useCallback((countryCode: string) => {
-    const countrySelection = selections.find(s => s.countryCode === countryCode);
-    return countrySelection?.selections || {};
-  }, [selections]);
+  const getCountrySelections = useCallback(
+    (countryCode: string) => {
+      const countrySelection = selections.find((s) => s.countryCode === countryCode);
+      return countrySelection?.selections || {};
+    },
+    [selections]
+  );
 
   // Calculate statistics
   const stats = useMemo(() => {
     const selectedCountries = selections
-      .filter(s => Object.values(s.selections).some(Boolean))
-      .map(s => s.countryCode);
+      .filter((s) => Object.values(s.selections).some(Boolean))
+      .map((s) => s.countryCode);
 
     const totalSelections = selections.reduce((sum, selection) => {
       return sum + Object.values(selection.selections).filter(Boolean).length;

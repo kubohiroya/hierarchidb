@@ -1,11 +1,8 @@
-import type { ILocationDownloadStrategy } from '~/services/download/types';
-import type {
-  LocationSearchConfig,
-  LocationType,
-} from '~/common/entities/LocationEntity';
+import type { LocationSearchConfig, LocationType } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import { mapType, parseNumber } from '~/services/download/mapperUtils';
 import type { RawNominatimResult } from '~/services/download/rawTypes';
+import type { ILocationDownloadStrategy } from '~/services/download/types';
 import { buildOsmPointProperties } from '~/services/pointFactoryUtils';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
@@ -16,7 +13,8 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
   }
 
   async search(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
-    const endpoint = config.options?.nominatimEndpoint || 'https://nominatim.openstreetmap.org/search';
+    const endpoint =
+      config.options?.nominatimEndpoint || 'https://nominatim.openstreetmap.org/search';
     const params = new URLSearchParams({
       q: config.query || '',
       format: 'json',
@@ -38,7 +36,7 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       const data = await response.json();
       if (!Array.isArray(data)) return [];
       const points = await Promise.all(
-        data.map((item) => this.fromOSM(item as RawNominatimResult)),
+        data.map((item) => this.fromOSM(item as RawNominatimResult))
       );
       return points.filter((value): value is LocationPointProperties => value !== null);
     } catch (e) {
@@ -54,13 +52,7 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
 
     const type: LocationType = mapType(osmData.type);
     const fetchedAt = Date.now();
-    const point = await buildOsmPointProperties(
-      osmData,
-      type,
-      lat,
-      lon,
-      fetchedAt,
-    );
+    const point = await buildOsmPointProperties(osmData, type, lat, lon, fetchedAt);
     return point;
   }
 }

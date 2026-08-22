@@ -1,6 +1,6 @@
 import { enUS, ja } from 'date-fns/locale';
-import { useCallback, useEffect, useState } from 'react';
 import type { i18n as I18nInstance } from 'i18next';
+import { useCallback, useEffect, useState } from 'react';
 import { isDevEnv } from '~/utils/env';
 
 // Avoid hard type dependency on date-fns types during DTS stage
@@ -124,9 +124,7 @@ const resolveCurrentLanguage = (i18n: I18nInstance): LanguageConfig => {
 };
 
 export function useLanguageProviderMountState(): boolean {
-  const [isMounted, setIsMounted] = useState<boolean>(
-    typeof window === 'undefined',
-  );
+  const [isMounted, setIsMounted] = useState<boolean>(typeof window === 'undefined');
 
   useEffect(() => {
     if (!isMounted) {
@@ -142,22 +140,16 @@ export interface UseLanguageProviderStateResult {
   adapterLocale: LanguageConfig['dateLocale'];
 }
 
-export function useLanguageProviderState(
-  i18n: I18nInstance,
-): UseLanguageProviderStateResult {
+export function useLanguageProviderState(i18n: I18nInstance): UseLanguageProviderStateResult {
   const [isLoading, setIsLoading] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<LanguageConfig>(() =>
-    resolveCurrentLanguage(i18n),
+    resolveCurrentLanguage(i18n)
   );
-  const [formatters, setFormatters] = useState(() =>
-    createFormatters(currentLanguage.code),
-  );
+  const [formatters, setFormatters] = useState(() => createFormatters(currentLanguage.code));
 
   const changeLanguage = useCallback(
     async (languageCode: string): Promise<void> => {
-      const targetLanguage = SUPPORTED_LANGUAGES.find(
-        (lang) => lang.code === languageCode,
-      );
+      const targetLanguage = SUPPORTED_LANGUAGES.find((lang) => lang.code === languageCode);
       if (!targetLanguage) {
         if (isDevEnv()) {
           console.warn(`Language ${languageCode} not supported`);
@@ -187,7 +179,7 @@ export function useLanguageProviderState(
         setIsLoading(false);
       }
     },
-    [i18n],
+    [i18n]
   );
 
   useEffect(() => {
@@ -224,16 +216,12 @@ export function useLanguageProviderState(
 }
 
 export const detectUserLanguage = (): string => {
-  const stored =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('preferred-language')
-      : null;
+  const stored = typeof window !== 'undefined' ? localStorage.getItem('preferred-language') : null;
   if (stored && SUPPORTED_LANGUAGES.some((lang) => lang.code === stored)) {
     return stored;
   }
 
-  const browserLang =
-    typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en';
+  const browserLang = typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en';
   const foundLang = SUPPORTED_LANGUAGES.find((lang) => lang.code === browserLang);
   if (foundLang) {
     return foundLang.code;

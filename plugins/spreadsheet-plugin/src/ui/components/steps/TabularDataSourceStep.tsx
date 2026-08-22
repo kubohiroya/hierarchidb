@@ -1,46 +1,59 @@
-import type { FC } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular';
+import { TabularDataImport, TabularPreviewGrid, TabularProvider } from '@hierarchidb/ui-tabular';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { type UseTabularDataSourceResult, useTabularDataSource } from '~/ui/hooks/useTabularDataSource';
-import { TabularPreviewGrid } from '@hierarchidb/ui-tabular';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { useAtomValue } from 'jotai';
+import type { FC } from 'react';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
+import {
+  type UseTabularDataSourceResult,
+  useTabularDataSource,
+} from '~/ui/hooks/useTabularDataSource';
 import { tabularRowsAtom } from '~/ui/state/tabularKeyValueAtoms';
 
-const TabularDataImportStep = TabularDataImport as React.FC<UseTabularDataSourceResult['importStepProps']>;
+const TabularDataImportStep = TabularDataImport as React.FC<
+  UseTabularDataSourceResult['importStepProps']
+>;
 
-export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { showPreview?: boolean }> = ({
-  data,
-  onChange,
-  setValid,
-  setError,
-  dialogRef,
-  nodeId,
-  showPreview = true,
-}) => {
+export const TabularDataSourceStep: FC<
+  PluginStepProps<SpreadsheetDraft> & { showPreview?: boolean }
+> = ({ data, onChange, setValid, setError, dialogRef, nodeId, showPreview = true }) => {
   const { t } = useTranslation('spreadsheet-plugin');
   const previewRows = useAtomValue(tabularRowsAtom);
-  const { dialogData, tabularApi, importAccordion, detailsAccordion, hasMetadata, importStepProps, formatBytes, details } =
-    useTabularDataSource({
-      data,
-      onChange,
-      setValid,
-      setError,
-      nodeId,
-      dialogRef,
-      missingDatasetMessage: t(
-        'dataSource.errors.missingDataset',
-        'select or download a data file before continuing.',
-      ) as string,
-    });
+  const {
+    dialogData,
+    tabularApi,
+    importAccordion,
+    detailsAccordion,
+    hasMetadata,
+    importStepProps,
+    formatBytes,
+    details,
+  } = useTabularDataSource({
+    data,
+    onChange,
+    setValid,
+    setError,
+    nodeId,
+    dialogRef,
+    missingDatasetMessage: t(
+      'dataSource.errors.missingDataset',
+      'select or download a data file before continuing.'
+    ) as string,
+  });
 
   return (
     <TabularProvider tabularApi={tabularApi}>
@@ -58,7 +71,11 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { sho
         </AccordionDetails>
       </Accordion>
 
-      <Accordion expanded={detailsAccordion.expanded} onChange={detailsAccordion.onChange} sx={{ mt: 1 }}>
+      <Accordion
+        expanded={detailsAccordion.expanded}
+        onChange={detailsAccordion.onChange}
+        sx={{ mt: 1 }}
+      >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TaskAltIcon fontSize="small" color={hasMetadata ? 'success' : 'disabled'} />
@@ -120,7 +137,10 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { sho
             <Paper variant="outlined" sx={{ height: 320 }}>
               <TabularPreviewGrid
                 rows={previewRows}
-                columns={extractColumnNames(dialogData.lastPreview, dialogData.tabularTableMetadata)}
+                columns={extractColumnNames(
+                  dialogData.lastPreview,
+                  dialogData.tabularTableMetadata
+                )}
                 height={320}
               />
             </Paper>
@@ -132,11 +152,14 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { sho
 };
 
 const isNamedColumn = (value: unknown): value is { name: string } =>
-  typeof value === 'object' && value !== null && 'name' in value && typeof (value as { name: unknown }).name === 'string';
+  typeof value === 'object' &&
+  value !== null &&
+  'name' in value &&
+  typeof (value as { name: unknown }).name === 'string';
 
 const extractColumnNames = (
   lastPreview?: TabularDataResult,
-  metadata?: TabularTableMetadata,
+  metadata?: TabularTableMetadata
 ): string[] => {
   const names: string[] = [];
   const previewColumns = lastPreview?.columns;

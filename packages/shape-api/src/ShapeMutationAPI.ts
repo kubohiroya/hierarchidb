@@ -1,17 +1,17 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  ShapeBuildTaskRecordInput,
-  ShapeBuildTaskRecordUpdate,
-  ShapeGeometryCache,
-  ShapeFeatureMetadata,
-  ShapeSourceCache,
-  ShapeDataSourceMetadata,
-} from './shapeBuildTypes.js';
-import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
-import type {
   ShapeBuildSessionRecoveryRequest,
   ShapeBuildSessionRecoveryResult,
 } from './ShapeBuildSessionContractError.js';
+import type {
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
+  ShapeDataSourceMetadata,
+  ShapeFeatureMetadata,
+  ShapeGeometryCache,
+  ShapeSourceCache,
+} from './shapeBuildTypes.js';
+import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
 export interface ShapeMutationAPI {
   upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void>;

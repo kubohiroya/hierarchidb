@@ -32,9 +32,9 @@ const IMPL_SUFFIX_REGEX = /^(.+)\.(core|internal|impl)\.[^.]+$/;
  * `null` when the file does not use an impl suffix.
  */
 export function parseImplSuffix(baseName: string): { stem: string; suffix: ImplSuffix } | null {
-    const match = baseName.match(IMPL_SUFFIX_REGEX);
-    if (!match) return null;
-    return { stem: match[1], suffix: match[2] as ImplSuffix };
+  const match = baseName.match(IMPL_SUFFIX_REGEX);
+  if (!match) return null;
+  return { stem: match[1], suffix: match[2] as ImplSuffix };
 }
 
 // ---------------------------------------------------------------------------
@@ -51,24 +51,24 @@ export function parseImplSuffix(baseName: string): { stem: string; suffix: ImplS
  * sub-directory, not use the .core.ts suffix.
  */
 export function isLegitimateCoreSuffix(analysis: FileAnalysis, stem: string): boolean {
-    // Re-export wrappers are never legitimate .core.ts
-    if (analysis.isReExportOnly) return false;
+  // Re-export wrappers are never legitimate .core.ts
+  if (analysis.isReExportOnly) return false;
 
-    // Hook files should use sub-directory, not .core.ts
-    if (stem.startsWith('use')) return false;
+  // Hook files should use sub-directory, not .core.ts
+  if (stem.startsWith('use')) return false;
 
-    // Must have own (non-reExport) exports
-    const ownExports = analysis.exports.filter((e) => e.kind !== 'reExport');
-    if (ownExports.length === 0) return false;
+  // Must have own (non-reExport) exports
+  const ownExports = analysis.exports.filter((e) => e.kind !== 'reExport');
+  if (ownExports.length === 0) return false;
 
-    // All own exports must be pure functions — no types, classes, consts
-    // (types are fine alongside functions, but the primary must be functions)
-    const hasFunctions = ownExports.some((e) => e.kind === 'function');
-    const hasNonFunctionValues = ownExports.some(
-        (e) => e.kind !== 'function' && e.kind !== 'type' && e.kind !== 'interface',
-    );
+  // All own exports must be pure functions — no types, classes, consts
+  // (types are fine alongside functions, but the primary must be functions)
+  const hasFunctions = ownExports.some((e) => e.kind === 'function');
+  const hasNonFunctionValues = ownExports.some(
+    (e) => e.kind !== 'function' && e.kind !== 'type' && e.kind !== 'interface'
+  );
 
-    return hasFunctions && !hasNonFunctionValues;
+  return hasFunctions && !hasNonFunctionValues;
 }
 
 // ---------------------------------------------------------------------------
@@ -81,9 +81,9 @@ export function isLegitimateCoreSuffix(analysis: FileAnalysis, stem: string): bo
  * within the same directory).
  */
 export function isLegitimateInternalSuffix(analysis: FileAnalysis): boolean {
-    if (analysis.isReExportOnly) return false;
-    const ownExports = analysis.exports.filter((e) => e.kind !== 'reExport');
-    return ownExports.length > 0;
+  if (analysis.isReExportOnly) return false;
+  const ownExports = analysis.exports.filter((e) => e.kind !== 'reExport');
+  return ownExports.length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,9 +95,9 @@ export function isLegitimateInternalSuffix(analysis: FileAnalysis): boolean {
  * wrapper and contains own exports (interface implementation).
  */
 export function isLegitimateImplSuffix(analysis: FileAnalysis): boolean {
-    if (analysis.isReExportOnly) return false;
-    const ownExports = analysis.exports.filter((e) => e.kind !== 'reExport');
-    return ownExports.length > 0;
+  if (analysis.isReExportOnly) return false;
+  const ownExports = analysis.exports.filter((e) => e.kind !== 'reExport');
+  return ownExports.length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,23 +113,23 @@ export function isLegitimateImplSuffix(analysis: FileAnalysis): boolean {
  *   - Other .core.ts / .internal.ts / .impl.ts → drop suffix: `<stem>.ts`
  */
 export function buildSuggestedRename(
-    stem: string,
-    suffix: ImplSuffix,
-    extension: string,
-    isReExportOnly: boolean,
+  stem: string,
+  suffix: ImplSuffix,
+  extension: string,
+  isReExportOnly: boolean
 ): string {
-    if (suffix === 'core' && stem.startsWith('use')) {
-        // Hook internal implementation → sub-directory
-        return `${stem}/${stem}${extension}`;
-    }
+  if (suffix === 'core' && stem.startsWith('use')) {
+    // Hook internal implementation → sub-directory
+    return `${stem}/${stem}${extension}`;
+  }
 
-    if (isReExportOnly) {
-        // Re-export wrapper → delete this file, rename the target
-        return `(delete wrapper, rename target to ${stem}${extension})`;
-    }
+  if (isReExportOnly) {
+    // Re-export wrapper → delete this file, rename the target
+    return `(delete wrapper, rename target to ${stem}${extension})`;
+  }
 
-    // Default: drop the suffix
-    return `${stem}${extension}`;
+  // Default: drop the suffix
+  return `${stem}${extension}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,57 +137,57 @@ export function buildSuggestedRename(
 // ---------------------------------------------------------------------------
 
 export const implSuffixRule: Rule = {
-    name: 'ImplSuffixRule',
+  name: 'ImplSuffixRule',
 
-    evaluate(analysis: FileAnalysis): Violation[] {
-        const { file } = analysis;
-        const baseName = path.basename(file.absolutePath);
+  evaluate(analysis: FileAnalysis): Violation[] {
+    const { file } = analysis;
+    const baseName = path.basename(file.absolutePath);
 
-        const parsed = parseImplSuffix(baseName);
-        if (!parsed) return [];
+    const parsed = parseImplSuffix(baseName);
+    if (!parsed) return [];
 
-        const { stem, suffix } = parsed;
+    const { stem, suffix } = parsed;
 
-        // --- Evaluate legitimacy per suffix kind ---
+    // --- Evaluate legitimacy per suffix kind ---
 
-        switch (suffix) {
-            case 'core': {
-                if (isLegitimateCoreSuffix(analysis, stem)) return [];
-                break;
-            }
-            case 'internal': {
-                if (isLegitimateInternalSuffix(analysis)) return [];
-                break;
-            }
-            case 'impl': {
-                if (isLegitimateImplSuffix(analysis)) return [];
-                break;
-            }
-        }
+    switch (suffix) {
+      case 'core': {
+        if (isLegitimateCoreSuffix(analysis, stem)) return [];
+        break;
+      }
+      case 'internal': {
+        if (isLegitimateInternalSuffix(analysis)) return [];
+        break;
+      }
+      case 'impl': {
+        if (isLegitimateImplSuffix(analysis)) return [];
+        break;
+      }
+    }
 
-        // --- Build violation ---
+    // --- Build violation ---
 
-        const suggestedRename = buildSuggestedRename(
-            stem,
-            suffix,
-            file.extension,
-            analysis.isReExportOnly,
-        );
+    const suggestedRename = buildSuggestedRename(
+      stem,
+      suffix,
+      file.extension,
+      analysis.isReExportOnly
+    );
 
-        const reason = analysis.isReExportOnly
-            ? `is a re-export wrapper with .${suffix}.ts suffix`
-            : stem.startsWith('use')
-                ? `is a hook internal implementation using .${suffix}.ts (move to sub-directory instead)`
-                : `uses .${suffix}.ts without clear justification`;
+    const reason = analysis.isReExportOnly
+      ? `is a re-export wrapper with .${suffix}.ts suffix`
+      : stem.startsWith('use')
+        ? `is a hook internal implementation using .${suffix}.ts (move to sub-directory instead)`
+        : `uses .${suffix}.ts without clear justification`;
 
-        return [
-            {
-                file,
-                pattern: 4,
-                severity: 'error',
-                message: `File "${baseName}" ${reason}. Suggested: "${suggestedRename}".`,
-                suggestedRename,
-            },
-        ];
-    },
+    return [
+      {
+        file,
+        pattern: 4,
+        severity: 'error',
+        message: `File "${baseName}" ${reason}. Suggested: "${suggestedRename}".`,
+        suggestedRename,
+      },
+    ];
+  },
 };

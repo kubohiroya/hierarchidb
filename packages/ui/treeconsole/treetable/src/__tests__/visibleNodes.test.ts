@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { describe, expect, it } from 'vitest';
 
 import { buildVisibleNodes } from '../utils/visible-nodes';
 
-const makeNode = (id: string, parentId: string | null, overrides: Partial<TreeNode> = {}): TreeNode => {
+const makeNode = (
+  id: string,
+  parentId: string | null,
+  overrides: Partial<TreeNode> = {}
+): TreeNode => {
   const parentKey = parentId ?? '';
   return {
     id: id as TreeNode['id'],
@@ -70,10 +74,6 @@ describe('buildVisibleNodes', () => {
 
     const result = buildVisibleNodes(nodes, expanded, { rootNodeId: 'virtual-root' });
 
-    expect(result.map((node) => String(node.id))).toEqual([
-      'child-a',
-      'grandchild',
-      'child-b',
-    ]);
+    expect(result.map((node) => String(node.id))).toEqual(['child-a', 'grandchild', 'child-b']);
   });
 });

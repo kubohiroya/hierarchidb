@@ -88,9 +88,9 @@ export class AuthNotificationRegistry {
         type: notification.type,
         requestId: (
           notification as
-          | AuthRequiredNotification
-          | AuthSuccessNotification
-          | AuthCancelledNotification
+            | AuthRequiredNotification
+            | AuthSuccessNotification
+            | AuthCancelledNotification
         ).context.requestId,
         broadcast,
         handlerCount: handlerIds.length,
@@ -226,10 +226,7 @@ export const AuthNotificationFactory = {
   /**
    * Create a storage warning notification
    */
-  createStorageWarning(params: {
-    message: string;
-    timestamp: number;
-  }): StorageWarningNotification {
+  createStorageWarning(params: { message: string; timestamp: number }): StorageWarningNotification {
     return {
       type: 'STORAGE_WARNING',
       context: {

@@ -1,5 +1,5 @@
-import { Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import { Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import { useEffect } from 'react';
 import type { FolderExportDraftData } from './types.js';
 import { normalizeFolderExportDraft } from './types.js';
@@ -19,31 +19,31 @@ export const FolderExportReviewStep = ({ data, setValid, setError }: Props) => {
       <Typography variant="h6">Review</Typography>
       <List>
         <ListItem>
-          <ListItemText primary="用途" secondary={draft.exportMode === 'continuity' ? '作業継続' : '外部配信'} />
+          <ListItemText
+            primary="用途"
+            secondary={draft.exportMode === 'continuity' ? '作業継続' : '外部配信'}
+          />
         </ListItem>
         <Divider component="li" />
         <ListItem>
           <ListItemText
             primary="対象"
-            secondary={draft.targetScope === 'shapeOnly' ? 'shape のみ' : 'shape/location/route 全件'}
+            secondary={
+              draft.targetScope === 'shapeOnly' ? 'shape のみ' : 'shape/location/route 全件'
+            }
           />
         </ListItem>
         <Divider component="li" />
         <ListItem>
-          <ListItemText
-            primary="フォーマット"
-            secondary={draft.format}
-          />
+          <ListItemText primary="フォーマット" secondary={draft.format} />
         </ListItem>
         <Divider component="li" />
         <ListItem>
           <ListItemText
             primary="可視化パラメータ"
-            secondary={
-              `minZoom=${draft.minZoom}, maxZoom=${draft.maxZoom}, maxTileBytes=${draft.maxTileBytes}, downloadablePayload=${String(
-                draft.downloadPayload,
-              )}`
-            }
+            secondary={`minZoom=${draft.minZoom}, maxZoom=${draft.maxZoom}, maxTileBytes=${draft.maxTileBytes}, downloadablePayload=${String(
+              draft.downloadPayload
+            )}`}
           />
         </ListItem>
       </List>

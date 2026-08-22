@@ -1,4 +1,6 @@
-export type BrandedString<T extends string, TBrand extends string> = T & { readonly __brand: TBrand };
+export type BrandedString<T extends string, TBrand extends string> = T & {
+  readonly __brand: TBrand;
+};
 
 export type ShapeLayerBoundarySymbol = BrandedString<'b' | 'f', 'ShapeLayerBoundarySymbol'>;
 export type ShapeSourceLayerName = BrandedString<string, 'ShapeSourceLayerName'>;
@@ -14,21 +16,23 @@ const normalizeLayerName = (value: unknown): string | undefined => {
   return trimmed.toLowerCase();
 };
 
-const toBoundarySymbol = (mode: LayerNameBoundaryMode): ShapeLayerBoundarySymbol => (
-  mode === 'boundary' ? 'b' : 'f'
-) as ShapeLayerBoundarySymbol;
+const toBoundarySymbol = (mode: LayerNameBoundaryMode): ShapeLayerBoundarySymbol =>
+  (mode === 'boundary' ? 'b' : 'f') as ShapeLayerBoundarySymbol;
 
 export const buildShapeSourceLayerName = (
   adminLevel: number,
-  boundaryMode: LayerNameBoundaryMode = 'fill',
-): ShapeSourceLayerName => (
-  `${adminLevel}${boundaryMode === 'boundary' ? '-b' : ''}` as ShapeSourceLayerName
-);
+  boundaryMode: LayerNameBoundaryMode = 'fill'
+): ShapeSourceLayerName =>
+  `${adminLevel}${boundaryMode === 'boundary' ? '-b' : ''}` as ShapeSourceLayerName;
 
-export const parseShapeSourceLayerName = (value: unknown): {
-  adminLevel: number;
-  boundary: ShapeLayerBoundarySymbol;
-} | undefined => {
+export const parseShapeSourceLayerName = (
+  value: unknown
+):
+  | {
+      adminLevel: number;
+      boundary: ShapeLayerBoundarySymbol;
+    }
+  | undefined => {
   const normalized = normalizeLayerName(value);
   if (!normalized) return undefined;
 
@@ -37,9 +41,8 @@ export const parseShapeSourceLayerName = (value: unknown): {
 
   const adminLevel = Number(match[1]);
   if (!Number.isInteger(adminLevel) || adminLevel < 0) return undefined;
-  const boundaryMode: LayerNameBoundaryMode = (match[2] ?? '').toLowerCase() === 'b'
-    ? 'boundary'
-    : 'fill';
+  const boundaryMode: LayerNameBoundaryMode =
+    (match[2] ?? '').toLowerCase() === 'b' ? 'boundary' : 'fill';
   return {
     adminLevel,
     boundary: toBoundarySymbol(boundaryMode),

@@ -87,14 +87,9 @@ export function useTagsPage(tagName?: string) {
     cachedTaggedNodesEntry && isFresh(cachedTaggedNodesEntry.ts)
   );
   const hasUsableTaggedNodesCache = Boolean(
-    hasFreshTaggedNodesCache &&
-      cachedTaggedNodesEntry &&
-      cachedTaggedNodesEntry.data.length > 0
+    hasFreshTaggedNodesCache && cachedTaggedNodesEntry && cachedTaggedNodesEntry.data.length > 0
   );
-  const cachedTaggedNodes =
-    hasUsableTaggedNodesCache
-      ? cachedTaggedNodesEntry?.data
-      : null;
+  const cachedTaggedNodes = hasUsableTaggedNodesCache ? cachedTaggedNodesEntry?.data : null;
 
   const fetchAllTags = useCallback(async () => {
     if (!workerClient) throw new Error('Worker not connected');
@@ -172,9 +167,7 @@ export function useTagsPage(tagName?: string) {
     return counts;
   }, [allTags, workerClient]);
 
-  const { data: usageCounts = new Map<string, number>() } = useQuery<
-    Map<string, number>
-  >({
+  const { data: usageCounts = new Map<string, number>() } = useQuery<Map<string, number>>({
     queryKey: ['tags', 'usage-counts', allTags.length],
     queryFn: fetchUsageCounts,
     enabled: isConnected && allTags.length > 0,
@@ -196,17 +189,13 @@ export function useTagsPage(tagName?: string) {
     }
     const tagAPI = await workerClient.getTagAPI();
     const candidates = await tagAPI.searchTags(tagName ?? '');
-    const exact = candidates.find(
-      (tag) => tag.name.trim().toLowerCase() === normalizedTagName
-    );
+    const exact = candidates.find((tag) => tag.name.trim().toLowerCase() === normalizedTagName);
     if (exact) {
       specificTagCache.set(normalizedTagName, { data: exact, ts: Date.now() });
       return exact;
     }
     const all = await tagAPI.getAllTags();
-    const fallback = all.find(
-      (tag) => tag.name.trim().toLowerCase() === normalizedTagName
-    );
+    const fallback = all.find((tag) => tag.name.trim().toLowerCase() === normalizedTagName);
     const resolved = fallback ?? null;
     specificTagCache.set(normalizedTagName, { data: resolved, ts: Date.now() });
     return resolved;
@@ -248,9 +237,7 @@ export function useTagsPage(tagName?: string) {
           const nodeKey = String(association.nodeId);
           let hasDraft = draftScopeCache.get(nodeKey);
           if (typeof hasDraft === 'undefined') {
-            const nodeAssociations = await tagAPI.getTagAssociationsForNode(
-              association.nodeId
-            );
+            const nodeAssociations = await tagAPI.getTagAssociationsForNode(association.nodeId);
             hasDraft = nodeAssociations.some((assoc) => assoc.scope === 'draft');
             draftScopeCache.set(nodeKey, hasDraft);
           }

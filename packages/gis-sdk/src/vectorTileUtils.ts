@@ -16,14 +16,19 @@ export type BoundingBox = [minLon: number, minLat: number, maxLon: number, maxLa
  *
  * Note: This matches the existing behavior used across the repo (floor-based, XYZ scheme).
  */
-export const lonToTileX = (lon: number, z: number): number => Math.floor(((lon + 180) / 360) * 2 ** z);
+export const lonToTileX = (lon: number, z: number): number =>
+  Math.floor(((lon + 180) / 360) * 2 ** z);
 
 export const latToTileY = (lat: number, z: number): number => {
   const rad = (lat * Math.PI) / 180;
   return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
 };
 
-export const lonLatToTileXY = (longitude: number, latitude: number, z: number): { x: number; y: number } => ({
+export const lonLatToTileXY = (
+  longitude: number,
+  latitude: number,
+  z: number
+): { x: number; y: number } => ({
   x: lonToTileX(longitude, z),
   y: latToTileY(latitude, z),
 });
@@ -60,7 +65,7 @@ const toPropertyString = (value: unknown): string | undefined => {
 
 export const pickFirstString = (
   properties: Record<string, unknown>,
-  keys: string[],
+  keys: string[]
 ): string | undefined => {
   for (const key of keys) {
     const value = toPropertyString(properties[key]);
@@ -70,7 +75,14 @@ export const pickFirstString = (
 };
 
 export const pickCountryName = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT']);
+  pickFirstString(properties, [
+    'country',
+    'COUNTRY',
+    'COUNTRY_NAME',
+    'NAME_0',
+    'ADMIN',
+    'SOVEREIGNT',
+  ]);
 
 export const pickCountryCode = (properties: Record<string, unknown>): string | undefined =>
   pickFirstString(properties, ['ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
@@ -90,7 +102,16 @@ export const pickAdminName = (properties: Record<string, unknown>): string | und
   ]);
 
 export const pickAdminCode = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['GID_0', 'GID_1', 'GID_2', 'GID_3', 'ADM1_CODE', 'ADM2_CODE', 'shapeID', 'code']);
+  pickFirstString(properties, [
+    'GID_0',
+    'GID_1',
+    'GID_2',
+    'GID_3',
+    'ADM1_CODE',
+    'ADM2_CODE',
+    'shapeID',
+    'code',
+  ]);
 
 export const pickAdminLevel = (properties: Record<string, unknown>): number | undefined => {
   const candidates = [
@@ -109,4 +130,3 @@ export const pickAdminLevel = (properties: Record<string, unknown>): number | un
   }
   return undefined;
 };
-

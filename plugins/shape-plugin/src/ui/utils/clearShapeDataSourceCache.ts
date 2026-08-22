@@ -6,7 +6,7 @@ import { invalidateCountrySelectionCaches } from '~/ui/hooks/invalidateCountrySe
 
 export const clearShapeDataSourceCache = async (
   nodeId: NodeId,
-  dataSource: DataSourceName,
+  dataSource: DataSourceName
 ): Promise<{ downloadCleared: number }> => {
   metadataLoader.clearCache(dataSource);
   await invalidateCountrySelectionCaches(dataSource, nodeId);

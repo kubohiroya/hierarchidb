@@ -37,7 +37,7 @@ describe('SpreadsheetTabularApiDriver', () => {
       tableManager,
       undefined,
       'test-styler-api-chunks',
-      'test-tabular-source-rowstore-db',
+      'test-tabular-source-rowstore-db'
     );
   });
 

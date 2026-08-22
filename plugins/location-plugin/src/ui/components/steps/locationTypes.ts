@@ -1,12 +1,6 @@
-import type { LocationType } from '~/common/types/index';
 import type { SvgIconComponent } from '@mui/icons-material';
-import {
-  Anchor,
-  FlightTakeoff,
-  ForkRight,
-  LocationCity,
-  Subway,
-} from '@mui/icons-material';
+import { Anchor, FlightTakeoff, ForkRight, LocationCity, Subway } from '@mui/icons-material';
+import type { LocationType } from '~/common/types/index';
 
 type LocationTypeStyle = {
   color: string;
@@ -38,10 +32,18 @@ export const LOCATION_TYPE_STYLES: Record<LocationType, LocationTypeStyle> = {
 };
 
 export const BASE_LOCATION_TYPES = [
-  { id: 'area_centroid' as LocationType, ...LOCATION_TYPE_STYLES.area_centroid, estimatedCount: 20000 },
+  {
+    id: 'area_centroid' as LocationType,
+    ...LOCATION_TYPE_STYLES.area_centroid,
+    estimatedCount: 20000,
+  },
   { id: 'airport' as LocationType, ...LOCATION_TYPE_STYLES.airport, estimatedCount: 28000 },
   { id: 'port' as LocationType, ...LOCATION_TYPE_STYLES.port, estimatedCount: 12000 },
-  { id: 'railway_station' as LocationType, ...LOCATION_TYPE_STYLES.railway_station, estimatedCount: 45000 },
+  {
+    id: 'railway_station' as LocationType,
+    ...LOCATION_TYPE_STYLES.railway_station,
+    estimatedCount: 45000,
+  },
   { id: 'interchange' as LocationType, ...LOCATION_TYPE_STYLES.interchange, estimatedCount: 15000 },
 ] as const;
 

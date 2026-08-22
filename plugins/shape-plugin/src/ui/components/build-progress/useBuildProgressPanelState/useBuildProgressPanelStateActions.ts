@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import { useCallback, useMemo } from 'react';
+import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
 import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressTypes';
 import { logStartTrace } from './useBuildProgressPanelState.utils.js';
-import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
 
 type Params = {
   resolvedNodeId?: NodeId;
@@ -92,10 +92,13 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
     setPendingUserAction,
   ]);
 
-  const mergedControls = useMemo(() => ({
-    ...controls,
-    startPending: Boolean(controls.startPending) || localStartPending,
-  }), [controls]);
+  const mergedControls = useMemo(
+    () => ({
+      ...controls,
+      startPending: Boolean(controls.startPending) || localStartPending,
+    }),
+    [controls]
+  );
 
   const handleStartClick = useCallback(async () => {
     if (startWarning) {

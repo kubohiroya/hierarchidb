@@ -1,11 +1,11 @@
 /**
-   * DATA_SOURCE_STRATEGY_DESIGN.md
-  */
+ * DATA_SOURCE_STRATEGY_DESIGN.md
+ */
 
-import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
+import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeStepValidationResult } from '~/common/types/index';
-import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
+import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
 
 export interface DataSourceConfig {
   id: string;
@@ -156,7 +156,10 @@ export type RawDataPipelineTransformResult = {
 
 export interface RawDataPipeline<TRawData> {
   prepareRequest(options: FetchOptions): RawDataPipelineRequest;
-  transformStream(stream: ReadableStream<Uint8Array>, options: FetchOptions): Promise<RawDataPipelineTransformResult>;
+  transformStream(
+    stream: ReadableStream<Uint8Array>,
+    options: FetchOptions
+  ): Promise<RawDataPipelineTransformResult>;
   decodeBuffer(buffer: ArrayBuffer, metadata?: ChunkStoreMetadata): Promise<TRawData>;
 }
 
@@ -224,9 +227,11 @@ export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeFe
   clearCache?(): Promise<void>;
 }
 
-export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData = ShapeFeaturePayload[]>
-  implements DataSourceStrategy<TRawData, TProcessedData> {
-
+export abstract class BaseDataSourceStrategy<
+  TRawData = unknown,
+  TProcessedData = ShapeFeaturePayload[],
+> implements DataSourceStrategy<TRawData, TProcessedData>
+{
   abstract readonly id: string;
   abstract readonly name: string;
   abstract readonly config: DataSourceConfig;
@@ -301,8 +306,8 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
       return data;
     }
 
-    return data.filter(item => {
-      return filters.every(filter => {
+    return data.filter((item) => {
+      return filters.every((filter) => {
         const value = this.getNestedValue(item, filter.field);
         return this.applyFilterRule(value, filter);
       });
@@ -311,7 +316,7 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
 
   protected async applyTransformations<T extends object>(
     data: T[],
-    transformations?: TransformationRule[],
+    transformations?: TransformationRule[]
   ): Promise<T[]> {
     if (!transformations || transformations.length === 0) {
       return data;
@@ -326,12 +331,10 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
 
   private getNestedValue(obj: unknown, path: string): unknown {
     if (typeof obj !== 'object' || obj === null) return undefined;
-    return path
-      .split('.')
-      .reduce<unknown>((current, key) => {
-        if (typeof current !== 'object' || current === null) return undefined;
-        return (current as Record<string, unknown>)[key];
-      }, obj);
+    return path.split('.').reduce<unknown>((current, key) => {
+      if (typeof current !== 'object' || current === null) return undefined;
+      return (current as Record<string, unknown>)[key];
+    }, obj);
   }
 
   private applyFilterRule(value: unknown, filter: FilterRule): boolean {
@@ -341,17 +344,27 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
       case 'ne':
         return value !== filter.value;
       case 'gt':
-        return typeof value === 'number' && typeof filter.value === 'number' && value > filter.value;
+        return (
+          typeof value === 'number' && typeof filter.value === 'number' && value > filter.value
+        );
       case 'gte':
-        return typeof value === 'number' && typeof filter.value === 'number' && value >= filter.value;
+        return (
+          typeof value === 'number' && typeof filter.value === 'number' && value >= filter.value
+        );
       case 'lt':
-        return typeof value === 'number' && typeof filter.value === 'number' && value < filter.value;
+        return (
+          typeof value === 'number' && typeof filter.value === 'number' && value < filter.value
+        );
       case 'lte':
-        return typeof value === 'number' && typeof filter.value === 'number' && value <= filter.value;
+        return (
+          typeof value === 'number' && typeof filter.value === 'number' && value <= filter.value
+        );
       case 'contains':
         return String(value).includes(String(filter.value));
       case 'in':
-        return Array.isArray(filter.value) && filter.value.includes(value as string | number | boolean);
+        return (
+          Array.isArray(filter.value) && filter.value.includes(value as string | number | boolean)
+        );
       default:
         return true;
     }
@@ -359,7 +372,7 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
 
   private async applyTransformation<T extends object>(
     data: T[],
-    transformation: TransformationRule,
+    transformation: TransformationRule
   ): Promise<T[]> {
     switch (transformation.type) {
       case 'extract':

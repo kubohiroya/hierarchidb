@@ -1,12 +1,4 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  clampMortonZoom,
-  getLocationDB,
-  type LocationFeature,
-  lonLatToTileXY,
-  MORTON_KEY_HEX_LENGTH,
-  mortonRangeForTile,
-} from '@hierarchidb/location-store';
 import type {
   LocationGroupItem,
   LocationNearestPoint,
@@ -17,6 +9,14 @@ import type {
   LocationViewportBbox,
   LocationViewportQueryOptions,
 } from '@hierarchidb/location-api';
+import {
+  clampMortonZoom,
+  getLocationDB,
+  type LocationFeature,
+  lonLatToTileXY,
+  MORTON_KEY_HEX_LENGTH,
+  mortonRangeForTile,
+} from '@hierarchidb/location-store';
 import { SingletonMixin } from '@hierarchidb/util';
 import { haversineMeters, metersToLongitudeDelta } from './nearest/tileNearest.js';
 

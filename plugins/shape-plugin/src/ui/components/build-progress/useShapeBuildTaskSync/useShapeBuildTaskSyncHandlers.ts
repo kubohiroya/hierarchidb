@@ -1,9 +1,7 @@
+import { useMemo } from 'react';
 import { useShapeBuildTaskSyncCore } from './useShapeBuildTaskSync.core.js';
 import { useShapeBuildTaskSyncEventHandlers } from './useShapeBuildTaskSyncEventHandlers.js';
-import { useMemo } from 'react';
-import type { SyncArgs } from './useShapeBuildTaskSyncTypes.js';
-import type { HandlerRefs } from './useShapeBuildTaskSyncTypes.js';
-import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
+import type { HandlerRefs, RawTaskSummary, SyncArgs } from './useShapeBuildTaskSyncTypes.js';
 
 type HandlerDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];
@@ -90,23 +88,26 @@ export const useShapeBuildTaskSyncHandlers = ({
     return (snapshot: RawTaskSummary[]) => events.handleSnapshot(snapshot);
   }, [events.handleSnapshot]);
 
-  return useMemo(() => ({
-    handleSnapshot,
-    handleUpdate: (task: RawTaskSummary) => events.handleUpdate(task),
-    syncTasksRef: core.syncTasksRef,
-    syncLoadingRef: core.syncLoadingRef,
-    syncErrorRef: core.syncErrorRef,
-    resetPending: core.resetPending,
-    scheduleFlush: core.scheduleFlush,
-    resetDebugCounters: core.resetDebugCounters,
-  }), [
-    core.syncTasksRef,
-    core.syncLoadingRef,
-    core.syncErrorRef,
-    core.resetPending,
-    core.scheduleFlush,
-    core.resetDebugCounters,
-    events.handleUpdate,
-    handleSnapshot,
-  ]);
+  return useMemo(
+    () => ({
+      handleSnapshot,
+      handleUpdate: (task: RawTaskSummary) => events.handleUpdate(task),
+      syncTasksRef: core.syncTasksRef,
+      syncLoadingRef: core.syncLoadingRef,
+      syncErrorRef: core.syncErrorRef,
+      resetPending: core.resetPending,
+      scheduleFlush: core.scheduleFlush,
+      resetDebugCounters: core.resetDebugCounters,
+    }),
+    [
+      core.syncTasksRef,
+      core.syncLoadingRef,
+      core.syncErrorRef,
+      core.resetPending,
+      core.scheduleFlush,
+      core.resetDebugCounters,
+      events.handleUpdate,
+      handleSnapshot,
+    ]
+  );
 };

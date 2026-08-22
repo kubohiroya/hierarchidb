@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SpacedSlider } from '@hierarchidb/components';
+import { DEFAULT_MAX_RATIO_VALUE } from '@hierarchidb/shape-api';
+import {
+  BuildConfigSectionTitle,
+  getBuildConfigHoverCardSx,
+} from '@hierarchidb/ui-accordion-config';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
+import { Tune as TuneIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
+  FormControlLabel,
   Grid,
   Paper,
   Stack,
@@ -10,16 +19,13 @@ import {
   Tabs,
   TextField,
   Typography,
-  FormControlLabel,
 } from '@mui/material';
-import { Tune as TuneIcon } from '@mui/icons-material';
-import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
-import { SpacedSlider } from '@hierarchidb/components';
-import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
-import { DEFAULT_MAX_RATIO_VALUE } from '@hierarchidb/shape-api';
-import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShapeBuildConfig } from '~/common/types/index';
-import { buildToneCurveAnchorsFromToleranceByBand, buildToleranceByBandFromToneCurveAnchors } from '~/services/utils/toleranceByBand';
+import {
+  buildToleranceByBandFromToneCurveAnchors,
+  buildToneCurveAnchorsFromToleranceByBand,
+} from '~/services/utils/toleranceByBand';
 
 type Props = {
   geometryConfig: ShapeBuildConfig['geometryConfig'];
@@ -53,7 +59,12 @@ const DEFAULT_ITERATIONS = 24;
 const DEFAULT_FALLBACK = 1;
 const DEFAULT_MULTIPLIER_ANCHORS = [1, 1, 1, 1] as const;
 const DEFAULT_MIN_RATIO_ANCHORS = [0, 0, 0, 0] as const;
-const DEFAULT_MAX_RATIO_ANCHORS = [DEFAULT_MAX_RATIO_VALUE, DEFAULT_MAX_RATIO_VALUE, DEFAULT_MAX_RATIO_VALUE, DEFAULT_MAX_RATIO_VALUE] as const;
+const DEFAULT_MAX_RATIO_ANCHORS = [
+  DEFAULT_MAX_RATIO_VALUE,
+  DEFAULT_MAX_RATIO_VALUE,
+  DEFAULT_MAX_RATIO_VALUE,
+  DEFAULT_MAX_RATIO_VALUE,
+] as const;
 
 const ADMIN_LEVEL_TABS: ReadonlyArray<{ key: AdminLevelTabKey; label: string }> = [
   { key: 'admin0', label: 'Admin 0' },
@@ -69,26 +80,29 @@ const PREVIOUS_TAB_BY_KEY: Partial<Record<AdminLevelTabKey, AdminLevelTabKey>> =
 };
 
 const clampIterations = (value: number): number => Math.min(64, Math.max(1, Math.round(value)));
-const clampRatio = (value: number): number => Math.max(0, Math.min(DEFAULT_MAX_RATIO_VALUE, Number.parseFloat(value.toFixed(3))));
-const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
-const areRatioValuesEqual = (left: number, right: number): boolean => Math.abs(clampRatio(left) - clampRatio(right)) < 1e-9;
+const clampRatio = (value: number): number =>
+  Math.max(0, Math.min(DEFAULT_MAX_RATIO_VALUE, Number.parseFloat(value.toFixed(3))));
+const resolveSliderNumber = (value: number | number[]) =>
+  Array.isArray(value) ? (value[0] ?? 0) : value;
+const areRatioValuesEqual = (left: number, right: number): boolean =>
+  Math.abs(clampRatio(left) - clampRatio(right)) < 1e-9;
 
 const resolveRatioByBand = (
   input: number[] | undefined,
   zoomBandBoundaries: number[],
-  fallbackAnchors: readonly [number, number, number, number],
+  fallbackAnchors: readonly [number, number, number, number]
 ): number[] => {
   const fallback = fallbackAnchors[0] ?? DEFAULT_FALLBACK;
   return buildToneCurveAnchorsFromToleranceByBand(
     input,
     zoomBandBoundaries,
     fallback,
-    fallbackAnchors,
+    fallbackAnchors
   ).map((anchor) => clampRatio(anchor.y));
 };
 
 const resolveStoredProfiles = (
-  geometryConfig: ShapeBuildConfig['geometryConfig'],
+  geometryConfig: ShapeBuildConfig['geometryConfig']
 ): StoredAdminLevelProfiles => {
   const raw = geometryConfig.simplifyToleranceByAdminLevel;
   if (!raw || typeof raw !== 'object') {
@@ -100,7 +114,7 @@ const resolveStoredProfiles = (
 const resolveEditableProfile = (
   key: AdminLevelTabKey,
   geometryConfig: ShapeBuildConfig['geometryConfig'],
-  storedProfiles: StoredAdminLevelProfiles,
+  storedProfiles: StoredAdminLevelProfiles
 ): AdminLevelProfile => {
   const raw = storedProfiles[key];
   return {
@@ -108,27 +122,28 @@ const resolveEditableProfile = (
     multiplierByBand: resolveRatioByBand(
       raw?.multiplierByBand ?? geometryConfig.toleranceMultiplierByBand,
       geometryConfig.zoomBandBoundaries,
-      DEFAULT_MULTIPLIER_ANCHORS,
+      DEFAULT_MULTIPLIER_ANCHORS
     ),
     minRatioByBand: resolveRatioByBand(
       raw?.minRatioByBand ?? geometryConfig.toleranceMinRatioByBand,
       geometryConfig.zoomBandBoundaries,
-      DEFAULT_MIN_RATIO_ANCHORS,
+      DEFAULT_MIN_RATIO_ANCHORS
     ),
     maxRatioByBand: resolveRatioByBand(
       raw?.maxRatioByBand ?? geometryConfig.toleranceMaxRatioByBand,
       geometryConfig.zoomBandBoundaries,
-      DEFAULT_MAX_RATIO_ANCHORS,
+      DEFAULT_MAX_RATIO_ANCHORS
     ),
-    toleranceSearchMaxIterations: typeof raw?.toleranceSearchMaxIterations === 'number'
-      ? clampIterations(raw.toleranceSearchMaxIterations)
-      : clampIterations(geometryConfig.toleranceSearchMaxIterations ?? DEFAULT_ITERATIONS),
+    toleranceSearchMaxIterations:
+      typeof raw?.toleranceSearchMaxIterations === 'number'
+        ? clampIterations(raw.toleranceSearchMaxIterations)
+        : clampIterations(geometryConfig.toleranceSearchMaxIterations ?? DEFAULT_ITERATIONS),
   };
 };
 
 const resolveEffectiveProfiles = (
   geometryConfig: ShapeBuildConfig['geometryConfig'],
-  storedProfiles: StoredAdminLevelProfiles,
+  storedProfiles: StoredAdminLevelProfiles
 ): Record<AdminLevelTabKey, AdminLevelProfile> => {
   const base: Record<AdminLevelTabKey, AdminLevelProfile> = {
     admin0: resolveEditableProfile('admin0', geometryConfig, storedProfiles),
@@ -146,7 +161,11 @@ const resolveEffectiveProfiles = (
     admin1: admin1UsePrevious ? base.admin0 : base.admin1,
     admin2: admin2UsePrevious ? (admin1UsePrevious ? base.admin0 : base.admin1) : base.admin2,
     admin3Plus: admin3UsePrevious
-      ? (admin2UsePrevious ? (admin1UsePrevious ? base.admin0 : base.admin1) : base.admin2)
+      ? admin2UsePrevious
+        ? admin1UsePrevious
+          ? base.admin0
+          : base.admin1
+        : base.admin2
       : base.admin3Plus,
   };
 };
@@ -154,7 +173,7 @@ const resolveEffectiveProfiles = (
 const clampProfileBands = (
   multiplierByBand: number[],
   minRatioByBand: number[],
-  maxRatioByBand: number[],
+  maxRatioByBand: number[]
 ): Pick<AdminLevelProfile, 'multiplierByBand' | 'minRatioByBand' | 'maxRatioByBand'> => {
   const maxLength = Math.max(multiplierByBand.length, minRatioByBand.length, maxRatioByBand.length);
   const nextMultiplier: number[] = [];
@@ -190,20 +209,20 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   const [simplifyCurveWidth, setSimplifyCurveWidth] = useState(500);
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
-  const storedProfiles = useMemo(
-    () => resolveStoredProfiles(geometryConfig),
-    [geometryConfig],
+  const storedProfiles = useMemo(() => resolveStoredProfiles(geometryConfig), [geometryConfig]);
+  const editableProfiles = useMemo(
+    () => ({
+      admin0: resolveEditableProfile('admin0', geometryConfig, storedProfiles),
+      admin1: resolveEditableProfile('admin1', geometryConfig, storedProfiles),
+      admin2: resolveEditableProfile('admin2', geometryConfig, storedProfiles),
+      admin3Plus: resolveEditableProfile('admin3Plus', geometryConfig, storedProfiles),
+    }),
+    [storedProfiles, geometryConfig]
   );
-  const editableProfiles = useMemo(() => ({
-    admin0: resolveEditableProfile('admin0', geometryConfig, storedProfiles),
-    admin1: resolveEditableProfile('admin1', geometryConfig, storedProfiles),
-    admin2: resolveEditableProfile('admin2', geometryConfig, storedProfiles),
-    admin3Plus: resolveEditableProfile('admin3Plus', geometryConfig, storedProfiles),
-  }), [storedProfiles, geometryConfig]);
 
   const effectiveProfiles = useMemo(
     () => resolveEffectiveProfiles(geometryConfig, storedProfiles),
-    [storedProfiles, geometryConfig],
+    [storedProfiles, geometryConfig]
   );
 
   const activeEditable = editableProfiles[activeTab];
@@ -214,98 +233,124 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   const controlsDisabled = Boolean(disabled || usePrevious);
   const activeValues = usePrevious ? activeEffective : activeEditable;
 
-  const xMarks = geometryConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
+  const xMarks = geometryConfig.zoomBandBoundaries.map((value) => ({
+    value,
+    label: String(value),
+  }));
   const iterationMarks = [8, 16, 24, 32, 48, 64].map((value) => ({ value, label: String(value) }));
-  const buildZoomLabel = useCallback((zoomValue: number): string => (
-    t('processing.geometry.simplifyTolerance.zoomLabel', 'Zoom {{zoom}}', {
-      zoom: Number.isFinite(zoomValue) ? Number.parseFloat(zoomValue.toFixed(3)) : '-',
-    })
-  ), [t]);
+  const buildZoomLabel = useCallback(
+    (zoomValue: number): string =>
+      t('processing.geometry.simplifyTolerance.zoomLabel', 'Zoom {{zoom}}', {
+        zoom: Number.isFinite(zoomValue) ? Number.parseFloat(zoomValue.toFixed(3)) : '-',
+      }),
+    [t]
+  );
 
   const resolvedMultiplierAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.multiplierByBand,
     geometryConfig.zoomBandBoundaries,
     DEFAULT_MULTIPLIER_ANCHORS[0] ?? DEFAULT_FALLBACK,
-    DEFAULT_MULTIPLIER_ANCHORS,
+    DEFAULT_MULTIPLIER_ANCHORS
   );
   const resolvedMinAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.minRatioByBand,
     geometryConfig.zoomBandBoundaries,
     DEFAULT_MIN_RATIO_ANCHORS[0] ?? 0,
-    DEFAULT_MIN_RATIO_ANCHORS,
+    DEFAULT_MIN_RATIO_ANCHORS
   );
   const resolvedMaxAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.maxRatioByBand,
     geometryConfig.zoomBandBoundaries,
     DEFAULT_MAX_RATIO_ANCHORS[0] ?? DEFAULT_MAX_RATIO_VALUE,
-    DEFAULT_MAX_RATIO_ANCHORS,
+    DEFAULT_MAX_RATIO_ANCHORS
   );
 
-  const updateStoredProfile = useCallback((
-    key: AdminLevelTabKey,
-    partial: Partial<StoredAdminLevelProfile>,
-  ) => {
-    const nextProfiles = {
-      admin0: { ...(storedProfiles.admin0 ?? {}) },
-      admin1: { ...(storedProfiles.admin1 ?? {}) },
-      admin2: { ...(storedProfiles.admin2 ?? {}) },
-      admin3Plus: { ...(storedProfiles.admin3Plus ?? {}) },
-    };
-    nextProfiles[key] = {
-      ...(nextProfiles[key] ?? {}),
-      ...partial,
-    };
+  const updateStoredProfile = useCallback(
+    (key: AdminLevelTabKey, partial: Partial<StoredAdminLevelProfile>) => {
+      const nextProfiles = {
+        admin0: { ...(storedProfiles.admin0 ?? {}) },
+        admin1: { ...(storedProfiles.admin1 ?? {}) },
+        admin2: { ...(storedProfiles.admin2 ?? {}) },
+        admin3Plus: { ...(storedProfiles.admin3Plus ?? {}) },
+      };
+      nextProfiles[key] = {
+        ...(nextProfiles[key] ?? {}),
+        ...partial,
+      };
 
-    const patch: Partial<ShapeBuildConfig['geometryConfig']> = {
-      simplifyToleranceByAdminLevel: nextProfiles,
-    };
+      const patch: Partial<ShapeBuildConfig['geometryConfig']> = {
+        simplifyToleranceByAdminLevel: nextProfiles,
+      };
 
-    if (key === 'admin0') {
-      const admin0 = nextProfiles.admin0 ?? {};
-      if (Array.isArray(admin0.multiplierByBand)) {
-        patch.toleranceMultiplierByBand = admin0.multiplierByBand;
+      if (key === 'admin0') {
+        const admin0 = nextProfiles.admin0 ?? {};
+        if (Array.isArray(admin0.multiplierByBand)) {
+          patch.toleranceMultiplierByBand = admin0.multiplierByBand;
+        }
+        if (Array.isArray(admin0.minRatioByBand)) {
+          patch.toleranceMinRatioByBand = admin0.minRatioByBand;
+        }
+        if (Array.isArray(admin0.maxRatioByBand)) {
+          patch.toleranceMaxRatioByBand = admin0.maxRatioByBand;
+        }
+        if (
+          typeof admin0.toleranceSearchMaxIterations === 'number' &&
+          Number.isFinite(admin0.toleranceSearchMaxIterations)
+        ) {
+          patch.toleranceSearchMaxIterations = clampIterations(admin0.toleranceSearchMaxIterations);
+        }
       }
-      if (Array.isArray(admin0.minRatioByBand)) {
-        patch.toleranceMinRatioByBand = admin0.minRatioByBand;
+
+      onChange(patch);
+    },
+    [onChange, storedProfiles]
+  );
+
+  const updateBands = useCallback(
+    (nextPartial: {
+      multiplierByBand?: number[];
+      minRatioByBand?: number[];
+      maxRatioByBand?: number[];
+    }) => {
+      const mergedMultiplier = nextPartial.multiplierByBand ?? activeEditable.multiplierByBand;
+      const mergedMin = nextPartial.minRatioByBand ?? activeEditable.minRatioByBand;
+      const mergedMax = nextPartial.maxRatioByBand ?? activeEditable.maxRatioByBand;
+      const normalized = clampProfileBands(mergedMultiplier, mergedMin, mergedMax);
+
+      const isSameMultiplier =
+        normalized.multiplierByBand.length === activeEditable.multiplierByBand.length &&
+        normalized.multiplierByBand.every((value, index) =>
+          areRatioValuesEqual(value, activeEditable.multiplierByBand[index] ?? value)
+        );
+      const isSameMin =
+        normalized.minRatioByBand.length === activeEditable.minRatioByBand.length &&
+        normalized.minRatioByBand.every((value, index) =>
+          areRatioValuesEqual(value, activeEditable.minRatioByBand[index] ?? value)
+        );
+      const isSameMax =
+        normalized.maxRatioByBand.length === activeEditable.maxRatioByBand.length &&
+        normalized.maxRatioByBand.every((value, index) =>
+          areRatioValuesEqual(value, activeEditable.maxRatioByBand[index] ?? value)
+        );
+
+      if (isSameMultiplier && isSameMin && isSameMax) {
+        return;
       }
-      if (Array.isArray(admin0.maxRatioByBand)) {
-        patch.toleranceMaxRatioByBand = admin0.maxRatioByBand;
-      }
-      if (typeof admin0.toleranceSearchMaxIterations === 'number' && Number.isFinite(admin0.toleranceSearchMaxIterations)) {
-        patch.toleranceSearchMaxIterations = clampIterations(admin0.toleranceSearchMaxIterations);
-      }
-    }
 
-    onChange(patch);
-  }, [onChange, storedProfiles]);
-
-  const updateBands = useCallback((nextPartial: {
-    multiplierByBand?: number[];
-    minRatioByBand?: number[];
-    maxRatioByBand?: number[];
-  }) => {
-    const mergedMultiplier = nextPartial.multiplierByBand ?? activeEditable.multiplierByBand;
-    const mergedMin = nextPartial.minRatioByBand ?? activeEditable.minRatioByBand;
-    const mergedMax = nextPartial.maxRatioByBand ?? activeEditable.maxRatioByBand;
-    const normalized = clampProfileBands(mergedMultiplier, mergedMin, mergedMax);
-
-    const isSameMultiplier = normalized.multiplierByBand.length === activeEditable.multiplierByBand.length
-      && normalized.multiplierByBand.every((value, index) => areRatioValuesEqual(value, activeEditable.multiplierByBand[index] ?? value));
-    const isSameMin = normalized.minRatioByBand.length === activeEditable.minRatioByBand.length
-      && normalized.minRatioByBand.every((value, index) => areRatioValuesEqual(value, activeEditable.minRatioByBand[index] ?? value));
-    const isSameMax = normalized.maxRatioByBand.length === activeEditable.maxRatioByBand.length
-      && normalized.maxRatioByBand.every((value, index) => areRatioValuesEqual(value, activeEditable.maxRatioByBand[index] ?? value));
-
-    if (isSameMultiplier && isSameMin && isSameMax) {
-      return;
-    }
-
-    updateStoredProfile(activeTab, {
-      multiplierByBand: normalized.multiplierByBand,
-      minRatioByBand: normalized.minRatioByBand,
-      maxRatioByBand: normalized.maxRatioByBand,
-    });
-  }, [activeEditable.maxRatioByBand, activeEditable.minRatioByBand, activeEditable.multiplierByBand, activeTab, updateStoredProfile]);
+      updateStoredProfile(activeTab, {
+        multiplierByBand: normalized.multiplierByBand,
+        minRatioByBand: normalized.minRatioByBand,
+        maxRatioByBand: normalized.maxRatioByBand,
+      });
+    },
+    [
+      activeEditable.maxRatioByBand,
+      activeEditable.minRatioByBand,
+      activeEditable.multiplierByBand,
+      activeTab,
+      updateStoredProfile,
+    ]
+  );
 
   const copyFromPreviousTab = useCallback(() => {
     if (!previousTabKey || controlsDisabled) {
@@ -385,9 +430,13 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
         </Tabs>
 
         {hasReferenceToggle ? (
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.5}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+          >
             <FormControlLabel
-              control={(
+              control={
                 <Switch
                   checked={usePrevious}
                   onChange={(event) => {
@@ -395,8 +444,11 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   }}
                   disabled={disabled}
                 />
+              }
+              label={t(
+                'processing.geometry.adminLevel.usePrevious',
+                'Use values from previous tab'
               )}
-              label={t('processing.geometry.adminLevel.usePrevious', 'Use values from previous tab')}
             />
             <Button
               variant="outlined"
@@ -415,10 +467,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                 <Typography variant="body2" color="text.secondary">
                   {t('processing.geometry.simplifyTolerance.label', 'Simplify tolerance profile')}
                 </Typography>
-                <div
-                  ref={curveWidthRef}
-                  style={{ width: '100%' }}
-                >
+                <div ref={curveWidthRef} style={{ width: '100%' }}>
                   <ToneCurveEditor
                     width={simplifyCurveWidth}
                     height={180}
@@ -447,7 +496,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                           const next = buildToleranceByBandFromToneCurveAnchors(
                             overlayAnchors,
                             geometryConfig.zoomBandBoundaries,
-                            DEFAULT_MIN_RATIO_ANCHORS[0] ?? 0,
+                            DEFAULT_MIN_RATIO_ANCHORS[0] ?? 0
                           ).map((value) => clampRatio(value));
                           updateBands({ minRatioByBand: next });
                         },
@@ -462,7 +511,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                           const next = buildToleranceByBandFromToneCurveAnchors(
                             overlayAnchors,
                             geometryConfig.zoomBandBoundaries,
-                            DEFAULT_MAX_RATIO_ANCHORS[0] ?? DEFAULT_MAX_RATIO_VALUE,
+                            DEFAULT_MAX_RATIO_ANCHORS[0] ?? DEFAULT_MAX_RATIO_VALUE
                           ).map((value) => clampRatio(value));
                           updateBands({ maxRatioByBand: next });
                         },
@@ -473,7 +522,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                       const next = buildToleranceByBandFromToneCurveAnchors(
                         anchors,
                         geometryConfig.zoomBandBoundaries,
-                        DEFAULT_MULTIPLIER_ANCHORS[0] ?? DEFAULT_FALLBACK,
+                        DEFAULT_MULTIPLIER_ANCHORS[0] ?? DEFAULT_FALLBACK
                       ).map((value) => clampRatio(value));
                       updateBands({ multiplierByBand: next });
                     }}
@@ -490,7 +539,11 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     overflow: 'visible',
                   }}
                 >
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}
+                  >
                     <Typography width={80}>Max ratio</Typography>
                     {resolvedMaxAnchors.map((anchor, index) => (
                       <TextField
@@ -528,7 +581,11 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     overflow: 'visible',
                   }}
                 >
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}
+                  >
                     <Typography width={80}>Multiplier</Typography>
                     {resolvedMultiplierAnchors.map((anchor, index) => (
                       <TextField
@@ -566,7 +623,11 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     overflow: 'visible',
                   }}
                 >
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}
+                  >
                     <Typography width={80}>Min ratio</Typography>
                     {resolvedMinAnchors.map((anchor, index) => (
                       <TextField
@@ -629,7 +690,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.geometry.adminLevel.description',
-            'Configure simplify tolerance by admin level. Admin 1+ can reference values from the previous tab.',
+            'Configure simplify tolerance by admin level. Admin 1+ can reference values from the previous tab.'
           )}
         </Typography>
       </Stack>
