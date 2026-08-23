@@ -4,7 +4,6 @@
 
 import { AuthService } from '@hierarchidb/auth';
 import type {
-  BuildProgress,
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
   BuildSessionRuntimeStatus,
@@ -15,12 +14,10 @@ import type {
   CanonicalPluginBuildAPI,
   HeartbeatEvent,
   SessionStatusUpdatedEvent,
-  StageKey,
   StageSnapshotUpdatedEvent,
   TaskProgressUpdatedEvent,
   WorkerLogEvent,
 } from '@hierarchidb/build-api';
-import { assertCanonicalBuildRuntimeRecords } from '@hierarchidb/build-api';
 import { CanonicalBuildRuntimeAdapterRegistry } from '@hierarchidb/build-runtime-services';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
@@ -35,7 +32,6 @@ import {
   configureWorkerContainer,
   getWorkerContainer,
   type PluginWorkerModuleLoaderContract,
-  publishBuildSessionUpdate,
   subscribeToBuildSessionBroadcast,
   WorkerDiTokens,
   WorkerService,
@@ -46,11 +42,7 @@ import {
   type YamlStorageCanonicalReadyState,
 } from '@hierarchidb/runtime-worker/yaml-storage-activation';
 import { inspectCanonicalYamlStorageCoreDb } from '@hierarchidb/runtime-worker/yaml-storage-production';
-import type {
-  ShapeBuildProgressSummary,
-  ShapeBuildSessionRecord,
-  ShapeDataSourceName,
-} from '@hierarchidb/shape-api';
+import type { ShapeBuildSessionRecord, ShapeDataSourceName } from '@hierarchidb/shape-api';
 import {
   getAllRuntimeExports,
   type WorkerInitializationReporter,
@@ -66,11 +58,11 @@ import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveCanonicalBuildRuntimeModule } from './resolveCanonicalBuildRuntimeModule.js';
 import { resolveCanonicalBuildStartInput } from './resolveCanonicalBuildStartInput.js';
-import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 import {
   resolveShapeBuildExtensions,
   type ShapeDownloadTaskPayload,
 } from './resolveShapeBuildExtensions.js';
+import { resolveShapeBuildRuntimeAdapterHooks } from './resolveShapeBuildRuntimeAdapterHooks.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -199,82 +191,6 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
   }
   return safe as T;
 };
-
-const isTaskStage = (value: unknown): value is StageKey =>
-  value === 'source' || value === 'geometry' || value === 'tileEmit';
-
-const requireBuildProgressCount = (value: unknown, field: string): number => {
-  if (!Number.isInteger(value) || (value as number) < 0) {
-    throw new Error(
-      `[worker bootstrap] build progress ${field} must be a non-negative integer, received ${String(value)}`
-    );
-  }
-  return value as number;
-};
-
-const requireBuildProgressPercentage = (value: unknown): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100) {
-    throw new Error(
-      `[worker bootstrap] build progress percentage must be finite 0..100, received ${String(value)}`
-    );
-  }
-  return value;
-};
-
-const toBuildProgress = (progress: ShapeBuildProgressSummary): BuildProgress => {
-  const total = requireBuildProgressCount(progress.total, 'total');
-  const completed = requireBuildProgressCount(progress.completed, 'completed');
-  const failed = requireBuildProgressCount(progress.failed, 'failed');
-  const skipped = requireBuildProgressCount(progress.skipped, 'skipped');
-  const terminal = completed + failed + skipped;
-  if (terminal > total) {
-    throw new Error(
-      `[worker bootstrap] terminal build task count must not exceed total: terminal=${terminal}, total=${total}`
-    );
-  }
-  const stage = (progress as { stage?: unknown }).stage;
-  if (stage !== undefined && !isTaskStage(stage)) {
-    throw new Error(`[worker bootstrap] invalid build progress stage: ${String(stage)}`);
-  }
-  return {
-    total,
-    completed,
-    failed,
-    skipped,
-    percentage: requireBuildProgressPercentage(progress.percentage),
-    ...(stage === undefined ? {} : { stage }),
-  };
-};
-
-const RUNTIME_KEY_SEPARATOR = '\u0000';
-
-const toRuntimeKey = (nodeType: NodeType, nodeId: NodeId): string =>
-  `${String(nodeType)}${RUNTIME_KEY_SEPARATOR}${String(nodeId)}`;
-
-const resolveRuntimeStatusFromShapeRecord = (
-  status: ShapeBuildSessionRecord['status']
-): BuildSessionRuntimeStatus => {
-  switch (status) {
-    case 'running':
-      return 'running';
-    case 'paused':
-      return 'paused';
-    case 'completed':
-      return 'completed';
-    case 'failed':
-      return 'failed';
-    case 'idle':
-      return 'idle';
-  }
-};
-
-const runtimeStatusesWithActiveLock = new Set<BuildSessionRuntimeStatus>([
-  'starting',
-  'running',
-  'pausing',
-  'resuming',
-  'finalizing',
-]);
 
 // Provide minimal Node-like globals for libraries that expect them.
 const globalShim = globalThis as typeof globalThis & {
@@ -558,219 +474,30 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           statuses.length > 0
             ? statuses
             : (['running'] as Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>);
-        const runtimeStatusOverrides = new Map<string, BuildSessionRuntimeStatus>();
-        const runtimeActiveHints = new Map<string, boolean>();
-        const runtimeRevisions = new Map<string, number>();
-        const runtimeNodeIndex = new Map<string, { nodeType: NodeType; nodeId: NodeId }>();
-        const runtimeInputSources = new Map<string, CanonicalBuildInputSource>();
-
-        const bumpRuntimeRevision = (nodeType: NodeType, nodeId: NodeId): number => {
-          const key = toRuntimeKey(nodeType, nodeId);
-          const next = (runtimeRevisions.get(key) ?? 0) + 1;
-          runtimeRevisions.set(key, next);
-          runtimeNodeIndex.set(key, { nodeType, nodeId });
-          return next;
-        };
-
-        const setRuntimeTransientStatus = (
-          nodeType: NodeType,
-          nodeId: NodeId,
-          status: BuildSessionRuntimeStatus,
-          activeHint?: boolean
-        ): void => {
-          const key = toRuntimeKey(nodeType, nodeId);
-          runtimeStatusOverrides.set(key, status);
-          runtimeNodeIndex.set(key, { nodeType, nodeId });
-          if (activeHint !== undefined) {
-            runtimeActiveHints.set(key, activeHint);
-          }
-          bumpRuntimeRevision(nodeType, nodeId);
-          publishBuildSessionUpdate({ nodeId, status });
-        };
-
-        const clearRuntimeTransientStatus = (
-          nodeType: NodeType,
-          nodeId: NodeId,
-          activeHint?: boolean
-        ): void => {
-          const key = toRuntimeKey(nodeType, nodeId);
-          runtimeStatusOverrides.delete(key);
-          runtimeNodeIndex.set(key, { nodeType, nodeId });
-          if (activeHint !== undefined) {
-            runtimeActiveHints.set(key, activeHint);
-          }
-          bumpRuntimeRevision(nodeType, nodeId);
-          publishBuildSessionUpdate({ nodeId });
-        };
-
-        const probeRuntimeActive = (
-          nodeType: NodeType,
-          nodeId: NodeId,
-          status: BuildSessionRuntimeStatus
-        ): boolean => {
-          if (!runtimeStatusesWithActiveLock.has(status)) {
-            return false;
-          }
-          const activeHint = runtimeActiveHints.get(toRuntimeKey(nodeType, nodeId));
-          return activeHint ?? true;
-        };
-
-        const toRuntimeRecord = (
-          nodeType: NodeType,
-          session: ShapeBuildSessionRecord
-        ): BuildSessionRuntimeRecord => {
-          const key = toRuntimeKey(nodeType, session.nodeId);
-          runtimeNodeIndex.set(key, { nodeType, nodeId: session.nodeId });
-          const persistedStatus = resolveRuntimeStatusFromShapeRecord(session.status);
-          const runtimeStatus = runtimeStatusOverrides.get(key) ?? persistedStatus;
-          const isActive = probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
-          const revision = runtimeRevisions.get(key) ?? Number(session.updatedAt ?? 0);
-          return {
-            nodeType,
-            nodeId: session.nodeId,
-            status: runtimeStatus,
-            isActive,
-            progress: toBuildProgress(session.progress),
-            startedAt: session.startedAt,
-            completedAt: session.completedAt,
-            updatedAt: session.updatedAt,
-            inactiveMs: session.inactiveMs,
-            lastHeartbeatAt: session.lastHeartbeatAt,
-            error: session.status === 'failed' ? 'failed' : undefined,
-            revision,
-            inputSource: runtimeInputSources.get(key),
-          };
-        };
-
-        const toSyntheticRuntimeRecord = (
-          nodeType: NodeType,
-          nodeId: NodeId
-        ): BuildSessionRuntimeRecord | null => {
-          const key = toRuntimeKey(nodeType, nodeId);
-          const transient = runtimeStatusOverrides.get(key);
-          if (!transient) return null;
-          const isActive = probeRuntimeActive(nodeType, nodeId, transient);
-          return {
-            nodeType,
-            nodeId,
-            status: transient,
-            isActive,
-            revision: runtimeRevisions.get(key) ?? bumpRuntimeRevision(nodeType, nodeId),
-            updatedAt: Date.now(),
-            inputSource: runtimeInputSources.get(key),
-          };
-        };
-
-        const getRuntimeRecordsForShape = async (
-          filter?: BuildSessionRuntimeFilter
-        ): Promise<BuildSessionRuntimeRecord[]> => {
-          const queryAPI = services.getShapeQueryAPI();
-          const nodeFilter = filter?.nodeId;
-          const statuses = ['idle', 'running', 'paused', 'completed', 'failed'] as Array<
-            'idle' | 'running' | 'paused' | 'completed' | 'failed'
-          >;
-          const sessionRecords = nodeFilter
-            ? queryAPI.getBuildSessionRecord(nodeFilter)
-            : queryAPI.listBuildSessionRecordsByStatus(statuses);
-
-          const persisted = await sessionRecords;
-          const records = Array.isArray(persisted) ? persisted : persisted ? [persisted] : [];
-          const runtimeRecords = records.map((session) =>
-            toRuntimeRecord(SHAPE_NODE_TYPE, session)
-          );
-          const existing = new Set(
-            runtimeRecords.map((record) => toRuntimeKey(SHAPE_NODE_TYPE, record.nodeId))
-          );
-
-          const syntheticCandidates = filter?.nodeId
-            ? [{ nodeType: SHAPE_NODE_TYPE, nodeId: filter.nodeId }]
-            : Array.from(runtimeNodeIndex.values()).filter(
-                (entry) => entry.nodeType === SHAPE_NODE_TYPE
-              );
-
-          for (const candidate of syntheticCandidates) {
-            const key = toRuntimeKey(candidate.nodeType, candidate.nodeId);
-            if (existing.has(key)) continue;
-            const synthetic = toSyntheticRuntimeRecord(candidate.nodeType, candidate.nodeId);
-            if (!synthetic) continue;
-            runtimeRecords.push(synthetic);
-          }
-
-          const statusesFilter = filter?.statuses;
-          const filteredByStatus =
-            statusesFilter && statusesFilter.length > 0
-              ? runtimeRecords.filter((record) => statusesFilter.includes(record.status))
-              : runtimeRecords;
-          const filteredByActive = filter?.activeOnly
-            ? filteredByStatus.filter((record) => record.isActive)
-            : filteredByStatus;
-          const sorted = filteredByActive.sort((a, b) =>
-            String(a.nodeId).localeCompare(String(b.nodeId))
-          );
-          return assertCanonicalBuildRuntimeRecords(sorted, SHAPE_NODE_TYPE);
-        };
-
-        const shapeRuntimeAdapter: CanonicalBuildRuntimeAdapter = {
-          nodeType: SHAPE_NODE_TYPE,
-          getSession: async (nodeId: NodeId): Promise<BuildSessionRuntimeRecord | null> => {
-            const sessions = await getRuntimeRecordsForShape({ nodeId });
-            return sessions[0] ?? null;
-          },
-          listSessions: getRuntimeRecordsForShape,
-          subscribeSessions: async (
-            filter: BuildSessionRuntimeFilter | undefined,
-            callback: (sessions: BuildSessionRuntimeRecord[]) => void
-          ): Promise<() => void> => {
-            const queryAPI = services.getShapeQueryAPI();
-            const statuses = ['idle', 'running', 'paused', 'completed', 'failed'] as Array<
-              'idle' | 'running' | 'paused' | 'completed' | 'failed'
-            >;
-            const observable = liveQuery(() => queryAPI.listBuildSessionRecordsByStatus(statuses));
-            const dispatch = async () => {
-              const sessions = await getRuntimeRecordsForShape(filter);
-              callback(sanitizeForComlink(sessions));
-            };
-            const subscription = observable.subscribe({
-              next: () => {
-                void dispatch();
-              },
-              error: (error) => {
-                const msg = error instanceof Error ? error.message : String(error);
-                console.warn('[worker bootstrap] build runtime subscription failed:', msg);
-              },
-            });
-            const broadcastUnsubscribe = subscribeToBuildSessionBroadcast(() => {
-              void dispatch();
-            });
-            await dispatch();
-            return toComlinkProxy(Comlink, () => {
-              subscription.unsubscribe();
-              broadcastUnsubscribe();
-            });
-          },
-          deleteSession: async (nodeId: NodeId): Promise<void> => {
-            const queryAPI = services.getShapeQueryAPI();
-            const current = await queryAPI.getBuildSessionRecord(nodeId);
-            if (current?.status === 'running') {
-              throw new Error('Cannot delete a running build session.');
-            }
-            setRuntimeTransientStatus(SHAPE_NODE_TYPE, nodeId, 'deleting', false);
-            try {
-              const mutationAPI = services.getShapeMutationAPI();
-              await mutationAPI.deleteBuildSession(nodeId);
-              clearRuntimeTransientStatus(SHAPE_NODE_TYPE, nodeId, false);
-            } catch (error) {
-              clearRuntimeTransientStatus(SHAPE_NODE_TYPE, nodeId, false);
-              throw error;
-            }
-          },
-        };
+        const shapeBuildRuntimeAdapterHooks = resolveShapeBuildRuntimeAdapterHooks(shapeModule);
+        shapeBuildRuntimeAdapterHooks.configureShapeCanonicalBuildRuntimeAdapter({
+          queryAPI: services.getShapeQueryAPI(),
+          mutationAPI: services.getShapeMutationAPI(),
+        });
         const buildRuntimeAdapters = new CanonicalBuildRuntimeAdapterRegistry(
           canonicalBuildRuntimeAdapters
         );
-        if (!buildRuntimeAdapters.has(SHAPE_NODE_TYPE)) {
-          buildRuntimeAdapters.register(shapeRuntimeAdapter);
-        }
+        buildRuntimeAdapters.require(SHAPE_NODE_TYPE);
+        const runtimeInputSources = new Map<string, CanonicalBuildInputSource>();
+        const runtimeInputSourceKey = (nodeType: NodeType, nodeId: NodeId): string =>
+          `${String(nodeType)}\u0000${String(nodeId)}`;
+        const setRuntimeTransientStatus = (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          status: BuildSessionRuntimeStatus
+        ): void => {
+          if (nodeType !== SHAPE_NODE_TYPE) return;
+          shapeBuildRuntimeAdapterHooks.setShapeBuildRuntimeTransientStatus(nodeId, status);
+        };
+        const clearRuntimeTransientStatus = (nodeType: NodeType, nodeId: NodeId): void => {
+          if (nodeType !== SHAPE_NODE_TYPE) return;
+          shapeBuildRuntimeAdapterHooks.clearShapeBuildRuntimeTransientStatus(nodeId);
+        };
 
         const runStartBuildSession = async (
           nodeType: NodeType,
@@ -778,7 +505,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           inputSource: CanonicalBuildInputSource
         ): Promise<BuildSessionStatus> => {
           const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
-          setRuntimeTransientStatus(nodeType, nodeId, 'starting', true);
+          setRuntimeTransientStatus(nodeType, nodeId, 'starting');
           try {
             const treeNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
             const input = resolveCanonicalBuildStartInput({
@@ -799,13 +526,15 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
                 `[worker bootstrap] canonical build status nodeId mismatch: expected=${String(nodeId)}, actual=${String(status.nodeId)}`
               );
             }
-            runtimeInputSources.set(toRuntimeKey(nodeType, nodeId), input.source);
+            runtimeInputSources.set(runtimeInputSourceKey(nodeType, nodeId), input.source);
+            if (nodeType === SHAPE_NODE_TYPE) {
+              shapeBuildRuntimeAdapterHooks.setShapeBuildRuntimeInputSource(nodeId, input.source);
+            }
             setHeapContext({ nodeType, nodeId: status.nodeId });
-            const runtimeStatus = resolveRuntimeStatusFromBuildSession(status.status);
-            clearRuntimeTransientStatus(nodeType, nodeId, runtimeStatus === 'running');
+            clearRuntimeTransientStatus(nodeType, nodeId);
             return { ...status, inputSource: input.source };
           } catch (error) {
-            clearRuntimeTransientStatus(nodeType, nodeId, false);
+            clearRuntimeTransientStatus(nodeType, nodeId);
             throw error;
           }
         };
@@ -821,7 +550,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             nodeId,
             reason: reason ?? null,
           });
-          setRuntimeTransientStatus(nodeType, nodeId, 'pausing', true);
+          setRuntimeTransientStatus(nodeType, nodeId, 'pausing');
           try {
             await buildApi.pauseBuildSession(nodeId, reason);
             console.warn('[worker bootstrap][PauseTrace] pause-finished', {
@@ -830,7 +559,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               reason: reason ?? null,
               observedStatus: 'paused',
             });
-            clearRuntimeTransientStatus(nodeType, nodeId, false);
+            clearRuntimeTransientStatus(nodeType, nodeId);
             return;
           } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
@@ -840,7 +569,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               reason: reason ?? null,
               errorMessage: msg,
             });
-            clearRuntimeTransientStatus(nodeType, nodeId, true);
+            clearRuntimeTransientStatus(nodeType, nodeId);
             throw error;
           }
         };
@@ -852,7 +581,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<void> => {
           const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
           await buildApi.cancelQueuedBuildSession(nodeId, reason);
-          clearRuntimeTransientStatus(nodeType, nodeId, false);
+          clearRuntimeTransientStatus(nodeType, nodeId);
         };
 
         const runRestartBuildSession = async (
@@ -862,7 +591,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           await runStartBuildSession(
             nodeType,
             nodeId,
-            runtimeInputSources.get(toRuntimeKey(nodeType, nodeId)) ?? 'committed'
+            runtimeInputSources.get(runtimeInputSourceKey(nodeType, nodeId)) ?? 'committed'
           );
         };
 
@@ -1256,7 +985,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             ) {
               return toComlinkProxy(Comlink, () => {});
             }
-            return buildRuntimeAdapters.subscribeSessions(nodeType, filter, callback);
+            const unsubscribe = await buildRuntimeAdapters.subscribeSessions(
+              nodeType,
+              filter,
+              callback
+            );
+            return toComlinkProxy(Comlink, unsubscribe);
           },
           deleteBuildSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
             if (

@@ -42,10 +42,9 @@ in-memory session inventory を公開し、`get/list/subscribe/delete` が
 `start/pause/cancel/status/tasks` と同じ manager instance を参照する。`delete` は
 inactive session record だけでなく、plugin が管理する build job/task/artifact data の
 cleanup が成功した後に session inventory から削除する。cleanup 失敗時は削除成功へ
-読み替えず、そのまま失敗させる。shape は
-persisted `ShapeQueryService` record と transient command state を合成する既存経路を
-app 内 fallback adapter として維持し、shape plugin-owned adapter へ移すまでは
-duplicate node type 登録時に plugin export を優先する。
+読み替えず、そのまま失敗させる。shape は plugin-owned runtime adapter が
+persisted `ShapeQueryService` record と transient command state を合成し、app bootstrap
+は shape 専用 fallback adapter を作らず registry へ登録された plugin export を使う。
 
 `BuildSessionRuntimeRecord` は `nodeType`、`nodeId`、canonical runtime `status`、
 `isActive`、単調増加する `revision` を必須とする。`nodeType` は registry key と
