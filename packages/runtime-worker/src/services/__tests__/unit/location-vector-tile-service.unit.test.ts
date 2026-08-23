@@ -58,6 +58,11 @@ const createFeature = (): LocationFeature => ({
     latitude: 35,
     longitude: 139,
     type: 'airport',
+    renderRank: 1,
+    importance: 0.9,
+    iconKey: 'flight_takeoff',
+    labelClass: 'major',
+    minZoom: 3,
   },
 });
 

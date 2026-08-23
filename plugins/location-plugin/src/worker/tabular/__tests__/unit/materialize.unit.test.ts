@@ -18,13 +18,12 @@ describe('materializeLocationPointsFromTabular', () => {
   });
 
   it('adds tile id fields for z0-z9', async () => {
-    const { materializeLocationPointsFromTabular } = await import(
-      '../../materializeLocationPointsFromTabular'
-    );
+    const { materializeLocationPointsFromTabular } =
+      await import('../../materializeLocationPointsFromTabular');
     const rows: TabularDataResult = {
       columns: [],
       totalRows: 1,
-      rows: [{ name: 'Test', lat: 35.0, lon: 139.0 }],
+      rows: [{ name: 'Test', lat: 35.0, lon: 139.0, featureCode: 'airport' }],
     };
     await materializeLocationPointsFromTabular('node-1' as NodeId, rows);
     const point = capturedPoints[0];

@@ -3942,6 +3942,9 @@ importers:
       '@hierarchidb/ui-tabular':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
+      '@hierarchidb/vt-orchestrator':
+        specifier: workspace:*
+        version: link:../../packages/vt-orchestrator
       '@hierarchidb/worker-api':
         specifier: workspace:*
         version: link:../../packages/worker-api

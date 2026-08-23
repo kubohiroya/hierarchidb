@@ -11,6 +11,7 @@ import type {
   LocationFeatureProperties,
   LocationType,
 } from './locationTypes.js';
+import { getLocationRenderClassification } from './locationTypes.js';
 import { buildTileIdByZoom } from './morton.js';
 
 const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
@@ -199,6 +200,7 @@ export const parseIdeGsmTable = async (
     const adminCenterFlag = row[adminCenterIndex >= 0 ? adminCenterIndex : 5]?.trim() ?? '0';
     const isAdminCenter = adminCenterFlag === '1';
     const type = toLocationType(name, isAdminCenter);
+    const renderClassification = getLocationRenderClassification(type);
     const rawCountryCode = row[countryCodeIndex >= 0 ? countryCodeIndex : -1]?.trim() || undefined;
     const normalizedCode = rawCountryCode ? rawCountryCode.trim().toUpperCase() : undefined;
     const metadata = headers.reduce<Record<string, string | number | null>>(
@@ -220,6 +222,7 @@ export const parseIdeGsmTable = async (
       latitude: lat,
       longitude: lon,
       type,
+      ...renderClassification,
       ...buildTileIdByZoom(lon, lat),
       admin0,
       admin1,

@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import type { LocationPointProperties } from '../../../common/entities/LocationPoint';
+import { createDefaultLocationMvtBuildConfig } from '../../mvt/createDefaultLocationMvtBuildConfig';
 import { createLocationSourcePlan } from '../../source/createLocationSourcePlan';
 
 const { strategySearch } = vi.hoisted(() => ({
@@ -56,6 +57,11 @@ describe('LocationBuildManager country normalization', () => {
         latitude: 35.0,
         longitude: 140.0,
         type: 'airport',
+        renderRank: 1,
+        importance: 0.9,
+        iconKey: 'flight_takeoff',
+        labelClass: 'major',
+        minZoom: 3,
         admin0Code: 'USA',
         admin0: 'United States',
       },
@@ -66,6 +72,11 @@ describe('LocationBuildManager country normalization', () => {
         latitude: 36.0,
         longitude: 139.0,
         type: 'port',
+        renderRank: 2,
+        importance: 0.8,
+        iconKey: 'directions_boat',
+        labelClass: 'major',
+        minZoom: 4,
         admin0Code: '',
         admin0: 'Japan',
       },
@@ -76,6 +87,11 @@ describe('LocationBuildManager country normalization', () => {
         latitude: 34.0,
         longitude: 138.0,
         type: 'airport',
+        renderRank: 1,
+        importance: 0.9,
+        iconKey: 'flight_takeoff',
+        labelClass: 'major',
+        minZoom: 3,
         admin0Code: 'US',
         admin0: 'United States',
       },
@@ -86,6 +102,11 @@ describe('LocationBuildManager country normalization', () => {
         latitude: 33.0,
         longitude: 137.0,
         type: 'airport',
+        renderRank: 1,
+        importance: 0.9,
+        iconKey: 'flight_takeoff',
+        labelClass: 'major',
+        minZoom: 3,
         admin0Code: '',
         admin0: 'Unknownland',
       },
@@ -98,6 +119,7 @@ describe('LocationBuildManager country normalization', () => {
         },
       ],
       processingOptions: { concurrent: 1 },
+      mvt: createDefaultLocationMvtBuildConfig(),
     };
 
     const points = await manager.collectLocationPoints(

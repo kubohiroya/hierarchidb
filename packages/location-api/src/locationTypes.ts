@@ -50,6 +50,60 @@ export type LocationIconId =
   | 'train'
   | 'fork_right';
 
+export type LocationMvtIconKey = LocationIconId;
+
+export type LocationMvtLabelClass = 'capital' | 'major' | 'standard' | 'minor';
+
+export type LocationRenderClassification = {
+  renderRank: number;
+  importance: number;
+  iconKey: LocationMvtIconKey;
+  labelClass: LocationMvtLabelClass;
+  minZoom: number;
+};
+
+const LOCATION_TYPE_RENDER_CLASSIFICATION: Record<LocationType, LocationRenderClassification> = {
+  airport: {
+    renderRank: 1,
+    importance: 0.9,
+    iconKey: 'flight_takeoff',
+    labelClass: 'major',
+    minZoom: 3,
+  },
+  port: {
+    renderRank: 2,
+    importance: 0.8,
+    iconKey: 'directions_boat',
+    labelClass: 'major',
+    minZoom: 4,
+  },
+  railway_station: {
+    renderRank: 3,
+    importance: 0.6,
+    iconKey: 'train',
+    labelClass: 'standard',
+    minZoom: 7,
+  },
+  interchange: {
+    renderRank: 4,
+    importance: 0.45,
+    iconKey: 'fork_right',
+    labelClass: 'standard',
+    minZoom: 8,
+  },
+  area_centroid: {
+    renderRank: 5,
+    importance: 0.35,
+    iconKey: 'location_city',
+    labelClass: 'minor',
+    minZoom: 6,
+  },
+};
+
+export const getLocationRenderClassification = (
+  type: LocationType
+): LocationRenderClassification => LOCATION_TYPE_RENDER_CLASSIFICATION[type];
+
 export type LocationIconConfigEntry = {
   color: string;
   iconId: LocationIconId;
@@ -125,6 +179,11 @@ export interface LocationPointProperties {
   latitude: number;
   longitude: number;
   type: LocationPointKind;
+  renderRank: number;
+  importance: number;
+  iconKey: LocationMvtIconKey;
+  labelClass: LocationMvtLabelClass;
+  minZoom: number;
   admin0?: string;
   admin1?: string;
   admin2?: string;

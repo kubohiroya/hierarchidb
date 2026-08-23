@@ -9,7 +9,9 @@ import type {
   LocationProcessingStatus,
   LocationRepresentationByZoomLevelConfig,
   LocationSearchConfig,
+  LocationType,
 } from '@hierarchidb/location-api';
+import type { TileEmitConfig } from '@hierarchidb/gis-sdk';
 import type { NodePayload } from '@hierarchidb/tree-api';
 
 export type {
@@ -26,6 +28,23 @@ export type {
   LocationSearchOptions,
   LocationType,
 } from '@hierarchidb/location-api';
+
+export interface LocationMvtZoomBandConfig {
+  id: string;
+  minZoom: number;
+  maxZoom: number;
+  types: LocationType[];
+  maxRenderRank?: number;
+  minImportance?: number;
+}
+
+export interface LocationMvtBuildConfig {
+  schemaVersion: 1;
+  sourceLayer: 'location_points';
+  encoderVersion: string;
+  zoomBands: LocationMvtZoomBandConfig[];
+  tileEmitConfig: TileEmitConfig;
+}
 
 export interface LocationEntityPayload extends NodePayload {
   dataSource: LocationDataSource;
@@ -57,4 +76,5 @@ export interface LocationBuildConfig {
   concurrentDownloads?: number;
   processingOptions: LocationBuildProcessingOptions;
   filterCriteria?: LocationBuildFilterCriteria;
+  mvt: LocationMvtBuildConfig;
 }

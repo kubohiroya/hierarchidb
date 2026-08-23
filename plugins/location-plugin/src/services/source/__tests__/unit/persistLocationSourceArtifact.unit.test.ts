@@ -9,6 +9,11 @@ const point = (overrides: Partial<LocationPointProperties> = {}): LocationPointP
   latitude: 35.681236,
   longitude: 139.767125,
   type: 'airport',
+  renderRank: 1,
+  importance: 0.9,
+  iconKey: 'flight_takeoff',
+  labelClass: 'major',
+  minZoom: 3,
   admin0Code: 'JP',
   metadata: {
     source: 'fixture',

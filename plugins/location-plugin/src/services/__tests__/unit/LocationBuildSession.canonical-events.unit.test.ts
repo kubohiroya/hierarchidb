@@ -4,15 +4,24 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import { LocationBuildManager } from '../../LocationBuildManager';
+import { createDefaultLocationMvtBuildConfig } from '../../mvt/createDefaultLocationMvtBuildConfig';
 import { createLocationSourcePlan } from '../../source/createLocationSourcePlan';
 
-const { replaceLocationArtifacts, runLocationSourceArtifactCleanup, strategySearch } = vi.hoisted(
-  () => ({
-    replaceLocationArtifacts: vi.fn(),
-    runLocationSourceArtifactCleanup: vi.fn(),
-    strategySearch: vi.fn(),
-  })
-);
+const {
+  replaceLocationArtifacts,
+  runLocationSourceArtifactCleanup,
+  strategySearch,
+  persistLocationGeometryArtifacts,
+  prepareLocationTileEmitTasks,
+  runLocationTileEmitStage,
+} = vi.hoisted(() => ({
+  replaceLocationArtifacts: vi.fn(),
+  runLocationSourceArtifactCleanup: vi.fn(),
+  strategySearch: vi.fn(),
+  persistLocationGeometryArtifacts: vi.fn(),
+  prepareLocationTileEmitTasks: vi.fn(),
+  runLocationTileEmitStage: vi.fn(),
+}));
 
 vi.mock('../../download/strategyRegistryUtils.js', () => ({
   getLocationStrategy: () => ({
@@ -29,6 +38,18 @@ vi.mock('../../pointRepository.js', () => ({
 
 vi.mock('../../source/runLocationSourceArtifactCleanup.js', () => ({
   runLocationSourceArtifactCleanup,
+}));
+
+vi.mock('../../mvt/persistLocationGeometryArtifacts.js', () => ({
+  buildLocationGeometryCacheId: (_nodeId: string, bandIndex: number) =>
+    `geometry-${String(bandIndex)}`,
+  persistLocationGeometryArtifacts,
+  requireLocationMvtBands: () => [{ bandIndex: 0, zMin: 0, zMax: 5, zBase: 0 }],
+}));
+
+vi.mock('../../mvt/prepareLocationTileEmitTasks.js', () => ({
+  prepareLocationTileEmitTasks,
+  runLocationTileEmitStage,
 }));
 
 vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
@@ -52,6 +73,40 @@ describe('LocationBuildSession canonical events', () => {
     runLocationSourceArtifactCleanup.mockReset();
     runLocationSourceArtifactCleanup.mockResolvedValue(undefined);
     strategySearch.mockReset();
+    persistLocationGeometryArtifacts.mockReset();
+    persistLocationGeometryArtifacts.mockResolvedValue({
+      artifacts: [
+        {
+          geometryCacheId: 'geometry-0',
+          bandIndex: 0,
+          zMin: 0,
+          zMax: 5,
+          zBase: 0,
+          featureCount: 1,
+          tileCount: 1,
+          inputHash: 'geometry-input',
+          contentHash: 'geometry-content',
+        },
+      ],
+      relationCount: 1,
+    });
+    prepareLocationTileEmitTasks.mockReset();
+    prepareLocationTileEmitTasks.mockResolvedValue([
+      {
+        taskId: `${String(nodeId)}:location:tileEmit:0:0:0`,
+        index: 2,
+        inputData: {
+          bandIndex: 0,
+          zBase: 0,
+          tileId: 0,
+          bufferIds: ['geometry-0'],
+          domainType: 'location',
+          sourceKey: 'global',
+        },
+      },
+    ]);
+    runLocationTileEmitStage.mockReset();
+    runLocationTileEmitStage.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -67,6 +122,11 @@ describe('LocationBuildSession canonical events', () => {
         latitude: 35,
         longitude: 140,
         type: 'airport',
+        renderRank: 1,
+        importance: 0.9,
+        iconKey: 'flight_takeoff',
+        labelClass: 'major',
+        minZoom: 3,
         admin0Code: 'JP',
         admin0: 'Japan',
       },
@@ -94,6 +154,7 @@ describe('LocationBuildSession canonical events', () => {
     const config: LocationBuildConfig = {
       searchConfigs: [{ dataSource: 'ourairports' }],
       processingOptions: { concurrent: 1 },
+      mvt: createDefaultLocationMvtBuildConfig(),
     };
     const manager = new LocationBuildManager();
     await manager.startLocationBuildSession(nodeId, config, sourcePlan);
@@ -103,32 +164,44 @@ describe('LocationBuildSession canonical events', () => {
       nodeId,
       status: 'completed',
     });
-    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
-      expect.objectContaining({
-        stage: 'source',
-        status: 'completed',
-        progress: 100,
-      }),
-    ]);
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stage: 'source',
+          status: 'completed',
+          progress: 100,
+        }),
+        expect.objectContaining({
+          stage: 'geometry',
+          status: 'completed',
+          progress: 100,
+        }),
+        expect.objectContaining({
+          stage: 'tileEmit',
+          status: 'completed',
+          progress: 100,
+        }),
+      ])
+    );
 
     const sessionEvents = events.filter((event) => event.type === 'sessionStatusUpdated');
-    expect(sessionEvents.map((event) => event.payload.phase)).toEqual([
-      'idle',
-      'running',
-      'running',
-      'completed',
-    ]);
+    expect(sessionEvents.at(0)?.payload.phase).toBe('idle');
+    expect(sessionEvents.at(-1)?.payload.phase).toBe('completed');
+    expect(sessionEvents.map((event) => event.payload.stageId)).toEqual(
+      expect.arrayContaining(['source', 'geometry', 'tileEmit'])
+    );
     expect(sessionEvents[1]?.payload.stageId).toBeUndefined();
     expect(sessionEvents[2]?.payload.stageId).toBe('source');
     expect(events.some((event) => event.type === 'heartbeat')).toBe(true);
 
     const progressEvents = events.filter((event) => event.type === 'taskProgressUpdated');
-    expect(progressEvents.map((event) => event.payload.value)).toEqual([0, 100]);
-    expect(progressEvents.map((event) => event.payload.version)).toEqual([2, 3]);
+    expect(progressEvents.map((event) => event.payload.value)).toEqual([0, 100, 0, 100, 0, 100]);
+    expect(progressEvents.map((event) => event.payload.version)).toEqual([2, 3, 2, 3, 2, 3]);
 
     const snapshots = events.filter((event) => event.type === 'stageSnapshotUpdated');
-    expect(snapshots).toHaveLength(4);
-    expect(snapshots.every((event) => event.payload.stageId === 'source')).toBe(true);
+    expect(snapshots.map((event) => event.payload.stageId)).toEqual(
+      expect.arrayContaining(['source', 'geometry', 'tileEmit'])
+    );
     const finalSnapshot = snapshots.at(-1);
     expect(finalSnapshot?.payload.tasks).toEqual([
       expect.objectContaining({ status: 'completed', progress: 100, version: 3 }),
@@ -141,7 +214,7 @@ describe('LocationBuildSession canonical events', () => {
       expect.objectContaining({
         nodeId,
         inputHash: sourcePlan.identity.inputHash,
-        completedAt: finalSnapshot?.payload.stageCompletedAt,
+        completedAt: expect.any(Number),
       })
     );
   });
@@ -163,6 +236,7 @@ describe('LocationBuildSession canonical events', () => {
     const config: LocationBuildConfig = {
       searchConfigs: [{ dataSource: 'ourairports' }],
       processingOptions: { concurrent: 1 },
+      mvt: createDefaultLocationMvtBuildConfig(),
     };
     const manager = new LocationBuildManager();
     await manager.startLocationBuildSession(nodeId, config, sourcePlan);
@@ -207,6 +281,7 @@ describe('LocationBuildSession canonical events', () => {
       {
         searchConfigs: [{ dataSource: 'ourairports' }],
         processingOptions: { concurrent: 1 },
+        mvt: createDefaultLocationMvtBuildConfig(),
       },
       sourcePlan
     );
@@ -240,6 +315,7 @@ describe('LocationBuildSession canonical events', () => {
       {
         searchConfigs: [{ dataSource: 'ourairports' }],
         processingOptions: { concurrent: 1 },
+        mvt: createDefaultLocationMvtBuildConfig(),
       },
       sourcePlan
     );
@@ -258,19 +334,86 @@ describe('LocationBuildSession canonical events', () => {
     expect(runLocationSourceArtifactCleanup).not.toHaveBeenCalled();
   });
 
-  it('fails the session before replacing points when downstream artifact cleanup fails', async () => {
-    strategySearch.mockResolvedValue([
+  it('marks geometry tasks failed when the geometry stage rejects', async () => {
+    strategySearch.mockResolvedValue([createAirportPoint()]);
+    persistLocationGeometryArtifacts.mockRejectedValue(new Error('geometry artifact failed'));
+    const failed = new Promise<void>((resolve) => {
+      unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'failed') resolve();
+      });
+    });
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(
+      nodeId,
       {
-        schemaVersion: 2,
-        pointId: 'point-1',
-        name: 'Test airport',
-        latitude: 35,
-        longitude: 140,
-        type: 'airport',
-        admin0Code: 'JP',
-        admin0: 'Japan',
+        searchConfigs: [{ dataSource: 'ourairports' }],
+        processingOptions: { concurrent: 1 },
+        mvt: createDefaultLocationMvtBuildConfig(),
       },
-    ]);
+      sourcePlan
+    );
+
+    await failed;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'failed',
+      stopReason: 'failed',
+      error: 'geometry artifact failed',
+    });
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stage: 'source', status: 'completed' }),
+        expect.objectContaining({
+          stage: 'geometry',
+          status: 'failed',
+          errorMessage: 'geometry artifact failed',
+        }),
+      ])
+    );
+    expect(runLocationTileEmitStage).not.toHaveBeenCalled();
+  });
+
+  it('marks tileEmit tasks failed when tile emission rejects', async () => {
+    strategySearch.mockResolvedValue([createAirportPoint()]);
+    runLocationTileEmitStage.mockRejectedValue(new Error('tile emit failed'));
+    const failed = new Promise<void>((resolve) => {
+      unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'failed') resolve();
+      });
+    });
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(
+      nodeId,
+      {
+        searchConfigs: [{ dataSource: 'ourairports' }],
+        processingOptions: { concurrent: 1 },
+        mvt: createDefaultLocationMvtBuildConfig(),
+      },
+      sourcePlan
+    );
+
+    await failed;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'failed',
+      stopReason: 'failed',
+      error: 'tile emit failed',
+    });
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stage: 'source', status: 'completed' }),
+        expect.objectContaining({ stage: 'geometry', status: 'completed' }),
+        expect.objectContaining({
+          stage: 'tileEmit',
+          status: 'failed',
+          errorMessage: 'tile emit failed',
+        }),
+      ])
+    );
+  });
+
+  it('fails the session before replacing points when downstream artifact cleanup fails', async () => {
+    strategySearch.mockResolvedValue([createAirportPoint()]);
     runLocationSourceArtifactCleanup.mockRejectedValue(
       new Error('vt-store-not-registered:location')
     );
@@ -285,6 +428,7 @@ describe('LocationBuildSession canonical events', () => {
       {
         searchConfigs: [{ dataSource: 'ourairports' }],
         processingOptions: { concurrent: 1 },
+        mvt: createDefaultLocationMvtBuildConfig(),
       },
       sourcePlan
     );
@@ -298,4 +442,20 @@ describe('LocationBuildSession canonical events', () => {
     });
     expect(replaceLocationArtifacts).not.toHaveBeenCalled();
   });
+});
+
+const createAirportPoint = () => ({
+  schemaVersion: 2,
+  pointId: 'point-1',
+  name: 'Test airport',
+  latitude: 35,
+  longitude: 140,
+  type: 'airport',
+  renderRank: 1,
+  importance: 0.9,
+  iconKey: 'flight_takeoff',
+  labelClass: 'major',
+  minZoom: 3,
+  admin0Code: 'JP',
+  admin0: 'Japan',
 });

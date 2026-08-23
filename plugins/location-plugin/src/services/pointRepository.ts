@@ -123,18 +123,12 @@ export async function replaceLocationPointsChunked(
 export async function listLocationPoints(nodeId: NodeId): Promise<PointProperties[]> {
   const db = await getDb();
   const rows = await db.features.where('nodeId').equals(nodeId).toArray();
-  return fromGroupRow(rows).map((item) => ({
-    ...(item.data ?? {
-      schemaVersion: 2,
-      pointId: item.id as LocationPointProperties['pointId'],
-      name: '',
-      latitude: 0,
-      longitude: 0,
-      type: 'unknown',
-      admin0Code: '',
-      metadata: undefined,
-    }),
-  }));
+  return fromGroupRow(rows).map((item) => {
+    if (!item.data) {
+      throw new Error(`[location points] feature row ${String(item.id)} is missing data`);
+    }
+    return { ...item.data };
+  });
 }
 
 export async function deleteLocationPoints(nodeId: NodeId, pointIds: string[]): Promise<void> {

@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { getLocationRenderClassification, type LocationType } from '@hierarchidb/location-api';
 import { mortonKeyFromLonLat } from '@hierarchidb/location-store';
 import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import type { LocationGroupItemData, LocationPeerData } from '~/common/types/entities';
@@ -11,6 +12,21 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => isObject(value);
+
+const LOCATION_TYPE_SET = new Set<LocationType>([
+  'area_centroid',
+  'airport',
+  'port',
+  'railway_station',
+  'interchange',
+]);
+
+const requireLocationType = (value: unknown, label: string): LocationType => {
+  if (typeof value !== 'string' || !LOCATION_TYPE_SET.has(value as LocationType)) {
+    throw new Error(`[location normalizer] ${label} must be a supported location type`);
+  }
+  return value as LocationType;
+};
 
 const isProgress = (value: unknown): value is Progress =>
   isObject(value) && typeof value.stage === 'string';
@@ -100,6 +116,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
     const schemaVersion = value.schemaVersion === 2 ? 2 : 1;
     if (schemaVersion === 2) {
+      const type = requireLocationType(value.type, 'group data type');
       const centroidForShapeId = normalizeCentroidForShapeId(value.centroidForShapeId);
       const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
         value.centroidForShapeContainerNodeId
@@ -107,6 +124,8 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       return {
         ...value,
         schemaVersion: 2,
+        type,
+        ...getLocationRenderClassification(type),
         ...(centroidForShapeId !== undefined && { centroidForShapeId }),
         ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
         metadata: sanitizeMetadata(value.metadata),
@@ -129,13 +148,15 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
       legacy.centroidForShapeContainerNodeId
     );
+    const type = requireLocationType(legacy.type, 'legacy group data type');
     return {
       schemaVersion: 2,
       pointId: (legacy.pid ?? '') as LocationGroupItemData['pointId'],
       name: typeof value.name === 'string' ? value.name : '',
       latitude: typeof value.latitude === 'number' ? value.latitude : 0,
       longitude: typeof value.longitude === 'number' ? value.longitude : 0,
-      type: typeof value.type === 'string' ? value.type : 'unknown',
+      type,
+      ...getLocationRenderClassification(type),
       admin0Code: typeof legacy.gid0 === 'string' ? legacy.gid0 : '',
       admin1: typeof legacy.gid1 === 'string' ? legacy.gid1 : undefined,
       admin2: typeof legacy.gid2 === 'string' ? legacy.gid2 : undefined,
@@ -146,18 +167,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   }
 
   if (!isObject(value)) {
-    return {
-      schemaVersion: 2,
-      pointId: '' as LocationGroupItemData['pointId'],
-      name: '',
-      latitude: 0,
-      longitude: 0,
-      type: 'unknown',
-      admin0Code: '',
-      admin1: undefined,
-      admin2: undefined,
-      metadata: undefined,
-    };
+    throw new Error('[location normalizer] group data must be an object');
   }
 
   const pointId =
@@ -170,7 +180,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   const name = typeof valueRecord.name === 'string' ? valueRecord.name : '';
   const latitude = typeof valueRecord.latitude === 'number' ? valueRecord.latitude : 0;
   const longitude = typeof valueRecord.longitude === 'number' ? valueRecord.longitude : 0;
-  const type = typeof valueRecord.type === 'string' ? valueRecord.type : 'unknown';
+  const type = requireLocationType(valueRecord.type, 'group data type');
   const admin0Code =
     typeof (value as Record<string, unknown>).admin0Code === 'string'
       ? ((value as Record<string, unknown>).admin0Code as string)
@@ -207,6 +217,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     latitude,
     longitude,
     type,
+    ...getLocationRenderClassification(type),
     admin0Code,
     admin0,
     admin1,
