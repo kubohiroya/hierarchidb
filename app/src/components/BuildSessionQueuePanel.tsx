@@ -3,6 +3,7 @@ import { useIconRegistry } from '@hierarchidb/components';
 import type { NodeType, TreeId } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -33,7 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { BuildJobQueue, BuildJobQueueEntry } from '~/router/pages/tree/console/buildJobQueue';
 import {
   BUILD_JOB_QUEUE_OPEN_EVENT,
-  deleteBuildJobQueues,
+  deleteBuildJobQueueSessions,
   subscribeBuildJobQueues,
 } from '~/router/pages/tree/console/buildJobQueue';
 import { BuildSessionQueueSessionRow } from './BuildSessionQueueSessionRow';
@@ -154,6 +155,7 @@ export function BuildSessionQueuePanel({
   const { t } = useGlobalI18nTranslator();
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [jobQueues, setJobQueues] = useState<BuildJobQueue[]>([]);
+  const [isDeletingJobQueues, setIsDeletingJobQueues] = useState(false);
 
   const {
     rows,
@@ -221,8 +223,8 @@ export function BuildSessionQueuePanel({
     totalQueueItems === 1
       ? t('buildSessionQueue.popperCountOne', '{{count}} item', { count: totalQueueItems })
       : t('buildSessionQueue.popperCountOther', '{{count}} items', { count: totalQueueItems });
-  const isDeleteQueueActionDisabled = isDeleting || totalQueueItems === 0;
-  const isResumeQueueActionDisabled = isDeleting || rows.length === 0;
+  const isDeleteQueueActionDisabled = isDeleting || isDeletingJobQueues || totalQueueItems === 0;
+  const isResumeQueueActionDisabled = isDeleting || isDeletingJobQueues || rows.length === 0;
 
   const handleConfirmDeleteAutoClose = useCallback(async () => {
     const shouldCloseQueuePanel = totalQueueItems <= 1;
@@ -233,11 +235,26 @@ export function BuildSessionQueuePanel({
   }, [handleConfirmDelete, handleCloseAll, totalQueueItems]);
 
   const handleDeleteAllQueues = useCallback(async () => {
-    await handleDeleteAll();
-    if (visibleJobQueues.length > 0) {
-      deleteBuildJobQueues(visibleJobQueues.map((queue) => queue.queueId));
+    setIsDeletingJobQueues(true);
+    try {
+      await handleDeleteAll();
+      if (visibleJobQueues.length > 0) {
+        const bridge = getBuildWorkerBridge();
+        await deleteBuildJobQueueSessions(
+          visibleJobQueues.map((queue) => queue.queueId),
+          {
+            initialize: () => bridge.initialize(),
+            deleteBuildSession: (entryNodeType, nodeId) =>
+              bridge.deleteBuildSession(toNodeType(entryNodeType), nodeId),
+          }
+        );
+      }
+      handleCloseAll();
+    } catch (error) {
+      console.error('[BuildSessionQueuePanel] delete build job queues failed', error);
+    } finally {
+      setIsDeletingJobQueues(false);
     }
-    handleCloseAll();
   }, [handleCloseAll, handleDeleteAll, visibleJobQueues]);
 
   useEffect(() => {

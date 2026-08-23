@@ -8,11 +8,13 @@ import {
 } from '../buildFlow.ts';
 import {
   BUILD_JOB_QUEUE_OPEN_EVENT,
+  deleteBuildJobQueueSessions,
   deleteBuildJobQueues,
   deleteBuildJobQueuesForTree,
   getBuildJobQueue,
   listBuildJobQueues,
   openBuildJobQueueSurface,
+  reloadBuildJobQueuesForTests,
   resetBuildJobQueuesForTests,
   startBuildJobQueue,
 } from '../buildJobQueue.ts';
@@ -594,6 +596,124 @@ describe('collectBuildTargetsForFolder', () => {
     expect(getBuildJobQueue(firstQueue.queueId)).toBeNull();
     expect(getBuildJobQueue(secondQueue.queueId)?.queueId).toBe(secondQueue.queueId);
     expect(listStorageKeys()).toEqual([`hdb.buildJobQueue.${secondQueue.queueId}`]);
+  });
+
+  it('marks interrupted persisted build job queues as paused on reload', () => {
+    window.localStorage.setItem(
+      'hdb.buildJobQueue.queue-reload',
+      JSON.stringify({
+        queueId: 'queue-reload',
+        treeId: 'tree-1',
+        ownerNodeId: 'r:folder',
+        createdAt: 1,
+        createdBy: 'tree-console',
+        mode: 'web-ui',
+        status: 'running',
+        entries: [
+          {
+            targetNodeId: 'r:shape-running',
+            nodeType: 'shape',
+            inputSource: 'working-copy',
+            stepId: 'build',
+            stepNumber: 1,
+            shouldAutoStart: true,
+            entryId: 'queue-reload:1',
+            order: 0,
+            status: 'running',
+            startedAt: 2,
+          },
+          {
+            targetNodeId: 'r:shape-pending',
+            nodeType: 'shape',
+            inputSource: 'working-copy',
+            stepId: 'build',
+            stepNumber: 1,
+            shouldAutoStart: true,
+            entryId: 'queue-reload:2',
+            order: 1,
+            status: 'pending',
+          },
+        ],
+      })
+    );
+
+    reloadBuildJobQueuesForTests();
+    const queue = getBuildJobQueue('queue-reload');
+
+    expect(queue?.status).toBe('paused');
+    expect(queue?.entries.map((entry) => entry.status)).toEqual(['paused', 'pending']);
+    expect(queue?.entries[0]?.error).toContain('interrupted before completion');
+    const persisted = window.localStorage.getItem('hdb.buildJobQueue.queue-reload');
+    expect(persisted).toContain('"status":"paused"');
+  });
+
+  it('deletes started build sessions before removing selected build job queues', async () => {
+    composeStepConfigsMock.mockImplementation((nodeType: string) => {
+      if (nodeType === 'styler') {
+        return { configs: [{ id: 'data-source' }], hasHostBase: false };
+      }
+      return { configs: [{ id: 'build' }], hasHostBase: false };
+    });
+
+    const queue = await createBuildJobQueueForFolder({
+      treeId: 'tree-1' as TreeId,
+      pageNodeId: 'r:folder' as NodeId,
+      folderNode: makeNode({ id: 'r:folder' as NodeId }),
+      returnTo: '/treeconsole',
+      workerClient: {
+        getQueryAPI: vi.fn(async () => ({
+          listDescendants: async () => [
+            makeNode({
+              id: 'r:shape-build' as NodeId,
+              nodeType: 'shape',
+              metadata: {
+                name: 'Shape Build',
+                description: '',
+                tags: [],
+                buildMetadata: { buildRequired: true },
+              },
+            }),
+            makeNode({
+              id: 'r:styler-build' as NodeId,
+              nodeType: 'styler',
+              metadata: {
+                name: 'Styler Build',
+                description: '',
+                tags: [],
+                buildMetadata: { buildRequired: true },
+              },
+            }),
+          ],
+        })),
+      },
+    });
+    if (!queue) {
+      throw new Error('Expected build job queue.');
+    }
+
+    await startBuildJobQueue(queue.queueId, {
+      startBuildSession: async (nodeType, nodeId) => ({
+        nodeId,
+        status: 'completed',
+        progress: { total: 1, completed: 1, failed: 0, skipped: 0 },
+      }),
+      getBuildSessionStatus: async (nodeType, nodeId) => ({
+        nodeId,
+        status: 'completed',
+        progress: { total: 1, completed: 1, failed: 0, skipped: 0 },
+      }),
+    });
+    const deleteBuildSession = vi.fn(async () => undefined);
+
+    await deleteBuildJobQueueSessions([queue.queueId], {
+      deleteBuildSession,
+    });
+
+    expect(deleteBuildSession.mock.calls).toEqual([
+      ['shape', 'r:shape-build'],
+      ['styler', 'r:styler-build'],
+    ]);
+    expect(getBuildJobQueue(queue.queueId)).toBeNull();
   });
 
   it('includes treeId when requesting the AppBar build job queue surface', async () => {

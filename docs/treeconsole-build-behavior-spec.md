@@ -26,10 +26,11 @@
 ### 4.2 フォルダノード
 - フォルダノードは、配下のビルド可能ノードが存在し、少なくとも 1 件でもビルド対象ならビルド可能扱いとなる。
 - ビルドジョブ作成時には、対象ツリー配下を走査して `targetNodeId / nodeType / inputSource / build step` を持つ target entry を収集する。この段階では URL を実行制御状態として作らない。
+- フォルダ Build のバックグラウンド実行対象は、ビルドターゲット解決に加えて `canStartBuild` が真または未定義の target に限定する。`canStartBuild=false` の target は自動実行できないため folder job queue へ登録しない。
 
 ### 4.3 フォルダ要ビルド表示ルール
 - フォルダの「要ビルド」表示は、配下ノードの判定結果を集約して算出する。  
-  すなわち、配下のノードに `buildRequired=true` かつビルドターゲット解決可能なノードが 1 件以上存在する場合、上位フォルダは「要ビルド」として表示される。
+  すなわち、配下のノードに `buildRequired=true`、ビルドターゲット解決可能、かつ自動実行可能なノードが 1 件以上存在する場合、上位フォルダは「要ビルド」として表示される。
 - 表示判定の評価は `collectBuildTargetsForFolder` 相当の収集ロジックに準拠する。
   - 収集件数 > 0 → フォルダはビルド可能
   - 収集件数 = 0 → フォルダはビルド不可（表示不要）
@@ -57,6 +58,8 @@
 5. URL は job entry / session の詳細画面をユーザー操作で開く入口として利用できるが、次 entry へ進む主制御や残りキューの SSOT にはしない。
 6. 実行中にユーザーが queue surface から該当ステップへ遷移すると、同セッションを購読可能な状態で閲覧/停止操作が可能。
 7. 完了・失敗通知はキュー/セッション状態購読を通じて反映する。
+8. `localStorage` に永続化された non-terminal job queue を reload 後に読み込んだ場合、メモリ上の runner は存在しないため、`running/pending/pausing` queue は `paused` として可視化する。復旧時に暗黙の自動再開は行わず、ユーザーは folder Build を再実行して新しい execution queue を作成する。
+9. queue surface の削除操作は、開始済み entry の build session を `nodeType / targetNodeId` ごとに削除してから、job queue の永続状態を削除する。未開始 `pending` entry は build session が存在しないため session 削除対象にしない。
 
 ## 8. ステータス判定（styler など URL Download 連携のための補足）
 1. styler の「ビルドが必要」判定は、`URL Download` など外部取得手段が「未完了」の場合にも真とする。
@@ -73,6 +76,8 @@
 - フォルダノードのビルド実行で、URL 配列ではなく build job/session queue が作成され、実行開始時にバックグラウンドで順次進行すること。
 - フォルダノードのビルド実行では先頭 target へ自動遷移せず、AppBar の build queue/job progress surface から job entry を開けること。
 - フォルダノードの Build URL は表示入口に限定され、残り queue や次 entry の実行制御 SSOT にならないこと。
+- reload 後に persisted non-terminal job queue を読み込んだ場合、stale な running 表示を残さず `paused` として可視化すること。
+- job queue の削除操作で、開始済み entry の build session が nodeType 別に削除されること。
 - styler の場合、`build` ステップ不在時に `data-source` へフォールバックして遷移すること。
 - ステータス更新時、URL Download で未実行のダウンロードは「ビルドが必要」と判定されること。
 - セッション中の停止/中断操作が、同一セッション購読コンポーネント上で一貫して有効化されること。

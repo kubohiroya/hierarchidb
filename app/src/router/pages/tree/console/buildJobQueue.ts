@@ -64,6 +64,11 @@ export type BuildJobQueueStartTransport = {
   getBuildSessionStatus: (nodeType: string, nodeId: NodeId) => Promise<BuildSessionStatus>;
 };
 
+export type BuildJobQueueDeleteTransport = {
+  initialize?: () => Promise<void>;
+  deleteBuildSession: (nodeType: string, nodeId: NodeId) => Promise<void>;
+};
+
 type BuildJobQueueListener = (queues: BuildJobQueue[]) => void;
 
 export const BUILD_JOB_QUEUE_OPEN_EVENT = 'hierarchidb:open-build-job-queue';
@@ -81,6 +86,8 @@ const BUILD_JOB_TERMINAL_STATUSES = new Set<BuildSessionStatusValue>([
 
 const POLL_INTERVAL_MS = 1000;
 const STORAGE_PREFIX = 'hdb.buildJobQueue.';
+const INTERRUPTED_QUEUE_ERROR =
+  'Build job queue was interrupted before completion. Run folder Build again to create a new execution queue.';
 
 let store: Record<string, BuildJobQueue> = {};
 const listeners = new Set<BuildJobQueueListener>();
@@ -236,6 +243,53 @@ const parsePersistedQueue = (raw: unknown): BuildJobQueue => {
   } satisfies BuildJobQueue;
 };
 
+const isQueueStatusActive = (status: BuildJobQueueStatus): boolean =>
+  status === 'pending' || status === 'running' || status === 'pausing';
+
+const reconcilePersistedQueue = (queue: BuildJobQueue): BuildJobQueue => {
+  const entries = queue.entries.map((entry) =>
+    entry.status === 'running'
+      ? {
+          ...entry,
+          status: 'paused' as const,
+          completedAt: Date.now(),
+          error: INTERRUPTED_QUEUE_ERROR,
+        }
+      : { ...entry }
+  );
+
+  if (entries.every((entry) => entry.status === 'completed')) {
+    return { ...queue, status: 'completed', entries };
+  }
+
+  if (!isQueueStatusActive(queue.status)) {
+    return { ...queue, entries };
+  }
+
+  const hasInterruptedEntry = entries.some((entry) => entry.error === INTERRUPTED_QUEUE_ERROR);
+  if (!hasInterruptedEntry) {
+    const firstPendingIndex = entries.findIndex((entry) => entry.status === 'pending');
+    if (firstPendingIndex >= 0) {
+      const firstPending = entries[firstPendingIndex];
+      if (!firstPending) {
+        throw new Error('[buildJobQueue] pending entry index resolved without an entry');
+      }
+      entries[firstPendingIndex] = {
+        ...firstPending,
+        status: 'paused',
+        completedAt: Date.now(),
+        error: INTERRUPTED_QUEUE_ERROR,
+      };
+    }
+  }
+
+  return {
+    ...queue,
+    status: 'paused',
+    entries,
+  };
+};
+
 const persistQueue = (queue: BuildJobQueue): void => {
   if (!hasLocalStorage()) return;
   window.localStorage.setItem(storageKey(queue.queueId), JSON.stringify(queue));
@@ -255,8 +309,9 @@ const loadPersistedQueues = (): void => {
     if (!key?.startsWith(STORAGE_PREFIX)) continue;
     const raw = window.localStorage.getItem(key);
     if (!raw) continue;
-    const parsed = parsePersistedQueue(JSON.parse(raw));
+    const parsed = reconcilePersistedQueue(parsePersistedQueue(JSON.parse(raw)));
     nextStore[parsed.queueId] = parsed;
+    persistQueue(parsed);
   }
   store = nextStore;
 };
@@ -456,6 +511,59 @@ export const deleteBuildJobQueuesForTree = (treeId: TreeId): void => {
   publish();
 };
 
+const collectStartedQueueEntries = (queues: BuildJobQueue[]): BuildJobQueueEntry[] => {
+  const seen = new Set<string>();
+  const entries: BuildJobQueueEntry[] = [];
+  for (const queue of queues) {
+    for (const entry of queue.entries) {
+      if (entry.status === 'pending' || entry.status === 'cancelled') continue;
+      const key = `${entry.nodeType}:${String(entry.targetNodeId)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      entries.push(entry);
+    }
+  }
+  return entries;
+};
+
+export const deleteBuildJobQueueSessions = async (
+  queueIds: string[],
+  transport: BuildJobQueueDeleteTransport
+): Promise<void> => {
+  if (!Array.isArray(queueIds) || queueIds.length === 0) {
+    throw new Error('[buildJobQueue] queueIds must be a non-empty array');
+  }
+  loadPersistedQueues();
+  const normalizedQueueIds = queueIds.map((queueId) => assertNonEmptyString(queueId, 'queueId'));
+  const queues = normalizedQueueIds.map((queueId) => {
+    const queue = store[queueId];
+    if (!queue) {
+      throw new Error(`[buildJobQueue] queue not found: ${queueId}`);
+    }
+    return cloneQueue(queue);
+  });
+  if (transport.initialize) {
+    await transport.initialize();
+  }
+  const entries = collectStartedQueueEntries(queues);
+  const results = await Promise.allSettled(
+    entries.map((entry) => transport.deleteBuildSession(entry.nodeType, entry.targetNodeId))
+  );
+  const rejected = results.filter(
+    (result): result is PromiseRejectedResult => result.status === 'rejected'
+  );
+  if (rejected.length > 0) {
+    throw new Error(
+      `[buildJobQueue] failed to delete ${rejected.length} build job session(s): ${rejected
+        .map((result) =>
+          result.reason instanceof Error ? result.reason.message : String(result.reason)
+        )
+        .join('; ')}`
+    );
+  }
+  deleteBuildJobQueues(normalizedQueueIds);
+};
+
 export const startBuildJobQueue = async (
   queueId: string,
   transport: BuildJobQueueStartTransport
@@ -579,5 +687,11 @@ export const resetBuildJobQueuesForTests = (): void => {
       window.localStorage.removeItem(key);
     }
   }
+  publish();
+};
+
+export const reloadBuildJobQueuesForTests = (): void => {
+  store = {};
+  storageLoaded = false;
   publish();
 };
