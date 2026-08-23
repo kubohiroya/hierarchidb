@@ -50,7 +50,7 @@ export type BandConfig = {
   zBase: number;
 };
 
-export type DomainType = 'shape' | 'route';
+export type DomainType = 'shape' | 'route' | 'location';
 
 /*
 export type GeometryStageConfig = {

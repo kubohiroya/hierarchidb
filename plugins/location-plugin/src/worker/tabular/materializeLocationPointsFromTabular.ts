@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { getLocationRenderClassification, type LocationType } from '@hierarchidb/location-api';
 import { buildLocationPointIdFromLatLon, buildTileIdByZoom } from '@hierarchidb/location-store';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
@@ -30,6 +31,28 @@ const normalizeMetadataValue = (value: unknown): string | number | null => {
 const toMetadata = (row: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(row).map(([k, v]) => [k, normalizeMetadataValue(v)]));
 
+const LOCATION_TYPE_SET = new Set<LocationType>([
+  'area_centroid',
+  'airport',
+  'port',
+  'railway_station',
+  'interchange',
+]);
+
+const requireLocationType = (value: string): LocationType => {
+  if (!LOCATION_TYPE_SET.has(value as LocationType)) {
+    throw new Error(`[location mvt] unsupported tabular location type: ${value}`);
+  }
+  return value as LocationType;
+};
+
+const requireLocationTypeValue = (value: string | undefined): LocationType => {
+  if (value === undefined) {
+    throw new Error('[location mvt] tabular location type is required');
+  }
+  return requireLocationType(value);
+};
+
 export async function materializeLocationPointsFromTabular(
   nodeId: NodeId,
   rows: TabularDataResult,
@@ -47,7 +70,8 @@ export async function materializeLocationPointsFromTabular(
 
     const featureClass = toStringVal(r.featureClass);
     const featureCode = toStringVal(r.featureCode);
-    const type = featureCode ?? featureClass ?? 'poi';
+    const type = requireLocationTypeValue(featureCode ?? featureClass);
+    const renderClassification = getLocationRenderClassification(type);
     const admin0Code = toStringVal(r.admin0Code) ?? toStringVal(r.countryCode) ?? '';
     const admin1 = toStringVal(r.admin1) ?? toStringVal(r.adminCode1);
     const admin2 = toStringVal(r.admin2) ?? toStringVal(r.adminCode2);
@@ -64,6 +88,7 @@ export async function materializeLocationPointsFromTabular(
       latitude: lat,
       longitude: lon,
       type,
+      ...renderClassification,
       admin0Code,
       admin0,
       admin1,

@@ -4,6 +4,7 @@ import {
   type LocationSourcePlan,
   type PreparedLocationBuild,
 } from '~/services/source/LocationSourcePlan.js';
+import { createDefaultLocationMvtBuildConfig } from '~/services/mvt/locationMvtConfig.js';
 
 const requireRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -58,4 +59,5 @@ const createBuildConfig = (
   })),
   concurrentDownloads: concurrent,
   processingOptions: { concurrent },
+  mvt: createDefaultLocationMvtBuildConfig(),
 });

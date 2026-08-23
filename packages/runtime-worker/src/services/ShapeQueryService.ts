@@ -148,6 +148,11 @@ const isNumber = (value: unknown): value is number =>
 const isDefined = <T>(value: T | null | undefined): value is T =>
   value !== null && value !== undefined;
 
+const isShapeGeometryCache = (
+  record: { nodeId: NodeId; timestamp: number; domainType: 'shape' | 'route' | 'location' }
+): record is ShapeGeometryCache =>
+  record.timestamp > 0 && (record.domainType === 'shape' || record.domainType === 'route');
+
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   value === 'queued' ||
   value === 'running' ||
@@ -688,14 +693,15 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return records
       .filter(isDefined)
       .filter(
-        (record): record is ShapeGeometryCache => record.nodeId === nodeId && record.timestamp > 0
+        (record): record is ShapeGeometryCache =>
+          record.nodeId === nodeId && isShapeGeometryCache(record)
       );
   }
 
   async getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null> {
     return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
       const record = await ephemeralDB.geometryCache.get(bufferId);
-      if (!record || record.timestamp <= 0) return null;
+      if (!record || !isShapeGeometryCache(record)) return null;
       return record;
     });
   }

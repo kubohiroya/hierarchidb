@@ -60,7 +60,8 @@
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
-    "@hierarchidb/tabular-source": "workspace:*"
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/vt-orchestrator": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/auth": "workspace:*",

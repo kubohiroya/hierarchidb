@@ -1,10 +1,12 @@
 import type { CountryCode, Timestamp } from '@hierarchidb/core-types';
+import { getLocationRenderClassification } from '@hierarchidb/location-api';
 import { buildLocationPointIdFromLatLon } from '@hierarchidb/location-store';
 import type {
   LocationPointId,
   LocationPointKind,
   LocationPointMetadata,
   LocationPointProperties,
+  LocationType,
 } from '~/common/entities/LocationPoint';
 import { sanitizeTags } from './download/mapperUtils.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
@@ -21,6 +23,21 @@ interface BasePointParams {
   admin2?: string;
   metadata?: LocationPointMetadata;
 }
+
+const LOCATION_TYPE_SET = new Set<LocationType>([
+  'area_centroid',
+  'airport',
+  'port',
+  'railway_station',
+  'interchange',
+]);
+
+const requireRenderClassification = (type: LocationPointKind) => {
+  if (!LOCATION_TYPE_SET.has(type as LocationType)) {
+    throw new Error(`[location mvt] unsupported location type for render classification: ${type}`);
+  }
+  return getLocationRenderClassification(type as LocationType);
+};
 
 const normalizeMetadataValue = (value: unknown): string | number | null => {
   if (value == null) return null;
@@ -46,19 +63,27 @@ const toMetadata = (
 
 export const createLocationPointProperties = (
   params: BasePointParams
-): LocationPointProperties => ({
-  schemaVersion: 2,
-  pointId: params.pointId,
-  name: params.name,
-  latitude: params.latitude,
-  longitude: params.longitude,
-  type: params.type,
-  admin0Code: params.admin0Code,
-  admin0: params.admin0,
-  admin1: params.admin1,
-  admin2: params.admin2,
-  metadata: params.metadata,
-});
+): LocationPointProperties => {
+  const classification = requireRenderClassification(params.type);
+  return {
+    schemaVersion: 2,
+    pointId: params.pointId,
+    name: params.name,
+    latitude: params.latitude,
+    longitude: params.longitude,
+    type: params.type,
+    renderRank: classification.renderRank,
+    importance: classification.importance,
+    iconKey: classification.iconKey,
+    labelClass: classification.labelClass,
+    minZoom: classification.minZoom,
+    admin0Code: params.admin0Code,
+    admin0: params.admin0,
+    admin1: params.admin1,
+    admin2: params.admin2,
+    metadata: params.metadata,
+  };
+};
 
 const buildPointIdFromLatLon = async (lat: number, lon: number): Promise<LocationPointId> =>
   buildLocationPointIdFromLatLon(lat, lon);

@@ -15,7 +15,9 @@ import {
 } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import { FetchNetworkPort, notifyPluginAuthRequired } from '@hierarchidb/download';
+import { type EphemeralDB, initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
 import type {
   LocationBuildConfig,
@@ -37,6 +39,16 @@ import { replaceLocationArtifacts, replaceLocationPoints } from './pointReposito
 import type { LocationSourcePlan } from './source/LocationSourcePlan.js';
 import { createLocationSourceArtifactRecord } from './source/persistLocationSourceArtifact.js';
 import { runLocationSourceArtifactCleanup } from './source/runLocationSourceArtifactCleanup.js';
+import {
+  buildLocationGeometryCacheId,
+  persistLocationGeometryArtifacts,
+  requireLocationMvtBands,
+} from './mvt/locationMvtGeometryArtifacts.js';
+import {
+  prepareLocationTileEmitTasks,
+  runLocationTileEmitStage,
+  type LocationTileEmitTask,
+} from './mvt/locationMvtTileEmit.js';
 
 const logLocationBuildWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -62,12 +74,14 @@ const ISO3166_CSV_URL = resolveIso3166CsvUrl();
 
 type LocationBuildTaskState = {
   taskId: string;
-  searchConfig: LocationSearchConfig;
+  searchConfig?: LocationSearchConfig;
+  stage: 'source' | 'geometry' | 'tileEmit';
   status: TaskStatus;
   progress: number;
   version: number;
   index: number;
   errorMessage?: string;
+  metadata?: Record<string, unknown>;
 };
 
 type LocationStageTiming = {
@@ -99,7 +113,9 @@ export class LocationBuildSession
   private net: FetchNetworkPort | null = null;
   private readonly tasks: LocationBuildTaskState[];
   private readonly pendingTaskProgressUpdates: TaskProgressUpdatedEvent['payload'][] = [];
-  private sourceStageTiming: LocationStageTiming | null = null;
+  private readonly stageTiming = new Map<LocationBuildTaskState['stage'], LocationStageTiming>();
+  private readonly ephemeralStore: EphemeralDB;
+  private activeStage: LocationBuildTaskState['stage'] | null = null;
   countryNameMap: Map<string, string> | null = null;
 
   constructor(
@@ -111,21 +127,23 @@ export class LocationBuildSession
     this.tasks = config.searchConfigs.map((searchConfig, index) => ({
       taskId: `${String(nodeId)}:source:${String(index)}`,
       searchConfig,
+      stage: 'source',
       status: 'queued',
       progress: 0,
       version: 1,
       index,
     }));
+    this.ephemeralStore = initializeEphemeralDB(getDBName(getBuildDatabasePrefix(), 'ephemeral'));
   }
 
   protected async processBatch(signal: AbortSignal): Promise<void> {
     const { processingOptions } = this.config;
-    const total = this.tasks.length;
+    let total = this.tasks.length;
     let completed = 0;
     let failed = 0;
     const sourcePoints: LocationPointProperties[] = [];
 
-    this.beginSourceStage();
+    this.beginStage('source');
     this.updateProgress({ total, completed, failed }, 'source');
 
     const concurrent =
@@ -144,7 +162,12 @@ export class LocationBuildSession
           this.updateLocationTaskProgress(task, 0);
           this.updateProgress({ total, completed, failed }, 'source');
           try {
-            const results = await this.searchLocations(task.searchConfig);
+            const searchConfig =
+              task.searchConfig ??
+              (() => {
+                throw new Error(`[location source] task ${task.taskId} is missing search config`);
+              })();
+            const results = await this.searchLocations(searchConfig);
             requireNotAborted(signal, 'Location build paused during search');
             const validated = await this.validateAndFilterLocations(
               results,
@@ -187,28 +210,128 @@ export class LocationBuildSession
     requireNotAborted(signal, 'Location build paused during artifact cleanup');
     await replaceLocationArtifacts(this.nodeId, sourcePoints, sourceArtifact);
     requireNotAborted(signal, 'Location build paused during persistence');
-    this.completeSourceStage(completedAt);
+    this.completeStage('source', completedAt);
     this.updateProgress({ total, completed, failed }, 'source');
+
+    const bands = requireLocationMvtBands(this.config.mvt);
+    const geometryTasks = bands.map((band, index) => ({
+      taskId: `${String(this.nodeId)}:geometry:${String(index)}`,
+      stage: 'geometry' as const,
+      status: 'queued' as TaskStatus,
+      progress: 0,
+      version: 1,
+      index: this.tasks.length + index,
+      metadata: {
+        bandIndex: band.bandIndex,
+        zMin: band.zMin,
+        zMax: band.zMax,
+        zBase: band.zBase,
+      },
+    }));
+    this.tasks.push(...geometryTasks);
+    total = this.tasks.length;
+    this.beginStage('geometry');
+    this.updateProgress({ total, completed, failed }, 'geometry');
+    geometryTasks.forEach((task) => {
+      task.status = 'running';
+      this.updateLocationTaskProgress(task, 0);
+    });
+    let geometryOutput: Awaited<ReturnType<typeof persistLocationGeometryArtifacts>>;
+    try {
+      geometryOutput = await persistLocationGeometryArtifacts({
+        nodeId: this.nodeId,
+        points: sourcePoints,
+        buildConfig: this.config,
+        sourceContentHash: sourceArtifact.contentHash,
+        sourceInputHash: sourceArtifact.inputHash,
+        store: this.ephemeralStore,
+        signal,
+      });
+      requireNotAborted(signal, 'Location build paused during geometry persistence');
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      if (isAuthRequiredError(error)) throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      failed += this.markTasksFailed(geometryTasks, errorMessage);
+      this.updateProgress({ total, completed, failed }, 'geometry');
+      throw error;
+    }
+    geometryTasks.forEach((task) => {
+      task.status = 'completed';
+      completed += 1;
+      this.updateLocationTaskProgress(task, 100);
+    });
+    this.completeStage('geometry', Date.now());
+    this.updateProgress({ total, completed, failed }, 'geometry');
+
+    const tileEmitTasks = await prepareLocationTileEmitTasks({
+      nodeId: this.nodeId,
+      bands,
+      expectedGeometryCacheIds: geometryOutput.artifacts.map((artifact) =>
+        buildLocationGeometryCacheId(this.nodeId, artifact.bandIndex)
+      ),
+      startIndex: this.tasks.length,
+      store: this.ephemeralStore,
+    });
+    if (sourcePoints.length > 0 && tileEmitTasks.length === 0) {
+      throw new Error('[location tileEmit] planning produced no tasks for non-empty source points');
+    }
+    const localTileEmitTasks = tileEmitTasks.map((task) => toLocationBuildTileEmitTask(task));
+    this.tasks.push(...localTileEmitTasks);
+    total = this.tasks.length;
+    this.beginStage('tileEmit');
+    this.updateProgress({ total, completed, failed }, 'tileEmit');
+    localTileEmitTasks.forEach((task) => {
+      task.status = 'running';
+      this.updateLocationTaskProgress(task, 0);
+    });
+    try {
+      await runLocationTileEmitStage({
+        nodeId: this.nodeId,
+        buildConfig: this.config,
+        bands,
+        tasks: tileEmitTasks,
+        store: this.ephemeralStore,
+        signal,
+      });
+      requireNotAborted(signal, 'Location build paused during tileEmit persistence');
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      if (isAuthRequiredError(error)) throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      failed += this.markTasksFailed(localTileEmitTasks, errorMessage);
+      this.updateProgress({ total, completed, failed }, 'tileEmit');
+      throw error;
+    }
+    localTileEmitTasks.forEach((task) => {
+      task.status = 'completed';
+      completed += 1;
+      this.updateLocationTaskProgress(task, 100);
+    });
+    this.completeStage('tileEmit', Date.now());
+    this.updateProgress({ total, completed, failed }, 'tileEmit');
   }
 
   getCanonicalStageSnapshot(): StageSnapshotUpdatedEvent['payload'] | null {
-    if (!this.sourceStageTiming) return null;
+    if (!this.activeStage) return null;
+    const timing = this.stageTiming.get(this.activeStage);
+    if (!timing) {
+      throw new Error(`Location stage ${this.activeStage} is active without timing`);
+    }
     return {
-      stageId: 'source',
-      tasks: this.tasks.map((task) => ({
-        taskId: task.taskId,
-        stage: 'source',
-        status: task.status,
-        progress: task.progress,
-        version: task.version,
-        errorMessage: task.errorMessage,
-        metadata: {
-          dataSource: task.searchConfig.dataSource,
-          index: task.index,
-          inputHash: this.sourcePlan.identity.inputHash,
-        },
-      })),
-      ...this.sourceStageTiming,
+      stageId: this.activeStage,
+      tasks: this.tasks
+        .filter((task) => task.stage === this.activeStage)
+        .map((task) => ({
+          taskId: task.taskId,
+          stage: task.stage,
+          status: task.status,
+          progress: task.progress,
+          version: task.version,
+          errorMessage: task.errorMessage,
+          metadata: this.buildTaskMetadata(task),
+        })),
+      ...timing,
     };
   }
 
@@ -220,15 +343,11 @@ export class LocationBuildSession
     return this.tasks.map((task) => ({
       taskId: task.taskId,
       version: task.version,
-      stage: 'source',
+      stage: task.stage,
       status: task.status,
       progress: task.progress,
       errorMessage: task.errorMessage,
-      metadata: {
-        dataSource: task.searchConfig.dataSource,
-        index: task.index,
-        inputHash: this.sourcePlan.identity.inputHash,
-      },
+      metadata: this.buildTaskMetadata(task),
     }));
   }
 
@@ -250,24 +369,31 @@ export class LocationBuildSession
     this.updateProgress({ total: 0, completed: 0, failed: 0, skipped: 0 });
   }
 
-  private beginSourceStage(): void {
-    if (this.sourceStageTiming) {
-      throw new Error('Location source stage has already started');
+  private beginStage(stage: LocationBuildTaskState['stage']): void {
+    const existing = this.stageTiming.get(stage);
+    if (existing) {
+      if (existing.stageCompletedAt !== undefined) {
+        throw new Error(`Location ${stage} stage cannot restart after completion`);
+      }
+      this.activeStage = stage;
+      return;
     }
-    this.sourceStageTiming = {
+    this.activeStage = stage;
+    this.stageTiming.set(stage, {
       stageStartedAt: Date.now(),
       stageInactiveMs: 0,
-    };
+    });
   }
 
-  private completeSourceStage(completedAt: number): void {
-    if (!this.sourceStageTiming) {
-      throw new Error('Location source stage cannot complete before it starts');
+  private completeStage(stage: LocationBuildTaskState['stage'], completedAt: number): void {
+    const timing = this.stageTiming.get(stage);
+    if (!timing || this.activeStage !== stage) {
+      throw new Error(`Location ${stage} stage cannot complete before it starts`);
     }
     if (!Number.isFinite(completedAt) || completedAt < 0) {
-      throw new Error(`Location source stage completedAt must be finite and non-negative`);
+      throw new Error(`Location ${stage} stage completedAt must be finite and non-negative`);
     }
-    this.sourceStageTiming.stageCompletedAt = completedAt;
+    timing.stageCompletedAt = completedAt;
   }
 
   private updateLocationTaskProgress(
@@ -283,15 +409,32 @@ export class LocationBuildSession
     this.pendingTaskProgressUpdates.push({
       taskId: task.taskId,
       version: task.version,
-      stageId: 'source',
+      stageId: task.stage,
       value,
       message,
-      metadata: {
-        dataSource: task.searchConfig.dataSource,
-        index: task.index,
-        inputHash: this.sourcePlan.identity.inputHash,
-      },
+      metadata: this.buildTaskMetadata(task),
     });
+  }
+
+  private buildTaskMetadata(task: LocationBuildTaskState): Record<string, unknown> {
+    return {
+      ...task.metadata,
+      ...(task.searchConfig ? { dataSource: task.searchConfig.dataSource } : {}),
+      index: task.index,
+      inputHash: this.sourcePlan.identity.inputHash,
+    };
+  }
+
+  private markTasksFailed(tasks: LocationBuildTaskState[], errorMessage: string): number {
+    let failed = 0;
+    for (const task of tasks) {
+      if (task.status === 'completed' || task.status === 'failed') continue;
+      task.status = 'failed';
+      task.errorMessage = errorMessage;
+      failed += 1;
+      this.updateLocationTaskProgress(task, task.progress, errorMessage);
+    }
+    return failed;
   }
 
   private async persistLocationPoints(
@@ -753,9 +896,8 @@ export class LocationBuildSession
   async getCountryNameMap(): Promise<Map<string, string>> {
     if (this.countryNameMap) return this.countryNameMap;
     try {
-      const { ensureIso3166Data, getAllCountries } = await import(
-        '@hierarchidb/gen-iso3166-2/browser'
-      );
+      const { ensureIso3166Data, getAllCountries } =
+        await import('@hierarchidb/gen-iso3166-2/browser');
       await ensureIso3166Data({ csvUrl: ISO3166_CSV_URL });
       const countries = await getAllCountries();
       const map = new Map<string, string>();
@@ -781,6 +923,24 @@ function createBatches<T>(items: T[], batchSize: number): T[][] {
     batches.push(items.slice(i, i + batchSize));
   }
   return batches;
+}
+
+function toLocationBuildTileEmitTask(task: LocationTileEmitTask): LocationBuildTaskState {
+  return {
+    taskId: task.taskId,
+    stage: 'tileEmit',
+    status: 'queued',
+    progress: 0,
+    version: 1,
+    index: task.index,
+    metadata: {
+      bandIndex: task.inputData.bandIndex,
+      zBase: task.inputData.zBase,
+      tileId: task.inputData.tileId,
+      bufferCount: task.inputData.bufferIds.length,
+      sourceKey: task.inputData.sourceKey,
+    },
+  };
 }
 
 function requireNotAborted(signal: AbortSignal, message: string): void {

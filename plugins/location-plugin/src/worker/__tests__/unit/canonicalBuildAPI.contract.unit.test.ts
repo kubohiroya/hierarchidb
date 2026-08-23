@@ -116,6 +116,14 @@ describe('location canonicalBuildAPI contract', () => {
         ],
         concurrentDownloads: 3,
         processingOptions: { concurrent: 3 },
+        mvt: expect.objectContaining({
+          schemaVersion: 1,
+          sourceLayer: 'location_points',
+          tileEmitConfig: expect.objectContaining({
+            layerSetName: 'location_points',
+            promoteId: 'pointId',
+          }),
+        }),
       },
       expect.objectContaining({
         sourceKind: 'network',

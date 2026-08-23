@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildProgressSummary, ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 
-export type EphemeralDomainType = 'shape' | 'route' | 'tileEmit';
+export type EphemeralDomainType = 'shape' | 'route' | 'location' | 'tileEmit';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
@@ -186,7 +186,7 @@ export type EphemeralSourceCacheMetaRecord = Omit<EphemeralSourceCacheRecord, 'd
 export interface EphemeralGeometryCacheRecord {
   id: string;
   nodeId: NodeId;
-  domainType: 'shape' | 'route';
+  domainType: 'shape' | 'route' | 'location';
   bandIndex: number;
   sourceKey: string;
   countryCode?: string;
@@ -204,7 +204,7 @@ export interface EphemeralGeometryCacheRecord {
 export interface EphemeralGeometryCacheMetaRecord {
   id: string;
   nodeId: NodeId;
-  domainType: 'shape' | 'route';
+  domainType: 'shape' | 'route' | 'location';
   bandIndex: number;
   sourceKey: string;
   countryCode?: string;
@@ -225,7 +225,7 @@ export interface EphemeralGeometryErrorRecord extends ShapeGeometryErrorRecord {
 export interface EphemeralTileIdToBufferRelation {
   id: string;
   nodeId: NodeId;
-  domainType?: 'shape' | 'route';
+  domainType?: 'shape' | 'route' | 'location';
   bandIndex: number;
   tileId: string;
   bufferId: string;
