@@ -43,6 +43,7 @@ function createAliasMap(): Record<string, string> {
     '@hierarchidb/plugin-base': path.resolve(rootDir, '../packages/plugin-base/src/index.ts'),
     '@hierarchidb/gis-sdk': path.resolve(rootDir, '../packages/gis-sdk/src/index.ts'),
     '@hierarchidb/ide-gsm-client': path.resolve(rootDir, '../packages/ide-gsm-client/src/index.ts'),
+    '@hierarchidb/styler-store': path.resolve(rootDir, '../packages/styler-store/src/index.ts'),
     '@hierarchidb/vt-orchestrator': path.resolve(
       rootDir,
       '../packages/vt-orchestrator/src/index.ts'
@@ -62,6 +63,51 @@ function createAliasMap(): Record<string, string> {
     '@hierarchidb/yaml-api': path.resolve(rootDir, '../packages/yaml-api/src/index.ts'),
     '@hierarchidb/ui-icon': path.resolve(rootDir, '../packages/components/src/index.ts'),
     '@hierarchidb/components': path.resolve(rootDir, '../packages/components/src/index.ts'),
+    '@hierarchidb/ui-plugin-shell/components': path.resolve(
+      rootDir,
+      '../packages/components/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/plugin-ui-host': path.resolve(
+      rootDir,
+      '../packages/plugin-ui-host/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-auth': path.resolve(
+      rootDir,
+      '../packages/ui/auth/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-dialog': path.resolve(
+      rootDir,
+      '../packages/ui/dialog/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-i18n': path.resolve(
+      rootDir,
+      '../packages/ui/i18n/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-icon': path.resolve(
+      rootDir,
+      '../packages/ui/icon/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-map': path.resolve(rootDir, '../packages/ui/map/src/index.ts'),
+    '@hierarchidb/ui-plugin-shell/ui-navigation': path.resolve(
+      rootDir,
+      '../packages/ui/navigation/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-theme': path.resolve(
+      rootDir,
+      '../packages/ui/theme/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-tour': path.resolve(
+      rootDir,
+      '../packages/ui/tour/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb': path.resolve(
+      rootDir,
+      '../packages/ui/treeconsole/breadcrumb/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-usermenu': path.resolve(
+      rootDir,
+      '../packages/ui/usermenu/src/index.ts'
+    ),
     '@hierarchidb/ui-dialog': path.resolve(rootDir, '../packages/ui/dialog/src/index.ts'),
     '@hierarchidb/ui-treeconsole-toolbar': path.resolve(
       rootDir,

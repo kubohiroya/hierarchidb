@@ -126,6 +126,7 @@ export type LocationLayerEntry = {
 
 export type UseFolderLayersParams = {
   nodeId?: string;
+  refreshKey?: string;
   searchZxy?: string;
   onPersistedZxy: PersistedZxyHandler;
   stylerToggles?: Record<string, boolean>;
@@ -149,6 +150,7 @@ type ParsedStylerNode = {
 
 export const useFolderLayers = ({
   nodeId,
+  refreshKey,
   searchZxy,
   onPersistedZxy,
   stylerToggles,
@@ -616,7 +618,7 @@ export const useFolderLayers = ({
     return () => {
       cancelled = true;
     };
-  }, [nodeId, onPersistedZxy, searchZxy, stylerToggles]);
+  }, [nodeId, onPersistedZxy, refreshKey, searchZxy, stylerToggles]);
 
   return {
     basemapStyles,

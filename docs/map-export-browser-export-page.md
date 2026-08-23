@@ -56,6 +56,8 @@ Manifest `nodeId` values are logical IDs used by `layers[]`. The browser page re
 
 After build completion, the page loads map layers from `target.parentId` through the existing folder-layer resolution path and filters the result to the committed node IDs selected by `layers[]`. If `layers[]` is empty, every committed manifest node is treated as visible. A visible committed node that cannot be resolved to a renderable MapLibre vector layer keeps the job from reaching `ready` and eventually fails with `maplibre_not_ready`; the page must not silently omit requested layers.
 
+When multiple jobs are submitted to the same mounted browser page, layer resolution must refresh for each accepted job even if `target.parentId` is unchanged. Newly committed manifest nodes are part of the render contract and must not depend on a full page reload to become visible to the map layer resolver.
+
 ## Readiness Requirements
 
 The page may return `ready` only after all of the following are true:
