@@ -9,6 +9,7 @@ export {
   createDexieFeatureStore,
   createDexieVectorTileStore,
 } from './entity/dexie-stores.js';
+export { getVTStoreRegistry } from './entity/getVTStoreRegistry.js';
 // Public re-exports for plugin-side stores and registry
 export type {
   FeatureItemBase,
@@ -18,6 +19,7 @@ export type {
   VectorTileItemBase,
   VectorTileStore,
 } from './entity/storeTypes.js';
+export { VTStoreRegistry } from './entity/VTStoreRegistry.js';
 export * from './module-paths.js';
 export {
   publishBuildSessionUpdate,

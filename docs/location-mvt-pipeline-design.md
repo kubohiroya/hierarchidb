@@ -283,6 +283,8 @@ LocationDB v1 から v2 への migration は additive とする。
 - `vectorTiles` record は `tileId`, `nodeId`, `z`, `x`, `y`, `data`, `size`, `contentType`, `timestamp` を持つ。
 - `tileId` は `nodeId-z-x-y` とし、`size` は `data.byteLength` と一致しなければならない。
 - absent tile は query result `null` とする。record 破損、座標範囲外、content type 不一致、size 不一致は error とし、empty tile や GeoJSON query へ読み替えない。
+- worker 内の vector tile store adapter は `VTStoreRegistry` へ `nodeType='location'` で登録する。registry は node type 共通の store adapter 境界であり、公開 tile read は `LocationQueryAPI.getVectorTile(nodeId,z,x,y)` が正規 API である。
+- `VTStoreRegistry` の二重登録、未登録 node type、破損 record は error とする。未登録時に empty tile list や viewport GeoJSON query へ fallback しない。
 - tile summary、read-back validation、tile relation は tileEmit pipeline の downstream artifact として扱い、導入時も MVT から LocationPoint metadata を復元しない。
 - 既存 vector tile artifact がある場合は、その内容を SSOT として採用せず再生成対象にする。
 

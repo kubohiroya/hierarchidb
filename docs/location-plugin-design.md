@@ -187,6 +187,12 @@
 - `getPoint(nodeId, pointId)`
 - `listMetadata(nodeId, filter?)`
 
+## Worker store registration
+
+Location worker は `registerLocationWorkerStores()` で `VTStoreRegistry` に `nodeType='location'` の vector tile store を登録する。`VTStoreRegistry` は worker 内の派生 MVT store 境界であり、公開 query API の代替ではない。UI や外部 runner が tile bytes を読む場合は `LocationQueryAPI.getVectorTile(nodeId,z,x,y)` を使い、worker 内の lifecycle/copy/delete など node type 共通処理が store adapter を必要とする場合だけ `VTStoreRegistry.requireVectorTiles('location')` を使う。
+
+登録済み node type の二重登録は契約違反として error にする。未登録 node type を empty store として扱ったり、LocationPoint の viewport query へ fallback してはならない。
+
 ### Prefetch マージン
 
 - 表示範囲の外側まで少し余分に取得するため、検索時にマージン指定を行う。

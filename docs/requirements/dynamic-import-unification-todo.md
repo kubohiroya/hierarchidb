@@ -29,9 +29,9 @@
 - [ ] folder/resolver プラグインで codemod を試験適用（resolver 完了、folder 未着手）
   - 参考実装: resolver 適用済み差分 (`packages/plugins/resolver-plugin/…`)、`packages/plugins/dialog-impl-status.md`
   - やること: folder plugin への dry-run → 本適用 → typecheck/log 記録
-- [ ] Dexie 初期化・storeRegistry 登録処理をファクトリへ集約
+- [ ] Dexie 初期化・VTStoreRegistry 登録処理をファクトリへ集約
   - 参考実装: route/spreadsheet worker (`packages/plugins/*/src/worker/RuntimeWorkerService.ts`)、`reference/packages/plugin-folder`
-  - やること: 共通ヘルパー化（loader + storeRegistry）、ModuleLoader からの呼び出し統合
+  - やること: 共通ヘルパー化（loader + VTStoreRegistry）、ModuleLoader からの呼び出し統合
 - [ ] 代表プラグインの typecheck/test を実行し記録
 - [ ] Location / Timeline plugin: 現状 `load*EntitiesDbModule` が存在せず Dexie preload の対象外。Dexie バックエンド導入方針を決定し、必要であればヘルパーを実装して WorkerModuleLoader に統合
   - 参考実装: shape plugin の Dexie 登録、`reference/packages/plugin-folder` の旧 worker

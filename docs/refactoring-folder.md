@@ -67,7 +67,7 @@ mindmap
       InitializationChannel (progress events　DONE)
     Plugin Workers (monorepo)
       Core node-types (basemap/folder/route/spreadsheet/resolver/styler/shape　DONE)
-        load*EntitiesDbModule helpers + storeRegistry registration
+        load*EntitiesDbModule helpers + VTStoreRegistry registration
       Location worker [PLAN]
         Dexie preload整備・batch adapters連携
       Timeline worker [PLAN]
