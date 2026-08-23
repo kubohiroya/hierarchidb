@@ -103,7 +103,7 @@ jobs:
             validation_mode="full"
           fi
           case "${validation_mode}" in
-            affected|full) ;;
+            affected|full|skip) ;;
             *)
               echo "Unexpected validation mode: ${validation_mode}" >&2
               exit 1
@@ -141,3 +141,10 @@ jobs:
           set -euo pipefail
           echo "### Validation executed: repository-wide checks + full workspace build/lint" >> "${GITHUB_STEP_SUMMARY}"
           pnpm run ci:validate:full
+
+      - name: Skip validation
+        if: steps.validation-mode.outputs.mode == 'skip'
+        run: |
+          set -euo pipefail
+          echo "### Validation skipped" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Only documentation-only paths changed." >> "${GITHUB_STEP_SUMMARY}"

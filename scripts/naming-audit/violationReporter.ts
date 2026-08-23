@@ -127,12 +127,12 @@ export function reportNamingAuditComparison(
     }
 
     if (comparison.resolvedErrors.length > 0) {
-      console.log('\nResolved baseline errors require a baseline update:');
+      console.log('\nResolved baseline errors detected; baseline cleanup is handled separately:');
       for (const violation of comparison.resolvedErrors) {
-        console.log(`  ✖ [P${violation.pattern}] ${violation.subPackage}/${violation.file}`);
+        console.log(`  ✓ [P${violation.pattern}] ${violation.subPackage}/${violation.file}`);
       }
     }
   }
 
-  return comparison.newErrors.length > 0 || comparison.resolvedErrors.length > 0 ? 1 : 0;
+  return comparison.newErrors.length > 0 ? 1 : 0;
 }

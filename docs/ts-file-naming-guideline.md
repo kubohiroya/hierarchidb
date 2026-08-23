@@ -34,17 +34,18 @@ Pull Request のCIでは、base SHAから追加・変更・コピー・renameさ
 新規または悪化したerrorがある場合だけ終了コード `1` とする。変更範囲内の既存
 error解消数とwarning数の変化もCIログへ表示する。削除済みファイルは解析しない。
 
-監査スクリプト、固定baseline、またはNaming Audit workflow自体を変更した場合は、
-規則変更の影響を確認するためheadの全対象ファイルを解析する。CLIで
-`--changed-since <base-ref>`を指定しない場合も全対象ファイルを解析する。
+監査スクリプト、またはNaming Audit workflow自体を変更した場合は、規則変更の影響を
+確認するためheadの全対象ファイルを解析する。固定baselineだけの変更は通常PRの対象に
+せず、full scanトリガーにしない。CLIで`--changed-since <base-ref>`を指定しない
+場合も全対象ファイルを解析する。
 
 baselineレポートはJSON schemaを厳密に検証する。baselineファイルの欠落・破損、
 schema不一致は成功扱いにせず終了コード `2` とする。incremental scanで変更対象が
 0件になることは正常系とするが、full scanで対象が0件なら終了コード `2` とする。
 不正なbase refをfull scanへフォールバックさせない。
-固定baselineに記録されたerrorがheadで解消されている場合も、baseline更新漏れとして
-CIを失敗させる。命名修正PRでは修正と同じPRで`scripts/naming-audit-baseline.json`
-を更新する。
+固定baselineに記録されたerrorがheadで解消されている場合、通常PRではCIを失敗させず
+解消件数を表示する。baseline更新とbaseline integrity/full scanは通常PRから外し、
+`Naming Audit Baseline` workflow（scheduled / manual）で実施する。
 
 CI内部では次の固定baseline比較を使う。report-onlyモードはbaseline更新時にだけ
 使い、PRごとにbase worktreeやbase側レポートを生成しない。
