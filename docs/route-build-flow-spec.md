@@ -130,6 +130,33 @@ cache identity の正規仕様（SSOT）とする。
   suspend/completion/crash dialog surfaceへ接続する。canonical timingの欠落を
   draft timestampや`Date.now()`で補完しない。
 
+### canonical build input boundary
+
+- app / runtime bootstrap は route payload を opaque に扱い、`tabularSourceId`、
+  `selectedArrayByCountries`、`routeBuildInput.routes`、direct route fields を解釈しない。
+  bootstrap が行うのは `source='committed' | 'working-copy'` の slot 選択と
+  plugin canonical API への転送だけである。
+- route plugin の canonical API は payload validation 後、必ず
+  `RouteCanonicalBuildInputResolver` を通してから `RouteBuildSessionOrchestrator` へ
+  completed internal input を渡す。
+- external payload は次のいずれか1つだけを表す:
+  - direct-route: `routeBuildInput.kind='direct-route'` と direct route fields
+    (`startLocationId` / `endLocationId` / `lineGeometry` / `routeMode`)。
+  - selection-driven: `routeBuildInput.kind='selection-driven'`、`tabularSourceId`、
+    `selectedArrayByCountries`、任意の `locationNodeIds`。
+- direct-route fields と selection-driven fields の混在、どちらも存在しない payload、
+  空selection、5-cell legacy row、非boolean cell、不正国コード、空tabular source、
+  endpoint未解決、unsupported routeMode、解決後route 0件は task 生成前に失敗する。
+  どちらかの形式へ寄せる、空成果物として成功させる、別sourceへfallbackすることは禁止する。
+- `routeBuildInput.routes` は resolver 通過後の completed internal input 専用であり、
+  external payload に含めて start してはならない。resolved input は
+  `RouteBuildRouteInput[]` として location ID、始点/終点座標、routeMode、directionality metadata、
+  generation method/options を含み、session 内で selection や endpoint を再解決しない。
+- selection-driven resolver の決定的sort keyは
+  `routeMode / fromLocationId / toLocationId / source row identity` とする。同一payloadは
+  committed data と Working Copy のどちらから起動しても同じroute順序、source identity、
+  input hash、build behaviorを持つ。
+
 ### 内部パイプライン
 
 - `source` ステージ:
@@ -273,15 +300,17 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 
 ## canonical Worker start入力
 
-- Runtime bootstrapはroute nodeTypeの開始時だけTreeNodeの`draftData`を正規化し、
-  pluginへ渡すtransient入力に明示discriminator `routeBuildInput.kind`を追加する。
+- Runtime bootstrapはroute nodeTypeの`draftData`を解釈せず、canonical plugin build APIへ
+  payloadをopaqueに渡す。route固有入力の判定と解決はroute pluginの
+  `RouteCanonicalBuildInputResolver` が所有する。
 - `routeBuildInput.kind = "direct-route"` は`RouteEntityPayload.buildConfig / routeMode /
   startLocationId / endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を
   始点・終点座標として使う。
 - `routeBuildInput.kind = "selection-driven"` は`tabularSourceId`とstrict
-  `selectedArrayByCountries`からruntime `RouteMutationAPI.resolveIdeGsmRouteBuildRoutes`
-  が解決した`RouteBuildRouteInput[]`だけをpluginへ渡す。`draftData.routes`は永続入力SSOTとして
-  追加しない。
+  `selectedArrayByCountries`をexternal payloadとして受け取り、route pluginのcanonical
+  resolverがtabular rowと関連locationを解決して内部用`RouteBuildRouteInput[]`を生成する。
+  app bootstrapやruntime mutation APIは展開済みroutesを作らない。`draftData.routes`は
+  永続入力SSOTとして追加しない。
 - selection-driven startでは`selectedArrayByCountries`だけから選択対象を決め、未選択行を
   task化しない。location ID、始点/終点座標、route mode、directionality metadataは
   IDE-GSM rowと関連locationから解決済みの`RouteBuildRouteInput`に含める。

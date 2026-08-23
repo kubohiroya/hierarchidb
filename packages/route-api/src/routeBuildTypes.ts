@@ -25,9 +25,21 @@ export type RouteBuildStartInput =
   | { kind: 'direct-route' }
   | { kind: 'selection-driven'; routes: RouteBuildRouteInput[] };
 
-export type IdeGsmRouteBuildRoutesRequest = {
-  nodeId: NodeId;
+export type RouteDirectBuildExternalInput = {
+  routeBuildInput?: { kind: 'direct-route' };
+  startLocationId?: NodeId;
+  endLocationId?: NodeId;
+  lineGeometry?: unknown;
+  routeMode?: RouteMode;
+};
+
+export type RouteSelectionDrivenBuildExternalInput = {
+  routeBuildInput?: { kind: 'selection-driven' };
   tabularSourceId: string;
   selectedArrayByCountries: unknown;
   locationNodeIds?: NodeId[];
 };
+
+export type RouteCanonicalBuildExternalInput =
+  | RouteDirectBuildExternalInput
+  | RouteSelectionDrivenBuildExternalInput;

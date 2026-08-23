@@ -79,6 +79,11 @@ type RuntimeExportEntry = {
 };
 
 type YamlCanonicalDialogWriter = NonNullable<WorkerServiceOptions['yamlCanonicalDialogWriter']>;
+type RouteCanonicalBuildInputResolverConfigurator = (deps: {
+  treeQueryAPI: ReturnType<WorkerService['getQueryAPI']>;
+  locationQueryAPI: ReturnType<WorkerService['getLocationQueryAPI']>;
+  dbPrefix: string;
+}) => void;
 
 type ManualPluginSelf = typeof self & {
   __HIERARCHIDB_MANUAL_PLUGIN_DEFS__?: PluginDefinition[];
@@ -513,6 +518,22 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         reporter.reportStepProgress('Bootstrap services', 60);
         reporter.reportStepProgress('Bootstrap services', 100);
 
+        const routeModule = moduleEntries.find((entry) => entry.nodeType === ROUTE_NODE_TYPE)?.mod;
+        if (
+          routeModule !== null &&
+          typeof routeModule === 'object' &&
+          'configureRouteCanonicalBuildInputResolver' in routeModule &&
+          typeof routeModule.configureRouteCanonicalBuildInputResolver === 'function'
+        ) {
+          (
+            routeModule.configureRouteCanonicalBuildInputResolver as RouteCanonicalBuildInputResolverConfigurator
+          )({
+            treeQueryAPI: services.getQueryAPI(),
+            locationQueryAPI: services.getLocationQueryAPI(),
+            dbPrefix: databasePrefix,
+          });
+        }
+
         const servicesReadyAt = Date.now();
         options.messageTarget?.postMessage?.({
           type: 'SERVICES_READY',
@@ -751,78 +772,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           buildRuntimeAdapters.register(shapeRuntimeAdapter);
         }
 
-        const requireRoutePayloadRecord = (payload: unknown): Record<string, unknown> => {
-          if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
-            throw new Error('[worker bootstrap] route canonical payload must be an object');
-          }
-          return payload as Record<string, unknown>;
-        };
-
-        const hasRouteDirectInput = (draft: Record<string, unknown>): boolean =>
-          Object.hasOwn(draft, 'startLocationId') ||
-          Object.hasOwn(draft, 'endLocationId') ||
-          Object.hasOwn(draft, 'lineGeometry') ||
-          Object.hasOwn(draft, 'routeMode');
-
-        const hasRouteSelectionInput = (draft: Record<string, unknown>): boolean =>
-          Object.hasOwn(draft, 'tabularSourceId') ||
-          Object.hasOwn(draft, 'selectedArrayByCountries');
-
-        const requireRouteTabularSourceId = (value: unknown): string => {
-          if (typeof value !== 'string' || value.length === 0 || value !== value.trim()) {
-            throw new Error(
-              '[worker bootstrap] route selection-driven start requires canonical payload tabularSourceId'
-            );
-          }
-          return value;
-        };
-
-        const resolveRouteStartPayload = async (
-          nodeId: NodeId,
-          payload: unknown
-        ): Promise<unknown> => {
-          const draft = requireRoutePayloadRecord(payload);
-          const direct = hasRouteDirectInput(draft);
-          const selection = hasRouteSelectionInput(draft);
-          if (direct && selection) {
-            throw new Error(
-              '[worker bootstrap] route build start cannot mix direct-route and selection-driven inputs'
-            );
-          }
-          if (direct) {
-            return {
-              ...draft,
-              routeBuildInput: { kind: 'direct-route' },
-            };
-          }
-          if (!selection) {
-            throw new Error(
-              '[worker bootstrap] route build start requires either direct-route or selection-driven input'
-            );
-          }
-          const routes = await services.getRouteMutationAPI().resolveIdeGsmRouteBuildRoutes({
-            nodeId,
-            tabularSourceId: requireRouteTabularSourceId(draft.tabularSourceId),
-            selectedArrayByCountries: draft.selectedArrayByCountries,
-          });
-          const { tabularSourceId, selectedArrayByCountries, ...canonicalDraft } = draft;
-          void tabularSourceId;
-          void selectedArrayByCountries;
-          return {
-            ...canonicalDraft,
-            routeBuildInput: { kind: 'selection-driven', routes },
-          };
-        };
-
-        const resolveBuildStartPayload = async (
-          nodeType: NodeType,
-          nodeId: NodeId,
-          payload: unknown
-        ): Promise<unknown> => {
-          if (nodeType !== ROUTE_NODE_TYPE) return payload;
-          return resolveRouteStartPayload(nodeId, payload);
-        };
-
         const runStartBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
@@ -838,12 +787,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               source: inputSource,
               treeNode,
             });
-            const resolvedPayload = await resolveBuildStartPayload(nodeType, nodeId, input.payload);
             const status = await buildApi.startBuildSession({
               nodeId,
               input: {
                 source: input.source,
-                payload: resolvedPayload,
+                payload: input.payload,
               },
             });
             if (status.nodeId !== nodeId) {

@@ -35,7 +35,7 @@ route pipelineは次の3ステージを、この順序で実行する。
 - route node ID
 - Step2 data-source selection
 - Step3 `selectedArrayByCountries`
-- data-source strategy / adapterが解決したlocation参照と始点/終点Point
+- canonical route input resolver が解決したlocation参照と始点/終点Point
 - `RouteBuildConfig.sourceConfig`
 - route generation method/options
 
@@ -53,6 +53,14 @@ engine、location、routeMode、座標、generation設定が欠落・不正な�
 別engine、直線、大圏航路、cacheへの暗黙fallbackは行わない。
 session内では曖昧なlocation検索を行わず、admin name/codeは正規`RouteFeature`をSSOTとして
 source cache metadataへ重複保存しない。
+
+selection-driven start の `tabularSourceId` / `selectedArrayByCountries` は
+route plugin の canonical boundary で `RouteBuildRouteInput[]` に解決する。
+app bootstrap や runtime-worker の汎用 start adapter は route固有fieldを参照しない。
+direct-route と selection-driven の混在、external payload の `routeBuildInput.routes`、
+空selection、空解決結果、endpoint未解決は source task 作成前に失敗させる。
+resolver output の順序は route mode、始点location ID、終点location ID、source row identity で
+決定的に固定し、committed / working-copy の input source によって分岐しない。
 
 ### source keyと入力署名
 
