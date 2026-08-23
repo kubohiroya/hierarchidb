@@ -1,6 +1,11 @@
 import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const startRequest = (nodeId: string, payload: unknown) => ({
+  nodeId,
+  input: { source: 'working-copy' as const, payload },
+});
+
 const mocks = vi.hoisted(() => ({
   startLocationBuildSession: vi.fn(),
   getBuildSessionStatus: vi.fn(),
@@ -49,9 +54,9 @@ describe('location canonicalBuildAPI contract', () => {
     await expect(
       canonicalBuildAPI.startBuildSession({
         nodeId: 'location-contract-node',
-        draftData: {},
+        input: { source: 'working-copy', payload: {} },
       })
-    ).rejects.toThrow('draftData.dataSource is not supported by the Worker build session');
+    ).rejects.toThrow('payload.dataSource is not supported by the Worker build session');
   });
 
   it('delegates commands, queries, and subscriptions through the canonical surface', async () => {
@@ -84,7 +89,9 @@ describe('location canonicalBuildAPI contract', () => {
       },
     };
 
-    await expect(canonicalBuildAPI.startBuildSession({ nodeId, draftData })).resolves.toBe(status);
+    await expect(
+      canonicalBuildAPI.startBuildSession(startRequest(nodeId, draftData))
+    ).resolves.toBe(status);
     expect(mocks.startLocationBuildSession).toHaveBeenCalledWith(nodeId, {
       searchConfigs: [
         {
@@ -117,31 +124,29 @@ describe('location canonicalBuildAPI contract', () => {
 
   it('rejects a selection matrix without selected location types', async () => {
     await expect(
-      canonicalBuildAPI.startBuildSession({
-        nodeId: 'location-contract-node',
-        draftData: {
+      canonicalBuildAPI.startBuildSession(
+        startRequest('location-contract-node', {
           dataSource: 'openstreetmap',
           concurrentDownloads: 2,
           selectedArrayByCountries: {
             JP: [false, false, false, false, false],
           },
-        },
-      })
+        })
+      )
     ).rejects.toThrow('must select at least one location type');
   });
 
   it('rejects a non-canonical country key instead of normalizing it', async () => {
     await expect(
-      canonicalBuildAPI.startBuildSession({
-        nodeId: 'location-contract-node',
-        draftData: {
+      canonicalBuildAPI.startBuildSession(
+        startRequest('location-contract-node', {
           dataSource: 'openstreetmap',
           concurrentDownloads: 2,
           selectedArrayByCountries: {
             jp: [true, false, false, false, false],
           },
-        },
-      })
+        })
+      )
     ).rejects.toThrow('must be an uppercase ISO 3166-1 alpha-2 code: jp');
   });
 
@@ -149,16 +154,15 @@ describe('location canonicalBuildAPI contract', () => {
     'rejects the unimplemented %s worker data source',
     async (dataSource) => {
       await expect(
-        canonicalBuildAPI.startBuildSession({
-          nodeId: 'location-contract-node',
-          draftData: {
+        canonicalBuildAPI.startBuildSession(
+          startRequest('location-contract-node', {
             dataSource,
             concurrentDownloads: 2,
             selectedArrayByCountries: {
               JP: [true, false, false, false, false],
             },
-          },
-        })
+          })
+        )
       ).rejects.toThrow('is not supported by the Worker build session');
     }
   );

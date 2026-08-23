@@ -1,5 +1,7 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 
+export type BuildSessionInputSource = 'committed' | 'working-copy';
+
 export type BuildSessionPersistedStatus =
   | 'idle'
   | 'startAccepted'
@@ -27,7 +29,11 @@ export interface BuildSessionControlPort {
     nodeId: NodeId,
     callback: BuildSessionSubscriptionCallback
   ): Promise<() => void>;
-  startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  startBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    inputSource: BuildSessionInputSource
+  ): Promise<void>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   nextBuildStageRequest(nodeType: NodeType, nodeId: NodeId): Promise<void>;

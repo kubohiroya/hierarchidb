@@ -2,6 +2,15 @@ import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
+const startRequest = (
+  nodeId: string,
+  payload: unknown,
+  source: 'committed' | 'working-copy' = 'working-copy'
+) => ({
+  nodeId,
+  input: { source, payload },
+});
+
 const shapeBuildAPIMocks = vi.hoisted(() => ({
   startBuildSession: vi.fn(),
   getBuildSession: vi.fn(),
@@ -105,11 +114,8 @@ describe('shape canonicalBuildAPI contract', () => {
 
   it('rejects a start request without explicit build config', async () => {
     await expect(
-      canonicalBuildAPI.startBuildSession({
-        nodeId: 'shape-contract-node',
-        draftData: {},
-      })
-    ).rejects.toThrow('draftData.buildConfig is required');
+      canonicalBuildAPI.startBuildSession(startRequest('shape-contract-node', {}))
+    ).rejects.toThrow('payload.buildConfig is required');
   });
 
   it('does not synthesize a stage before the worker has started one', async () => {
@@ -129,12 +135,11 @@ describe('shape canonicalBuildAPI contract', () => {
       },
     });
 
-    const status = await canonicalBuildAPI.startBuildSession({
-      nodeId: 'shape-contract-node',
-      draftData: {
+    const status = await canonicalBuildAPI.startBuildSession(
+      startRequest('shape-contract-node', {
         buildConfig: DEFAULT_BUILD_CONFIG,
-      },
-    });
+      })
+    );
 
     expect(status.progress).not.toHaveProperty('stage');
   });
@@ -169,16 +174,11 @@ describe('shape canonicalBuildAPI contract', () => {
       subscribe.mockReturnValue(unsubscribe);
     }
 
-    const request = {
-      nodeId,
-      draftData: {
-        buildConfig: DEFAULT_BUILD_CONFIG,
-      },
-    };
+    const request = startRequest(nodeId, { buildConfig: DEFAULT_BUILD_CONFIG }, 'committed');
     await expect(canonicalBuildAPI.startBuildSession(request)).resolves.toMatchObject({ nodeId });
     expect(shapeBuildAPIMocks.startBuildSession).toHaveBeenCalledWith(
       nodeId,
-      request.draftData.buildConfig,
+      (request.input.payload as { buildConfig: unknown }).buildConfig,
       undefined,
       []
     );
@@ -209,42 +209,39 @@ describe('shape canonicalBuildAPI contract', () => {
 
   it('rejects a build config with missing required leaf values', async () => {
     await expect(
-      canonicalBuildAPI.startBuildSession({
-        nodeId: 'shape-contract-node',
-        draftData: {
+      canonicalBuildAPI.startBuildSession(
+        startRequest('shape-contract-node', {
           buildConfig: {
             dataSourceName: 'geoboundaries',
             sourceConfig: {},
             geometryConfig: {},
             tileEmitConfig: {},
           },
-        },
-      })
-    ).rejects.toThrow('draftData.buildConfig.sourceConfig.deleteOnComplete must be boolean');
+        })
+      )
+    ).rejects.toThrow('payload.buildConfig.sourceConfig.deleteOnComplete must be boolean');
   });
 
   it('rejects a processing config with missing required leaf values', async () => {
     await expect(
-      canonicalBuildAPI.startBuildSession({
-        nodeId: 'shape-contract-node',
-        draftData: {
+      canonicalBuildAPI.startBuildSession(
+        startRequest('shape-contract-node', {
           buildConfig: DEFAULT_BUILD_CONFIG,
           processingConfig: {
             source: {},
             geometry: {},
             tileEmit: {},
           },
-        },
-      })
-    ).rejects.toThrow('draftData.processingConfig.source.maxConcurrent must be an integer in 1..4');
+        })
+      )
+    ).rejects.toThrow('payload.processingConfig.source.maxConcurrent must be an integer in 1..4');
     expect(shapeBuildAPIMocks.startBuildSession).not.toHaveBeenCalled();
   });
 
   it('rejects dynamic concurrency sampling that the runtime would otherwise round up', async () => {
     await expect(
-      canonicalBuildAPI.startBuildSession({
-        nodeId: 'shape-contract-node',
-        draftData: {
+      canonicalBuildAPI.startBuildSession(
+        startRequest('shape-contract-node', {
           buildConfig: DEFAULT_BUILD_CONFIG,
           processingConfig: {
             ...DEFAULT_PROCESSING_CONFIG,
@@ -256,10 +253,10 @@ describe('shape canonicalBuildAPI contract', () => {
               },
             },
           },
-        },
-      })
+        })
+      )
     ).rejects.toThrow(
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.sampleMs must be an integer at least 200'
+      'payload.processingConfig.tileEmit.dynamicConcurrency.sampleMs must be an integer at least 200'
     );
     expect(shapeBuildAPIMocks.startBuildSession).not.toHaveBeenCalled();
   });

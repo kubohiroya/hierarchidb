@@ -3,8 +3,11 @@ import type {
   BuildProgress,
   BuildSessionStatus,
   CanonicalPluginBuildAPI,
+  CanonicalPluginBuildStartRequest,
+  LegacyCanonicalPluginBuildStartRequest,
   StageKey,
 } from '@hierarchidb/build-api';
+import { isLegacyCanonicalPluginBuildStartRequest } from '@hierarchidb/build-api';
 import { requireCanonicalStageBuildConfig } from '@hierarchidb/build-runtime-services';
 import type { BuildSession, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
 import { setShapeCorsProxyBaseURL } from '~/services/utils/setShapeCorsProxyBaseURL';
@@ -85,102 +88,99 @@ const requireFiniteNumberInRange = (
 const requireBuildConfig = (value: unknown): ShapeBuildConfig => {
   const config = requireCanonicalStageBuildConfig(value, {
     errorPrefix: 'shape canonical build API',
-    label: 'draftData.buildConfig',
+    label: 'payload.buildConfig',
     requireSourceExecutionFields: false,
     requireGeometryExecutionFields: false,
     requireTileExecutionFields: false,
   });
   if (typeof config.dataSourceName !== 'string' || config.dataSourceName.length === 0) {
     throw new Error(
-      '[shape canonical build API] draftData.buildConfig.dataSourceName must be a non-empty string'
+      '[shape canonical build API] payload.buildConfig.dataSourceName must be a non-empty string'
     );
   }
   return value as ShapeBuildConfig;
 };
 
 const requireProcessingConfig = (value: unknown): ShapeProcessingConfig => {
-  const config = requireRecord(value, 'draftData.processingConfig');
-  const source = requireRecord(config.source, 'draftData.processingConfig.source');
+  const config = requireRecord(value, 'payload.processingConfig');
+  const source = requireRecord(config.source, 'payload.processingConfig.source');
   requireIntegerInRange(
     source.maxConcurrent,
-    'draftData.processingConfig.source.maxConcurrent',
+    'payload.processingConfig.source.maxConcurrent',
     1,
     4
   );
-  requireIntegerInRange(source.retryAttempts, 'draftData.processingConfig.source.retryAttempts', 0);
-  requireFiniteNumberInRange(source.retryDelay, 'draftData.processingConfig.source.retryDelay', 0);
-  requireIntegerInRange(source.retryLimit, 'draftData.processingConfig.source.retryLimit', 0);
+  requireIntegerInRange(source.retryAttempts, 'payload.processingConfig.source.retryAttempts', 0);
+  requireFiniteNumberInRange(source.retryDelay, 'payload.processingConfig.source.retryDelay', 0);
+  requireIntegerInRange(source.retryLimit, 'payload.processingConfig.source.retryLimit', 0);
   if (source.retryBackoff !== 'linear' && source.retryBackoff !== 'exponential') {
     throw new Error(
-      '[shape canonical build API] draftData.processingConfig.source.retryBackoff must be linear or exponential'
+      '[shape canonical build API] payload.processingConfig.source.retryBackoff must be linear or exponential'
     );
   }
 
-  const geometry = requireRecord(config.geometry, 'draftData.processingConfig.geometry');
+  const geometry = requireRecord(config.geometry, 'payload.processingConfig.geometry');
   requireIntegerInRange(
     geometry.maxConcurrent,
-    'draftData.processingConfig.geometry.maxConcurrent',
+    'payload.processingConfig.geometry.maxConcurrent',
     1,
     8
   );
 
-  const tileEmit = requireRecord(config.tileEmit, 'draftData.processingConfig.tileEmit');
+  const tileEmit = requireRecord(config.tileEmit, 'payload.processingConfig.tileEmit');
   requireIntegerInRange(
     tileEmit.maxConcurrent,
-    'draftData.processingConfig.tileEmit.maxConcurrent',
+    'payload.processingConfig.tileEmit.maxConcurrent',
     1
   );
   if (tileEmit.dynamicConcurrency !== undefined) {
     const dynamic = requireRecord(
       tileEmit.dynamicConcurrency,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency'
+      'payload.processingConfig.tileEmit.dynamicConcurrency'
     );
-    requireBoolean(
-      dynamic.enabled,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.enabled'
-    );
+    requireBoolean(dynamic.enabled, 'payload.processingConfig.tileEmit.dynamicConcurrency.enabled');
     const minimum = requireIntegerInRange(
       dynamic.minConcurrent,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.minConcurrent',
+      'payload.processingConfig.tileEmit.dynamicConcurrency.minConcurrent',
       1
     );
     if (dynamic.maxConcurrent !== undefined) {
       const maximum = requireIntegerInRange(
         dynamic.maxConcurrent,
-        'draftData.processingConfig.tileEmit.dynamicConcurrency.maxConcurrent',
+        'payload.processingConfig.tileEmit.dynamicConcurrency.maxConcurrent',
         1
       );
       if (maximum < minimum) {
         throw new Error(
-          '[shape canonical build API] draftData.processingConfig.tileEmit.dynamicConcurrency.maxConcurrent must be greater than or equal to minConcurrent'
+          '[shape canonical build API] payload.processingConfig.tileEmit.dynamicConcurrency.maxConcurrent must be greater than or equal to minConcurrent'
         );
       }
     }
     const highWatermark = requireFiniteNumberInRange(
       dynamic.highWatermark,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.highWatermark',
+      'payload.processingConfig.tileEmit.dynamicConcurrency.highWatermark',
       0,
       1
     );
     const lowWatermark = requireFiniteNumberInRange(
       dynamic.lowWatermark,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.lowWatermark',
+      'payload.processingConfig.tileEmit.dynamicConcurrency.lowWatermark',
       0,
       1
     );
     if (lowWatermark >= highWatermark) {
       throw new Error(
-        '[shape canonical build API] draftData.processingConfig.tileEmit.dynamicConcurrency.lowWatermark must be less than highWatermark'
+        '[shape canonical build API] payload.processingConfig.tileEmit.dynamicConcurrency.lowWatermark must be less than highWatermark'
       );
     }
     requireIntegerInRange(
       dynamic.adjustStep,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.adjustStep',
+      'payload.processingConfig.tileEmit.dynamicConcurrency.adjustStep',
       1
     );
     requireIntegerInRange(
       dynamic.sampleMs,
-      'draftData.processingConfig.tileEmit.dynamicConcurrency.sampleMs',
+      'payload.processingConfig.tileEmit.dynamicConcurrency.sampleMs',
       200
     );
   }
@@ -269,11 +269,17 @@ const getBuildSessionStatus = async (
 ): Promise<BuildSessionStatus> =>
   toBuildSessionStatus(await shapeBuildAPI.getBuildSession(nodeId), nodeId);
 
+const resolveStartPayload = (
+  request: CanonicalPluginBuildStartRequest | LegacyCanonicalPluginBuildStartRequest
+): unknown =>
+  isLegacyCanonicalPluginBuildStartRequest(request) ? request.draftData : request.input.payload;
+
 export const canonicalBuildAPI = {
-  startBuildSession: async ({ nodeId, draftData }) => {
-    const draft = requireRecord(draftData, 'draftData');
+  startBuildSession: async (request) => {
+    const { nodeId } = request;
+    const draft = requireRecord(resolveStartPayload(request), 'payload');
     if (!Object.hasOwn(draft, 'buildConfig')) {
-      throw new Error('[shape canonical build API] draftData.buildConfig is required');
+      throw new Error('[shape canonical build API] payload.buildConfig is required');
     }
     const buildConfig = requireBuildConfig(draft.buildConfig);
     const processingConfig = Object.hasOwn(draft, 'processingConfig')

@@ -11,6 +11,21 @@
 - タスク（Task）: ステージ内で生成物を作成/更新する処理単位。タスクステータスの定義は「タスクステータス定義」セクションを参照。
 - ステージ（Stage）: `source` → `geometry` → `tileEmit` の順序で進行する処理単位。
 - ビルドセッション（Build Session）: 複数ステージを順に実行する一連の処理。再開可能な状態を永続化する。ライフサイクルフェーズの定義は「ビルドセッションライフサイクル」セクションを参照。
+- committed payload: commit 済み `TreeNode.data` に保存された、再現実行・外部 runner・CLI の正規入力となる完成済み設定。
+- Working Copy payload: UI dialog が編集中に `TreeNode.draftData` に保存する作業中設定。保存形式は `Partial<TData>` を許すが、build boundary を通過する時点では plugin ごとの completed payload validator を満たさなければならない。
+- completed internal input: build boundary で source 解決、route selection 解決、plugin schema validation を通過した、task 生成に渡せる内部入力。
+
+## Canonical build start input boundary
+
+canonical build start は storage field 名を request 契約に露出しない。呼び出し側は `source: 'committed' | 'working-copy'` と `payload` を持つ input envelope を明示する。
+
+- `source='committed'` は `TreeNode.data` だけを読む。`data` が欠落、不完全、不正な場合に `draftData` へ fallback してはならない。
+- `source='working-copy'` は `TreeNode.draftData` だけを読む。`draftData` が欠落、不完全、不正な場合に `data` へ fallback してはならない。
+- runtime resolver は `nodeId`、`nodeType`、`source`、`TreeNode.version`、指定 slot の存在、plain object payload を検証してから plugin canonical API へ渡す。
+- shape/location/route plugin は `unknown` payload を completed payload validator で検証し、必須値欠落・型不正・範囲外を task 生成前に fail-fast する。
+- route の selection-driven build は、committed payload または Working Copy payload の `tabularSourceId` / `selectedArrayByCountries` から source planning 前に正規 `routeBuildInput` を解決する。direct-route 入力と selection-driven 入力を混在させない。
+- resolver 通過後の cache identity、auth-required、artifact reconcile、failure semantics は input source に依存して分岐しない。同一 payload は同一 input hash と同一 build behavior を持つ。
+- 旧 `draftData` request は移行中の rollback surface として隔離される。正規 path と新規 call site は input envelope を使用する。
 
 ## ビルドセッションライフサイクル
 

@@ -1,9 +1,22 @@
+export {
+  CanonicalBuildInputError,
+  type CanonicalBuildInputErrorCode,
+  type CanonicalBuildInputErrorDetails,
+} from './CanonicalBuildInputError.js';
 export type {
+  CanonicalBuildInputEnvelope,
+  CanonicalBuildInputSource,
   CanonicalPluginBuildAPI,
   CanonicalPluginBuildStartRequest,
   CanonicalPluginBuildUnsubscribe,
+  LegacyCanonicalPluginBuildStartRequest,
 } from './CanonicalPluginBuildAPI.js';
-export { canonicalPluginBuildAPIMethodNames } from './CanonicalPluginBuildAPI.js';
+export {
+  canonicalBuildInputSources,
+  canonicalPluginBuildAPIMethodNames,
+  isCanonicalBuildInputSource,
+  isLegacyCanonicalPluginBuildStartRequest,
+} from './CanonicalPluginBuildAPI.js';
 export * from './isBuildControlAPIV2Enabled.js';
 export type {
   BuildContinuationPolicy,

@@ -1,4 +1,7 @@
-import type { BuildStatus as CanonicalBuildStatus } from '@hierarchidb/build-api';
+import type {
+  CanonicalBuildInputSource,
+  BuildStatus as CanonicalBuildStatus,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStage, BuildStatus as UiBuildStatus } from '@hierarchidb/ui-build-progress';
 import { CloudDownload } from '@mui/icons-material';
@@ -88,8 +91,11 @@ const hasRequiredFields = (nodeId: NodeId | null, draft: Partial<LocationEntity>
 const createCommandTransport = (draft: Partial<LocationEntity> | null) => ({
   kind: 'same-realm' as const,
   commands: {
-    startBuildSession: (nodeId: NodeId) =>
-      canonicalBuildAPI.startBuildSession({ nodeId, draftData: draft ?? {} }),
+    startBuildSession: (nodeId: NodeId, inputSource: CanonicalBuildInputSource) =>
+      canonicalBuildAPI.startBuildSession({
+        nodeId,
+        input: { source: inputSource, payload: draft ?? {} },
+      }),
     pauseBuildSession: (nodeId: NodeId, reason?: string) =>
       canonicalBuildAPI.pauseBuildSession(nodeId, reason),
     cancelQueuedBuildSession: (nodeId: NodeId, reason?: string) =>

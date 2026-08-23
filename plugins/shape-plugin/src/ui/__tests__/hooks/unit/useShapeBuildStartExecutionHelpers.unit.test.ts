@@ -49,7 +49,11 @@ describe('useShapeBuildStartExecutionHelpers', () => {
       advanceBuildSessionTransitionPhase,
     });
 
-    expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith('shape', 'node-start-test');
+    expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith(
+      'shape',
+      'node-start-test',
+      'working-copy'
+    );
     expect(beginBuildStartupStep).toHaveBeenCalledWith(
       'payload-build',
       expect.objectContaining({
@@ -101,7 +105,8 @@ describe('useShapeBuildStartExecutionHelpers', () => {
 
     expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith(
       'shape',
-      'node-resume-label-test'
+      'node-resume-label-test',
+      'working-copy'
     );
     expect(result.statusResult.status).toBe('running');
   });

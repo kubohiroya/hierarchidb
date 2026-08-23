@@ -36,12 +36,36 @@ export interface CanonicalPluginBuildAPI {
   ): CanonicalPluginBuildUnsubscribe | Promise<CanonicalPluginBuildUnsubscribe>;
 }
 
+export type CanonicalBuildInputSource = 'committed' | 'working-copy';
+
+export type CanonicalBuildInputEnvelope = {
+  source: CanonicalBuildInputSource;
+  payload: unknown;
+};
+
 export type CanonicalPluginBuildStartRequest = {
+  nodeId: NodeId;
+  input: CanonicalBuildInputEnvelope;
+};
+
+export type LegacyCanonicalPluginBuildStartRequest = {
   nodeId: NodeId;
   draftData: unknown;
 };
 
 export type CanonicalPluginBuildUnsubscribe = () => void;
+
+export const canonicalBuildInputSources = [
+  'committed',
+  'working-copy',
+] as const satisfies readonly CanonicalBuildInputSource[];
+
+export const isCanonicalBuildInputSource = (value: unknown): value is CanonicalBuildInputSource =>
+  value === 'committed' || value === 'working-copy';
+
+export const isLegacyCanonicalPluginBuildStartRequest = (
+  request: CanonicalPluginBuildStartRequest | LegacyCanonicalPluginBuildStartRequest
+): request is LegacyCanonicalPluginBuildStartRequest => 'draftData' in request;
 
 export const canonicalPluginBuildAPIMethodNames = [
   'startBuildSession',

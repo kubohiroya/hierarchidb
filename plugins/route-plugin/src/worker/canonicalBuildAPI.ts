@@ -1,4 +1,9 @@
-import type { CanonicalPluginBuildAPI } from '@hierarchidb/build-api';
+import {
+  type CanonicalPluginBuildAPI,
+  type CanonicalPluginBuildStartRequest,
+  isLegacyCanonicalPluginBuildStartRequest,
+  type LegacyCanonicalPluginBuildStartRequest,
+} from '@hierarchidb/build-api';
 import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
@@ -57,24 +62,24 @@ const requireRouteMode = (value: unknown, label: string): RouteMode => {
 };
 
 const requireDirectRouteInput = (draft: Record<string, unknown>): RouteBuildRouteInput => {
-  const startLocationId = requireNodeId(draft.startLocationId, 'draftData.startLocationId');
-  const endLocationId = requireNodeId(draft.endLocationId, 'draftData.endLocationId');
+  const startLocationId = requireNodeId(draft.startLocationId, 'payload.startLocationId');
+  const endLocationId = requireNodeId(draft.endLocationId, 'payload.endLocationId');
   if (!Array.isArray(draft.lineGeometry) || draft.lineGeometry.length < 2) {
     throw new Error(
-      '[route canonical build API] draftData.lineGeometry must contain at least two coordinates'
+      '[route canonical build API] payload.lineGeometry must contain at least two coordinates'
     );
   }
-  const startCoordinates = requireCoordinate(draft.lineGeometry[0], 'draftData.lineGeometry[0]');
+  const startCoordinates = requireCoordinate(draft.lineGeometry[0], 'payload.lineGeometry[0]');
   const endCoordinates = requireCoordinate(
     draft.lineGeometry[draft.lineGeometry.length - 1],
-    `draftData.lineGeometry[${String(draft.lineGeometry.length - 1)}]`
+    `payload.lineGeometry[${String(draft.lineGeometry.length - 1)}]`
   );
   return {
     startLocationId,
     endLocationId,
     startCoordinates,
     endCoordinates,
-    routeMode: requireRouteMode(draft.routeMode, 'draftData.routeMode'),
+    routeMode: requireRouteMode(draft.routeMode, 'payload.routeMode'),
   };
 };
 
@@ -88,7 +93,7 @@ const hasSelectionDrivenInput = (draft: Record<string, unknown>): boolean =>
   Object.hasOwn(draft, 'tabularSourceId') || Object.hasOwn(draft, 'selectedArrayByCountries');
 
 const requireRouteBuildStartInput = (draft: Record<string, unknown>): RouteBuildStartInput => {
-  const startInput = requireRecord(draft.routeBuildInput, 'draftData.routeBuildInput');
+  const startInput = requireRecord(draft.routeBuildInput, 'payload.routeBuildInput');
   const kind = startInput.kind;
   if (kind === 'direct-route') {
     if (hasSelectionDrivenInput(draft)) {
@@ -106,7 +111,7 @@ const requireRouteBuildStartInput = (draft: Record<string, unknown>): RouteBuild
     }
     if (!Array.isArray(startInput.routes) || startInput.routes.length === 0) {
       throw new Error(
-        '[route canonical build API] draftData.routeBuildInput.routes must contain at least one resolved route'
+        '[route canonical build API] payload.routeBuildInput.routes must contain at least one resolved route'
       );
     }
     return {
@@ -115,39 +120,39 @@ const requireRouteBuildStartInput = (draft: Record<string, unknown>): RouteBuild
     };
   }
   throw new Error(
-    `[route canonical build API] draftData.routeBuildInput.kind is unsupported: ${String(kind)}`
+    `[route canonical build API] payload.routeBuildInput.kind is unsupported: ${String(kind)}`
   );
 };
 
 const requireResolvedRouteInput = (value: unknown, index: number): RouteBuildRouteInput => {
-  const route = requireRecord(value, `draftData.routeBuildInput.routes[${String(index)}]`);
+  const route = requireRecord(value, `payload.routeBuildInput.routes[${String(index)}]`);
   return {
     startLocationId: requireNodeId(
       route.startLocationId,
-      `draftData.routeBuildInput.routes[${String(index)}].startLocationId`
+      `payload.routeBuildInput.routes[${String(index)}].startLocationId`
     ),
     endLocationId: requireNodeId(
       route.endLocationId,
-      `draftData.routeBuildInput.routes[${String(index)}].endLocationId`
+      `payload.routeBuildInput.routes[${String(index)}].endLocationId`
     ),
     startCoordinates: requireCoordinate(
       route.startCoordinates,
-      `draftData.routeBuildInput.routes[${String(index)}].startCoordinates`
+      `payload.routeBuildInput.routes[${String(index)}].startCoordinates`
     ),
     endCoordinates: requireCoordinate(
       route.endCoordinates,
-      `draftData.routeBuildInput.routes[${String(index)}].endCoordinates`
+      `payload.routeBuildInput.routes[${String(index)}].endCoordinates`
     ),
     routeMode: requireRouteMode(
       route.routeMode,
-      `draftData.routeBuildInput.routes[${String(index)}].routeMode`
+      `payload.routeBuildInput.routes[${String(index)}].routeMode`
     ),
     ...(route.metadata === undefined
       ? {}
       : {
           metadata: requireRouteMetadata(
             route.metadata,
-            `draftData.routeBuildInput.routes[${String(index)}].metadata`
+            `payload.routeBuildInput.routes[${String(index)}].metadata`
           ),
         }),
   };
@@ -166,11 +171,17 @@ const requireRouteMetadata = (
   return record as NonNullable<RouteBuildRouteInput['metadata']>;
 };
 
+const resolveStartPayload = (
+  request: CanonicalPluginBuildStartRequest | LegacyCanonicalPluginBuildStartRequest
+): unknown =>
+  isLegacyCanonicalPluginBuildStartRequest(request) ? request.draftData : request.input.payload;
+
 export const canonicalBuildAPI = {
-  startBuildSession: async ({ nodeId, draftData }) => {
-    const draft = requireRecord(draftData, 'draftData');
+  startBuildSession: async (request) => {
+    const { nodeId } = request;
+    const draft = requireRecord(resolveStartPayload(request), 'payload');
     if (!Object.hasOwn(draft, 'buildConfig')) {
-      throw new Error('[route canonical build API] draftData.buildConfig is required');
+      throw new Error('[route canonical build API] payload.buildConfig is required');
     }
     const buildConfig = requireRouteBuildConfig(draft.buildConfig);
     const startInput = requireRouteBuildStartInput(draft);

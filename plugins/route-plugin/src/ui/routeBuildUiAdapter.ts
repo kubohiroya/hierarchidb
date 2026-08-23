@@ -197,6 +197,7 @@ export const routeBuildUiAdapter = {
   commandTransport: {
     kind: 'worker' as const,
     nodeType: PLUGIN_NODE_TYPE,
+    inputSource: 'working-copy' as const,
   },
   resolveStageId,
   resolveUiBuildStatus,

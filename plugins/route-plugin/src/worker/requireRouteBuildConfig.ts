@@ -12,52 +12,52 @@ const ROUTE_GENERATION_METHODS = new Set<RouteGenerationMethod>([
 export const requireRouteBuildConfig = (value: unknown): RouteBuildConfig => {
   const config = requireCanonicalStageBuildConfig(value, {
     errorPrefix: 'route canonical build API',
-    label: 'draftData.buildConfig',
+    label: 'payload.buildConfig',
     requireSourceExecutionFields: true,
     requireGeometryExecutionFields: true,
     requireTileExecutionFields: true,
   });
   requireRouteGeneration(config.routeGeneration);
-  requireOptionalConfig(config.cleanupConfig, 'draftData.buildConfig.cleanupConfig');
+  requireOptionalConfig(config.cleanupConfig, 'payload.buildConfig.cleanupConfig');
   requireRouteGeometryConfig(config.geometryConfig, config.routeGeometryConfig);
-  requireOptionalConfig(config.locationResolution, 'draftData.buildConfig.locationResolution');
-  requireOptionalConfig(config.validation, 'draftData.buildConfig.validation');
-  requireOptionalConfig(config.laneCaps, 'draftData.buildConfig.laneCaps');
+  requireOptionalConfig(config.locationResolution, 'payload.buildConfig.locationResolution');
+  requireOptionalConfig(config.validation, 'payload.buildConfig.validation');
+  requireOptionalConfig(config.laneCaps, 'payload.buildConfig.laneCaps');
   return value as RouteBuildConfig;
 };
 
 const requireRouteGeometryConfig = (geometryValue: unknown, routeValue: unknown): void => {
-  const geometry = requireRecord(geometryValue, 'draftData.buildConfig.geometryConfig');
-  const route = requireRecord(routeValue, 'draftData.buildConfig.routeGeometryConfig');
+  const geometry = requireRecord(geometryValue, 'payload.buildConfig.geometryConfig');
+  const route = requireRecord(routeValue, 'payload.buildConfig.routeGeometryConfig');
   const boundaries = requireStrictZoomBoundaries(
     geometry.zoomBandBoundaries,
-    'draftData.buildConfig.geometryConfig.zoomBandBoundaries'
+    'payload.buildConfig.geometryConfig.zoomBandBoundaries'
   );
   if (geometry.enableFeatureFiltering !== true) {
     throw new Error(
-      '[route canonical build API] draftData.buildConfig.geometryConfig.enableFeatureFiltering must be true'
+      '[route canonical build API] payload.buildConfig.geometryConfig.enableFeatureFiltering must be true'
     );
   }
   requireEnum(
     geometry.geometryEngine,
     new Set(['turf']),
-    'draftData.buildConfig.geometryConfig.geometryEngine'
+    'payload.buildConfig.geometryConfig.geometryEngine'
   );
   requireEnum(
     geometry.simplifyAlgorithm,
     new Set(['geojson']),
-    'draftData.buildConfig.geometryConfig.simplifyAlgorithm'
+    'payload.buildConfig.geometryConfig.simplifyAlgorithm'
   );
   const bandCount = boundaries.length - 1;
   requireBandValues(
     route.minDistanceMetersByBand,
     bandCount,
-    'draftData.buildConfig.routeGeometryConfig.minDistanceMetersByBand'
+    'payload.buildConfig.routeGeometryConfig.minDistanceMetersByBand'
   );
   requireBandValues(
     route.simplifyToleranceByBand,
     bandCount,
-    'draftData.buildConfig.routeGeometryConfig.simplifyToleranceByBand'
+    'payload.buildConfig.routeGeometryConfig.simplifyToleranceByBand'
   );
 };
 
@@ -100,19 +100,16 @@ const requireBandValues = (value: unknown, bandCount: number, label: string): vo
 };
 
 const requireRouteGeneration = (value: unknown): void => {
-  const config = requireRecord(value, 'draftData.buildConfig.routeGeneration');
+  const config = requireRecord(value, 'payload.buildConfig.routeGeneration');
   requireEnum(
     config.method,
     ROUTE_GENERATION_METHODS,
-    'draftData.buildConfig.routeGeneration.method'
+    'payload.buildConfig.routeGeneration.method'
   );
-  requireBoolean(config.parallel, 'draftData.buildConfig.routeGeneration.parallel');
-  requirePositiveInteger(
-    config.maxConcurrent,
-    'draftData.buildConfig.routeGeneration.maxConcurrent'
-  );
-  requireBoolean(config.retryOnFailure, 'draftData.buildConfig.routeGeneration.retryOnFailure');
-  requireNonNegativeInteger(config.maxRetries, 'draftData.buildConfig.routeGeneration.maxRetries');
+  requireBoolean(config.parallel, 'payload.buildConfig.routeGeneration.parallel');
+  requirePositiveInteger(config.maxConcurrent, 'payload.buildConfig.routeGeneration.maxConcurrent');
+  requireBoolean(config.retryOnFailure, 'payload.buildConfig.routeGeneration.retryOnFailure');
+  requireNonNegativeInteger(config.maxRetries, 'payload.buildConfig.routeGeneration.maxRetries');
 };
 
 const requireOptionalConfig = (value: unknown, label: string): void => {
