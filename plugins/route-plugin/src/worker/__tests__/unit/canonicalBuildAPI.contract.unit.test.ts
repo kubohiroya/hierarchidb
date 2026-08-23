@@ -1,5 +1,5 @@
 import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
-import { ROUTE_MODES } from '@hierarchidb/route-api';
+import { ROUTE_MODES, type RouteCanonicalBuildInputResolverPorts } from '@hierarchidb/route-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig.js';
 
@@ -58,11 +58,15 @@ vi.mock('../../getBuildTasks.js', () => ({
   getBuildTasks: mocks.getBuildTasks,
 }));
 
-import { canonicalBuildAPI } from '../../canonicalBuildAPI.js';
+import {
+  canonicalBuildAPI,
+  setRouteCanonicalBuildInputResolverPortsForTests,
+} from '../../canonicalBuildAPI.js';
 
 describe('route canonicalBuildAPI contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setRouteCanonicalBuildInputResolverPortsForTests(null);
   });
 
   it('exports exactly the canonical plugin build API methods', () => {
@@ -200,7 +204,7 @@ describe('route canonicalBuildAPI contract', () => {
     ).rejects.toThrow('payload.routeMode is unsupported');
   });
 
-  it('accepts resolved selection-driven route inputs through the explicit discriminator', async () => {
+  it('accepts selection-driven route inputs through the canonical resolver', async () => {
     const nodeId = 'route-contract-node';
     const status = {
       nodeId,
@@ -208,6 +212,72 @@ describe('route canonicalBuildAPI contract', () => {
       progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
     };
     mocks.startBuildSession.mockResolvedValue(status);
+    const ports: RouteCanonicalBuildInputResolverPorts = {
+      loadIdeGsmRouteRows: vi.fn(async () => ({
+        headers: [
+          'Start',
+          'End',
+          'Name',
+          'Distance',
+          'Speed',
+          'Border',
+          'Overhead',
+          'Loading',
+          'Mode',
+          'Quality',
+          'Oneway',
+          'Freight',
+          'Country1',
+          'Region1',
+          'Country2',
+          'Region2',
+        ],
+        rows: [
+          {
+            Start: 'A',
+            End: 'B',
+            Name: 'selected-road',
+            Distance: '10',
+            Speed: '50',
+            Mode: '0',
+            Country1: 'JP',
+            Country2: 'JP',
+            Oneway: '1',
+          },
+        ],
+      })),
+      resolveIdeGsmLocationNodeIds: vi.fn(async () => ['location-node-a', 'location-node-b']),
+      buildIdeGsmLocationIndex: vi.fn(
+        async () =>
+          new Map([
+            [
+              'A',
+              {
+                locationFeatureId: 'feature-a',
+                locationNodeId: 'location-a',
+                name: 'A',
+                latitude: 35,
+                longitude: 139,
+                pointId: 'point-a',
+                admin0Code: 'JP',
+              },
+            ],
+            [
+              'B',
+              {
+                locationFeatureId: 'feature-b',
+                locationNodeId: 'location-b',
+                name: 'B',
+                latitude: 36,
+                longitude: 140,
+                pointId: 'point-b',
+                admin0Code: 'JP',
+              },
+            ],
+          ])
+      ),
+    };
+    setRouteCanonicalBuildInputResolverPortsForTests(ports);
 
     await expect(
       canonicalBuildAPI.startBuildSession(
@@ -215,18 +285,10 @@ describe('route canonicalBuildAPI contract', () => {
           nodeId,
           {
             buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
-            routeBuildInput: {
-              kind: 'selection-driven',
-              routes: [
-                {
-                  startLocationId: 'location-a',
-                  endLocationId: 'location-b',
-                  startCoordinates: [139, 35],
-                  endCoordinates: [140, 36],
-                  routeMode: ROUTE_MODES.ROAD,
-                  metadata: { oneway: true },
-                },
-              ],
+            routeBuildInput: { kind: 'selection-driven' },
+            tabularSourceId: 'route-table',
+            selectedArrayByCountries: {
+              JP: [false, false, false, false, true, false, false, false, false, true],
             },
           },
           'committed'

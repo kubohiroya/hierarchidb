@@ -63,11 +63,6 @@ type RouteMutationAPI = {
     rowCount: number;
     errorCount: number;
   }>;
-  resolveIdeGsmRouteBuildRoutes: (request: {
-    nodeId: string;
-    tabularSourceId: string;
-    selectedArrayByCountries: Record<string, boolean[]>;
-  }) => Promise<Array<{ startLocationId: string; endLocationId: string; routeMode: string }>>;
 };
 
 type RouteQueryAPI = {
@@ -1030,7 +1025,7 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
     );
 
     const selectionResult = await page.evaluate(
-      async ({ nodeId, tabularSourceId, selected }) => {
+      async ({ nodeId, tabularSourceId }) => {
         const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
         const client = ref?.client ?? ref?.getAPI?.();
         if (!client?.getRouteMutationAPI) throw new Error('Route mutation API unavailable');
@@ -1039,29 +1034,17 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
           nodeId,
           tabularSourceId,
         });
-        const plannedRoutes = await routeMutation.resolveIdeGsmRouteBuildRoutes({
-          nodeId,
-          tabularSourceId,
-          selectedArrayByCountries: selected,
-        });
-        return { coverage, plannedRoutes };
+        return { coverage };
       },
       {
         nodeId: selectionRouteNode.id,
         tabularSourceId: routeTableId,
-        selected: selectedRoadInJapan,
       }
     );
     expect(selectionResult.coverage.rowCount).toBe(1);
     expect(selectionResult.coverage.errorCount).toBe(0);
     expect(selectionResult.coverage.coverageByCountryOr.JP).toEqual(['road']);
     expect(selectionResult.coverage.coverageByCountryAnd.JP).toEqual(['road']);
-    expect(selectionResult.plannedRoutes).toHaveLength(1);
-    expect(selectionResult.plannedRoutes[0]).toMatchObject({
-      startLocationId: locationNode.id,
-      endLocationId: locationNode.id,
-      routeMode: 'road',
-    });
 
     await openRouteEditStep(page, selectionRouteNode, 2, /データソース|Data Source/i);
     await expect(page.getByText(/IDE-GSM|Data Source/i).first()).toBeVisible({ timeout: 15000 });
