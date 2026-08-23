@@ -270,6 +270,9 @@ export interface VectorTileDataSource {
   /** Optional hook for tile request stats (Dexie or custom providers) */
   onTileRequest?: (stats: VectorTileRequestStats) => void;
 
+  /** Optional hook for tile request errors (Dexie or custom providers) */
+  onTileError?: (error: VectorTileRequestError) => void;
+
   /** Promote a feature property to be its ID */
   promoteId?: string | Record<string, string>;
 
@@ -283,6 +286,15 @@ export type VectorTileRequestStats = {
   nodeId?: string;
   sourceId?: string;
   url?: string;
+};
+
+export type VectorTileRequestError = {
+  dbName?: string;
+  nodeId?: string;
+  sourceId?: string;
+  url?: string;
+  kind: 'invalid-url' | 'provider-missing' | 'tile-missing' | 'provider-error';
+  error: Error;
 };
 
 // Complete vector tile props combining all configurations

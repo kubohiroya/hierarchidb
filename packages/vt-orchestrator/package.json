@@ -47,6 +47,7 @@
     "@turf/clean-coords": "^7.0.0",
     "@types/geojson": "^7946.0.14",
     "@types/topojson-client": "^3.1.5",
+    "@types/topojson-simplify": "^3.0.3",
     "@types/topojson-specification": "^1.0.5",
     "flatgeobuf": "^4.4.0",
     "geojson-vt": "^3.2.1",

@@ -54,6 +54,7 @@ import type {
 } from '@hierarchidb/shape-store';
 import {
   ephemeralDB,
+  type EphemeralGeometryCacheRecord,
   type EphemeralBuildSessionRecord,
   getSessionWithDetails,
   probeBuildSession as probeEphemeralBuildSession,
@@ -74,6 +75,15 @@ const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idl
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+const isShapeGeometryCache = (
+  record: EphemeralGeometryCacheRecord | null | undefined
+): record is ShapeGeometryCache =>
+  Boolean(
+    record &&
+      isGeometryCacheComplete(record) &&
+      (record.domainType === 'shape' || record.domainType === 'route')
+  );
 
 const isShapeGeometryTaskQueue = (value: ShapeGeometryTaskQueue): value is ShapeGeometryTaskQueue =>
   isRecord(value) &&
@@ -590,7 +600,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   ): Promise<ShapeGeometryCache | null> {
     return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
       const record = await ephemeralDB.geometryCache.get(bufferId);
-      return isGeometryCacheComplete(record) ? record : null;
+      return isShapeGeometryCache(record) ? record : null;
     });
   }
 
@@ -1123,7 +1133,7 @@ export class EphemeralShapeApiImpl {
   async getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null> {
     return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
       const record = await ephemeralDB.geometryCache.get(bufferId);
-      return isGeometryCacheComplete(record) ? record : null;
+      return isShapeGeometryCache(record) ? record : null;
     });
   }
 

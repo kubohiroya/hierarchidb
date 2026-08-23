@@ -91,6 +91,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
               tiles={entry.layer.tiles}
               tileDataProvider={entry.layer.tileDataProvider}
               onTileRequest={statsActive ? handleTileRequest : undefined}
+              onTileError={entry.layer.onTileError}
               layerId={entry.layerId}
               sourceId={entry.sourceId}
               promoteId={entry.layer.promoteId}

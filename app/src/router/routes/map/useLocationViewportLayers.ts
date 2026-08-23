@@ -62,6 +62,7 @@ type UseLocationViewportLayersArgs = {
   locationCirclePaint: Record<string, unknown>;
   locationIconImageExpression: unknown;
   locationIconSizeExpression: unknown;
+  enabled?: boolean;
   exportControlEnabled?: boolean;
 };
 
@@ -83,6 +84,7 @@ export const useLocationViewportLayers = (
     locationCirclePaint,
     locationIconImageExpression,
     locationIconSizeExpression,
+    enabled = true,
     exportControlEnabled = true,
   } = args;
 
@@ -207,6 +209,10 @@ export const useLocationViewportLayers = (
 
   const fetchLocationViewportPoints = useCallback(
     async (viewState?: MapViewState) => {
+      if (!enabled) {
+        setLocationGeoJsonLayers([]);
+        return;
+      }
       if (!mapInstanceRef.current) return;
       if (locationLayers.length === 0) {
         setLocationGeoJsonLayers([]);
@@ -319,6 +325,7 @@ export const useLocationViewportLayers = (
     },
     [
       buildLocationLayersForNode,
+      enabled,
       enabledLocationKinds,
       getLocationQueryAPI,
       layerSetVisibility.location,
@@ -328,6 +335,10 @@ export const useLocationViewportLayers = (
 
   const scheduleLocationQuery = useCallback(
     (viewState?: MapViewState) => {
+      if (!enabled) {
+        setLocationGeoJsonLayers([]);
+        return;
+      }
       if (locationQueryTimerRef.current) {
         window.clearTimeout(locationQueryTimerRef.current);
       }
@@ -335,7 +346,7 @@ export const useLocationViewportLayers = (
         void fetchLocationViewportPoints(viewState);
       }, 150);
     },
-    [fetchLocationViewportPoints]
+    [enabled, fetchLocationViewportPoints]
   );
 
   useEffect(() => {
@@ -372,7 +383,7 @@ export const useLocationViewportLayers = (
   }, [ensureLocationIcons, loadLocationIcon, mapInstance, resolveLocationTypeFromIconId]);
 
   useEffect(() => {
-    if (!layerSetVisibility.location) {
+    if (!enabled || !layerSetVisibility.location) {
       setLocationGeoJsonLayers([]);
       return () => {
         if (locationQueryTimerRef.current) {
@@ -397,6 +408,7 @@ export const useLocationViewportLayers = (
     };
   }, [
     buildLocationLayersForNode,
+    enabled,
     layerSetVisibility.location,
     locationLayers,
     scheduleLocationQuery,
@@ -408,7 +420,9 @@ export const useLocationViewportLayers = (
       mapInstanceRef.current = map;
       setMapInstance(map);
       ensureLocationIcons(map);
-      scheduleLocationQuery();
+      if (enabled) {
+        scheduleLocationQuery();
+      }
       if (exportControlEnabled && !exportControlRef.current) {
         const control = new MaplibreExportControl({
           Format: 'pdf',
@@ -419,14 +433,15 @@ export const useLocationViewportLayers = (
         exportControlRef.current = control;
       }
     },
-    [ensureLocationIcons, exportControlEnabled, nodeId, scheduleLocationQuery]
+    [enabled, ensureLocationIcons, exportControlEnabled, nodeId, scheduleLocationQuery]
   );
 
   const handleLocationMoveEnd = useCallback(
     (viewState: MapViewState) => {
+      if (!enabled) return;
       scheduleLocationQuery(viewState);
     },
-    [scheduleLocationQuery]
+    [enabled, scheduleLocationQuery]
   );
 
   return {

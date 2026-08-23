@@ -126,6 +126,7 @@ const collectPositions = (
 
 const computeFeatureBBox = (feature: Feature<Geometry>): TileBBox | null => {
   if (!feature.geometry) return null;
+  if (!('coordinates' in feature.geometry)) return null;
   const positions = collectPositions(feature.geometry.coordinates);
   if (positions.length === 0) return null;
   let minX = Infinity;

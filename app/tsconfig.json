@@ -24,6 +24,27 @@
       "~": ["app/src"],
       "~~/*": ["app/src/*"],
       "~~": ["app/src"],
+      "@hierarchidb/plugin-registry": ["packages/plugin-registry/generated/registry.ts"],
+      "@hierarchidb/plugin-registry/ui-loaders": [
+        "packages/plugin-registry/generated/ui-loaders.ts"
+      ],
+      "@hierarchidb/plugin-registry/worker-loaders": [
+        "packages/plugin-registry/generated/worker-loaders.ts"
+      ],
+      "@hierarchidb/plugin-registry/icon-loaders": [
+        "packages/plugin-registry/generated/icon-loaders.ts"
+      ],
+      "@hierarchidb/plugin-registry/database-loaders": [
+        "packages/plugin-registry/generated/database-loaders.ts"
+      ],
+      "@hierarchidb/plugin-registry/plugin-definitions": [
+        "packages/plugin-registry/generated/plugin-definitions.ts"
+      ],
+      "@hierarchidb/plugin-registry/types": ["packages/plugin-registry/src/types.ts"],
+      "@hierarchidb/plugin-registry/derivations": ["packages/plugin-registry/src/derivations.ts"],
+      "@hierarchidb/plugin-registry/generated/registry": [
+        "packages/plugin-registry/generated/registry.ts"
+      ],
       "@hierarchidb/location-plugin/common": ["plugins/location-plugin/dist/common/index.d.ts"],
       "@hierarchidb/route-plugin/common": ["plugins/route-plugin/dist/common/index.d.ts"],
       "@hierarchidb/shape-plugin/common": ["plugins/shape-plugin/dist/common/index.d.ts"],

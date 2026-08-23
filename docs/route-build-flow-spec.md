@@ -249,6 +249,9 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 - route MVT の正規 source-layer は `layer0`、`promoteId` は `id`、交通モードpropertyは
   `routeMode` とする。route plugin 内部は common constants を参照し、folder map は同じ値を返す
   ui-map の route source-layer helper を使用する。
+- folder map で shape/location/route の vector layer を同時表示する場合も、route は
+  `RouteQueryAPI.getVectorTile(nodeId,z,x,y)` と source-layer helper のみを使う。location MVT
+  flag の状態を理由に route tile を GeoJSON や別 source へ fallback してはならない。
 - 同一route sourceのgeometry cache更新は、旧band artifact/relation削除、新artifact/meta、
   新relation書込み、read-back検証を1つのEphemeralDB transactionで完了する。
 

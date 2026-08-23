@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type { RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
@@ -20,8 +21,10 @@ import {
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { useEffect, useState } from 'react';
+import { canonicalBuildFeatureFlags } from '~/config/canonicalBuildFeatureFlags.js';
 import { parseZxyParam } from '~/router/loaders/mapLoader';
 import type { MapInfoSummary } from '~/router/routes/modeless/modelessDialogContent';
+import { buildLocationMvtLayerStyles, LOCATION_MVT_PROMOTE_ID } from './locationMvtLayerStyles.js';
 import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
 import type {
   BasemapStyleEntry,
@@ -103,6 +106,14 @@ const getRouteQueryAPI = async (): Promise<RouteQueryAPI> => {
     routeQueryPromise = ensureWorkerAPI().then((api) => api.getRouteQueryAPI());
   }
   return routeQueryPromise;
+};
+
+let locationQueryPromise: Promise<LocationQueryAPI> | null = null;
+const getLocationQueryAPI = async (): Promise<LocationQueryAPI> => {
+  if (!locationQueryPromise) {
+    locationQueryPromise = ensureWorkerAPI().then((api) => api.getLocationQueryAPI());
+  }
+  return locationQueryPromise;
 };
 
 export type UseFolderLayersResult = {
@@ -228,6 +239,7 @@ export const useFolderLayers = ({
         const basemapEntries: BasemapStyleEntry[] = [];
         const shapeEntries: ResourceVectorLayer[] = [];
         const routeEntries: ResourceVectorLayer[] = [];
+        const locationVectorEntries: ResourceVectorLayer[] = [];
         const geoJsonEntries: ResourceGeoJsonLayer[] = [];
         const locationEntries: LocationLayerEntry[] = [];
         const styleOverrides: LayerStyleOverrides = {};
@@ -545,6 +557,38 @@ export const useFolderLayers = ({
             const dataSourceName = data?.dataSource;
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;
+            if (canonicalBuildFeatureFlags.locationMvt) {
+              const layerStyles = buildLocationMvtLayerStyles(layerId, sourceId, true);
+              layerStyles.forEach(({ kind, layerPriority, layerConfig }) => {
+                locationVectorEntries.push({
+                  nodeId: String(node.id),
+                  nodeType: 'location',
+                  dataSourceName,
+                  absolutePath: withLayerOrder(
+                    'location',
+                    `${absolutePath}/${kind}`,
+                    `${String(node.id)}/${kind}`
+                  ),
+                  layerSetId: 'location',
+                  layerPriority,
+                  layerLabel: absolutePath ?? String(node.id),
+                  dbName: getDBName(getBuildDatabasePrefix(), 'location'),
+                  tileDataProvider: async (z, x, y, tileNodeId) => {
+                    if (!tileNodeId) {
+                      throw new Error('Location MVT tile request is missing nodeId');
+                    }
+                    const api = await getLocationQueryAPI();
+                    return api.getVectorTile(tileNodeId as NodeId, z, x, y);
+                  },
+                  onTileError: (error) => {
+                    console.warn('[MapPage] Location MVT tile request failed', error);
+                  },
+                  layerConfig,
+                  promoteId: LOCATION_MVT_PROMOTE_ID,
+                });
+              });
+              continue;
+            }
             locationEntries.push({
               nodeId: String(node.id),
               nodeType: 'location',
@@ -596,7 +640,11 @@ export const useFolderLayers = ({
 
         if (!cancelled) {
           setBasemapStyles(sortByPath(basemapEntries));
-          setVectorLayers([...sortByPath(shapeEntries), ...sortByPath(routeEntries)]);
+          setVectorLayers([
+            ...sortByPath(shapeEntries),
+            ...sortByPath(routeEntries),
+            ...sortByPath(locationVectorEntries),
+          ]);
           setGeoJsonLayers(sortByLayerPath(geoJsonEntries));
           setLocationLayers(sortByPath(locationEntries));
           setStyleOverridesByType(styleOverrides);

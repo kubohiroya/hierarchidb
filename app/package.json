@@ -153,6 +153,7 @@
     "@hierarchidb/vite-plugin-hierarchidb-plugin-alias": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/tools-load-plugin-manifest": "workspace:*",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24.9.2",
     "@types/shpjs": "^3.4.7",
     "@vitejs/plugin-react": "^5.0.1",

@@ -38,6 +38,8 @@ vi.mock('@hierarchidb/ui-plugin-shell/ui-map', () => ({
     { id: 'route', priority: 2, entries: [] },
     { id: 'location', priority: 3, entries: [] },
   ],
+  LOCATION_POINTS_ENTRY_ID: 'location:points',
+  LOCATION_SYMBOLS_ENTRY_ID: 'location:symbols',
   parseShapeSourceLayerName: vi.fn(() => null),
 }));
 

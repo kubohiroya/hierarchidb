@@ -265,6 +265,10 @@ cleanup は下流から上流へ実行する。一部失敗を黙殺して sessi
 - 標準 layer id は `location-points-circle`, `location-points-icon`, `location-points-label` とする。
 - hover/click は rendered feature の `pointId` を `LocationQueryAPI.getPoint` へ渡す。
 - detail panel と metadata table は MVT property だけで構築しない。
+- app の通常地図では `VITE_LOCATION_MVT=1` の起動時固定 flag で location MVT path を有効化する。未設定または `0` は既定 OFF とし、`0/1` 以外は起動時の契約違反として失敗させる。
+- flag ON では `useFolderLayers` が location node ごとに `circle` / `symbol icon` / `symbol label` の vector layer を生成し、`LocationQueryAPI.getVectorTile(nodeId,z,x,y)` だけを tile source とする。旧 viewport GeoJSON の `queryByViewport` は実行しない。
+- flag ON の vector tile protocol では provider 例外、absent tile、provider 未登録を error として MapLibre へ伝播し、0 byte tile や GeoJSON query へ読み替えない。empty tile は tileEmit が生成した valid MVT artifact としてのみ扱う。
+- flag ON の click identify は rendered feature の promoted id または `pointId` を使い、`LocationQueryAPI.getPoint(nodeId, pointId)` で LocationPoint SSOT から metadata を取得する。MVT feature properties は描画と lookup key に限定する。
 - 画像生成 runner の map ready 条件:
   1. style load 完了
   2. vector source 登録完了
@@ -290,6 +294,7 @@ LocationDB v1 から v2 への migration は additive とする。
 
 rollback:
 
+- feature flag 名は `VITE_LOCATION_MVT` とする。未設定または `0` は OFF、`1` は ON、その他の値は契約違反である。
 - feature flag OFF では旧 viewport GeoJSON path を一時的に使用できる。
 - flag OFF は LocationPoint と metadata を保持し、MVT 派生成果物を無視する。
 - flag OFF で契約違反データを受理してはならない。
@@ -301,6 +306,7 @@ rollback:
 
 - 新規実装 Issue は MVT path を既定 OFF の feature flag で導入する。
 - MVT path が ON の場合、MapLibre 描画は vector source を使う。
+- MVT path が ON の場合、旧 query-by-viewport GeoJSONSource を同時実行しない。MVT 失敗時に旧 path へ自動 fallback せず、flag を OFF に戻すことで rollback する。
 - MVT path が OFF の場合、旧 query-by-viewport GeoJSONSource を使用できるが、metadata/query SSOT は同じ LocationPoint である。
 - 旧 path の存在を理由に MVT property schema、read-back validation、LOD 契約を緩めない。
 
