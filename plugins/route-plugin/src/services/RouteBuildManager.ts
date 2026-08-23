@@ -97,6 +97,7 @@ function createRouteTaskData(
   const method = route.method ?? config.routeGeneration.method;
   const generation = {
     method,
+    routeMode: route.routeMode,
     ...(route.methodOptions === undefined ? {} : { options: route.methodOptions }),
   } satisfies RouteGenerationConfig;
   const identity = buildRouteSourceIdentity({

@@ -56,6 +56,7 @@ export const buildRouteSourceIdentity = (input: RouteSourceIdentityInput): Route
     to: toSignatureEndpoint(to),
     generation: {
       method: generation.method,
+      routeMode: generation.routeMode ?? routeMode,
       options: generation.options ?? null,
     },
     sourceConfig,
@@ -126,6 +127,7 @@ const requireGenerationConfig = (value: unknown): RouteGenerationConfig => {
   }
   return {
     method: value.method as RouteGenerationConfig['method'],
+    ...(value.routeMode === undefined ? {} : { routeMode: requireRouteMode(value.routeMode) }),
     ...(value.options === undefined ? {} : { options: value.options }),
   };
 };

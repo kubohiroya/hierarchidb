@@ -5,25 +5,28 @@
 
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
 import {
+  assertRouteEngineCanServeRequest,
+  createRouteEngineCapability,
+  isRouteGenerationMethod,
+  type RouteEngineCapability,
+  type RouteEngineRequest,
+  RouteEngineUnavailableError,
+} from './RouteEngineCapability.js';
+import {
   createRouteEngineRegistry,
   type RouteEnginesProvider,
   type RouteExternalEngineMethod,
 } from './RouteEnginesProvider.js';
-import {
-  assertRouteEngineCanServeRequest,
-  createRouteEngineCapability,
-  isRouteGenerationMethod,
-  RouteEngineUnavailableError,
-  type RouteEngineCapability,
-  type RouteEngineRequest,
-} from './RouteEngineCapability.js';
 import type { RouteGenerationResult } from './RouteGenerationResult.js';
 import {
   requireRouteGenerationCoordinate,
   validateRouteGenerationResult,
 } from './validateRouteGenerationResult.js';
 
-type BuiltInRouteGenerationMethod = Extract<RouteGenerationConfig['method'], 'direct' | 'great_circle'>;
+type BuiltInRouteGenerationMethod = Extract<
+  RouteGenerationConfig['method'],
+  'direct' | 'great_circle'
+>;
 
 const BUILT_IN_CAPABILITIES = {
   direct: createRouteEngineCapability({
@@ -114,7 +117,9 @@ export class RouteGenerator {
     };
   }
 
-  private async generateRegisteredRoute(request: RouteEngineRequest): Promise<RouteGenerationResult> {
+  private async generateRegisteredRoute(
+    request: RouteEngineRequest
+  ): Promise<RouteGenerationResult> {
     const method = request.method as RouteExternalEngineMethod;
     const registered = this.externalEngines.get(method);
     if (!registered) {
@@ -239,6 +244,7 @@ const requireRouteEngineRequest = (
   return {
     method: config.method,
     points: coordinates,
+    ...(config.routeMode === undefined ? {} : { routeMode: config.routeMode }),
     ...(config.options === undefined ? {} : { options: config.options }),
   };
 };

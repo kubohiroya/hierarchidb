@@ -415,6 +415,7 @@ export class LocationMutationService implements LocationMutationAPI {
         }
         for (const routeNodeId of impactedRouteNodeIds) {
           await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
+          // Legacy nearest-search cache cleanup; canonical tile lineage is in EphemeralDB.
           await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
         }
       }
@@ -515,6 +516,7 @@ export class LocationMutationService implements LocationMutationAPI {
         }
         for (const routeNodeId of structuralRouteNodes) {
           await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
+          // Legacy nearest-search cache cleanup; canonical tile lineage is in EphemeralDB.
           await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
         }
       }

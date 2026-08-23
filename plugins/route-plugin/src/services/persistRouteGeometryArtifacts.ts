@@ -14,6 +14,7 @@ import {
 } from '@hierarchidb/gis-sdk';
 import type { RouteBuildConfig, RouteMode } from '@hierarchidb/route-api';
 import { collectLineStringTileIds } from '@hierarchidb/vt-orchestrator';
+import { ROUTE_MVT_SOURCE_LAYER } from '../common/styles/routeMvtLayerConstants.js';
 
 export type RouteGeometryArtifactOutput = {
   sourceCacheId: string;
@@ -454,7 +455,7 @@ const buildGeometryFeatureCollection = (params: {
           properties: {
             ...params.source.properties,
             id: params.geometryCacheId,
-            layer: 'layer0',
+            layer: ROUTE_MVT_SOURCE_LAYER,
             geometryInputHash: params.inputHash,
             sourceContentHash: params.source.contentHash,
             bandIndex: params.band.bandIndex,

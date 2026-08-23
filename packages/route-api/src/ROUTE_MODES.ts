@@ -72,6 +72,7 @@ export type TransportMode = 'air' | 'sea' | 'rail' | 'road';
 
 export type RouteGenerationConfig = {
   method: RouteGenerationMethod;
+  routeMode?: RouteMode;
   options?: RouteGenerationOptions;
 };
 

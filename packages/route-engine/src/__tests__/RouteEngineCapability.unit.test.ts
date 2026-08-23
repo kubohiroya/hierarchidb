@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   createRouteEngineRegistry,
   RouteEngineCapabilityError,
-  RouteGenerator,
   type RouteEnginesProvider,
+  RouteGenerator,
   type RoutingEngine,
 } from '../index.js';
 
@@ -92,5 +92,29 @@ describe('route engine capability registry', () => {
     expect(result.lineGeometry).toHaveLength(3);
     expect(result.distance).toBe(480000);
     expect(result.duration).toBe(18000);
+  });
+
+  it('rejects route modes outside the selected engine capability', async () => {
+    const engine: NonNullable<RouteEnginesProvider['osrm']> = {
+      capability: {
+        engineId: 'osrm-fixture',
+        engineVersion: '1',
+        method: 'osm_route',
+        acceptedRouteModes: ['road'],
+        networkRequirement: 'required',
+        supportsWaypoints: true,
+      },
+      async route() {
+        return {
+          line: points,
+          distance_m: 1,
+        };
+      },
+    };
+    const generator = new RouteGenerator({ osrm: engine });
+
+    await expect(
+      generator.generate(points, { method: 'osm_route', routeMode: 'waterway' })
+    ).rejects.toThrow('does not support routeMode waterway');
   });
 });
