@@ -1297,7 +1297,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               !canonicalBuildFeatureFlags.canonicalBuildRuntimeAdapter &&
               nodeType !== SHAPE_NODE_TYPE
             ) {
-              return () => {};
+              return toComlinkProxy(Comlink, () => {});
             }
             return buildRuntimeAdapters.subscribeSessions(nodeType, filter, callback);
           },

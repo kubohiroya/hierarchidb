@@ -41,7 +41,7 @@ build runtime の get/list/subscribe/delete surface は node type ごとの
 resuming / finalizing / completed / failed / deleting` のみを許可する。`revision` は
 node type + nodeId 単位で非負整数として進め、同じ runtime surface 内で status
 や transient command state の変化を観測可能にする。`isActive` は runtime status
-から導出し、`starting / running / pausing / resuming / finalizing / deleting` だけを
+から導出し、`starting / running / pausing / resuming / finalizing` だけを
 active とする。`completed` や `failed` を active として補完してはならない。
 
 ## ビルドセッションライフサイクル

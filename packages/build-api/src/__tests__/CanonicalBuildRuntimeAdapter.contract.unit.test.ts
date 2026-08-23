@@ -47,6 +47,18 @@ describe('CanonicalBuildRuntimeAdapter contract', () => {
     });
   });
 
+  it('accepts deleting as an inactive runtime record', () => {
+    expect(
+      assertCanonicalBuildRuntimeRecord(
+        createRuntimeRecord({ status: 'deleting', isActive: false }),
+        nodeType
+      )
+    ).toMatchObject({
+      status: 'deleting',
+      isActive: false,
+    });
+  });
+
   it('rejects status values outside the contract', () => {
     const record = createRuntimeRecord({
       status: 'unsupported' as BuildSessionRuntimeRecord['status'],
@@ -67,6 +79,14 @@ describe('CanonicalBuildRuntimeAdapter contract', () => {
 
   it('rejects activity flags that contradict the status', () => {
     const record = createRuntimeRecord({ status: 'completed', isActive: true });
+
+    expect(() => assertCanonicalBuildRuntimeRecord(record, nodeType)).toThrow(
+      CanonicalBuildRuntimeError
+    );
+  });
+
+  it('rejects deleting runtime records marked active', () => {
+    const record = createRuntimeRecord({ status: 'deleting', isActive: true });
 
     expect(() => assertCanonicalBuildRuntimeRecord(record, nodeType)).toThrow(
       CanonicalBuildRuntimeError

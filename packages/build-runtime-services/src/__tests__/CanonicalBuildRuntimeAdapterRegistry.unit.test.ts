@@ -105,3 +105,16 @@ describe('CanonicalBuildRuntimeRevisionTracker', () => {
     expect(() => tracker.accept(shapeNodeType, nodeId, 2)).toThrow(CanonicalBuildRuntimeError);
   });
 });
+
+describe('createBuildSessionRuntimeRecord', () => {
+  it('rejects invalid revisions when projecting runtime records', () => {
+    expect(() =>
+      createBuildSessionRuntimeRecord({
+        nodeType: shapeNodeType,
+        nodeId,
+        status: 'running',
+        revision: -1,
+      })
+    ).toThrow(CanonicalBuildRuntimeError);
+  });
+});
