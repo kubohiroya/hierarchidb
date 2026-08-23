@@ -1,6 +1,6 @@
 import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
 import { useIconRegistry } from '@hierarchidb/components';
-import type { NodeType } from '@hierarchidb/core-types';
+import type { NodeType, TreeId } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import ConstructionIcon from '@mui/icons-material/Construction';
@@ -19,12 +19,23 @@ import {
   Divider,
   IconButton,
   List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Paper,
   Popper,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { BuildJobQueue, BuildJobQueueEntry } from '~/router/pages/tree/console/buildJobQueue';
+import {
+  BUILD_JOB_QUEUE_OPEN_EVENT,
+  deleteBuildJobQueues,
+  subscribeBuildJobQueues,
+} from '~/router/pages/tree/console/buildJobQueue';
 import { BuildSessionQueueSessionRow } from './BuildSessionQueueSessionRow';
 import {
   type BuildSessionQueueEntry,
@@ -36,8 +47,10 @@ export type { BuildSessionQueueEntry } from './hooks/useBuildSessionListQueue';
 type BuildSessionQueueCompactMode = 'summary' | 'icon-badge';
 
 type BuildSessionQueuePanelProps = {
+  treeId?: TreeId;
   nodeType?: NodeType;
   onNavigateToBuild?: (entry: BuildSessionQueueEntry) => void;
+  onNavigateToBuildJobEntry?: (entry: BuildJobQueueEntry, queue: BuildJobQueue) => void;
   onEntriesChange?: (entries: BuildSessionQueueEntry[]) => void;
   compact?: boolean;
   compactMode?: BuildSessionQueueCompactMode;
@@ -58,9 +71,80 @@ const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
 const formatTemplate = (text: string, values: Record<string, string>): string =>
   Object.entries(values).reduce((next, [key, value]) => next.replaceAll(`{{${key}}}`, value), text);
 
+const JOB_QUEUE_VISIBLE_STATUSES = new Set<BuildJobQueue['status']>([
+  'pending',
+  'running',
+  'pausing',
+  'paused',
+  'failed',
+]);
+
+const getJobQueueEntryLabel = (entry: BuildJobQueueEntry): string =>
+  `${entry.nodeType}: ${String(entry.targetNodeId)}`;
+
+type BuildJobQueueSurfaceRowProps = {
+  queue: BuildJobQueue;
+  entry: BuildJobQueueEntry;
+  onNavigate?: (entry: BuildJobQueueEntry, queue: BuildJobQueue) => void;
+};
+
+function BuildJobQueueSurfaceRow({ queue, entry, onNavigate }: BuildJobQueueSurfaceRowProps) {
+  const { t } = useGlobalI18nTranslator();
+  const canNavigate = Boolean(entry.displayUrl && onNavigate);
+  const secondaryText = t('buildSessionQueue.jobEntryStatus', 'Job {{queueId}} · {{status}}', {
+    queueId: queue.queueId,
+    status: entry.status,
+  });
+
+  return (
+    <ListItem
+      disablePadding
+      sx={{
+        border: 1,
+        borderColor: entry.status === 'failed' ? 'error.main' : 'divider',
+        borderRadius: 1,
+        width: '100%',
+        mb: 1,
+      }}
+    >
+      <ListItemButton
+        onClick={canNavigate ? () => onNavigate?.(entry, queue) : undefined}
+        disabled={!canNavigate}
+        sx={{ py: 1, px: 1.5, width: '100%' }}
+      >
+        <ListItemIcon>
+          <ConstructionIcon
+            fontSize="small"
+            color={entry.status === 'failed' ? 'error' : 'inherit'}
+          />
+        </ListItemIcon>
+        <ListItemText
+          primary={
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+              <Typography variant="body2" noWrap>
+                {getJobQueueEntryLabel(entry)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                #{entry.order + 1}
+              </Typography>
+            </Stack>
+          }
+          secondary={secondaryText}
+          slotProps={{
+            primary: { component: 'div' },
+            secondary: { component: 'span' },
+          }}
+        />
+      </ListItemButton>
+    </ListItem>
+  );
+}
+
 export function BuildSessionQueuePanel({
+  treeId,
   nodeType = toNodeType('shape'),
   onNavigateToBuild,
+  onNavigateToBuildJobEntry,
   compact = false,
   compactMode = 'summary',
   onEntriesChange,
@@ -68,6 +152,8 @@ export function BuildSessionQueuePanel({
 }: BuildSessionQueuePanelProps) {
   const { resolveIcon } = useIconRegistry();
   const { t } = useGlobalI18nTranslator();
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [jobQueues, setJobQueues] = useState<BuildJobQueue[]>([]);
 
   const {
     rows,
@@ -94,26 +180,71 @@ export function BuildSessionQueuePanel({
     autoStartTopSession,
   });
 
+  useEffect(() => subscribeBuildJobQueues(setJobQueues), []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleOpenBuildJobQueue = (event: Event) => {
+      const detail = (event as CustomEvent<{ treeId?: TreeId }>).detail;
+      if (treeId && detail?.treeId !== treeId) return;
+      if (!buttonRef.current) return;
+      handleOpenAll(buttonRef.current);
+    };
+
+    window.addEventListener(BUILD_JOB_QUEUE_OPEN_EVENT, handleOpenBuildJobQueue);
+    return () => {
+      window.removeEventListener(BUILD_JOB_QUEUE_OPEN_EVENT, handleOpenBuildJobQueue);
+    };
+  }, [handleOpenAll, treeId]);
+
+  const visibleJobQueues = useMemo(
+    () =>
+      jobQueues.filter((queue) => {
+        if (treeId && queue.treeId !== treeId) return false;
+        return JOB_QUEUE_VISIBLE_STATUSES.has(queue.status);
+      }),
+    [jobQueues, treeId]
+  );
+  const jobQueueEntries = useMemo(
+    () =>
+      visibleJobQueues.flatMap((queue) =>
+        [...queue.entries]
+          .sort((left, right) => left.order - right.order)
+          .map((entry) => ({ queue, entry }))
+      ),
+    [visibleJobQueues]
+  );
+  const totalQueueItems = rows.length + jobQueueEntries.length;
+
   const popperTitle = t('buildSessionQueue.popperTitle', 'Session queue');
   const popperCountText =
-    rows.length === 1
-      ? t('buildSessionQueue.popperCountOne', '{{count}} item', { count: rows.length })
-      : t('buildSessionQueue.popperCountOther', '{{count}} items', { count: rows.length });
-  const isDialogQueueActionDisabled = isDeleting || rows.length === 0;
+    totalQueueItems === 1
+      ? t('buildSessionQueue.popperCountOne', '{{count}} item', { count: totalQueueItems })
+      : t('buildSessionQueue.popperCountOther', '{{count}} items', { count: totalQueueItems });
+  const isDeleteQueueActionDisabled = isDeleting || totalQueueItems === 0;
+  const isResumeQueueActionDisabled = isDeleting || rows.length === 0;
 
   const handleConfirmDeleteAutoClose = useCallback(async () => {
-    const shouldCloseQueuePanel = rows.length <= 1;
+    const shouldCloseQueuePanel = totalQueueItems <= 1;
     await handleConfirmDelete();
     if (shouldCloseQueuePanel) {
       handleCloseAll();
     }
-  }, [handleConfirmDelete, handleCloseAll, rows.length]);
+  }, [handleConfirmDelete, handleCloseAll, totalQueueItems]);
+
+  const handleDeleteAllQueues = useCallback(async () => {
+    await handleDeleteAll();
+    if (visibleJobQueues.length > 0) {
+      deleteBuildJobQueues(visibleJobQueues.map((queue) => queue.queueId));
+    }
+    handleCloseAll();
+  }, [handleCloseAll, handleDeleteAll, visibleJobQueues]);
 
   useEffect(() => {
-    if (rows.length === 0 && anchorEl) {
+    if (totalQueueItems === 0 && anchorEl) {
       handleCloseAll();
     }
-  }, [anchorEl, handleCloseAll, rows.length]);
+  }, [anchorEl, handleCloseAll, totalQueueItems]);
 
   const renderedRows = useMemo(
     () =>
@@ -184,13 +315,29 @@ export function BuildSessionQueuePanel({
     resolveIcon,
   ]);
 
+  const renderedJobRows = useMemo(
+    () =>
+      jobQueueEntries.map(({ queue, entry }) => (
+        <BuildJobQueueSurfaceRow
+          key={`${queue.queueId}:${entry.entryId}`}
+          queue={queue}
+          entry={entry}
+          onNavigate={onNavigateToBuildJobEntry}
+        />
+      )),
+    [jobQueueEntries, onNavigateToBuildJobEntry]
+  );
+
   const queueList =
-    rows.length === 0 ? (
+    totalQueueItems === 0 ? (
       <Box sx={{ px: 1, py: 1, color: 'text.secondary' }}>
         {t('buildSessionQueue.empty', 'No running or queued build sessions found')}
       </Box>
     ) : (
-      <List dense>{renderedRows}</List>
+      <List dense>
+        {renderedJobRows}
+        {renderedRows}
+      </List>
     );
 
   const queueDialog = (
@@ -240,7 +387,7 @@ export function BuildSessionQueuePanel({
     );
   }
 
-  if (compactMode === 'summary' && rows.length === 0) {
+  if (compactMode === 'summary' && totalQueueItems === 0) {
     return (
       <>
         {queueList}
@@ -253,10 +400,11 @@ export function BuildSessionQueuePanel({
     compactMode === 'icon-badge' ? (
       <span>
         <IconButton
+          ref={buttonRef}
           aria-label={t('buildSessionQueue.openQueueList', 'Open build session queue')}
           onClick={handleOpenAll}
           size="small"
-          disabled={rows.length === 0}
+          disabled={totalQueueItems === 0}
           sx={{
             color: 'primary.main',
             p: '8px',
@@ -265,10 +413,10 @@ export function BuildSessionQueuePanel({
             },
           }}
         >
-          {rows.length === 0 ? (
+          {totalQueueItems === 0 ? (
             <ConstructionIcon fontSize="small" />
           ) : (
-            <Badge badgeContent={rows.length} color="warning">
+            <Badge badgeContent={totalQueueItems} color="warning">
               <ConstructionIcon fontSize="small" />
             </Badge>
           )}
@@ -333,11 +481,11 @@ export function BuildSessionQueuePanel({
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                 <Button
-                  onClick={handleDeleteAll}
+                  onClick={handleDeleteAllQueues}
                   color="error"
                   size="small"
                   startIcon={<DeleteIcon />}
-                  disabled={isDialogQueueActionDisabled}
+                  disabled={isDeleteQueueActionDisabled}
                 >
                   {t('buildSessionQueue.deleteQueue', '削除')}
                 </Button>
@@ -346,7 +494,7 @@ export function BuildSessionQueuePanel({
                   size="small"
                   variant="contained"
                   startIcon={<ReplayIcon />}
-                  disabled={isDialogQueueActionDisabled}
+                  disabled={isResumeQueueActionDisabled}
                 >
                   {t('buildSessionQueue.resumeQueue', '再開')}
                 </Button>

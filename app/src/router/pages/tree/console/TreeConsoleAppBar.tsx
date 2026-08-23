@@ -48,6 +48,7 @@ export function TreeConsoleAppBar({
     isDeletingQueue,
     isResumingQueue,
     handleNavigateToBuild,
+    handleNavigateToBuildJobEntry,
     handleResumeDialogEntriesChange,
     handleResumeQueue,
     handleDeleteQueue,
@@ -79,8 +80,10 @@ export function TreeConsoleAppBar({
         <Stack direction="row" spacing={2} alignItems="center">
           {data.tree?.id ? (
             <BuildSessionQueuePanelBadgeButton
+              treeId={data.tree.id}
               nodeType={resumeSessionNodeType}
               onNavigateToBuild={handleNavigateToBuild}
+              onNavigateToBuildJobEntry={handleNavigateToBuildJobEntry}
               autoStartTopSession={isQueueAutoStartEnabled}
               onEntriesChange={handleResumeDialogEntriesChange}
             />
@@ -96,8 +99,10 @@ export function TreeConsoleAppBar({
         </DialogTitle>
         <DialogContent dividers>
           <BuildSessionQueuePanel
+            treeId={data.tree?.id}
             nodeType={resumeSessionNodeType}
             onNavigateToBuild={handleNavigateToBuild}
+            onNavigateToBuildJobEntry={handleNavigateToBuildJobEntry}
             onEntriesChange={handleResumeDialogEntriesChange}
             autoStartTopSession={isQueueAutoStartEnabled}
             compact={false}

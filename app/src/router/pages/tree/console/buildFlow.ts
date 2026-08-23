@@ -1,9 +1,18 @@
+import type { CanonicalBuildInputSource } from '@hierarchidb/build-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import { toNodeType } from '@hierarchidb/core-types';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
-import { createBuildQueue, createBuildQueueKey } from './buildQueueConstants.ts';
+import {
+  type BuildJobQueue,
+  type BuildQueueEntryDraft,
+  createBuildJobQueue,
+  openBuildJobQueueSurface,
+  startBuildJobQueue,
+} from './buildJobQueue.ts';
+import { createBuildQueueKey } from './buildQueueConstants.ts';
 
 export type BuildStepTarget = {
   stepId: 'build' | 'data-source';
@@ -13,6 +22,25 @@ export type BuildStepTarget = {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const folderNodeTypeAliases = new Set<string>([
+  'folder',
+  'folder-plugin',
+  'ProjectFolder',
+  'ResourceFolder',
+  'ProjectsRoot',
+  'ResourcesRoot',
+  'ProjectsArchiveRoot',
+  'ResourcesArchiveRoot',
+]);
+
+const isFolderNodeType = (nodeType?: string | null): boolean => {
+  if (!nodeType) return false;
+  if (folderNodeTypeAliases.has(nodeType)) return true;
+  const normalized = nodeType.trim();
+  if (folderNodeTypeAliases.has(normalized)) return true;
+  return /folder$/i.test(normalized);
+};
 
 export const mergeNodeData = (node?: TreeNode | null): Record<string, unknown> => {
   if (!node) return {};
@@ -63,16 +91,14 @@ type FolderQueryApi = {
   listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
 };
 
-const collectBuildUrlsFromDescendants = async (params: {
-  treeId: TreeId;
-  pageNodeId: NodeId;
+const DEFAULT_BUILD_INPUT_SOURCE: CanonicalBuildInputSource = 'working-copy';
+
+const collectBuildTargetsFromDescendants = async (params: {
   folderNode: TreeNode;
-  returnTo: string;
-  queueKey: string;
   queryAPI: FolderQueryApi;
-}): Promise<string[]> => {
-  const { treeId, pageNodeId, folderNode, returnTo, queueKey, queryAPI } = params;
-  const urls: string[] = [];
+}): Promise<BuildQueueEntryDraft[]> => {
+  const { folderNode, queryAPI } = params;
+  const targets: BuildQueueEntryDraft[] = [];
   const descendants = await queryAPI.listDescendants(folderNode.id as NodeId);
   for (const item of descendants) {
     const itemType = String(item.nodeType ?? '');
@@ -81,20 +107,17 @@ const collectBuildUrlsFromDescendants = async (params: {
     await loadUIPlugin(itemType).catch(() => false);
     const target = await resolveBuildStepTarget(itemType, mergeNodeData(item));
     if (!target) continue;
-    urls.push(
-      buildDialogUrl({
-        treeId,
-        pageNodeId,
-        targetNodeId: item.id as NodeId,
-        nodeType: itemType,
-        stepNumber: target.stepNumber,
-        returnTo,
-        buildQueueKey: queueKey,
-        buildQueued: true,
-      })
-    );
+    if (!target.shouldAutoStart) continue;
+    targets.push({
+      targetNodeId: item.id as NodeId,
+      nodeType: itemType,
+      inputSource: DEFAULT_BUILD_INPUT_SOURCE,
+      stepId: target.stepId,
+      stepNumber: target.stepNumber,
+      shouldAutoStart: target.shouldAutoStart,
+    });
   }
-  return urls;
+  return targets;
 };
 
 export const buildDialogUrl = (params: {
@@ -105,6 +128,8 @@ export const buildDialogUrl = (params: {
   stepNumber: number;
   returnTo: string;
   buildQueueKey?: string | null;
+  buildJobId?: string | null;
+  buildJobEntryId?: string | null;
   buildQueued?: boolean;
 }): string => {
   const basePath = `/d/${params.treeId}/${params.pageNodeId}/${params.targetNodeId}/${params.nodeType}/edit/normal/${params.stepNumber}`;
@@ -118,10 +143,32 @@ export const buildDialogUrl = (params: {
   if (params.buildQueueKey) {
     search.set('buildQueue', params.buildQueueKey);
   }
+  if (params.buildJobId) {
+    search.set('buildJob', params.buildJobId);
+  }
+  if (params.buildJobEntryId) {
+    search.set('buildJobEntry', params.buildJobEntryId);
+  }
   return `${basePath}?${search.toString()}`;
 };
 
-export const collectBuildUrlsForFolder = async (params: {
+export const collectBuildTargetsForFolder = async (params: {
+  folderNode: TreeNode;
+  workerClient: {
+    getQueryAPI: () => Promise<{
+      listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
+    }>;
+  };
+}): Promise<BuildQueueEntryDraft[]> => {
+  const { folderNode, workerClient } = params;
+  const queryAPI = await workerClient.getQueryAPI();
+  return collectBuildTargetsFromDescendants({
+    folderNode,
+    queryAPI,
+  });
+};
+
+export const createBuildJobQueueForFolder = async (params: {
   treeId: TreeId;
   pageNodeId: NodeId;
   folderNode: TreeNode;
@@ -131,19 +178,38 @@ export const collectBuildUrlsForFolder = async (params: {
       listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
     }>;
   };
-}): Promise<{ urls: string[]; queueKey: string }> => {
+}): Promise<BuildJobQueue | null> => {
   const { treeId, pageNodeId, folderNode, returnTo, workerClient } = params;
-  const queryAPI = await workerClient.getQueryAPI();
-  const queueKey = createBuildQueueKey();
-  const urls = await collectBuildUrlsFromDescendants({
-    treeId,
-    pageNodeId,
+  const targets = await collectBuildTargetsForFolder({
     folderNode,
-    returnTo,
-    queueKey,
-    queryAPI,
+    workerClient,
   });
-  return { urls, queueKey };
+  if (targets.length === 0) return null;
+  const queueId = createBuildQueueKey();
+  const entries = targets.map((target, index) => {
+    const entryId = `${queueId}:${index + 1}`;
+    return {
+      ...target,
+      displayUrl: buildDialogUrl({
+        treeId,
+        pageNodeId,
+        targetNodeId: target.targetNodeId,
+        nodeType: target.nodeType,
+        stepNumber: target.stepNumber,
+        returnTo,
+        buildJobId: queueId,
+        buildJobEntryId: entryId,
+      }),
+    } satisfies BuildQueueEntryDraft;
+  });
+  const job = createBuildJobQueue({
+    treeId,
+    ownerNodeId: folderNode.id as NodeId,
+    entries,
+    mode: 'web-ui',
+    queueId,
+  });
+  return job;
 };
 
 export const resolveBuildTargetForNode = async (params: {
@@ -181,18 +247,25 @@ export const startBuildFlow = async (params: {
   if (!node?.id || !nodeType) return;
   if (isFolderNodeType(nodeType)) {
     if (!workerClient) return;
-    const { urls, queueKey } = await collectBuildUrlsForFolder({
+    const job = await createBuildJobQueueForFolder({
       treeId,
       pageNodeId,
       folderNode: node,
       returnTo,
       workerClient,
     });
-    if (!urls.length) return;
-    const storedKey = createBuildQueue(urls, returnTo, treeId, queueKey);
-    const startUrl = urls[0];
-    if (!storedKey || !startUrl) return;
-    navigate(startUrl);
+    if (!job) return;
+    openBuildJobQueueSurface(job.queueId);
+    const bridge = getBuildWorkerBridge();
+    void startBuildJobQueue(job.queueId, {
+      initialize: () => bridge.initialize(),
+      startBuildSession: (entryNodeType, nodeId, inputSource) =>
+        bridge.startBuildSession(toNodeType(entryNodeType), nodeId, inputSource),
+      getBuildSessionStatus: (entryNodeType, nodeId) =>
+        bridge.getBuildSessionStatus(toNodeType(entryNodeType), nodeId),
+    }).catch((error) => {
+      console.warn('[buildFlow] folder build job failed', error);
+    });
     return;
   }
   const target = await resolveBuildTargetForNode({ node, workerClient });

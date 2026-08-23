@@ -20,7 +20,7 @@ import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
 import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverterUtils';
 import {
-  collectBuildUrlsForFolder,
+  collectBuildTargetsForFolder,
   resolveBuildTargetForNode,
   startBuildFlow,
 } from '../buildFlow.ts';
@@ -151,15 +151,12 @@ export function useTreeNodeInfoPanel({
         }
         setBuildTargetLoading(true);
         try {
-          const { urls } = await collectBuildUrlsForFolder({
-            treeId,
-            pageNodeId: candidate.id as NodeId,
+          const targets = await collectBuildTargetsForFolder({
             folderNode: candidate,
-            returnTo,
             workerClient,
           });
           if (!cancelled) {
-            setFolderBuildReady(urls.length > 0);
+            setFolderBuildReady(targets.length > 0);
             setBuildTargetLoading(false);
           }
         } catch (error) {
@@ -186,7 +183,7 @@ export function useTreeNodeInfoPanel({
     return () => {
       cancelled = true;
     };
-  }, [currentNode, node, workerClient, treeId, returnTo]);
+  }, [currentNode, node, workerClient, treeId]);
 
   useEffect(() => {
     setMenuNode(nodeData ?? null);

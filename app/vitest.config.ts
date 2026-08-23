@@ -26,6 +26,9 @@ function createAliasMap(): Record<string, string> {
   const baseEntries: Record<string, string> = {
     '#app': path.resolve(rootDir, 'src'),
     'node-fetch': path.resolve(rootDir, 'src/virtual/node-fetch.ts'),
+    '@hierarchidb/build-api': path.resolve(rootDir, '../packages/build-api/src/index.ts'),
+    '@hierarchidb/core-types': path.resolve(rootDir, '../packages/core-types/src/index.ts'),
+    '@hierarchidb/tree-api': path.resolve(rootDir, '../packages/tree-api/src/index.ts'),
     '@hierarchidb/runtime-worker/yaml-storage-legacy-fence': path.resolve(
       rootDir,
       '../packages/runtime-worker/src/yaml-storage-legacy-fence/index.ts'
@@ -66,6 +69,22 @@ function createAliasMap(): Record<string, string> {
     '@hierarchidb/ui-treeconsole-toolbar': path.resolve(
       rootDir,
       '../packages/ui/treeconsole/toolbar/src/index.ts'
+    ),
+    '@hierarchidb/ui-treeconsole-breadcrumb': path.resolve(
+      rootDir,
+      '../packages/ui/treeconsole/breadcrumb/src/index.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb': path.resolve(
+      rootDir,
+      '../packages/ui/plugin-shell/src/ui-treeconsole-breadcrumb.ts'
+    ),
+    '@hierarchidb/ui-plugin-shell': path.resolve(
+      rootDir,
+      '../packages/ui/plugin-shell/src/index.ts'
+    ),
+    '@hierarchidb/ui-worker-client': path.resolve(
+      rootDir,
+      '../packages/ui/worker-client/src/index.ts'
     ),
   };
 

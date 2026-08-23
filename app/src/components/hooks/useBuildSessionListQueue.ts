@@ -541,8 +541,10 @@ export function useBuildSessionListQueue({
     [draggingNodeId]
   );
 
-  const handleOpenAll = useCallback((event: MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleOpenAll = useCallback((eventOrElement: MouseEvent<HTMLElement> | HTMLElement) => {
+    const nextAnchor =
+      'currentTarget' in eventOrElement ? eventOrElement.currentTarget : eventOrElement;
+    setAnchorEl(nextAnchor);
   }, []);
 
   const handleCloseAll = useCallback(() => {
