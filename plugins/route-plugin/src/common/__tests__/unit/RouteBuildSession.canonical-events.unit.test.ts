@@ -452,7 +452,8 @@ describe('RouteBuildSession canonical events', () => {
           event.payload.stageId === 'source' &&
           event.payload.tasks.some(
             (task) =>
-              task.status === 'failed' && task.errorMessage?.includes('OSRM engine is required')
+              task.status === 'failed' &&
+              task.errorMessage?.includes('Route engine for method osm_route is unavailable')
           )
       )
     ).toBe(true);
@@ -460,7 +461,7 @@ describe('RouteBuildSession canonical events', () => {
       events.some(
         (event) =>
           event.type === 'taskProgressUpdated' &&
-          event.payload.message?.includes('OSRM engine is required')
+          event.payload.message?.includes('Route engine for method osm_route is unavailable')
       )
     ).toBe(true);
     await expect(ephemeralStore.sourceCache.where('nodeId').equals(nodeId).count()).resolves.toBe(
@@ -492,6 +493,13 @@ describe('RouteBuildSession canonical events', () => {
     const orchestrator = new RouteBuildSessionOrchestrator({
       engines: {
         osrm: {
+          capability: {
+            engineId: 'osrm-fixture',
+            engineVersion: '1',
+            method: 'osm_route',
+            networkRequirement: 'required',
+            supportsWaypoints: true,
+          },
           async route() {
             engineCalls += 1;
             return {

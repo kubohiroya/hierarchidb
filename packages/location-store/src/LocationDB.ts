@@ -4,10 +4,17 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeature } from '@hierarchidb/location-api';
+import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import { Dexie, type Table } from 'dexie';
+import {
+  buildLocationVectorTileId,
+  LOCATION_VECTOR_TILE_CONTENT_TYPE,
+  type LocationVectorTileRecord,
+} from './LocationVectorTileRecord.js';
 
-export class LocationDB extends Dexie {
-  features!: Table<LocationFeature, [NodeId, string]>;
+export class LocationDB extends VectorTileDbBase {
+  declare features: Table<LocationFeature, [NodeId, string]>;
+  declare vectorTiles: Table<LocationVectorTileRecord, string>;
 
   constructor(databaseName: string) {
     super(databaseName);
@@ -15,16 +22,98 @@ export class LocationDB extends Dexie {
       features:
         '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
     });
+    this.version(2).stores(
+      this.mergeVectorTileStores({
+        features:
+          '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
+        vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+      })
+    );
 
     this.features = this.table('features');
+    this.vectorTiles = this.table('vectorTiles');
+    this.initVectorTileTables();
   }
 
-  async clearNodeData(nodeId: NodeId): Promise<void> {
+  async clearNodeFeatures(nodeId: NodeId): Promise<void> {
     await this.transaction('rw', [this.features], async () => {
       await this.features.where('nodeId').equals(nodeId).delete();
     });
   }
+
+  async clearNodeVectorTiles(nodeId: NodeId): Promise<void> {
+    await this.transaction('rw', [this.vectorTiles], async () => {
+      await this.vectorTiles.where('nodeId').equals(nodeId).delete();
+    });
+  }
+
+  async clearNodeArtifacts(nodeId: NodeId): Promise<void> {
+    await this.transaction('rw', [this.features, this.vectorTiles], async () => {
+      await this.features.where('nodeId').equals(nodeId).delete();
+      await this.vectorTiles.where('nodeId').equals(nodeId).delete();
+    });
+  }
+
+  async clearNodeData(nodeId: NodeId): Promise<void> {
+    await this.clearNodeArtifacts(nodeId);
+  }
+
+  async storeVectorTile(tile: LocationVectorTileRecord): Promise<void> {
+    validateLocationVectorTileRecord(tile);
+    await this.vectorTiles.put(tile);
+  }
+
+  async getVectorTile(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<LocationVectorTileRecord | undefined> {
+    validateTileCoordinates(z, x, y);
+    const tile = await this.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).first();
+    if (tile === undefined) return undefined;
+    validateLocationVectorTileRecord(tile);
+    return tile;
+  }
 }
+
+export const validateTileCoordinates = (z: number, x: number, y: number): void => {
+  if (!Number.isInteger(z) || z < 0 || z > 24) {
+    throw new Error('location-vector-tile-z-invalid');
+  }
+  const tileCount = 2 ** z;
+  if (!Number.isInteger(x) || x < 0 || x >= tileCount) {
+    throw new Error('location-vector-tile-x-invalid');
+  }
+  if (!Number.isInteger(y) || y < 0 || y >= tileCount) {
+    throw new Error('location-vector-tile-y-invalid');
+  }
+};
+
+const isArrayBuffer = (value: unknown): value is ArrayBuffer =>
+  Object.prototype.toString.call(value) === '[object ArrayBuffer]';
+
+export const validateLocationVectorTileRecord = (tile: LocationVectorTileRecord): void => {
+  validateTileCoordinates(tile.z, tile.x, tile.y);
+  if (typeof tile.tileId !== 'string' || tile.tileId.length === 0) {
+    throw new Error('location-vector-tile-id-invalid');
+  }
+  if (tile.tileId !== buildLocationVectorTileId(tile.nodeId, tile.z, tile.x, tile.y)) {
+    throw new Error('location-vector-tile-id-mismatch');
+  }
+  if (!isArrayBuffer(tile.data)) {
+    throw new Error('location-vector-tile-data-invalid');
+  }
+  if (!Number.isInteger(tile.size) || tile.size !== tile.data.byteLength) {
+    throw new Error('location-vector-tile-size-mismatch');
+  }
+  if (tile.contentType !== LOCATION_VECTOR_TILE_CONTENT_TYPE) {
+    throw new Error('location-vector-tile-content-type-invalid');
+  }
+  if (!Number.isFinite(tile.timestamp) || tile.timestamp < 0) {
+    throw new Error('location-vector-tile-timestamp-invalid');
+  }
+};
 
 let singleton: LocationDB | null = null;
 

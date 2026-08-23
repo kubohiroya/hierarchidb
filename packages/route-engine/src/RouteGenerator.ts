@@ -4,47 +4,79 @@
  */
 
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
-import type { RouteEnginesProvider } from './RouteEnginesProvider.js';
+import {
+  createRouteEngineRegistry,
+  type RouteEnginesProvider,
+  type RouteExternalEngineMethod,
+} from './RouteEnginesProvider.js';
+import {
+  assertRouteEngineCanServeRequest,
+  createRouteEngineCapability,
+  isRouteGenerationMethod,
+  RouteEngineUnavailableError,
+  type RouteEngineCapability,
+  type RouteEngineRequest,
+} from './RouteEngineCapability.js';
 import type { RouteGenerationResult } from './RouteGenerationResult.js';
+import {
+  requireRouteGenerationCoordinate,
+  validateRouteGenerationResult,
+} from './validateRouteGenerationResult.js';
+
+type BuiltInRouteGenerationMethod = Extract<RouteGenerationConfig['method'], 'direct' | 'great_circle'>;
+
+const BUILT_IN_CAPABILITIES = {
+  direct: createRouteEngineCapability({
+    engineId: 'route-engine:direct',
+    engineVersion: '1',
+    method: 'direct',
+    networkRequirement: 'none',
+    supportsWaypoints: true,
+  }),
+  great_circle: createRouteEngineCapability({
+    engineId: 'route-engine:great-circle',
+    engineVersion: '1',
+    method: 'great_circle',
+    networkRequirement: 'none',
+    supportsWaypoints: true,
+  }),
+} as const satisfies Record<BuiltInRouteGenerationMethod, RouteEngineCapability>;
 
 export class RouteGenerator {
-  constructor(private engines?: RouteEnginesProvider) {}
+  private readonly externalEngines;
+
+  constructor(engines?: RouteEnginesProvider) {
+    this.externalEngines = createRouteEngineRegistry(engines);
+  }
 
   async generate(
     points: [number, number][],
     config: RouteGenerationConfig
   ): Promise<RouteGenerationResult> {
-    if (points.length < 2) {
-      throw new Error('At least 2 points required for route generation');
-    }
-    points.forEach((point, index) => {
-      requireCoordinate(point, index);
-    });
+    const request = requireRouteEngineRequest(points, config);
 
     let result: RouteGenerationResult;
-    switch (config.method) {
+    switch (request.method) {
       case 'direct':
-        result = this.generateDirectRoute(points);
+        assertRouteEngineCanServeRequest(BUILT_IN_CAPABILITIES.direct, request);
+        result = this.generateDirectRoute(request.points);
         break;
       case 'great_circle':
-        result = this.generateGreatCircleRoute(points, config.options);
+        assertRouteEngineCanServeRequest(BUILT_IN_CAPABILITIES.great_circle, request);
+        result = this.generateGreatCircleRoute(request.points, request.options);
         break;
       case 'osm_route':
-        result = await this.generateOSMRoute(points, config.options);
-        break;
       case 'searoute':
-        result = await this.generateSeaRoute(points, config.options);
-        break;
       case 'custom':
-        result = await this.generateCustomRoute(points, config.options);
+        result = await this.generateRegisteredRoute(request);
         break;
       default:
-        throw new Error(`Unsupported route generation method: ${String(config.method)}`);
+        throw new Error(`Unsupported route generation method: ${String(request.method)}`);
     }
-    return requireGenerationResult(result);
+    return validateRouteGenerationResult({ result, request });
   }
 
-  private generateDirectRoute(points: [number, number][]): RouteGenerationResult {
+  private generateDirectRoute(points: readonly [number, number][]): RouteGenerationResult {
     const lineGeometry: [number, number][] = [...points];
     const distance = this.calculateTotalDistance(points);
 
@@ -55,7 +87,7 @@ export class RouteGenerator {
   }
 
   private generateGreatCircleRoute(
-    points: [number, number][],
+    points: readonly [number, number][],
     options?: unknown
   ): RouteGenerationResult {
     const numIntermediatePoints = requireGreatCirclePointCount(options);
@@ -82,37 +114,19 @@ export class RouteGenerator {
     };
   }
 
-  private async generateOSMRoute(
-    points: [number, number][],
-    options?: unknown
-  ): Promise<RouteGenerationResult> {
-    if (!this.engines?.osrm) {
-      throw new Error('OSRM engine is required for osm_route generation');
+  private async generateRegisteredRoute(request: RouteEngineRequest): Promise<RouteGenerationResult> {
+    const method = request.method as RouteExternalEngineMethod;
+    const registered = this.externalEngines.get(method);
+    if (!registered) {
+      throw new RouteEngineUnavailableError(method);
     }
-    const out = await this.engines.osrm.route(points, options);
-    return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
-  }
-
-  private async generateSeaRoute(
-    points: [number, number][],
-    options?: unknown
-  ): Promise<RouteGenerationResult> {
-    if (!this.engines?.searoute) {
-      throw new Error('Searoute engine is required for searoute generation');
-    }
-    const out = await this.engines.searoute.route(points, options);
-    return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
-  }
-
-  private async generateCustomRoute(
-    points: [number, number][],
-    options?: unknown
-  ): Promise<RouteGenerationResult> {
-    if (!this.engines?.custom) {
-      throw new Error('Custom route engine is required for custom generation');
-    }
-    const out = await this.engines.custom.route(points, options);
-    return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
+    assertRouteEngineCanServeRequest(registered.capability, request);
+    const out = await registered.engine.route([...request.points], request.options);
+    return {
+      lineGeometry: out.line,
+      distance: out.distance_m,
+      ...(out.duration_s === undefined ? {} : { duration: out.duration_s }),
+    };
   }
 
   private interpolateGreatCircle(
@@ -146,10 +160,15 @@ export class RouteGenerator {
       points.push([this.toDegrees(lon), this.toDegrees(lat)]);
     }
 
+    const lastIndex = points.length - 1;
+    if (lastIndex < 0) throw new Error('great_circle interpolation produced no coordinates');
+    points[0] = [start[0], start[1]];
+    points[lastIndex] = [end[0], end[1]];
+
     return points;
   }
 
-  private calculateTotalDistance(points: [number, number][]): number {
+  private calculateTotalDistance(points: readonly [number, number][]): number {
     let totalDistance = 0;
 
     for (let i = 0; i < points.length - 1; i++) {
@@ -162,7 +181,7 @@ export class RouteGenerator {
     return totalDistance;
   }
 
-  private calculateGreatCircleDistance(points: [number, number][]): number {
+  private calculateGreatCircleDistance(points: readonly [number, number][]): number {
     let totalDistance = 0;
 
     for (let i = 0; i < points.length - 1; i++) {
@@ -201,54 +220,27 @@ export class RouteGenerator {
   }
 }
 
-const requireCoordinate = (point: unknown, index: number): [number, number] => {
-  if (!Array.isArray(point) || point.length !== 2) {
-    throw new Error(`Route generation point ${String(index)} must be a longitude/latitude pair`);
+const requireRouteEngineRequest = (
+  points: [number, number][],
+  config: RouteGenerationConfig
+): RouteEngineRequest => {
+  if (points.length < 2) {
+    throw new Error('At least 2 points required for route generation');
   }
-  const [longitude, latitude] = point;
-  if (
-    typeof longitude !== 'number' ||
-    !Number.isFinite(longitude) ||
-    longitude < -180 ||
-    longitude > 180 ||
-    typeof latitude !== 'number' ||
-    !Number.isFinite(latitude) ||
-    latitude < -90 ||
-    latitude > 90
-  ) {
-    throw new Error(`Route generation point ${String(index)} contains invalid coordinates`);
-  }
-  return [longitude, latitude];
-};
-
-const requireGenerationResult = (value: unknown): RouteGenerationResult => {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error('Route engine result must be an object');
-  }
-  const candidate = value as Record<string, unknown>;
-  if (!Array.isArray(candidate.lineGeometry) || candidate.lineGeometry.length < 2) {
-    throw new Error('Route engine result lineGeometry must contain at least two coordinates');
-  }
-  const lineGeometry = candidate.lineGeometry.map((coordinate, index) =>
-    requireCoordinate(coordinate, index)
+  const coordinates = points.map((point, index) =>
+    requireRouteGenerationCoordinate(`Route generation point ${String(index)}`, point)
   );
-  const distance = requireFiniteNonNegative('distance', candidate.distance);
-  const duration =
-    candidate.duration === undefined
-      ? undefined
-      : requireFiniteNonNegative('duration', candidate.duration);
-  return {
-    lineGeometry,
-    distance,
-    ...(duration === undefined ? {} : { duration }),
-  };
-};
-
-const requireFiniteNonNegative = (label: string, value: unknown): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new Error(`Route engine result ${label} must be a finite non-negative number`);
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error('Route generation config must be an object');
   }
-  return value;
+  if (!isRouteGenerationMethod(config.method)) {
+    throw new Error(`Unsupported route generation method: ${String(config.method)}`);
+  }
+  return {
+    method: config.method,
+    points: coordinates,
+    ...(config.options === undefined ? {} : { options: config.options }),
+  };
 };
 
 const requireGreatCirclePointCount = (options: unknown): number => {

@@ -71,6 +71,7 @@ export interface LocationQueryAPI {
   listLocationFeatures(nodeId: NodeId): Promise<LocationFeature[]>;
   listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]>;
   listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]>;
+  getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null>;
   queryByViewport(
     nodeId: NodeId,
     bbox: LocationViewportBbox,

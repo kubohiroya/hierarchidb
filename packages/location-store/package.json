@@ -15,6 +15,8 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
@@ -32,6 +34,8 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0",
-    "typescript": "workspace:^5.9.3"
+    "fake-indexeddb": "^6.2.2",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0"
   }
 }

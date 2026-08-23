@@ -278,9 +278,12 @@ ready 条件の欠落を timeout 成功や空画像成功へ読み替えない�
 
 LocationDB v1 から v2 への migration は additive とする。
 
-- `locationPoints` は保持する。
-- render classification fields を追加する。
-- MVT tile store、tile summary、read-back validation、tile relation を追加する。
+- 既存 `features` table は保持し、保存済み LocationPoint record を読み替え・削除・再保存しない。
+- `vectorTiles` table を追加し、key は `tileId`、lookup は `nodeId/z/x/y` の compound index とする。
+- `vectorTiles` record は `tileId`, `nodeId`, `z`, `x`, `y`, `data`, `size`, `contentType`, `timestamp` を持つ。
+- `tileId` は `nodeId-z-x-y` とし、`size` は `data.byteLength` と一致しなければならない。
+- absent tile は query result `null` とする。record 破損、座標範囲外、content type 不一致、size 不一致は error とし、empty tile や GeoJSON query へ読み替えない。
+- tile summary、read-back validation、tile relation は tileEmit pipeline の downstream artifact として扱い、導入時も MVT から LocationPoint metadata を復元しない。
 - 既存 vector tile artifact がある場合は、その内容を SSOT として採用せず再生成対象にする。
 
 rollback:

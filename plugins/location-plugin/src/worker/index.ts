@@ -4,3 +4,5 @@ export {
   loadLocationEntitiesDbModule,
   registerLocationWorkerStores,
 } from './factory/registerLocationWorkerStores.js';
+export { createLocationFeatureStoreDexie } from './createLocationFeatureStoreDexie.js';
+export { createLocationVectorTileStoreDexie } from './createLocationVectorTileStoreDexie.js';

@@ -7,4 +7,7 @@ export {
   hasLocationReferencesToShapes,
   initializeLocationDB,
   LocationDB,
+  validateLocationVectorTileRecord,
+  validateTileCoordinates,
 } from './LocationDB.js';
+export * from './LocationVectorTileRecord.js';

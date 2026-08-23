@@ -42,7 +42,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/common/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/createLocationFeatureStoreDexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/common/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/createLocationFeatureStoreDexie.ts src/worker/createLocationVectorTileStoreDexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",

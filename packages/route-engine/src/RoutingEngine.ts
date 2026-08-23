@@ -1,4 +1,8 @@
+import type { RouteEngineCapability } from './RouteEngineCapability.js';
+
 export interface RoutingEngine {
+  readonly capability?: RouteEngineCapability;
+  getCapability?(): RouteEngineCapability;
   route(
     points: [number, number][],
     options?: unknown
