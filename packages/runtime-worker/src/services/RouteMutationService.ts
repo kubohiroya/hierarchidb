@@ -47,6 +47,7 @@ export class RouteMutationService implements RouteMutationAPI {
   async clearRouteArtifacts(nodeId: NodeId): Promise<void> {
     await this.deleteRouteLineStrings(nodeId);
     await this.db.vectorTiles.where('nodeId').equals(nodeId).delete?.();
+    // Legacy nearest-search cache cleanup; canonical tile lineage is in EphemeralDB.
     await this.db.tileIndex.where('nodeId').equals(nodeId).delete?.();
   }
 

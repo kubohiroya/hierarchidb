@@ -286,6 +286,7 @@ export class RouteQueryService implements RouteQueryAPI {
     x: number,
     y: number
   ): Promise<string[] | null> {
+    // RouteDB.tileIndex is only a nearest-search acceleration cache, not build lineage.
     const rows = await this.db.tileIndex
       .where('[nodeId+z+x+y]')
       .equals([nodeId, z, x, y])

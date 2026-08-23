@@ -166,8 +166,12 @@ cache identity の正規仕様（SSOT）とする。
     routeModeからmethodを推測しない。`@hierarchidb/route-engine` のengine registryは
     engine capability（engine id/version、method、任意のaccepted route modes、network requirement、
     waypoint対応）を必須入力として検証し、未登録engine、capability不一致、不正responseを失敗させる。
+    `generation.routeMode` は source planning 済みの正規 `routeMode` を含む必須のcapability検証入力であり、
+    engine側の `acceptedRouteModes` と一致しない場合はsource task failureにする。
     mode×method×engine capability matrix が仕様またはIssue commentで確定するまでは、
     capabilityが宣言したaccepted route modes以外の組み合わせを新たな正規動作として追加しない。
+    OSRM request は `baseUrl`/`osrmBaseUrl`、`profile`、`geometries`、`overview` を明示必須とし、
+    欠落値を `car`、`geojson`、`full` 等へ補完しない。
   - engine resultはWGS84 finite座標、2点以上、始終点一致、finite non-negative distance、
     任意durationの検証を通過した場合だけsource artifact永続化へ進める。
   - source cache には「オリジナル 1 本のみ」の LineString GeoJSON を保存する。
@@ -242,6 +246,8 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 - 正規tile転置indexは`EphemeralDB.tileEmitBufferRelations`のtile→geometry buffer関係とする。
   tile IDはVT orchestratorの共通packed IDを使い、tile境界への接触も交差として含める。
   旧`RouteDB.tileIndex`はcanonical geometry→tileEmit lineageのSSOTとして使用しない。
+- route MVT の正規 source-layer は `layer0`、`promoteId` は `id`、交通モードpropertyは
+  `routeMode` とし、preview と folder map は route plugin common constants を参照する。
 - 同一route sourceのgeometry cache更新は、旧band artifact/relation削除、新artifact/meta、
   新relation書込み、read-back検証を1つのEphemeralDB transactionで完了する。
 

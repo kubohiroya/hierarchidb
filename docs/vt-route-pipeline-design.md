@@ -48,8 +48,12 @@ route pipelineは次の3ステージを、この順序で実行する。
    LineStringを生成する。
    engine registryはmethodごとのcapabilityを必須とし、engine id/version、method、
    任意のaccepted route modes、network requirement、waypoint対応を検証する。
+   source planningで確定した`routeMode`はgeneration requestへ渡し、engine capabilityの
+   `acceptedRouteModes`で明示されていない組み合わせを拒否する。
    mode×method×engine capability matrixが確定するまで、未宣言のroute mode対応を
    generator側で推測しない。
+   `osm_route`は`baseUrl`/`osrmBaseUrl`、`profile`、`geometries`、`overview`を明示必須とし、
+   未指定時に既定profileやgeometry形式を補完しない。
    engine responseはWGS84 finite座標、2点以上、始終点一致、finite non-negative distance、
    任意durationを満たす場合だけ正規resultとして扱う。
 4. routeごとにオリジナルLineStringを1本だけsource cacheへ永続化する。
@@ -124,6 +128,9 @@ filtering、simplification、index生成の一部をno-opにしてtaskを`comple
 - 同一sourceの旧geometry artifact/relation削除と新artifact/meta/relation書込みは、
   read-back検証を含む単一EphemeralDB transactionで行う。
 - `RouteDB.tileIndex`をcanonical geometry→tileEmit lineageのSSOTとして参照しない。
+- route MVT の source-layer は `layer0`、`promoteId` は `id`、交通モードpropertyは
+  `routeMode` とする。preview / folder map / artifact property は同じ route plugin common
+  constants を参照する。
 
 ## tileEmit stage
 

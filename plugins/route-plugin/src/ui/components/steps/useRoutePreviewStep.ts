@@ -35,6 +35,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
 import { formatDistance, getTransportModeName, type SupportedLocale } from '~/common/i18n/index';
 import {
+  ROUTE_MVT_PROMOTE_ID,
+  ROUTE_MVT_SOURCE_LAYER,
+} from '~/common/styles/routeMvtLayerConstants';
+import {
   buildRouteColorExpression,
   mergeRouteStyleConfig,
   resolveLineDashArray,
@@ -643,10 +647,10 @@ export const useRoutePreviewStep = ({
           const targetId = (nodeIdOverride ?? previewNodeId) as NodeId;
           return api.getVectorTile(targetId, z, x, y);
         },
-        promoteId: 'id',
+        promoteId: ROUTE_MVT_PROMOTE_ID,
         layerConfig: {
           layerType: 'line',
-          sourceLayer: 'layer0',
+          sourceLayer: ROUTE_MVT_SOURCE_LAYER,
           paint: {
             'line-color': buildRouteColorExpression(routeStyleConfig),
             'line-width': routeStyleConfig.lineWidth,

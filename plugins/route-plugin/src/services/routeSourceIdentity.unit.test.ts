@@ -58,6 +58,22 @@ describe('buildRouteSourceIdentity', () => {
     expect(generatedDifferently.inputHash).not.toBe(baseline.inputHash);
   });
 
+  it('includes explicit generation routeMode in the input signature', () => {
+    const baseline = buildRouteSourceIdentity(buildInput());
+    const explicitMatchingMode = buildRouteSourceIdentity({
+      ...buildInput(),
+      generation: { method: 'direct', routeMode: ROUTE_MODES.ROAD },
+    });
+
+    expect(explicitMatchingMode.inputHash).toBe(baseline.inputHash);
+    expect(() =>
+      buildRouteSourceIdentity({
+        ...buildInput(),
+        generation: { method: 'direct', routeMode: 'unsupported-route-mode' as never },
+      })
+    ).toThrow('routeMode is unsupported');
+  });
+
   it('fails on invalid directionality metadata instead of defaulting it', () => {
     expect(() =>
       buildRouteSourceIdentity({

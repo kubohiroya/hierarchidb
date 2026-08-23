@@ -6,7 +6,7 @@ type OsrmProfile = 'car' | 'bike' | 'foot' | 'truck';
 export function getOsrmEngineDefaults(): { osrmBaseUrl?: string; osmProfile?: OsrmProfile } {
   const osrmBaseUrl = readConfigString('HIDB_OSRM_BASE_URL');
   const profile = readConfigString('HIDB_OSRM_PROFILE');
-  const osmProfile = castProfile(profile) ?? 'car';
+  const osmProfile = castProfile(profile);
   return { osrmBaseUrl, osmProfile };
 }
 

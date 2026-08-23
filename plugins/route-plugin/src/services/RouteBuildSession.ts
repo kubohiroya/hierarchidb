@@ -342,6 +342,7 @@ export class RouteBuildSession
       const generationStartedAt = Date.now();
       const generationResult = await this.runRouteTask(
         [routeData.startCoordinates, routeData.endCoordinates],
+        routeData.routeMode,
         routeData.method,
         routeData.methodOptions
       );
@@ -564,11 +565,13 @@ export class RouteBuildSession
 
   private async runRouteTask(
     points: [number, number][],
+    routeMode: RouteMode,
     method: RouteGenerationMethod,
     options: RouteGenerationConfig['options']
   ): Promise<RouteGenerationResult> {
     const config: RouteGenerationConfig = {
       method,
+      routeMode,
       options,
     };
     if (!this.generator) {

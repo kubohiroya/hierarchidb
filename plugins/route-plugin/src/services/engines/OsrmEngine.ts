@@ -11,8 +11,8 @@ export interface OsrmOptions {
   baseUrl?: string;
   osrmBaseUrl?: string;
   profile: 'car' | 'bike' | 'foot' | 'truck';
-  geometries?: 'geojson' | 'polyline';
-  overview?: 'full' | 'simplified' | 'false';
+  geometries: 'geojson' | 'polyline';
+  overview: 'full' | 'simplified' | 'false';
   headers?: Record<string, string>;
 }
 
@@ -40,15 +40,17 @@ export class OsrmEngine implements RoutingEngine {
   constructor(private readonly net: NetworkPortLike) {}
 
   async route(points: [number, number][], options?: unknown) {
-    const osrmOptions = options as OsrmOptions;
-    const base = trimTrailingSlash((osrmOptions.baseUrl ?? osrmOptions.osrmBaseUrl ?? '').trim());
+    const osrmOptions = requireOsrmOptions(options);
+    const baseSource = osrmOptions.baseUrl ?? osrmOptions.osrmBaseUrl;
+    if (baseSource === undefined) throw new Error('OSRM baseUrl is required');
+    const base = trimTrailingSlash(baseSource.trim());
     if (!base) throw new Error('OSRM baseUrl is required');
 
-    const profile = osrmOptions.profile || 'car';
+    const profile = osrmOptions.profile;
     const coordinates = points.map((p) => `${p[0]},${p[1]}`).join(';');
     const params = new URLSearchParams({
-      geometries: osrmOptions.geometries || 'geojson',
-      overview: osrmOptions.overview || 'full',
+      geometries: osrmOptions.geometries,
+      overview: osrmOptions.overview,
     });
     const url = `${base}/route/v1/${profile}/${coordinates}?${params.toString()}`;
     const res = await this.net.get(url, { headers: osrmOptions.headers });
@@ -70,6 +72,67 @@ export class OsrmEngine implements RoutingEngine {
     const { distance, duration, coordinates: line } = extractOsrmRoute(payload);
     return { line, distance_m: distance, duration_s: duration };
   }
+}
+
+function requireOsrmOptions(options: unknown): OsrmOptions {
+  if (
+    options === undefined ||
+    options === null ||
+    typeof options !== 'object' ||
+    Array.isArray(options)
+  ) {
+    throw new Error('OSRM options must be an object');
+  }
+  const source = options as Record<string, unknown>;
+  const baseUrl = readOptionalNonEmptyString(source.baseUrl);
+  const osrmBaseUrl = readOptionalNonEmptyString(source.osrmBaseUrl);
+  if (!baseUrl && !osrmBaseUrl) throw new Error('OSRM baseUrl is required');
+  const profile = requireOneOf('OSRM profile', source.profile, ['car', 'bike', 'foot', 'truck']);
+  const geometries = requireOneOf('OSRM geometries', source.geometries, ['geojson', 'polyline']);
+  const overview = requireOneOf('OSRM overview', source.overview, ['full', 'simplified', 'false']);
+  const headers = requireOptionalHeaders(source.headers);
+  return {
+    ...(baseUrl === undefined ? {} : { baseUrl }),
+    ...(osrmBaseUrl === undefined ? {} : { osrmBaseUrl }),
+    profile,
+    geometries,
+    overview,
+    ...(headers === undefined ? {} : { headers }),
+  };
+}
+
+function readOptionalNonEmptyString(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error('OSRM string option must be a non-empty string when provided');
+  }
+  return value.trim();
+}
+
+function requireOneOf<const T extends readonly string[]>(
+  label: string,
+  value: unknown,
+  allowed: T
+): T[number] {
+  if (typeof value !== 'string' || !(allowed as readonly string[]).includes(value)) {
+    throw new Error(`${label} must be one of: ${allowed.join(', ')}`);
+  }
+  return value as T[number];
+}
+
+function requireOptionalHeaders(value: unknown): Record<string, string> | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('OSRM headers must be an object when provided');
+  }
+  const headers: Record<string, string> = {};
+  for (const [key, headerValue] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof headerValue !== 'string') {
+      throw new Error(`OSRM header ${key} must be a string`);
+    }
+    headers[key] = headerValue;
+  }
+  return headers;
 }
 
 function resolveAuthRegistry(): AuthNotificationRegistry | undefined {
