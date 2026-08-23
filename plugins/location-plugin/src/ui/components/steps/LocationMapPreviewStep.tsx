@@ -36,6 +36,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({
   const {
     t,
     initialViewState,
+    locationVectorLayers,
     locationGeoJsonLayers,
     attributionItems,
     locationPreviewSnackbarProps,
@@ -94,7 +95,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({
           initialViewState: initialViewState,
           width: '100%',
           height: '100%',
-          vectorLayers: [],
+          vectorLayers: locationVectorLayers,
           geoJsonLayers: locationGeoJsonLayers,
           attributionItems,
           snackbar: {
