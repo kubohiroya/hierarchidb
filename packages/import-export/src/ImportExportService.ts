@@ -123,9 +123,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
           }
           const nodeId = generateUUID() as NodeId;
           const parentDepth = await resolveParentDepth(params.targetParentId);
-          const parentId: NodeId = (params.targetParentId ??
-            (nodeData as { parentNodeId?: NodeId })?.parentNodeId ??
-            nodeId) as NodeId;
+          const parentId: NodeId = (params.targetParentId ?? nodeId) as NodeId;
           const metaObj = (
             nodeData.metadata && typeof nodeData.metadata === 'object'
               ? (nodeData.metadata as Record<string, unknown>)

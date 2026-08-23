@@ -23,7 +23,6 @@ const validImportData = {
     {
       name: 'Folder',
       nodeType: 'folder',
-      parentNodeId: 'external-parent',
       version: 1,
       description: 'Imported folder',
       tags: ['top-level-tag'],
@@ -89,18 +88,32 @@ describe('ImportData schema validation', () => {
     ]);
   });
 
-  it('accepts legacy node placement and top-level tag fields', () => {
+  it('accepts top-level tag fields', () => {
     assert.deepEqual(
       validateImportDataPayload({
         nodes: [
           {
             name: 'Folder',
-            parentNodeId: 'external-parent',
             tags: ['imported'],
           },
         ],
       }),
       []
+    );
+  });
+
+  it('rejects node placement fields to keep import artifacts portable', () => {
+    assert.deepEqual(
+      validateImportDataPayload({
+        nodes: [{ name: 'Folder', parentNodeId: 'external-parent' }],
+      }),
+      [
+        {
+          code: 'SCHEMA_ADDITIONAL_PROPERTIES',
+          message: 'Unexpected property "parentNodeId" at nodes[0].parentNodeId',
+          path: 'nodes[0].parentNodeId',
+        },
+      ]
     );
   });
 

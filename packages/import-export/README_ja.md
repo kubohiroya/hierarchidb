@@ -10,8 +10,9 @@ HierarchiDB のデータ入出力パッケージ。ツリー構造のシリア�
 `ImportData` JSON Schema により JSON-like import payload を検証する。validator は
 型変換、既定値補完、追加プロパティ削除を行わない。root と node の envelope は厳密に検証し、
 plugin が所有する `data` / `draftData` は generic JSON value として扱う。
-import runtime が引き続き参照するため、node envelope には legacy placement metadata
-である `parentNodeId` と top-level `tags` を含める。
+portable import payload は `parentNodeId` を持たない。import 先は caller が
+`targetParentId` で指定し、payload 内の階層は nested `children` で表現する。
+import runtime が引き続き参照するため、node envelope には top-level `tags` を含める。
 
 ## 公開 Export Artifact
 

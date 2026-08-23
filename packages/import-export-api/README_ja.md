@@ -10,6 +10,8 @@ HierarchiDB のインポート/エクスポート API 型定義パッケージ�
 `importDataJsonSchema` を export する。import envelope、node envelope、metadata、
 draft metadata、再帰的な `children`、`version` を定義する。plugin が所有する
 `data` / `draftData` は、意図的に generic JSON value としてのみ制約する。
+portable payload は `parentNodeId` を含まない。import 先の配置は caller が
+`targetParentId` で指定し、payload 内の階層は `children` で表現する。
 
 ## 依存関係
 

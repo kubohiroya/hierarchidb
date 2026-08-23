@@ -11,8 +11,10 @@ Data import/export package for HierarchiDB. Provides serialization/deserializati
 no coercion, no defaults, and no removal of additional properties. The root and node
 envelopes are strict, while `data` and `draftData` remain generic JSON values owned by
 plugins.
-The node envelope includes legacy placement metadata (`parentNodeId`) and top-level
-`tags` because the import runtime still consumes those fields.
+Portable import payloads do not carry `parentNodeId`; callers choose the destination with
+`targetParentId`, and payload-local hierarchy is represented by nested `children`.
+The node envelope still includes top-level `tags` because the import runtime consumes
+those fields.
 
 ## Public Export Artifacts
 
