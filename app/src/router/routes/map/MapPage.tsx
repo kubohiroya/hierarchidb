@@ -54,6 +54,7 @@ import {
 } from './constants.js';
 import type { MapSearch } from './types.js';
 import { useFolderLayers } from './useFolderLayers.js';
+import { useLocationVectorLayers } from './useLocationVectorLayers.js';
 import { useLocationViewportLayers } from './useLocationViewportLayers.js';
 import { useMapViewState } from './useMapViewState.js';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
@@ -72,6 +73,7 @@ type MapDebugFlags = {
   skipModelessDialogs: boolean;
   skipResourceLayerMap: boolean;
   skipVectorTileLayers: boolean;
+  locationMvtEnabled: boolean;
 };
 
 const parseDebugFlag = (value: string | null): boolean => {
@@ -82,7 +84,12 @@ const parseDebugFlag = (value: string | null): boolean => {
 
 const getMapDebugFlags = (): MapDebugFlags => {
   if (typeof window === 'undefined') {
-    return { skipModelessDialogs: false, skipResourceLayerMap: false, skipVectorTileLayers: false };
+    return {
+      skipModelessDialogs: false,
+      skipResourceLayerMap: false,
+      skipVectorTileLayers: false,
+      locationMvtEnabled: false,
+    };
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -99,6 +106,7 @@ const getMapDebugFlags = (): MapDebugFlags => {
     skipModelessDialogs: resolveFlag('hdbNoModelessDialogs'),
     skipResourceLayerMap: resolveFlag('hdbNoResourceLayerMap'),
     skipVectorTileLayers: resolveFlag('hdbNoVectorTileLayers'),
+    locationMvtEnabled: resolveFlag('hdbLocationMvt'),
   };
 };
 
@@ -285,6 +293,17 @@ export default function MapPage() {
       ),
     [locationTypeSelection]
   );
+  const locationVectorLayers = useLocationVectorLayers({
+    enabled: debugFlags.locationMvtEnabled,
+    locationLayers,
+    layerSetVisibility,
+    enabledLocationKinds,
+    maxZoom: Math.min(commonZoomBounds.maxZoom, 22),
+  });
+  const folderVectorLayers = useMemo(
+    () => [...vectorLayers, ...locationVectorLayers],
+    [locationVectorLayers, vectorLayers]
+  );
   const locationTypeFilter = useMemo(
     () => buildCategoryFilter(enabledLocationKinds, locationKinds, ['type']),
     [enabledLocationKinds, locationKinds]
@@ -306,7 +325,7 @@ export default function MapPage() {
       'mode',
       'route_mode',
     ]);
-    const activeVectorLayers = vectorLayers.filter((layer) => {
+    const activeVectorLayers = folderVectorLayers.filter((layer) => {
       if (!layer.layerSetId) return true;
       return layerSetVisibility[layer.layerSetId] ?? false;
     });
@@ -342,7 +361,7 @@ export default function MapPage() {
     enabledRouteModes,
     locationTypeFilter,
     routeModeValues,
-    vectorLayers,
+    folderVectorLayers,
     layerSetVisibility,
   ]);
 
@@ -621,12 +640,25 @@ export default function MapPage() {
       locationCirclePaint,
       locationIconImageExpression,
       locationIconSizeExpression,
+      disabled: debugFlags.locationMvtEnabled,
     }
   );
 
   const combinedGeoJsonLayers = useMemo(
-    () => [...geoJsonLayers, ...(layerSetVisibility.location ? locationGeoJsonLayers : [])],
-    [geoJsonLayers, layerSetVisibility.location, locationGeoJsonLayers]
+    () => [
+      ...geoJsonLayers,
+      ...(debugFlags.locationMvtEnabled
+        ? []
+        : layerSetVisibility.location
+          ? locationGeoJsonLayers
+          : []),
+    ],
+    [
+      debugFlags.locationMvtEnabled,
+      geoJsonLayers,
+      layerSetVisibility.location,
+      locationGeoJsonLayers,
+    ]
   );
 
   const highlightLayerIds = useMemo(

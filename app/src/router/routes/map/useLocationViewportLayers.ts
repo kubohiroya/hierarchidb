@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationQueryAPI } from '@hierarchidb/location-api';
+import type { LocationIconId, LocationQueryAPI } from '@hierarchidb/location-api';
 import type { LocationType } from '@hierarchidb/location-store';
 import type {
   LayerSetEntryId,
@@ -21,6 +21,7 @@ import {
   FlightTakeoff as FlightTakeoffIcon,
   ForkRight as ForkRightIcon,
   LocationCity as LocationCityIcon,
+  Public as PublicIcon,
   Train as TrainIcon,
 } from '@mui/icons-material';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
@@ -45,12 +46,30 @@ const resolveLayerSetEntryPriority = (
   return layerSet.priority * 100 + (layerSet.entries.length - index);
 };
 
-const LOCATION_ICON_COMPONENTS: Record<LocationType, SvgIconComponent> = {
+const LOCATION_TYPE_ICON_COMPONENTS: Record<LocationType, SvgIconComponent> = {
   area_centroid: LocationCityIcon,
   airport: FlightTakeoffIcon,
   port: DirectionsBoatIcon,
   railway_station: TrainIcon,
   interchange: ForkRightIcon,
+};
+
+const LOCATION_MVT_ICON_COMPONENTS: Record<LocationIconId, SvgIconComponent> = {
+  public: PublicIcon,
+  location_city: LocationCityIcon,
+  flight_takeoff: FlightTakeoffIcon,
+  directions_boat: DirectionsBoatIcon,
+  train: TrainIcon,
+  fork_right: ForkRightIcon,
+};
+
+const LOCATION_MVT_ICON_TYPES: Record<LocationIconId, LocationType | null> = {
+  public: null,
+  location_city: 'area_centroid',
+  flight_takeoff: 'airport',
+  directions_boat: 'port',
+  train: 'railway_station',
+  fork_right: 'interchange',
 };
 
 type UseLocationViewportLayersArgs = {
@@ -63,6 +82,7 @@ type UseLocationViewportLayersArgs = {
   locationIconImageExpression: unknown;
   locationIconSizeExpression: unknown;
   exportControlEnabled?: boolean;
+  disabled?: boolean;
 };
 
 type UseLocationViewportLayersResult = {
@@ -84,6 +104,7 @@ export const useLocationViewportLayers = (
     locationIconImageExpression,
     locationIconSizeExpression,
     exportControlEnabled = true,
+    disabled = false,
   } = args;
 
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
@@ -91,7 +112,7 @@ export const useLocationViewportLayers = (
   const locationQueryPromiseRef = useRef<Promise<LocationQueryAPI> | null>(null);
   const locationQueryTimerRef = useRef<number | null>(null);
   const locationQueryRequestRef = useRef(0);
-  const pendingIconLoadsRef = useRef<Set<LocationType>>(new Set());
+  const pendingIconLoadsRef = useRef<Set<string>>(new Set());
   const [locationGeoJsonLayers, setLocationGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
@@ -104,57 +125,105 @@ export const useLocationViewportLayers = (
   }, []);
 
   const resolveLocationTypeFromIconId = useCallback((iconId: string): LocationType | null => {
+    const directType = (
+      Object.entries(LOCATION_TYPE_ICON_COMPONENTS) as Array<[LocationType, SvgIconComponent]>
+    ).find(([type]) => {
+      if (type === 'airport') return iconId === 'flight_takeoff';
+      if (type === 'port') return iconId === 'directions_boat';
+      if (type === 'railway_station') return iconId === 'train';
+      if (type === 'interchange') return iconId === 'fork_right';
+      return iconId === 'location_city';
+    })?.[0];
+    if (directType) return directType;
     const prefix = 'location-icon-';
     if (!iconId.startsWith(prefix)) return null;
     const candidate = iconId.slice(prefix.length);
-    if (!Object.prototype.hasOwnProperty.call(LOCATION_ICON_COMPONENTS, candidate)) return null;
+    if (!Object.prototype.hasOwnProperty.call(LOCATION_TYPE_ICON_COMPONENTS, candidate))
+      return null;
     return candidate as LocationType;
   }, []);
 
-  const loadLocationIcon = useCallback((map: MapLibreMapInstance, type: LocationType) => {
-    const mapWithImages = map as MapLibreMapInstance & {
-      hasImage?: (id: string) => boolean;
-      addImage?: (id: string, image: HTMLImageElement, options?: { sdf?: boolean }) => void;
-    };
-    if (!mapWithImages.addImage) return;
-    const iconId = `location-icon-${type}`;
-    if (mapWithImages.hasImage?.(iconId)) return;
-    if (pendingIconLoadsRef.current.has(type)) return;
-    const Icon = LOCATION_ICON_COMPONENTS[type];
-    if (!Icon) return;
+  const loadLocationIconImage = useCallback(
+    (
+      map: MapLibreMapInstance,
+      loadKey: string,
+      iconIds: string[],
+      Icon: SvgIconComponent,
+      color: string
+    ) => {
+      const mapWithImages = map as MapLibreMapInstance & {
+        hasImage?: (id: string) => boolean;
+        addImage?: (id: string, image: HTMLImageElement, options?: { sdf?: boolean }) => void;
+      };
+      if (!mapWithImages.addImage) return;
+      if (iconIds.every((iconId) => mapWithImages.hasImage?.(iconId))) return;
+      if (pendingIconLoadsRef.current.has(loadKey)) return;
 
-    pendingIconLoadsRef.current.add(type);
-    const iconProps: LocationViewportIconProps = {
-      Icon,
-      color: LOCATION_TYPE_COLORS[type],
-    };
-    const svg = renderToStaticMarkup(createElement(LocationViewportIcon, iconProps));
-    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    const image = new Image();
-    image.onload = () => {
-      pendingIconLoadsRef.current.delete(type);
-      try {
-        if (!mapWithImages.hasImage?.(iconId)) {
-          mapWithImages.addImage?.(iconId, image);
-        }
-      } catch (error) {
-        console.warn('[MapPage] Failed to register location icon image', { iconId, error });
-      }
-    };
-    image.onerror = () => {
-      pendingIconLoadsRef.current.delete(type);
-      console.warn('[MapPage] Failed to load location icon image', { iconId });
-    };
-    image.src = dataUrl;
-  }, []);
+      pendingIconLoadsRef.current.add(loadKey);
+      const iconProps: LocationViewportIconProps = { Icon, color };
+      const svg = renderToStaticMarkup(createElement(LocationViewportIcon, iconProps));
+      const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = () => {
+        pendingIconLoadsRef.current.delete(loadKey);
+        iconIds.forEach((iconId) => {
+          try {
+            if (!mapWithImages.hasImage?.(iconId)) {
+              mapWithImages.addImage?.(iconId, image);
+            }
+          } catch (error) {
+            console.warn('[MapPage] Failed to register location icon image', { iconId, error });
+          }
+        });
+      };
+      image.onerror = () => {
+        pendingIconLoadsRef.current.delete(loadKey);
+        console.warn('[MapPage] Failed to load location icon image', { iconIds });
+      };
+      image.src = dataUrl;
+    },
+    []
+  );
+
+  const loadLocationIcon = useCallback(
+    (map: MapLibreMapInstance, type: LocationType) => {
+      const iconIds =
+        type === 'airport'
+          ? ['location-icon-airport', 'flight_takeoff']
+          : type === 'port'
+            ? ['location-icon-port', 'directions_boat']
+            : type === 'railway_station'
+              ? ['location-icon-railway_station', 'train']
+              : type === 'interchange'
+                ? ['location-icon-interchange', 'fork_right']
+                : ['location-icon-area_centroid', 'location_city'];
+      const Icon = LOCATION_TYPE_ICON_COMPONENTS[type];
+      if (!Icon) return;
+      loadLocationIconImage(map, `type:${type}`, iconIds, Icon, LOCATION_TYPE_COLORS[type]);
+    },
+    [loadLocationIconImage]
+  );
+
+  const loadLocationMvtIcon = useCallback(
+    (map: MapLibreMapInstance, iconId: LocationIconId) => {
+      const Icon = LOCATION_MVT_ICON_COMPONENTS[iconId];
+      const type = LOCATION_MVT_ICON_TYPES[iconId];
+      const color = type ? LOCATION_TYPE_COLORS[type] : LOCATION_TYPE_COLORS.area_centroid;
+      loadLocationIconImage(map, `mvt:${iconId}`, [iconId], Icon, color);
+    },
+    [loadLocationIconImage]
+  );
 
   const ensureLocationIcons = useCallback(
     (map: MapLibreMapInstance) => {
-      (Object.keys(LOCATION_ICON_COMPONENTS) as LocationType[]).forEach((type) => {
+      (Object.keys(LOCATION_TYPE_ICON_COMPONENTS) as LocationType[]).forEach((type) => {
         loadLocationIcon(map, type);
       });
+      (Object.keys(LOCATION_MVT_ICON_COMPONENTS) as LocationIconId[]).forEach((iconId) => {
+        loadLocationMvtIcon(map, iconId);
+      });
     },
-    [loadLocationIcon]
+    [loadLocationIcon, loadLocationMvtIcon]
   );
 
   const buildLocationLayersForNode = useCallback(
@@ -208,6 +277,10 @@ export const useLocationViewportLayers = (
   const fetchLocationViewportPoints = useCallback(
     async (viewState?: MapViewState) => {
       if (!mapInstanceRef.current) return;
+      if (disabled) {
+        setLocationGeoJsonLayers([]);
+        return;
+      }
       if (locationLayers.length === 0) {
         setLocationGeoJsonLayers([]);
         return;
@@ -319,6 +392,7 @@ export const useLocationViewportLayers = (
     },
     [
       buildLocationLayersForNode,
+      disabled,
       enabledLocationKinds,
       getLocationQueryAPI,
       layerSetVisibility.location,
@@ -372,7 +446,7 @@ export const useLocationViewportLayers = (
   }, [ensureLocationIcons, loadLocationIcon, mapInstance, resolveLocationTypeFromIconId]);
 
   useEffect(() => {
-    if (!layerSetVisibility.location) {
+    if (disabled || !layerSetVisibility.location) {
       setLocationGeoJsonLayers([]);
       return () => {
         if (locationQueryTimerRef.current) {
@@ -397,6 +471,7 @@ export const useLocationViewportLayers = (
     };
   }, [
     buildLocationLayersForNode,
+    disabled,
     layerSetVisibility.location,
     locationLayers,
     scheduleLocationQuery,

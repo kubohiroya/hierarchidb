@@ -61,6 +61,7 @@ import {
   type BuildSessionHeartbeat,
   type BuildSessionStatus,
   type BuildStageStatus,
+  type EphemeralGeometryCacheRecord,
 } from '@hierarchidb/gis-sdk';
 
 const shapeBuildTaskTable = (): Table<ShapeBuildTaskRecord, string> =>
@@ -337,8 +338,10 @@ const toShapeVectorTileRecord = (tile: VectorTileRecord): ShapeVectorTileRecord 
   version: tile.version,
 });
 
-const isGeometryCacheComplete = <T extends { timestamp: number }>(record: T | null | undefined): record is T => (
-  Boolean(record && record.timestamp > 0)
+const isShapeGeometryCacheComplete = (
+  record: EphemeralGeometryCacheRecord | null | undefined
+): record is ShapeGeometryCache => (
+  Boolean(record && record.domainType === 'shape' && record.timestamp > 0)
 );
 
 const markGeometryCacheWriteComplete = async (buffers: Array<{ id: string }>): Promise<void> => {
@@ -402,7 +405,7 @@ const listGeometryCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<
   return records
     .filter(isDefined)
     .filter((record): record is ShapeGeometryCache => (
-      record.nodeId === nodeId && isGeometryCacheComplete(record)
+      record.nodeId === nodeId && isShapeGeometryCacheComplete(record)
     ));
 };
 
@@ -590,7 +593,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   ): Promise<ShapeGeometryCache | null> {
     return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
       const record = await ephemeralDB.geometryCache.get(bufferId);
-      return isGeometryCacheComplete(record) ? record : null;
+      return isShapeGeometryCacheComplete(record) ? record : null;
     });
   }
 
@@ -1123,7 +1126,7 @@ export class EphemeralShapeApiImpl {
   async getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null> {
     return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
       const record = await ephemeralDB.geometryCache.get(bufferId);
-      return isGeometryCacheComplete(record) ? record : null;
+      return isShapeGeometryCacheComplete(record) ? record : null;
     });
   }
 

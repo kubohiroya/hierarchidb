@@ -5,6 +5,7 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { MapAttributionItem, MapToggleSelection, MapViewState } from '@hierarchidb/ui-map';
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-map';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import { LocationCity } from '@mui/icons-material';
 import { useTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
@@ -48,6 +49,20 @@ const buildInitialViewState = (bbox?: [number, number, number, number]): MapView
     latitude: Number.isFinite(latitude) ? latitude : DEFAULT_MAP_CONFIG.viewState.latitude,
     zoom: DEFAULT_MAP_CONFIG.viewState.zoom,
   };
+};
+
+const parseBooleanFlag = (value: string | null): boolean => {
+  if (value === null) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'yes';
+};
+
+const isLocationMvtEnabled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  const queryValue = params.get('hdbLocationMvt');
+  if (queryValue !== null) return parseBooleanFlag(queryValue);
+  return parseBooleanFlag(window.localStorage.getItem('hdbLocationMvt'));
 };
 
 export const useLocationMapPreviewStep = ({
@@ -104,6 +119,7 @@ export const useLocationMapPreviewStep = ({
 
   const {
     previewPoints,
+    locationVectorLayers,
     locationGeoJsonLayers,
     locationPreviewSnackbarProps,
     hoverMatches,
@@ -123,6 +139,7 @@ export const useLocationMapPreviewStep = ({
     t,
     isDarkMode: theme.palette.mode === 'dark',
     refreshKey: metadataRefreshKey,
+    mvtEnabled: isLocationMvtEnabled(),
   });
 
   const filteredMetadataRows = useMemo(() => {
@@ -169,7 +186,7 @@ export const useLocationMapPreviewStep = ({
     () =>
       LOCATION_TYPE_OPTIONS.map((option) => {
         const type = option.id as LocationType;
-        const Icon = LOCATION_TYPE_STYLES[type].icon;
+        const Icon = LOCATION_TYPE_STYLES[type]?.icon ?? LocationCity;
         const iconColor = iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
         const labelColor = labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
         return {
@@ -232,6 +249,7 @@ export const useLocationMapPreviewStep = ({
   return {
     t,
     initialViewState,
+    locationVectorLayers,
     locationGeoJsonLayers,
     attributionItems,
     locationPreviewSnackbarProps,

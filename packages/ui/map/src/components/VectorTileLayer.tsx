@@ -33,6 +33,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   sourceLayer,
   tileDataProvider,
   onTileRequest,
+  onTileError,
   promoteId,
   featureState,
 }) => {
@@ -53,6 +54,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     sourceLayer,
     tileDataProvider,
     onTileRequest,
+    onTileError,
     promoteId,
     featureState,
   });
