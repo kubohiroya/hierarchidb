@@ -47,7 +47,6 @@ export const importDataJsonSchema = {
       properties: {
         name: { type: 'string', minLength: 1 },
         nodeType: { type: 'string', minLength: 1 },
-        parentNodeId: { type: 'string', minLength: 1 },
         version: { type: 'integer', minimum: 1 },
         description: { type: 'string' },
         tags: {

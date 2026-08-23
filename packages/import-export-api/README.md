@@ -10,6 +10,8 @@ The package exports `importDataJsonSchema`, the canonical JSON Schema for JSON-l
 `ImportData<T>` payloads. It defines the import envelope, node envelope, metadata,
 draft metadata, recursive `children`, and version fields. Plugin-owned `data` and
 `draftData` are intentionally constrained only to generic JSON values.
+Portable payloads do not include `parentNodeId`; import placement is supplied by the
+caller via `targetParentId`, while in-payload hierarchy is represented by `children`.
 
 ## Dependencies
 

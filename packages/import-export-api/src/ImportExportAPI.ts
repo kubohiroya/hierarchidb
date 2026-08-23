@@ -87,8 +87,6 @@ export interface ImportData<T> {
   nodes: Array<{
     name: string;
     nodeType?: string;
-    /** Optional parent node ID when no target parent is provided. */
-    parentNodeId?: NodeId;
     /** Optional source version for imported nodes (defaults to 1 if omitted). */
     version?: number;
     description?: string;
