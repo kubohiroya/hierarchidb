@@ -1,0 +1,2994 @@
+[
+  {
+    "file": "components/AppLogoIcon.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"AppLogoIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"AppLogoIconView.tsx\".",
+    "suggestedRename": "AppLogoIconView.tsx"
+  },
+  {
+    "file": "components/BuildSessionQueuePanel.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"BuildSessionQueuePanel.tsx\" exceeds separation threshold (JSX lines: 86 (threshold: 50), hook calls: 17 (threshold: 2)). Consider splitting into BuildSessionQueuePanel.tsx + BuildSessionQueuePanelView.tsx + useBuildSessionQueuePanelState.ts.",
+    "suggestedRename": "BuildSessionQueuePanel.tsx + BuildSessionQueuePanelView.tsx + useBuildSessionQueuePanelState.ts"
+  },
+  {
+    "file": "components/BuildSessionQueueSessionRow.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"BuildSessionQueueSessionRow.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into BuildSessionQueueSessionRow.tsx + BuildSessionQueueSessionRowView.tsx + useBuildSessionQueueSessionRowState.ts.",
+    "suggestedRename": "BuildSessionQueueSessionRow.tsx + BuildSessionQueueSessionRowView.tsx + useBuildSessionQueueSessionRowState.ts"
+  },
+  {
+    "file": "components/BuildSessionSpinnerButton.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"BuildSessionSpinnerButton.tsx\" exceeds separation threshold (hook calls: 5 (threshold: 2)). Consider splitting into BuildSessionSpinnerButton.tsx + BuildSessionSpinnerButtonView.tsx + useBuildSessionSpinnerButtonState.ts.",
+    "suggestedRename": "BuildSessionSpinnerButton.tsx + BuildSessionSpinnerButtonView.tsx + useBuildSessionSpinnerButtonState.ts"
+  },
+  {
+    "file": "contexts/AppConfigContext.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"AppConfigContext.tsx\" does not match primary export \"AppConfig\". Expected \"AppConfig.tsx\".",
+    "suggestedRename": "AppConfig.tsx"
+  },
+  {
+    "file": "contexts/AppProviders.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"AppProviders.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"AppProvidersView.tsx\".",
+    "suggestedRename": "AppProvidersView.tsx"
+  },
+  {
+    "file": "contexts/AppReporters.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"AppReporters.tsx\" does not match primary export \"MarkStepDoneOnMount\". Expected \"MarkStepDoneOnMount.tsx\".",
+    "suggestedRename": "MarkStepDoneOnMount.tsx"
+  },
+  {
+    "file": "contexts/AppReporters.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"AppReporters.tsx\" exceeds separation threshold (hook calls: 13 (threshold: 2)). Consider splitting into AppReporters.tsx + AppReportersView.tsx + useAppReportersState.ts.",
+    "suggestedRename": "AppReporters.tsx + AppReportersView.tsx + useAppReportersState.ts"
+  },
+  {
+    "file": "contexts/AppThemeProvider.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"AppThemeProvider.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into AppThemeProvider.tsx + AppThemeProviderView.tsx + useAppThemeProviderState.ts.",
+    "suggestedRename": "AppThemeProvider.tsx + AppThemeProviderView.tsx + useAppThemeProviderState.ts"
+  },
+  {
+    "file": "contexts/BootProgressProvider.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"BootProgressProvider.tsx\" exceeds separation threshold (hook calls: 25 (threshold: 2)). Consider splitting into BootProgressProvider.tsx + BootProgressProviderView.tsx + useBootProgressProviderState.ts.",
+    "suggestedRename": "BootProgressProvider.tsx + BootProgressProviderView.tsx + useBootProgressProviderState.ts"
+  },
+  {
+    "file": "contexts/IconRegistryProvider.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"IconRegistryProvider.tsx\" does not match primary export \"AppIconRegistryProvider\". Expected \"AppIconRegistryProvider.tsx\".",
+    "suggestedRename": "AppIconRegistryProvider.tsx"
+  },
+  {
+    "file": "contexts/IconRegistryProvider.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"IconRegistryProvider.tsx\" exceeds separation threshold (hook calls: 6 (threshold: 2)). Consider splitting into IconRegistryProvider.tsx + IconRegistryProviderView.tsx + useIconRegistryProviderState.ts.",
+    "suggestedRename": "IconRegistryProvider.tsx + IconRegistryProviderView.tsx + useIconRegistryProviderState.ts"
+  },
+  {
+    "file": "contexts/WorkerProvider.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"WorkerProvider.tsx\" exceeds separation threshold (hook calls: 32 (threshold: 2)). Consider splitting into WorkerProvider.tsx + WorkerProviderView.tsx + useWorkerProviderState.ts.",
+    "suggestedRename": "WorkerProvider.tsx + WorkerProviderView.tsx + useWorkerProviderState.ts"
+  },
+  {
+    "file": "features/shape/generated/geoboundaries-shape-presets.generated.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"geoboundaries-shape-presets.generated.ts\" does not match primary export \"GEOBOUNDARIES_COUNTRIES_BY_LEVEL\". Expected \"GEOBOUNDARIES_COUNTRIES_BY_LEVEL.ts\".",
+    "suggestedRename": "GEOBOUNDARIES_COUNTRIES_BY_LEVEL.ts"
+  },
+  {
+    "file": "features/shape/generated/geoboundaries-shape-presets.generated.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"geoboundaries-shape-presets.generated.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"geoboundaries-shape-presets.generatedConstants.ts\".",
+    "suggestedRename": "geoboundaries-shape-presets.generatedConstants.ts"
+  },
+  {
+    "file": "features/shape/shapeCreatePresets.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapeCreatePresets.ts\" does not match primary export \"SHAPE_CREATE_PRESET_IDS\". Expected \"SHAPE_CREATE_PRESET_IDS.ts\".",
+    "suggestedRename": "SHAPE_CREATE_PRESET_IDS.ts"
+  },
+  {
+    "file": "features/templates/nodeCreateTemplates.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"nodeCreateTemplates.ts\" does not match primary export \"TemplateTreeContext\". Expected \"TemplateTreeContext.ts\".",
+    "suggestedRename": "TemplateTreeContext.ts"
+  },
+  {
+    "file": "hooks/SubscriptionServices.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"SubscriptionServices.ts\" does not match primary export \"SubscriptionKind\". Expected \"SubscriptionKind.ts\".",
+    "suggestedRename": "SubscriptionKind.ts"
+  },
+  {
+    "file": "hooks/treeconsole/actions/dialog.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"dialog.ts\" does not match primary export \"PREVIEW_GUARD_NODE_TYPES\". Expected \"PREVIEW_GUARD_NODE_TYPES.ts\".",
+    "suggestedRename": "PREVIEW_GUARD_NODE_TYPES.ts"
+  },
+  {
+    "file": "hooks/treeconsole/actions/navigation.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"navigation.ts\" does not match primary export \"NavigationHelpers\". Expected \"NavigationHelpers.ts\".",
+    "suggestedRename": "NavigationHelpers.ts"
+  },
+  {
+    "file": "hooks/treeconsole/sortFilter.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"sortFilter.ts\" does not match primary export \"SortFilterConfig\". Expected \"SortFilterConfig.ts\".",
+    "suggestedRename": "SortFilterConfig.ts"
+  },
+  {
+    "file": "i18n/workerInitMessageConstants.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"workerInitMessageConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"workerInitMessageConstantsUtils.ts\".",
+    "suggestedRename": "workerInitMessageConstantsUtils.ts"
+  },
+  {
+    "file": "loader.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"loader.ts\" does not match primary export \"LoadAppConfigReturn\". Expected \"LoadAppConfigReturn.ts\".",
+    "suggestedRename": "LoadAppConfigReturn.ts"
+  },
+  {
+    "file": "maintenance/maintenanceChannelConstants.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"maintenanceChannelConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"maintenanceChannelConstantsUtils.ts\".",
+    "suggestedRename": "maintenanceChannelConstantsUtils.ts"
+  },
+  {
+    "file": "maintenance/maintenanceExecution.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"maintenanceExecution.ts\" does not match primary export \"MaintenanceDeleteResult\". Expected \"MaintenanceDeleteResult.ts\".",
+    "suggestedRename": "MaintenanceDeleteResult.ts"
+  },
+  {
+    "file": "maintenance/maintenanceLock.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"maintenanceLock.ts\" does not match primary export \"MaintenanceLockRecord\". Expected \"MaintenanceLockRecord.ts\".",
+    "suggestedRename": "MaintenanceLockRecord.ts"
+  },
+  {
+    "file": "maintenance/maintenanceSession.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"maintenanceSession.ts\" does not match primary export \"MaintenanceSessionRecord\". Expected \"MaintenanceSessionRecord.ts\".",
+    "suggestedRename": "MaintenanceSessionRecord.ts"
+  },
+  {
+    "file": "maintenance/runtimeShutdown.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"runtimeShutdown.ts\" does not match primary export \"RuntimeShutdownResult\". Expected \"RuntimeShutdownResult.ts\".",
+    "suggestedRename": "RuntimeShutdownResult.ts"
+  },
+  {
+    "file": "plugin-loaders/databaseLoaderUtils.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"databaseLoaderUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"databaseLoaderUtilsConstants.ts\".",
+    "suggestedRename": "databaseLoaderUtilsConstants.ts"
+  },
+  {
+    "file": "plugin-loaders/di/tokens.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tokens.ts\" does not match primary export \"UIPluginRegistryTokens\". Expected \"UIPluginRegistryTokens.ts\".",
+    "suggestedRename": "UIPluginRegistryTokens.ts"
+  },
+  {
+    "file": "plugin-loaders/iconLoaderUtils.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"iconLoaderUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"iconLoaderUtilsConstants.ts\".",
+    "suggestedRename": "iconLoaderUtilsConstants.ts"
+  },
+  {
+    "file": "plugin-loaders/menu-builders.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"menu-builders.ts\" does not match primary export \"TreeContext\". Expected \"TreeContext.ts\".",
+    "suggestedRename": "TreeContext.ts"
+  },
+  {
+    "file": "plugin-loaders/menu-spec.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"menu-spec.ts\" does not match primary export \"MenuGroup\". Expected \"MenuGroup.ts\".",
+    "suggestedRename": "MenuGroup.ts"
+  },
+  {
+    "file": "plugin-loaders/uiLoaderUtils.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"uiLoaderUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"uiLoaderUtilsConstants.ts\".",
+    "suggestedRename": "uiLoaderUtilsConstants.ts"
+  },
+  {
+    "file": "plugin-loaders/workerLoaderUtils.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"workerLoaderUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"workerLoaderUtilsConstants.ts\".",
+    "suggestedRename": "workerLoaderUtilsConstants.ts"
+  },
+  {
+    "file": "plugin-runtime/database-store-loaders.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"database-store-loaders.ts\" does not match primary export \"DatabaseStoreLoaderEntry\". Expected \"DatabaseStoreLoaderEntry.ts\".",
+    "suggestedRename": "DatabaseStoreLoaderEntry.ts"
+  },
+  {
+    "file": "plugin-runtime/plugin-registry.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-registry.ts\" does not match primary export \"InstalledPlugin\". Expected \"InstalledPlugin.ts\".",
+    "suggestedRename": "InstalledPlugin.ts"
+  },
+  {
+    "file": "plugin-runtime/plugins.config.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugins.config.ts\" does not match primary export \"PluginConfig\". Expected \"PluginConfig.ts\".",
+    "suggestedRename": "PluginConfig.ts"
+  },
+  {
+    "file": "plugin-runtime/storeSelectionUtils.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"storeSelectionUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"storeSelectionUtilsConstants.ts\".",
+    "suggestedRename": "storeSelectionUtilsConstants.ts"
+  },
+  {
+    "file": "root.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"root.tsx\" does not match primary export \"AppRoot\". Expected \"AppRoot.tsx\".",
+    "suggestedRename": "AppRoot.tsx"
+  },
+  {
+    "file": "router/config.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"config.ts\" does not match primary export \"RouterMode\". Expected \"RouterMode.ts\".",
+    "suggestedRename": "RouterMode.ts"
+  },
+  {
+    "file": "router/loaders/treeLoaders.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"treeLoaders.ts\" does not match primary export \"LoadNodeActionArgs\". Expected \"LoadNodeActionArgs.ts\".",
+    "suggestedRename": "LoadNodeActionArgs.ts"
+  },
+  {
+    "file": "router/loaders/treeLoaders.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"treeLoaders.ts\" contains only types but does not use the \"*Types.ts\" or \"types.ts\" suffix. Rename to \"treeLoadersTypes.ts\".",
+    "suggestedRename": "treeLoadersTypes.ts"
+  },
+  {
+    "file": "router/loaders/uiPlugins.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"uiPlugins.ts\" does not match primary export \"UIPluginSetupResult\". Expected \"UIPluginSetupResult.ts\".",
+    "suggestedRename": "UIPluginSetupResult.ts"
+  },
+  {
+    "file": "router/loaders/workerClient.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"workerClient.ts\" does not match primary export \"WorkerStartOptions\". Expected \"WorkerStartOptions.ts\".",
+    "suggestedRename": "WorkerStartOptions.ts"
+  },
+  {
+    "file": "router/pages/home/HomePage.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"HomePage.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into HomePage.tsx + HomePageView.tsx + useHomePageState.ts.",
+    "suggestedRename": "HomePage.tsx + HomePageView.tsx + useHomePageState.ts"
+  },
+  {
+    "file": "router/pages/info/LicenseInfo.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LicenseInfo.tsx\" exceeds separation threshold (JSX lines: 61 (threshold: 50)). Consider splitting into LicenseInfo.tsx + LicenseInfoView.tsx + useLicenseInfoState.ts.",
+    "suggestedRename": "LicenseInfo.tsx + LicenseInfoView.tsx + useLicenseInfoState.ts"
+  },
+  {
+    "file": "router/pages/maintenance/MaintenancePage.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"MaintenancePage.tsx\" exceeds separation threshold (JSX lines: 51 (threshold: 50), hook calls: 11 (threshold: 2)). Consider splitting into MaintenancePage.tsx + MaintenancePageView.tsx + useMaintenancePageState.ts.",
+    "suggestedRename": "MaintenancePage.tsx + MaintenancePageView.tsx + useMaintenancePageState.ts"
+  },
+  {
+    "file": "router/pages/tree/archive/ArchiveBreadcrumb.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ArchiveBreadcrumb.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ArchiveBreadcrumbView.tsx\".",
+    "suggestedRename": "ArchiveBreadcrumbView.tsx"
+  },
+  {
+    "file": "router/pages/tree/archive/ArchiveDialog.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ArchiveDialog.tsx\" exceeds separation threshold (JSX lines: 87 (threshold: 50), hook calls: 14 (threshold: 2)). Consider splitting into ArchiveDialog.tsx + ArchiveDialogView.tsx + useArchiveDialogState.ts.",
+    "suggestedRename": "ArchiveDialog.tsx + ArchiveDialogView.tsx + useArchiveDialogState.ts"
+  },
+  {
+    "file": "router/pages/tree/console/DynamicSpeedDial.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"DynamicSpeedDial.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into DynamicSpeedDial.tsx + DynamicSpeedDialView.tsx + useDynamicSpeedDialState.ts.",
+    "suggestedRename": "DynamicSpeedDial.tsx + DynamicSpeedDialView.tsx + useDynamicSpeedDialState.ts"
+  },
+  {
+    "file": "router/pages/tree/console/NodeNotFoundDialog.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"NodeNotFoundDialog.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"NodeNotFoundDialogView.tsx\".",
+    "suggestedRename": "NodeNotFoundDialogView.tsx"
+  },
+  {
+    "file": "router/pages/tree/console/TreeConsoleIntegration.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TreeConsoleIntegration.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into TreeConsoleIntegration.tsx + TreeConsoleIntegrationView.tsx + useTreeConsoleIntegrationState.ts.",
+    "suggestedRename": "TreeConsoleIntegration.tsx + TreeConsoleIntegrationView.tsx + useTreeConsoleIntegrationState.ts"
+  },
+  {
+    "file": "router/pages/tree/console/TreeConsoleIntegrationLoader.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"TreeConsoleIntegrationLoader.tsx\" does not match primary export \"MemoizedTreeConsoleIntegration\". Expected \"MemoizedTreeConsoleIntegration.tsx\".",
+    "suggestedRename": "MemoizedTreeConsoleIntegration.tsx"
+  },
+  {
+    "file": "router/pages/tree/console/TreeConsoleIntegrationLoader.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"TreeConsoleIntegrationLoader.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"TreeConsoleIntegrationLoaderView.tsx\".",
+    "suggestedRename": "TreeConsoleIntegrationLoaderView.tsx"
+  },
+  {
+    "file": "router/pages/tree/console/TreeConsoleRoutePage.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TreeConsoleRoutePage.tsx\" exceeds separation threshold (hook calls: 14 (threshold: 2)). Consider splitting into TreeConsoleRoutePage.tsx + TreeConsoleRoutePageView.tsx + useTreeConsoleRoutePageState.ts.",
+    "suggestedRename": "TreeConsoleRoutePage.tsx + TreeConsoleRoutePageView.tsx + useTreeConsoleRoutePageState.ts"
+  },
+  {
+    "file": "router/pages/tree/console/TreeConsoleRoutePageLayout.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"TreeConsoleRoutePageLayout.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"TreeConsoleRoutePageLayoutView.tsx\".",
+    "suggestedRename": "TreeConsoleRoutePageLayoutView.tsx"
+  },
+  {
+    "file": "router/pages/tree/console/TreeConsoleRoutePageProviders.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"TreeConsoleRoutePageProviders.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"TreeConsoleRoutePageProvidersView.tsx\".",
+    "suggestedRename": "TreeConsoleRoutePageProvidersView.tsx"
+  },
+  {
+    "file": "router/pages/tree/console/TreeNodeInfoPanel.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TreeNodeInfoPanel.tsx\" exceeds separation threshold (JSX lines: 80 (threshold: 50), hook calls: 7 (threshold: 2)). Consider splitting into TreeNodeInfoPanel.tsx + TreeNodeInfoPanelView.tsx + useTreeNodeInfoPanelState.ts.",
+    "suggestedRename": "TreeNodeInfoPanel.tsx + TreeNodeInfoPanelView.tsx + useTreeNodeInfoPanelState.ts"
+  },
+  {
+    "file": "router/pages/tree/console/buildFlow.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"buildFlow.ts\" does not match primary export \"BuildStepTarget\". Expected \"BuildStepTarget.ts\".",
+    "suggestedRename": "BuildStepTarget.ts"
+  },
+  {
+    "file": "router/pages/tree/console/buildQueueConstants.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"buildQueueConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"buildQueueConstantsUtils.ts\".",
+    "suggestedRename": "buildQueueConstantsUtils.ts"
+  },
+  {
+    "file": "router/pages/tree/tour/ProjectsGuidedTour.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ProjectsGuidedTour.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ProjectsGuidedTourView.tsx\".",
+    "suggestedRename": "ProjectsGuidedTourView.tsx"
+  },
+  {
+    "file": "router/pages/tree/tour/ResourcesGuidedTour.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ResourcesGuidedTour.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ResourcesGuidedTourView.tsx\".",
+    "suggestedRename": "ResourcesGuidedTourView.tsx"
+  },
+  {
+    "file": "router/pages/tree/tour/ResourcesGuidedTour.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ResourcesGuidedTour.tsx\" exceeds separation threshold (JSX lines: 64 (threshold: 50)). Consider splitting into ResourcesGuidedTour.tsx + ResourcesGuidedTourView.tsx + useResourcesGuidedTourState.ts.",
+    "suggestedRename": "ResourcesGuidedTour.tsx + ResourcesGuidedTourView.tsx + useResourcesGuidedTourState.ts"
+  },
+  {
+    "file": "router/routes/auth/auth.callback.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"auth.callback.tsx\" does not match primary export \"AuthCallbackRoute\". Expected \"AuthCallbackRoute.tsx\".",
+    "suggestedRename": "AuthCallbackRoute.tsx"
+  },
+  {
+    "file": "router/routes/auth/auth.callback.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"auth.callback.tsx\" exceeds separation threshold (hook calls: 10 (threshold: 2)). Consider splitting into auth.callback.tsx + auth.callbackView.tsx + useAuth.callbackState.ts.",
+    "suggestedRename": "auth.callback.tsx + auth.callbackView.tsx + useAuth.callbackState.ts"
+  },
+  {
+    "file": "router/routes/auth/auth.login.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"auth.login.tsx\" does not match primary export \"LoginRoute\". Expected \"LoginRoute.tsx\".",
+    "suggestedRename": "LoginRoute.tsx"
+  },
+  {
+    "file": "router/routes/auth/auth.login.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"auth.login.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into auth.login.tsx + auth.loginView.tsx + useAuth.loginState.ts.",
+    "suggestedRename": "auth.login.tsx + auth.loginView.tsx + useAuth.loginState.ts"
+  },
+  {
+    "file": "router/routes/auth/auth.silent-renew.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"auth.silent-renew.tsx\" does not match primary export \"SilentRenewRoute\". Expected \"SilentRenewRoute.tsx\".",
+    "suggestedRename": "SilentRenewRoute.tsx"
+  },
+  {
+    "file": "router/routes/folder/baseRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"baseRoute.tsx\" does not match primary export \"folderBaseRoute\". Expected \"folderBaseRoute.tsx\".",
+    "suggestedRename": "folderBaseRoute.tsx"
+  },
+  {
+    "file": "router/routes/folder/baseRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"baseRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"baseRouteView.tsx\".",
+    "suggestedRename": "baseRouteView.tsx"
+  },
+  {
+    "file": "router/routes/folder/folderRoutes.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"folderRoutes.tsx\" does not match primary export \"folderTreeRoute\". Expected \"folderTreeRoute.tsx\".",
+    "suggestedRename": "folderTreeRoute.tsx"
+  },
+  {
+    "file": "router/routes/folder/folderRoutes.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"folderRoutes.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"folderRoutesView.tsx\".",
+    "suggestedRename": "folderRoutesView.tsx"
+  },
+  {
+    "file": "router/routes/indexRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"indexRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"indexRouteView.tsx\".",
+    "suggestedRename": "indexRouteView.tsx"
+  },
+  {
+    "file": "router/routes/maintenanceRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"maintenanceRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"maintenanceRouteView.tsx\".",
+    "suggestedRename": "maintenanceRouteView.tsx"
+  },
+  {
+    "file": "router/routes/map/LocationViewportIcon.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"LocationViewportIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"LocationViewportIconView.tsx\".",
+    "suggestedRename": "LocationViewportIconView.tsx"
+  },
+  {
+    "file": "router/routes/map/MapPage.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"MapPage.tsx\" exceeds separation threshold (hook calls: 48 (threshold: 2)). Consider splitting into MapPage.tsx + MapPageView.tsx + useMapPageState.ts.",
+    "suggestedRename": "MapPage.tsx + MapPageView.tsx + useMapPageState.ts"
+  },
+  {
+    "file": "router/routes/map/constants.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"constants.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"constantsView.tsx\".",
+    "suggestedRename": "constantsView.tsx"
+  },
+  {
+    "file": "router/routes/map-export/MapExportPage.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"MapExportPage.tsx\" exceeds separation threshold (hook calls: 28 (threshold: 2)). Consider splitting into MapExportPage.tsx + MapExportPageView.tsx + useMapExportPageState.ts.",
+    "suggestedRename": "MapExportPage.tsx + MapExportPageView.tsx + useMapExportPageState.ts"
+  },
+  {
+    "file": "router/routes/map.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "error",
+    "message": "File \"map.tsx\" is a re-export-only wrapper (Pattern B). Delete this file and rename the implementation file to \"map.tsx\".",
+    "suggestedRename": "(delete map.tsx, rename target to default.tsx)"
+  },
+  {
+    "file": "router/routes/mapRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"mapRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"mapRouteView.tsx\".",
+    "suggestedRename": "mapRouteView.tsx"
+  },
+  {
+    "file": "router/routes/modeless/ModelessDialogManager.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ModelessDialogManager.tsx\" exceeds separation threshold (hook calls: 9 (threshold: 2)). Consider splitting into ModelessDialogManager.tsx + ModelessDialogManagerView.tsx + useModelessDialogManagerState.ts.",
+    "suggestedRename": "ModelessDialogManager.tsx + ModelessDialogManagerView.tsx + useModelessDialogManagerState.ts"
+  },
+  {
+    "file": "router/routes/modeless/ModelessDialogProvider.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ModelessDialogProvider.tsx\" exceeds separation threshold (hook calls: 11 (threshold: 2)). Consider splitting into ModelessDialogProvider.tsx + ModelessDialogProviderView.tsx + useModelessDialogProviderState.ts.",
+    "suggestedRename": "ModelessDialogProvider.tsx + ModelessDialogProviderView.tsx + useModelessDialogProviderState.ts"
+  },
+  {
+    "file": "router/routes/modeless/modelessDialogContent.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"modelessDialogContent.tsx\" does not match primary export \"MapInfoSummary\". Expected \"MapInfoSummary.tsx\".",
+    "suggestedRename": "MapInfoSummary.tsx"
+  },
+  {
+    "file": "router/routes/modeless/modelessDialogContent.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"modelessDialogContent.tsx\" exceeds separation threshold (JSX lines: 155 (threshold: 50), hook calls: 72 (threshold: 2)). Consider splitting into modelessDialogContent.tsx + modelessDialogContentView.tsx + useModelessDialogContentState.ts.",
+    "suggestedRename": "modelessDialogContent.tsx + modelessDialogContentView.tsx + useModelessDialogContentState.ts"
+  },
+  {
+    "file": "router/routes/modeless/modelessDialogContentData.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"modelessDialogContentData.ts\" does not match primary export \"MAX_ROWS\". Expected \"MAX_ROWS.ts\".",
+    "suggestedRename": "MAX_ROWS.ts"
+  },
+  {
+    "file": "router/routes/modeless/modelessDialogLayout.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"modelessDialogLayout.ts\" does not match primary export \"STORAGE_VERSION\". Expected \"STORAGE_VERSION.ts\".",
+    "suggestedRename": "STORAGE_VERSION.ts"
+  },
+  {
+    "file": "router/routes/plugins.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugins.tsx\" does not match primary export \"PluginsPage\". Expected \"PluginsPage.tsx\".",
+    "suggestedRename": "PluginsPage.tsx"
+  },
+  {
+    "file": "router/routes/plugins.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"plugins.tsx\" exceeds separation threshold (JSX lines: 311 (threshold: 50), hook calls: 16 (threshold: 2)). Consider splitting into plugins.tsx + pluginsView.tsx + usePluginsState.ts.",
+    "suggestedRename": "plugins.tsx + pluginsView.tsx + usePluginsState.ts"
+  },
+  {
+    "file": "router/routes/t.($treeId).($pageNodeId).tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"t.($treeId).($pageNodeId).tsx\" does not match primary export \"TLayout\". Expected \"TLayout.tsx\".",
+    "suggestedRename": "TLayout.tsx"
+  },
+  {
+    "file": "router/routes/tags.($tagName).tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tags.($tagName).tsx\" does not match primary export \"TagDetailPage\". Expected \"TagDetailPage.tsx\".",
+    "suggestedRename": "TagDetailPage.tsx"
+  },
+  {
+    "file": "router/routes/tags.($tagName).tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"tags.($tagName).tsx\" exceeds separation threshold (hook calls: 5 (threshold: 2)). Consider splitting into tags.($tagName).tsx + tags.($tagName)View.tsx + useTags.($tagName)State.ts.",
+    "suggestedRename": "tags.($tagName).tsx + tags.($tagName)View.tsx + useTags.($tagName)State.ts"
+  },
+  {
+    "file": "router/routes/tree/baseRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"baseRoute.tsx\" does not match primary export \"treeBaseRoute\". Expected \"treeBaseRoute.tsx\".",
+    "suggestedRename": "treeBaseRoute.tsx"
+  },
+  {
+    "file": "router/routes/tree/baseRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"baseRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"baseRouteView.tsx\".",
+    "suggestedRename": "baseRouteView.tsx"
+  },
+  {
+    "file": "router/routes/tree/dialogRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"dialogRoute.tsx\" does not match primary export \"TreeDialogLoaderResult\". Expected \"TreeDialogLoaderResult.tsx\".",
+    "suggestedRename": "TreeDialogLoaderResult.tsx"
+  },
+  {
+    "file": "router/routes/tree/dialogRoute.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"dialogRoute.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into dialogRoute.tsx + dialogRouteView.tsx + useDialogRouteState.ts.",
+    "suggestedRename": "dialogRoute.tsx + dialogRouteView.tsx + useDialogRouteState.ts"
+  },
+  {
+    "file": "router/routes/tree/indexRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"indexRoute.tsx\" does not match primary export \"treeLayoutIndexRoute\". Expected \"treeLayoutIndexRoute.tsx\".",
+    "suggestedRename": "treeLayoutIndexRoute.tsx"
+  },
+  {
+    "file": "router/routes/tree/layoutRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"layoutRoute.tsx\" does not match primary export \"treeLayoutRoute\". Expected \"treeLayoutRoute.tsx\".",
+    "suggestedRename": "treeLayoutRoute.tsx"
+  },
+  {
+    "file": "router/routes/tree/layoutRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"layoutRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"layoutRouteView.tsx\".",
+    "suggestedRename": "layoutRouteView.tsx"
+  },
+  {
+    "file": "router/routes/tree/nodeTypeRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"nodeTypeRoute.tsx\" does not match primary export \"treeNodeTypeRoute\". Expected \"treeNodeTypeRoute.tsx\".",
+    "suggestedRename": "treeNodeTypeRoute.tsx"
+  },
+  {
+    "file": "router/routes/tree/nodeTypeRoute.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"nodeTypeRoute.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into nodeTypeRoute.tsx + nodeTypeRouteView.tsx + useNodeTypeRouteState.ts.",
+    "suggestedRename": "nodeTypeRoute.tsx + nodeTypeRouteView.tsx + useNodeTypeRouteState.ts"
+  },
+  {
+    "file": "router/routes/tree/pageRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"pageRoute.tsx\" does not match primary export \"TreePageSearch\". Expected \"TreePageSearch.tsx\".",
+    "suggestedRename": "TreePageSearch.tsx"
+  },
+  {
+    "file": "router/routes/tree/pageRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"pageRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"pageRouteView.tsx\".",
+    "suggestedRename": "pageRouteView.tsx"
+  },
+  {
+    "file": "router/routes/tree/tagsRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tagsRoute.tsx\" does not match primary export \"treeTagsRoute\". Expected \"treeTagsRoute.tsx\".",
+    "suggestedRename": "treeTagsRoute.tsx"
+  },
+  {
+    "file": "router/routes/tree/tagsRoute.tsx",
+    "subPackage": "app",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"tagsRoute.tsx\" exceeds separation threshold (JSX lines: 64 (threshold: 50), hook calls: 9 (threshold: 2)). Consider splitting into tagsRoute.tsx + tagsRouteView.tsx + useTagsRouteState.ts.",
+    "suggestedRename": "tagsRoute.tsx + tagsRouteView.tsx + useTagsRouteState.ts"
+  },
+  {
+    "file": "router/routes/tree/targetRoute.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"targetRoute.tsx\" does not match primary export \"treeTargetRoute\". Expected \"treeTargetRoute.tsx\".",
+    "suggestedRename": "treeTargetRoute.tsx"
+  },
+  {
+    "file": "router/routes/tree/targetRoute.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"targetRoute.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"targetRouteView.tsx\".",
+    "suggestedRename": "targetRouteView.tsx"
+  },
+  {
+    "file": "router/routes/utilityRoutes.tsx",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"utilityRoutes.tsx\" does not match primary export \"pluginsRoute\". Expected \"pluginsRoute.tsx\".",
+    "suggestedRename": "pluginsRoute.tsx"
+  },
+  {
+    "file": "router/routes/utilityRoutes.tsx",
+    "subPackage": "app",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"utilityRoutes.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"utilityRoutesView.tsx\".",
+    "suggestedRename": "utilityRoutesView.tsx"
+  },
+  {
+    "file": "router/title/pageTitle.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"pageTitle.ts\" does not match primary export \"AppTitleOptions\". Expected \"AppTitleOptions.ts\".",
+    "suggestedRename": "AppTitleOptions.ts"
+  },
+  {
+    "file": "state/mapSearch.atoms.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"mapSearch.atoms.ts\" does not match primary export \"MapNodeType\". Expected \"MapNodeType.ts\".",
+    "suggestedRename": "MapNodeType.ts"
+  },
+  {
+    "file": "state/treeconsole.atoms.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"treeconsole.atoms.ts\" does not match primary export \"TreeConsoleSSOTEntry\". Expected \"TreeConsoleSSOTEntry.ts\".",
+    "suggestedRename": "TreeConsoleSSOTEntry.ts"
+  },
+  {
+    "file": "types/import-export.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"import-export.ts\" does not match primary export \"ImportData\". Expected \"ImportData.ts\".",
+    "suggestedRename": "ImportData.ts"
+  },
+  {
+    "file": "virtual/node-fetch.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"node-fetch.ts\" does not match primary export \"fetchImpl\". Expected \"fetchImpl.ts\".",
+    "suggestedRename": "fetchImpl.ts"
+  },
+  {
+    "file": "virtual/node-fetch.ts",
+    "subPackage": "app",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"node-fetch.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"node-fetchConstants.ts\".",
+    "suggestedRename": "node-fetchConstants.ts"
+  },
+  {
+    "file": "worker-runtime/WorkerStateStore.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"WorkerStateStore.ts\" does not match primary export \"WorkerRuntimeState\". Expected \"WorkerRuntimeState.ts\".",
+    "suggestedRename": "WorkerRuntimeState.ts"
+  },
+  {
+    "file": "worker-runtime/workerApiClientLoader.ts",
+    "subPackage": "app",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"workerApiClientLoader.ts\" does not match primary export \"WorkerAPIClientModule\". Expected \"WorkerAPIClientModule.ts\".",
+    "suggestedRename": "WorkerAPIClientModule.ts"
+  },
+  {
+    "file": "AuthNotificationSystem.ts",
+    "subPackage": "auth",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"AuthNotificationSystem.ts\" does not match primary export \"AuthNotificationRegistry\". Expected \"AuthNotificationRegistry.ts\".",
+    "suggestedRename": "AuthNotificationRegistry.ts"
+  },
+  {
+    "file": "eventStreamer.ts",
+    "subPackage": "build-runtime-services",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"eventStreamer.ts\" does not match primary export \"NotificationType\". Expected \"NotificationType.ts\".",
+    "suggestedRename": "NotificationType.ts"
+  },
+  {
+    "file": "progressHelpers.ts",
+    "subPackage": "build-runtime-services",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"progressHelpers.ts\" does not match primary export \"StageCheckpointPhase\". Expected \"StageCheckpointPhase.ts\".",
+    "suggestedRename": "StageCheckpointPhase.ts"
+  },
+  {
+    "file": "AriaLiveRegion/AriaLiveRegion.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"AriaLiveRegion.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into AriaLiveRegion.tsx + AriaLiveRegionView.tsx + useAriaLiveRegionState.ts.",
+    "suggestedRename": "AriaLiveRegion.tsx + AriaLiveRegionView.tsx + useAriaLiveRegionState.ts"
+  },
+  {
+    "file": "BackActionButton/BackActionButton.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"BackActionButton.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"BackActionButtonView.tsx\".",
+    "suggestedRename": "BackActionButtonView.tsx"
+  },
+  {
+    "file": "DropdownMenu/DropdownMenu.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"DropdownMenu.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into DropdownMenu.tsx + DropdownMenuView.tsx + useDropdownMenuState.ts.",
+    "suggestedRename": "DropdownMenu.tsx + DropdownMenuView.tsx + useDropdownMenuState.ts"
+  },
+  {
+    "file": "DropdownMenu/DropdownMenuItemType.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"DropdownMenuItemType.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"DropdownMenuItemTypeView.tsx\".",
+    "suggestedRename": "DropdownMenuItemTypeView.tsx"
+  },
+  {
+    "file": "FlagOverlay/FlagOverlay.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"FlagOverlay.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"FlagOverlayView.tsx\".",
+    "suggestedRename": "FlagOverlayView.tsx"
+  },
+  {
+    "file": "FlagOverlay/flagEmoji.ts",
+    "subPackage": "components",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"flagEmoji.ts\" does not match primary export \"FlagSymbolOptions\". Expected \"FlagSymbolOptions.ts\".",
+    "suggestedRename": "FlagSymbolOptions.ts"
+  },
+  {
+    "file": "FloatingWindow/components/useFloatingWindowPortalProvider.ts",
+    "subPackage": "components",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useFloatingWindowPortalProvider.ts\" does not match primary export \"useFloatingWindowPortalProviderValue\". Expected \"useFloatingWindowPortalProviderValue.ts\".",
+    "suggestedRename": "useFloatingWindowPortalProviderValue.ts"
+  },
+  {
+    "file": "GitHubCorner/GitHubCorner.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"GitHubCorner.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"GitHubCornerView.tsx\".",
+    "suggestedRename": "GitHubCornerView.tsx"
+  },
+  {
+    "file": "Icon/EriaCartLogo.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"EriaCartLogo.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"EriaCartLogoView.tsx\".",
+    "suggestedRename": "EriaCartLogoView.tsx"
+  },
+  {
+    "file": "Icon/getMuiIconComponent.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"getMuiIconComponent.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"getMuiIconComponentView.tsx\".",
+    "suggestedRename": "getMuiIconComponentView.tsx"
+  },
+  {
+    "file": "IndeterminateCheckbox/IndeterminateCheckbox.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"IndeterminateCheckbox.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"IndeterminateCheckboxView.tsx\".",
+    "suggestedRename": "IndeterminateCheckboxView.tsx"
+  },
+  {
+    "file": "Info/InfoContent.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"InfoContent.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"InfoContentView.tsx\".",
+    "suggestedRename": "InfoContentView.tsx"
+  },
+  {
+    "file": "Info/InfoPanel.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"InfoPanel.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"InfoPanelView.tsx\".",
+    "suggestedRename": "InfoPanelView.tsx"
+  },
+  {
+    "file": "Info/LicenseInfo.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LicenseInfo.tsx\" exceeds separation threshold (JSX lines: 88 (threshold: 50), hook calls: 5 (threshold: 2)). Consider splitting into LicenseInfo.tsx + LicenseInfoView.tsx + useLicenseInfoState.ts.",
+    "suggestedRename": "LicenseInfo.tsx + LicenseInfoView.tsx + useLicenseInfoState.ts"
+  },
+  {
+    "file": "InlineIcon/InlineIcon.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"InlineIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"InlineIconView.tsx\".",
+    "suggestedRename": "InlineIconView.tsx"
+  },
+  {
+    "file": "LoadingButton.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LoadingButton.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into LoadingButton.tsx + LoadingButtonView.tsx + useLoadingButtonState.ts.",
+    "suggestedRename": "LoadingButton.tsx + LoadingButtonView.tsx + useLoadingButtonState.ts"
+  },
+  {
+    "file": "NodeTypeIcon/NodeTypeIcon.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"NodeTypeIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"NodeTypeIconView.tsx\".",
+    "suggestedRename": "NodeTypeIconView.tsx"
+  },
+  {
+    "file": "NotificationSystem/NotificationSystem.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"NotificationSystem.tsx\" exceeds separation threshold (hook calls: 7 (threshold: 2)). Consider splitting into NotificationSystem.tsx + NotificationSystemView.tsx + useNotificationSystemState.ts.",
+    "suggestedRename": "NotificationSystem.tsx + NotificationSystemView.tsx + useNotificationSystemState.ts"
+  },
+  {
+    "file": "PillButton.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"PillButton.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"PillButtonView.tsx\".",
+    "suggestedRename": "PillButtonView.tsx"
+  },
+  {
+    "file": "PillButtonGroup.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"PillButtonGroup.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"PillButtonGroupView.tsx\".",
+    "suggestedRename": "PillButtonGroupView.tsx"
+  },
+  {
+    "file": "PillTextField.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"PillTextField.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"PillTextFieldView.tsx\".",
+    "suggestedRename": "PillTextFieldView.tsx"
+  },
+  {
+    "file": "SearchInput/SearchInput.tsx",
+    "subPackage": "components",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"SearchInput.tsx\" does not match primary export \"SEARCH_FIELD_WIDTH_PX\". Expected \"SEARCH_FIELD_WIDTH_PX.tsx\".",
+    "suggestedRename": "SEARCH_FIELD_WIDTH_PX.tsx"
+  },
+  {
+    "file": "SelectField/SelectField.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"SelectField.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"SelectFieldView.tsx\".",
+    "suggestedRename": "SelectFieldView.tsx"
+  },
+  {
+    "file": "SelectionMatrix/SelectionMatrix.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"SelectionMatrix.tsx\" exceeds separation threshold (JSX lines: 100 (threshold: 50), hook calls: 14 (threshold: 2)). Consider splitting into SelectionMatrix.tsx + SelectionMatrixView.tsx + useSelectionMatrixState.ts.",
+    "suggestedRename": "SelectionMatrix.tsx + SelectionMatrixView.tsx + useSelectionMatrixState.ts"
+  },
+  {
+    "file": "SpacedSlider.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"SpacedSlider.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"SpacedSliderView.tsx\".",
+    "suggestedRename": "SpacedSliderView.tsx"
+  },
+  {
+    "file": "StyledMenu/StyledMenu.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"StyledMenu.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"StyledMenuView.tsx\".",
+    "suggestedRename": "StyledMenuView.tsx"
+  },
+  {
+    "file": "ToggleButtonItemGroup/ToggleButtonItemGroup.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ToggleButtonItemGroup.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ToggleButtonItemGroupView.tsx\".",
+    "suggestedRename": "ToggleButtonItemGroupView.tsx"
+  },
+  {
+    "file": "landingpage/LandingPage.tsx",
+    "subPackage": "components",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"LandingPage.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"LandingPageView.tsx\".",
+    "suggestedRename": "LandingPageView.tsx"
+  },
+  {
+    "file": "toast/ToastProvider.tsx",
+    "subPackage": "components",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ToastProvider.tsx\" exceeds separation threshold (hook calls: 8 (threshold: 2)). Consider splitting into ToastProvider.tsx + ToastProviderView.tsx + useToastProviderState.ts.",
+    "suggestedRename": "ToastProvider.tsx + ToastProviderView.tsx + useToastProviderState.ts"
+  },
+  {
+    "file": "authNotifications.ts",
+    "subPackage": "download",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"authNotifications.ts\" does not match primary export \"AuthNotification\". Expected \"AuthNotification.ts\".",
+    "suggestedRename": "AuthNotification.ts"
+  },
+  {
+    "file": "ephemeral/sessionHelpers.ts",
+    "subPackage": "gis-sdk",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"sessionHelpers.ts\" does not match primary export \"ProgressInfo\". Expected \"ProgressInfo.ts\".",
+    "suggestedRename": "ProgressInfo.ts"
+  },
+  {
+    "file": "geocoding.ts",
+    "subPackage": "gis-sdk",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"geocoding.ts\" does not match primary export \"VectorTileGeocodeMatch\". Expected \"VectorTileGeocodeMatch.ts\".",
+    "suggestedRename": "VectorTileGeocodeMatch.ts"
+  },
+  {
+    "file": "shapeLayerNames.ts",
+    "subPackage": "gis-sdk",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapeLayerNames.ts\" does not match primary export \"BrandedString\". Expected \"BrandedString.ts\".",
+    "suggestedRename": "BrandedString.ts"
+  },
+  {
+    "file": "vectorTileFormats.ts",
+    "subPackage": "gis-sdk",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vectorTileFormats.ts\" does not match primary export \"VectorTileFormat\". Expected \"VectorTileFormat.ts\".",
+    "suggestedRename": "VectorTileFormat.ts"
+  },
+  {
+    "file": "ideGsmLocationCsv.ts",
+    "subPackage": "location-api",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ideGsmLocationCsv.ts\" does not match primary export \"IdeGsmParseResult\". Expected \"IdeGsmParseResult.ts\".",
+    "suggestedRename": "IdeGsmParseResult.ts"
+  },
+  {
+    "file": "locationPointId.ts",
+    "subPackage": "location-api",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"locationPointId.ts\" does not match primary export \"LOCATION_POINT_ID_VERSION\". Expected \"LOCATION_POINT_ID_VERSION.ts\".",
+    "suggestedRename": "LOCATION_POINT_ID_VERSION.ts"
+  },
+  {
+    "file": "morton.ts",
+    "subPackage": "location-api",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"morton.ts\" does not match primary export \"LocationTileIdByZoom\". Expected \"LocationTileIdByZoom.ts\".",
+    "suggestedRename": "LocationTileIdByZoom.ts"
+  },
+  {
+    "file": "atoms/draftAtoms.ts",
+    "subPackage": "plugin-base",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"draftAtoms.ts\" does not match primary export \"DraftData\". Expected \"DraftData.ts\".",
+    "suggestedRename": "DraftData.ts"
+  },
+  {
+    "file": "derivations.ts",
+    "subPackage": "plugin-registry",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"derivations.ts\" does not match primary export \"PluginModuleKey\". Expected \"PluginModuleKey.ts\".",
+    "suggestedRename": "PluginModuleKey.ts"
+  },
+  {
+    "file": "examples/SamplePluginProvider.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"SamplePluginProvider.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"SamplePluginProviderView.tsx\".",
+    "suggestedRename": "SamplePluginProviderView.tsx"
+  },
+  {
+    "file": "headless/PluginDialogControllerElements.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"PluginDialogControllerElements.tsx\" does not match primary export \"createPluginDialogContentComponent\". Expected \"createPluginDialogContentComponent.tsx\".",
+    "suggestedRename": "createPluginDialogContentComponent.tsx"
+  },
+  {
+    "file": "headless/PluginDialogControllerElements.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"PluginDialogControllerElements.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"PluginDialogControllerElementsView.tsx\".",
+    "suggestedRename": "PluginDialogControllerElementsView.tsx"
+  },
+  {
+    "file": "headless/components/DialogScaffold.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"DialogScaffold.tsx\" does not match primary export \"createHeaderComponent\". Expected \"createHeaderComponent.tsx\".",
+    "suggestedRename": "createHeaderComponent.tsx"
+  },
+  {
+    "file": "headless/components/PluginDialogControls.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"PluginDialogControls.tsx\" does not match primary export \"PluginDialogMaximizeButton\". Expected \"PluginDialogMaximizeButton.tsx\".",
+    "suggestedRename": "PluginDialogMaximizeButton.tsx"
+  },
+  {
+    "file": "headless/components/PluginDialogControls.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"PluginDialogControls.tsx\" exceeds separation threshold (hook calls: 5 (threshold: 2)). Consider splitting into PluginDialogControls.tsx + PluginDialogControlsView.tsx + usePluginDialogControlsState.ts.",
+    "suggestedRename": "PluginDialogControls.tsx + PluginDialogControlsView.tsx + usePluginDialogControlsState.ts"
+  },
+  {
+    "file": "headless/components/PluginDialogFooter.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"PluginDialogFooter.tsx\" exceeds separation threshold (JSX lines: 66 (threshold: 50), hook calls: 20 (threshold: 2)). Consider splitting into PluginDialogFooter.tsx + PluginDialogFooterView.tsx + usePluginDialogFooterState.ts.",
+    "suggestedRename": "PluginDialogFooter.tsx + PluginDialogFooterView.tsx + usePluginDialogFooterState.ts"
+  },
+  {
+    "file": "headless/components/PluginDialogHeader.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"PluginDialogHeader.tsx\" exceeds separation threshold (hook calls: 8 (threshold: 2)). Consider splitting into PluginDialogHeader.tsx + PluginDialogHeaderView.tsx + usePluginDialogHeaderState.ts.",
+    "suggestedRename": "PluginDialogHeader.tsx + PluginDialogHeaderView.tsx + usePluginDialogHeaderState.ts"
+  },
+  {
+    "file": "headless/components/PluginDialogStepper.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"PluginDialogStepper.tsx\" exceeds separation threshold (hook calls: 9 (threshold: 2)). Consider splitting into PluginDialogStepper.tsx + PluginDialogStepperView.tsx + usePluginDialogStepperState.ts.",
+    "suggestedRename": "PluginDialogStepper.tsx + PluginDialogStepperView.tsx + usePluginDialogStepperState.ts"
+  },
+  {
+    "file": "headless/components/StepStatusIcon.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"StepStatusIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"StepStatusIconView.tsx\".",
+    "suggestedRename": "StepStatusIconView.tsx"
+  },
+  {
+    "file": "headless/controller/step-guards.ts",
+    "subPackage": "plugin-ui-host",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"step-guards.ts\" does not match primary export \"emptyGuards\". Expected \"emptyGuards.ts\".",
+    "suggestedRename": "emptyGuards.ts"
+  },
+  {
+    "file": "headless/usePluginDialogController/useDialogSteps.tsx",
+    "subPackage": "plugin-ui-host",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"useDialogSteps.tsx\" exceeds separation threshold (JSX lines: 61 (threshold: 50), hook calls: 29 (threshold: 2)). Consider splitting into useDialogSteps.tsx + useDialogStepsView.tsx + useUseDialogStepsState.ts.",
+    "suggestedRename": "useDialogSteps.tsx + useDialogStepsView.tsx + useUseDialogStepsState.ts"
+  },
+  {
+    "file": "ideGsmRouteCsv.ts",
+    "subPackage": "route-api",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ideGsmRouteCsv.ts\" does not match primary export \"IdeGsmRouteError\". Expected \"IdeGsmRouteError.ts\".",
+    "suggestedRename": "IdeGsmRouteError.ts"
+  },
+  {
+    "file": "di/container.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"container.ts\" does not match primary export \"getWorkerContainer\". Expected \"getWorkerContainer.ts\".",
+    "suggestedRename": "getWorkerContainer.ts"
+  },
+  {
+    "file": "e2e/test-worker.entry.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"test-worker.entry.ts\" does not match primary export \"main\". Expected \"main.ts\".",
+    "suggestedRename": "main.ts"
+  },
+  {
+    "file": "entity/dexie-stores.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"dexie-stores.ts\" does not match primary export \"DexieVectorTileStoreOptions\". Expected \"DexieVectorTileStoreOptions.ts\".",
+    "suggestedRename": "DexieVectorTileStoreOptions.ts"
+  },
+  {
+    "file": "module-paths.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"module-paths.ts\" does not match primary export \"RUNTIME_MODULE_IDS\". Expected \"RUNTIME_MODULE_IDS.ts\".",
+    "suggestedRename": "RUNTIME_MODULE_IDS.ts"
+  },
+  {
+    "file": "services/RuntimeWorkerService.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"RuntimeWorkerService.ts\" does not match primary export \"RuntimeWorkerStageClient\". Expected \"RuntimeWorkerStageClient.ts\".",
+    "suggestedRename": "RuntimeWorkerStageClient.ts"
+  },
+  {
+    "file": "services/downloadAdapter.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"downloadAdapter.ts\" does not match primary export \"SharedDownloadOptions\". Expected \"SharedDownloadOptions.ts\".",
+    "suggestedRename": "SharedDownloadOptions.ts"
+  },
+  {
+    "file": "services/draft/commitOperations.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"commitOperations.ts\" does not match primary export \"CommitOk\". Expected \"CommitOk.ts\".",
+    "suggestedRename": "CommitOk.ts"
+  },
+  {
+    "file": "services/nearest/tileNearest.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tileNearest.ts\" does not match primary export \"TileCoord\". Expected \"TileCoord.ts\".",
+    "suggestedRename": "TileCoord.ts"
+  },
+  {
+    "file": "services/stageAliasConstants.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"stageAliasConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"stageAliasConstantsUtils.ts\".",
+    "suggestedRename": "stageAliasConstantsUtils.ts"
+  },
+  {
+    "file": "services/test-helpers/commandProcessorHarness.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"commandProcessorHarness.ts\" does not match primary export \"CommandTestHarness\". Expected \"CommandTestHarness.ts\".",
+    "suggestedRename": "CommandTestHarness.ts"
+  },
+  {
+    "file": "services/utils/error-adapter.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"error-adapter.ts\" does not match primary export \"WorkerErrorClassification\". Expected \"WorkerErrorClassification.ts\".",
+    "suggestedRename": "WorkerErrorClassification.ts"
+  },
+  {
+    "file": "services/utils/reconcileStaleBuildSessions.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"reconcileStaleBuildSessions.ts\" does not match primary export \"ReconcileRunningBuildSessionsResult\". Expected \"ReconcileRunningBuildSessionsResult.ts\".",
+    "suggestedRename": "ReconcileRunningBuildSessionsResult.ts"
+  },
+  {
+    "file": "services/validation/envelope.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"envelope.ts\" does not match primary export \"EnvelopeInput\". Expected \"EnvelopeInput.ts\".",
+    "suggestedRename": "EnvelopeInput.ts"
+  },
+  {
+    "file": "services/vectorTileStageRunner.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vectorTileStageRunner.ts\" does not match primary export \"VectorTileStageInput\". Expected \"VectorTileStageInput.ts\".",
+    "suggestedRename": "VectorTileStageInput.ts"
+  },
+  {
+    "file": "test-utils/assertions.ts",
+    "subPackage": "runtime-worker",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"assertions.ts\" does not match primary export \"CommandResultSuccess\". Expected \"CommandResultSuccess.ts\".",
+    "suggestedRename": "CommandResultSuccess.ts"
+  },
+  {
+    "file": "processor.ts",
+    "subPackage": "tabular-source",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"processor.ts\" does not match primary export \"TabularContext\". Expected \"TabularContext.ts\".",
+    "suggestedRename": "TabularContext.ts"
+  },
+  {
+    "file": "capability.ts",
+    "subPackage": "tag",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"capability.ts\" does not match primary export \"TaggableCapability\". Expected \"TaggableCapability.ts\".",
+    "suggestedRename": "TaggableCapability.ts"
+  },
+  {
+    "file": "env.ts",
+    "subPackage": "util",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"env.ts\" does not match primary export \"ReadEnvOptions\". Expected \"ReadEnvOptions.ts\".",
+    "suggestedRename": "ReadEnvOptions.ts"
+  },
+  {
+    "file": "debug/persistentDebugLog.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"persistentDebugLog.ts\" does not match primary export \"PersistentDebugLogLevel\". Expected \"PersistentDebugLogLevel.ts\".",
+    "suggestedRename": "PersistentDebugLogLevel.ts"
+  },
+  {
+    "file": "task/taskQueue.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"taskQueue.ts\" does not match primary export \"StoredTaskRecord\". Expected \"StoredTaskRecord.ts\".",
+    "suggestedRename": "StoredTaskRecord.ts"
+  },
+  {
+    "file": "tiles/tileId.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tileId.ts\" does not match primary export \"TileCoord\". Expected \"TileCoord.ts\".",
+    "suggestedRename": "TileCoord.ts"
+  },
+  {
+    "file": "transform/createGeometryStageHandler/helpers/analysis.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"analysis.ts\" does not match primary export \"ErrorRingRole\". Expected \"ErrorRingRole.ts\".",
+    "suggestedRename": "ErrorRingRole.ts"
+  },
+  {
+    "file": "transform/createGeometryStageHandler/helpers/collection.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"collection.ts\" does not match primary export \"BoundaryLayerSummary\". Expected \"BoundaryLayerSummary.ts\".",
+    "suggestedRename": "BoundaryLayerSummary.ts"
+  },
+  {
+    "file": "transform/createGeometryStageHandler/helpers/core.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"core.ts\" does not match primary export \"TASKDEBUG_BUILD_TAG\". Expected \"TASKDEBUG_BUILD_TAG.ts\".",
+    "suggestedRename": "TASKDEBUG_BUILD_TAG.ts"
+  },
+  {
+    "file": "transform/createGeometryStageHandler/helpers/validation.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"validation.ts\" does not match primary export \"decodeSourceCacheByFormat\". Expected \"decodeSourceCacheByFormat.ts\".",
+    "suggestedRename": "decodeSourceCacheByFormat.ts"
+  },
+  {
+    "file": "transform/createGeometryStageHandler/retrySimplifyWithinVertexLimit.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"retrySimplifyWithinVertexLimit.ts\" does not match primary export \"RetrySimplifyFeatureResult\". Expected \"RetrySimplifyFeatureResult.ts\".",
+    "suggestedRename": "RetrySimplifyFeatureResult.ts"
+  },
+  {
+    "file": "transform/createTransformByBandHandler/helpers/analysis.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"analysis.ts\" does not match primary export \"ErrorRingRole\". Expected \"ErrorRingRole.ts\".",
+    "suggestedRename": "ErrorRingRole.ts"
+  },
+  {
+    "file": "transform/createTransformByBandHandler/helpers/collection.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"collection.ts\" does not match primary export \"BoundaryLayerSummary\". Expected \"BoundaryLayerSummary.ts\".",
+    "suggestedRename": "BoundaryLayerSummary.ts"
+  },
+  {
+    "file": "transform/createTransformByBandHandler/helpers/core.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"core.ts\" does not match primary export \"TASKDEBUG_BUILD_TAG\". Expected \"TASKDEBUG_BUILD_TAG.ts\".",
+    "suggestedRename": "TASKDEBUG_BUILD_TAG.ts"
+  },
+  {
+    "file": "transform/createTransformByBandHandler/helpers/validation.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"validation.ts\" does not match primary export \"decodeSourceCacheByFormat\". Expected \"decodeSourceCacheByFormat.ts\".",
+    "suggestedRename": "decodeSourceCacheByFormat.ts"
+  },
+  {
+    "file": "transform/createTransformByBandHandler/transformByBandRetrySimplify.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"transformByBandRetrySimplify.ts\" does not match primary export \"RetrySimplifyFeatureResult\". Expected \"RetrySimplifyFeatureResult.ts\".",
+    "suggestedRename": "RetrySimplifyFeatureResult.ts"
+  },
+  {
+    "file": "transform/geometry/metrics.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"metrics.ts\" does not match primary export \"LonLat\". Expected \"LonLat.ts\".",
+    "suggestedRename": "LonLat.ts"
+  },
+  {
+    "file": "transform/geometryTransformUtils.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"geometryTransformUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"geometryTransformUtilsConstants.ts\".",
+    "suggestedRename": "geometryTransformUtilsConstants.ts"
+  },
+  {
+    "file": "transform/topojsonRuntimeAdapter.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"topojsonRuntimeAdapter.ts\" does not match primary export \"TopojsonRuntime\". Expected \"TopojsonRuntime.ts\".",
+    "suggestedRename": "TopojsonRuntime.ts"
+  },
+  {
+    "file": "vt/vtStageDebug.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageDebug.ts\" does not match primary export \"VtDebugFocusConfig\". Expected \"VtDebugFocusConfig.ts\".",
+    "suggestedRename": "VtDebugFocusConfig.ts"
+  },
+  {
+    "file": "vt/vtStageFeatureCollectorDebugSettings.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageFeatureCollectorDebugSettings.ts\" does not match primary export \"VtCollectDebugSettings\". Expected \"VtCollectDebugSettings.ts\".",
+    "suggestedRename": "VtCollectDebugSettings.ts"
+  },
+  {
+    "file": "vt/vtStageGeometryFeature.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageGeometryFeature.ts\" does not match primary export \"isEmptyGeometry\". Expected \"isEmptyGeometry.ts\".",
+    "suggestedRename": "isEmptyGeometry.ts"
+  },
+  {
+    "file": "vt/vtStageSummary.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageSummary.ts\" does not match primary export \"GeojsonVtEmptyTileDetail\". Expected \"GeojsonVtEmptyTileDetail.ts\".",
+    "suggestedRename": "GeojsonVtEmptyTileDetail.ts"
+  },
+  {
+    "file": "vt/vtStageTaskLayerBuilderLayerHelpers.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskLayerBuilderLayerHelpers.ts\" does not match primary export \"collectLayerForTile\". Expected \"collectLayerForTile.ts\".",
+    "suggestedRename": "collectLayerForTile.ts"
+  },
+  {
+    "file": "vt/vtStageTaskLayerBuilderPolicy.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskLayerBuilderPolicy.ts\" does not match primary export \"layerBuildSkipReason\". Expected \"layerBuildSkipReason.ts\".",
+    "suggestedRename": "layerBuildSkipReason.ts"
+  },
+  {
+    "file": "vt/vtStageTaskLayerBuilderTileAggregation.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskLayerBuilderTileAggregation.ts\" does not match primary export \"TileLayerCollector\". Expected \"TileLayerCollector.ts\".",
+    "suggestedRename": "TileLayerCollector.ts"
+  },
+  {
+    "file": "vt/vtStageTaskOutputHelpers.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskOutputHelpers.ts\" does not match primary export \"VtInputTileStats\". Expected \"VtInputTileStats.ts\".",
+    "suggestedRename": "VtInputTileStats.ts"
+  },
+  {
+    "file": "vt/vtStageTaskOutputLogging.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskOutputLogging.ts\" does not match primary export \"TileLayerFeatureCount\". Expected \"TileLayerFeatureCount.ts\".",
+    "suggestedRename": "TileLayerFeatureCount.ts"
+  },
+  {
+    "file": "vt/vtStageTaskOutputProgressPolicy.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskOutputProgressPolicy.ts\" does not match primary export \"ProgressState\". Expected \"ProgressState.ts\".",
+    "suggestedRename": "ProgressState.ts"
+  },
+  {
+    "file": "vt/vtStageTaskOutputStats.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskOutputStats.ts\" does not match primary export \"VtTileInputTotals\". Expected \"VtTileInputTotals.ts\".",
+    "suggestedRename": "VtTileInputTotals.ts"
+  },
+  {
+    "file": "vt/vtStageTaskOutputWriterActionsHandle.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskOutputWriterActionsHandle.ts\" does not match primary export \"TileVisitInput\". Expected \"TileVisitInput.ts\".",
+    "suggestedRename": "TileVisitInput.ts"
+  },
+  {
+    "file": "vt/vtStageTaskProcessorExecutionHelpers.ts",
+    "subPackage": "vt-orchestrator",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"vtStageTaskProcessorExecutionHelpers.ts\" does not match primary export \"VtTaskProcessorExecutionRunInput\". Expected \"VtTaskProcessorExecutionRunInput.ts\".",
+    "suggestedRename": "VtTaskProcessorExecutionRunInput.ts"
+  },
+  {
+    "file": "common/constants/builtInStyles.ts",
+    "subPackage": "basemap-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"builtInStyles.ts\" does not match primary export \"BuiltInStyle\". Expected \"BuiltInStyle.ts\".",
+    "suggestedRename": "BuiltInStyle.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "basemap-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "ui/components/getBasemapStepConfigs.tsx",
+    "subPackage": "basemap-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"getBasemapStepConfigs.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"getBasemapStepConfigsView.tsx\".",
+    "suggestedRename": "getBasemapStepConfigsView.tsx"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "folder-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "ui/FolderDialogHost.tsx",
+    "subPackage": "folder-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"FolderDialogHost.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"FolderDialogHostView.tsx\".",
+    "suggestedRename": "FolderDialogHostView.tsx"
+  },
+  {
+    "file": "ui/components/FolderIcon.tsx",
+    "subPackage": "folder-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"FolderIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"FolderIconView.tsx\".",
+    "suggestedRename": "FolderIconView.tsx"
+  },
+  {
+    "file": "ui/components/TagInput.tsx",
+    "subPackage": "folder-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TagInput.tsx\" exceeds separation threshold (JSX lines: 51 (threshold: 50)). Consider splitting into TagInput.tsx + TagInputView.tsx + useTagInputState.ts.",
+    "suggestedRename": "TagInput.tsx + TagInputView.tsx + useTagInputState.ts"
+  },
+  {
+    "file": "ui/components/steps-provider.tsx",
+    "subPackage": "folder-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"steps-provider.tsx\" does not match primary export \"normalizeFolderExportFormat\". Expected \"normalizeFolderExportFormat.tsx\".",
+    "suggestedRename": "normalizeFolderExportFormat.tsx"
+  },
+  {
+    "file": "ui/components/steps-provider.tsx",
+    "subPackage": "folder-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"steps-provider.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"steps-providerView.tsx\".",
+    "suggestedRename": "steps-providerView.tsx"
+  },
+  {
+    "file": "common/resourceTreeOrdering.ts",
+    "subPackage": "linker-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"resourceTreeOrdering.ts\" does not match primary export \"TreeNodeLike\". Expected \"TreeNodeLike.ts\".",
+    "suggestedRename": "TreeNodeLike.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "linker-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "ui/steps/AggregatedList.tsx",
+    "subPackage": "linker-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"AggregatedList.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into AggregatedList.tsx + AggregatedListView.tsx + useAggregatedListState.ts.",
+    "suggestedRename": "AggregatedList.tsx + AggregatedListView.tsx + useAggregatedListState.ts"
+  },
+  {
+    "file": "ui/steps/ResourcePicker.tsx",
+    "subPackage": "linker-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ResourcePicker.tsx\" exceeds separation threshold (JSX lines: 73 (threshold: 50), hook calls: 19 (threshold: 2)). Consider splitting into ResourcePicker.tsx + ResourcePickerView.tsx + useResourcePickerState.ts.",
+    "suggestedRename": "ResourcePicker.tsx + ResourcePickerView.tsx + useResourcePickerState.ts"
+  },
+  {
+    "file": "common/components/LocationDialog.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LocationDialog.tsx\" exceeds separation threshold (JSX lines: 90 (threshold: 50), hook calls: 28 (threshold: 2)). Consider splitting into LocationDialog.tsx + LocationDialogView.tsx + useLocationDialogState.ts.",
+    "suggestedRename": "LocationDialog.tsx + LocationDialogView.tsx + useLocationDialogState.ts"
+  },
+  {
+    "file": "common/components/LocationPanel.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LocationPanel.tsx\" exceeds separation threshold (JSX lines: 82 (threshold: 50)). Consider splitting into LocationPanel.tsx + LocationPanelView.tsx + useLocationPanelState.ts.",
+    "suggestedRename": "LocationPanel.tsx + LocationPanelView.tsx + useLocationPanelState.ts"
+  },
+  {
+    "file": "common/datasources/LocationDataSourceDefinitions.ts",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"LocationDataSourceDefinitions.ts\" does not match primary export \"LocationDataSourceBase\". Expected \"LocationDataSourceBase.ts\".",
+    "suggestedRename": "LocationDataSourceBase.ts"
+  },
+  {
+    "file": "common/i18n/formatters.ts",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"formatters.ts\" does not match primary export \"SupportedLocale\". Expected \"SupportedLocale.ts\".",
+    "suggestedRename": "SupportedLocale.ts"
+  },
+  {
+    "file": "common/test-shims/external-mocks.ts",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"external-mocks.ts\" does not match primary export \"BuildService\". Expected \"BuildService.ts\".",
+    "suggestedRename": "BuildService.ts"
+  },
+  {
+    "file": "common/test-shims/optionalFeatureUtils.ts",
+    "subPackage": "location-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"optionalFeatureUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"optionalFeatureUtilsConstants.ts\".",
+    "suggestedRename": "optionalFeatureUtilsConstants.ts"
+  },
+  {
+    "file": "common/test-shims/pluginWorkerFactoryUtils.ts",
+    "subPackage": "location-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"pluginWorkerFactoryUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"pluginWorkerFactoryUtilsConstants.ts\".",
+    "suggestedRename": "pluginWorkerFactoryUtilsConstants.ts"
+  },
+  {
+    "file": "common/test-shims/spreadsheet-plugin.ts",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"spreadsheet-plugin.ts\" does not match primary export \"SPREADSHEET_PLUGIN_ID\". Expected \"SPREADSHEET_PLUGIN_ID.ts\".",
+    "suggestedRename": "SPREADSHEET_PLUGIN_ID.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "services/download/csvDownloadUtils.ts",
+    "subPackage": "location-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"csvDownloadUtils.ts\" contains only constants but does not use the \"*Constants.ts\" or \"constants.ts\" suffix. Rename to \"csvDownloadUtilsConstants.ts\".",
+    "suggestedRename": "csvDownloadUtilsConstants.ts"
+  },
+  {
+    "file": "services/download/csvSourceConstants.ts",
+    "subPackage": "location-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"csvSourceConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"csvSourceConstantsUtils.ts\".",
+    "suggestedRename": "csvSourceConstantsUtils.ts"
+  },
+  {
+    "file": "services/pointRepository.ts",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"pointRepository.ts\" does not match primary export \"LocationPointWriteProgress\". Expected \"LocationPointWriteProgress.ts\".",
+    "suggestedRename": "LocationPointWriteProgress.ts"
+  },
+  {
+    "file": "ui/components/batch/LocationMapPreview.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LocationMapPreview.tsx\" exceeds separation threshold (JSX lines: 193 (threshold: 50)). Consider splitting into LocationMapPreview.tsx + LocationMapPreviewView.tsx + useLocationMapPreviewState.ts.",
+    "suggestedRename": "LocationMapPreview.tsx + LocationMapPreviewView.tsx + useLocationMapPreviewState.ts"
+  },
+  {
+    "file": "ui/components/batch/LocationMapPreviewMarkers.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"LocationMapPreviewMarkers.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"LocationMapPreviewMarkersView.tsx\".",
+    "suggestedRename": "LocationMapPreviewMarkersView.tsx"
+  },
+  {
+    "file": "ui/components/steps/LocationMapPreviewMapElements.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"LocationMapPreviewMapElements.tsx\" does not match primary export \"LocationMapPreviewIconProps\". Expected \"LocationMapPreviewIconProps.tsx\".",
+    "suggestedRename": "LocationMapPreviewIconProps.tsx"
+  },
+  {
+    "file": "ui/components/steps/LocationMapPreviewMapElements.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"LocationMapPreviewMapElements.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"LocationMapPreviewMapElementsView.tsx\".",
+    "suggestedRename": "LocationMapPreviewMapElementsView.tsx"
+  },
+  {
+    "file": "ui/components/steps/LocationMapPreviewStepElements.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"LocationMapPreviewStepElements.tsx\" does not match primary export \"LocationAdmin0FormatterProps\". Expected \"LocationAdmin0FormatterProps.tsx\".",
+    "suggestedRename": "LocationAdmin0FormatterProps.tsx"
+  },
+  {
+    "file": "ui/components/steps/LocationMapPreviewStepElements.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"LocationMapPreviewStepElements.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"LocationMapPreviewStepElementsView.tsx\".",
+    "suggestedRename": "LocationMapPreviewStepElementsView.tsx"
+  },
+  {
+    "file": "ui/components/steps/LocationStyleConfigPanel.tsx",
+    "subPackage": "location-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"LocationStyleConfigPanel.tsx\" exceeds separation threshold (JSX lines: 114 (threshold: 50)). Consider splitting into LocationStyleConfigPanel.tsx + LocationStyleConfigPanelView.tsx + useLocationStyleConfigPanelState.ts.",
+    "suggestedRename": "LocationStyleConfigPanel.tsx + LocationStyleConfigPanelView.tsx + useLocationStyleConfigPanelState.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "resolver-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "services/SimpleMappingCompiler.ts",
+    "subPackage": "resolver-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"SimpleMappingCompiler.ts\" does not match primary export \"CompiledFunction\". Expected \"CompiledFunction.ts\".",
+    "suggestedRename": "CompiledFunction.ts"
+  },
+  {
+    "file": "ui/components/ResolverPanel.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ResolverPanel.tsx\" exceeds separation threshold (JSX lines: 166 (threshold: 50)). Consider splitting into ResolverPanel.tsx + ResolverPanelView.tsx + useResolverPanelState.ts.",
+    "suggestedRename": "ResolverPanel.tsx + ResolverPanelView.tsx + useResolverPanelState.ts"
+  },
+  {
+    "file": "ui/components/steps/DuplicateResolutionStep.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"DuplicateResolutionStep.tsx\" exceeds separation threshold (JSX lines: 107 (threshold: 50)). Consider splitting into DuplicateResolutionStep.tsx + DuplicateResolutionStepView.tsx + useDuplicateResolutionStepState.ts.",
+    "suggestedRename": "DuplicateResolutionStep.tsx + DuplicateResolutionStepView.tsx + useDuplicateResolutionStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/PreviewTestStep.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"PreviewTestStep.tsx\" exceeds separation threshold (JSX lines: 210 (threshold: 50)). Consider splitting into PreviewTestStep.tsx + PreviewTestStepView.tsx + usePreviewTestStepState.ts.",
+    "suggestedRename": "PreviewTestStep.tsx + PreviewTestStepView.tsx + usePreviewTestStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/PropertyMappingStep.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"PropertyMappingStep.tsx\" exceeds separation threshold (JSX lines: 154 (threshold: 50)). Consider splitting into PropertyMappingStep.tsx + PropertyMappingStepView.tsx + usePropertyMappingStepState.ts.",
+    "suggestedRename": "PropertyMappingStep.tsx + PropertyMappingStepView.tsx + usePropertyMappingStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/ResolverBuildStep.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ResolverBuildStep.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ResolverBuildStepView.tsx\".",
+    "suggestedRename": "ResolverBuildStepView.tsx"
+  },
+  {
+    "file": "ui/components/steps/SchemaSelectionStep.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"SchemaSelectionStep.tsx\" exceeds separation threshold (JSX lines: 68 (threshold: 50)). Consider splitting into SchemaSelectionStep.tsx + SchemaSelectionStepView.tsx + useSchemaSelectionStepState.ts.",
+    "suggestedRename": "SchemaSelectionStep.tsx + SchemaSelectionStepView.tsx + useSchemaSelectionStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/ValidationConfigStep.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ValidationConfigStep.tsx\" exceeds separation threshold (JSX lines: 98 (threshold: 50)). Consider splitting into ValidationConfigStep.tsx + ValidationConfigStepView.tsx + useValidationConfigStepState.ts.",
+    "suggestedRename": "ValidationConfigStep.tsx + ValidationConfigStepView.tsx + useValidationConfigStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/ValidationConfigStepViewElements.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ValidationConfigStepViewElements.tsx\" does not match primary export \"ValidationRuleTypeOption\". Expected \"ValidationRuleTypeOption.tsx\".",
+    "suggestedRename": "ValidationRuleTypeOption.tsx"
+  },
+  {
+    "file": "ui/components/steps/ValidationConfigStepViewElements.tsx",
+    "subPackage": "resolver-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ValidationConfigStepViewElements.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ValidationConfigStepViewElementsView.tsx\".",
+    "suggestedRename": "ValidationConfigStepViewElementsView.tsx"
+  },
+  {
+    "file": "common/config/buildConfig.ts",
+    "subPackage": "route-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"buildConfig.ts\" does not match primary export \"DEFAULT_ROUTE_BUILD_CONFIG\". Expected \"DEFAULT_ROUTE_BUILD_CONFIG.ts\".",
+    "suggestedRename": "DEFAULT_ROUTE_BUILD_CONFIG.ts"
+  },
+  {
+    "file": "common/styles/routeStyle.ts",
+    "subPackage": "route-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"routeStyle.ts\" does not match primary export \"DEFAULT_ROUTE_MODE_COLORS\". Expected \"DEFAULT_ROUTE_MODE_COLORS.ts\".",
+    "suggestedRename": "DEFAULT_ROUTE_MODE_COLORS.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "route-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "services/build/adapters/RuntimeWorkerClient.ts",
+    "subPackage": "route-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"RuntimeWorkerClient.ts\" does not match primary export \"RouteRuntimeWorkerClient\". Expected \"RouteRuntimeWorkerClient.ts\".",
+    "suggestedRename": "RouteRuntimeWorkerClient.ts"
+  },
+  {
+    "file": "ui/components/RouteBuildLiveProgress.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RouteBuildLiveProgress.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into RouteBuildLiveProgress.tsx + RouteBuildLiveProgressView.tsx + useRouteBuildLiveProgressState.ts.",
+    "suggestedRename": "RouteBuildLiveProgress.tsx + RouteBuildLiveProgressView.tsx + useRouteBuildLiveProgressState.ts"
+  },
+  {
+    "file": "ui/components/RouteBuildSummary.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RouteBuildSummary.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into RouteBuildSummary.tsx + RouteBuildSummaryView.tsx + useRouteBuildSummaryState.ts.",
+    "suggestedRename": "RouteBuildSummary.tsx + RouteBuildSummaryView.tsx + useRouteBuildSummaryState.ts"
+  },
+  {
+    "file": "ui/components/steps/RouteGeometryBandValuesField.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RouteGeometryBandValuesField.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into RouteGeometryBandValuesField.tsx + RouteGeometryBandValuesFieldView.tsx + useRouteGeometryBandValuesFieldState.ts.",
+    "suggestedRename": "RouteGeometryBandValuesField.tsx + RouteGeometryBandValuesFieldView.tsx + useRouteGeometryBandValuesFieldState.ts"
+  },
+  {
+    "file": "ui/components/steps/RoutePreviewStep.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RoutePreviewStep.tsx\" exceeds separation threshold (JSX lines: 105 (threshold: 50)). Consider splitting into RoutePreviewStep.tsx + RoutePreviewStepView.tsx + useRoutePreviewStepState.ts.",
+    "suggestedRename": "RoutePreviewStep.tsx + RoutePreviewStepView.tsx + useRoutePreviewStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/RoutePreviewStepElements.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"RoutePreviewStepElements.tsx\" does not match primary export \"RoutePreviewHoverMatch\". Expected \"RoutePreviewHoverMatch.tsx\".",
+    "suggestedRename": "RoutePreviewHoverMatch.tsx"
+  },
+  {
+    "file": "ui/components/steps/RoutePreviewStepElements.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"RoutePreviewStepElements.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"RoutePreviewStepElementsView.tsx\".",
+    "suggestedRename": "RoutePreviewStepElementsView.tsx"
+  },
+  {
+    "file": "ui/components/steps/RouteProcessingStep.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RouteProcessingStep.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into RouteProcessingStep.tsx + RouteProcessingStepView.tsx + useRouteProcessingStepState.ts.",
+    "suggestedRename": "RouteProcessingStep.tsx + RouteProcessingStepView.tsx + useRouteProcessingStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/RouteSelectionStep.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RouteSelectionStep.tsx\" exceeds separation threshold (JSX lines: 53 (threshold: 50)). Consider splitting into RouteSelectionStep.tsx + RouteSelectionStepView.tsx + useRouteSelectionStepState.ts.",
+    "suggestedRename": "RouteSelectionStep.tsx + RouteSelectionStepView.tsx + useRouteSelectionStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/RouteTileSettingsStep.tsx",
+    "subPackage": "route-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"RouteTileSettingsStep.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into RouteTileSettingsStep.tsx + RouteTileSettingsStepView.tsx + useRouteTileSettingsStepState.ts.",
+    "suggestedRename": "RouteTileSettingsStep.tsx + RouteTileSettingsStepView.tsx + useRouteTileSettingsStepState.ts"
+  },
+  {
+    "file": "common/config/previewFlags.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"previewFlags.ts\" does not match primary export \"SHAPE_PREVIEW_METADATA_FLAG\". Expected \"SHAPE_PREVIEW_METADATA_FLAG.ts\".",
+    "suggestedRename": "SHAPE_PREVIEW_METADATA_FLAG.ts"
+  },
+  {
+    "file": "common/types/data-source.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"data-source.ts\" does not match primary export \"DataSourceName\". Expected \"DataSourceName.ts\".",
+    "suggestedRename": "DataSourceName.ts"
+  },
+  {
+    "file": "e2e/shape-test-worker.entry.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shape-test-worker.entry.ts\" does not match primary export \"main\". Expected \"main.ts\".",
+    "suggestedRename": "main.ts"
+  },
+  {
+    "file": "headless/mocks/auth.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"auth.ts\" does not match primary export \"AuthService\". Expected \"AuthService.ts\".",
+    "suggestedRename": "AuthService.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "services/build/ShapeBuildAPIClient.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ShapeBuildAPIClient.ts\" does not match primary export \"ShapeQueryAPIImpl\". Expected \"ShapeQueryAPIImpl.ts\".",
+    "suggestedRename": "ShapeQueryAPIImpl.ts"
+  },
+  {
+    "file": "services/build/stageAliasConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"stageAliasConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"stageAliasConstantsUtils.ts\".",
+    "suggestedRename": "stageAliasConstantsUtils.ts"
+  },
+  {
+    "file": "services/stageProfile.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"stageProfile.ts\" does not match primary export \"ShapeStageKind\". Expected \"ShapeStageKind.ts\".",
+    "suggestedRename": "ShapeStageKind.ts"
+  },
+  {
+    "file": "services/utils/geoboundariesEndpoints.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"geoboundariesEndpoints.ts\" does not match primary export \"GEOBOUNDARIES_RELEASE_TYPE\". Expected \"GEOBOUNDARIES_RELEASE_TYPE.ts\".",
+    "suggestedRename": "GEOBOUNDARIES_RELEASE_TYPE.ts"
+  },
+  {
+    "file": "services/utils/iso3166.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"iso3166.ts\" does not match primary export \"ContinentCode\". Expected \"ContinentCode.ts\".",
+    "suggestedRename": "ContinentCode.ts"
+  },
+  {
+    "file": "services/utils/toleranceByBand.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"toleranceByBand.ts\" does not match primary export \"TOLERANCE_MIN\". Expected \"TOLERANCE_MIN.ts\".",
+    "suggestedRename": "TOLERANCE_MIN.ts"
+  },
+  {
+    "file": "services/vt/shapePipelineShared.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapePipelineShared.ts\" does not match primary export \"ShapeGeometryByBandTaskInput\". Expected \"ShapeGeometryByBandTaskInput.ts\".",
+    "suggestedRename": "ShapeGeometryByBandTaskInput.ts"
+  },
+  {
+    "file": "services/vt/shapePipelineSourceStage.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapePipelineSourceStage.ts\" does not match primary export \"ShapeSourceStageParams\". Expected \"ShapeSourceStageParams.ts\".",
+    "suggestedRename": "ShapeSourceStageParams.ts"
+  },
+  {
+    "file": "services/vt/shapePipelineStageHelpers.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapePipelineStageHelpers.ts\" does not match primary export \"StageCounts\". Expected \"StageCounts.ts\".",
+    "suggestedRename": "StageCounts.ts"
+  },
+  {
+    "file": "services/vt/shapeStageReconcile.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapeStageReconcile.ts\" does not match primary export \"reconcileStageTasksByMetadata\". Expected \"reconcileStageTasksByMetadata.ts\".",
+    "suggestedRename": "reconcileStageTasksByMetadata.ts"
+  },
+  {
+    "file": "ui/components/build-config/DeleteBuildOutputsCard.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"DeleteBuildOutputsCard.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"DeleteBuildOutputsCardView.tsx\".",
+    "suggestedRename": "DeleteBuildOutputsCardView.tsx"
+  },
+  {
+    "file": "ui/components/build-config/ShapeBuildConfigStep.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ShapeBuildConfigStep.tsx\" exceeds separation threshold (hook calls: 6 (threshold: 2)). Consider splitting into ShapeBuildConfigStep.tsx + ShapeBuildConfigStepView.tsx + useShapeBuildConfigStepState.ts.",
+    "suggestedRename": "ShapeBuildConfigStep.tsx + ShapeBuildConfigStepView.tsx + useShapeBuildConfigStepState.ts"
+  },
+  {
+    "file": "ui/components/build-config/SimplifyToleranceByAdminLevelCard.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"SimplifyToleranceByAdminLevelCard.tsx\" exceeds separation threshold (JSX lines: 76 (threshold: 50), hook calls: 12 (threshold: 2)). Consider splitting into SimplifyToleranceByAdminLevelCard.tsx + SimplifyToleranceByAdminLevelCardView.tsx + useSimplifyToleranceByAdminLevelCardState.ts.",
+    "suggestedRename": "SimplifyToleranceByAdminLevelCard.tsx + SimplifyToleranceByAdminLevelCardView.tsx + useSimplifyToleranceByAdminLevelCardState.ts"
+  },
+  {
+    "file": "ui/components/build-config/ZoomBandRangeSummary.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ZoomBandRangeSummary.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ZoomBandRangeSummaryView.tsx\".",
+    "suggestedRename": "ZoomBandRangeSummaryView.tsx"
+  },
+  {
+    "file": "ui/components/build-progress/ShapeBuildProgressPanel/BuildSessionStageProgressBar/useBuildSessionStageProgressBarComputation.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useBuildSessionStageProgressBarComputation.ts\" does not match primary export \"ViewportRange\". Expected \"ViewportRange.ts\".",
+    "suggestedRename": "ViewportRange.ts"
+  },
+  {
+    "file": "ui/components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanelViewModel.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ShapeBuildProgressPanelViewModel.tsx\" does not match primary export \"ShapeBuildProgressPanelStartIcon\". Expected \"ShapeBuildProgressPanelStartIcon.tsx\".",
+    "suggestedRename": "ShapeBuildProgressPanelStartIcon.tsx"
+  },
+  {
+    "file": "ui/components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanelViewModel.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"ShapeBuildProgressPanelViewModel.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"ShapeBuildProgressPanelViewModelView.tsx\".",
+    "suggestedRename": "ShapeBuildProgressPanelViewModelView.tsx"
+  },
+  {
+    "file": "ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/useShapeBuildProgressPanelControllerOverlay/ShapeBuildProgressPanelControllerOverlayDialogsView.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ShapeBuildProgressPanelControllerOverlayDialogsView.tsx\" does not match primary export \"ShapeBuildProgressPanelConcurrencyEditorCard\". Expected \"ShapeBuildProgressPanelConcurrencyEditorCard.tsx\".",
+    "suggestedRename": "ShapeBuildProgressPanelConcurrencyEditorCard.tsx"
+  },
+  {
+    "file": "ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/useShapeBuildProgressPanelControllerOverlay/ShapeBuildProgressPanelControllerOverlaySectionsView.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ShapeBuildProgressPanelControllerOverlaySectionsView.tsx\" does not match primary export \"ShapeBuildProgressPanelOverlaySectionProgressContent\". Expected \"ShapeBuildProgressPanelOverlaySectionProgressContent.tsx\".",
+    "suggestedRename": "ShapeBuildProgressPanelOverlaySectionProgressContent.tsx"
+  },
+  {
+    "file": "ui/components/build-progress/ShapeBuildStep/ShapeBuildStep.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ShapeBuildStep.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into ShapeBuildStep.tsx + ShapeBuildStepView.tsx + useShapeBuildStepState.ts.",
+    "suggestedRename": "ShapeBuildStep.tsx + ShapeBuildStepView.tsx + useShapeBuildStepState.ts"
+  },
+  {
+    "file": "ui/components/build-progress/TaskItemCard/TaskItemDetailWindow.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TaskItemDetailWindow.tsx\" exceeds separation threshold (JSX lines: 128 (threshold: 50), hook calls: 27 (threshold: 2)). Consider splitting into TaskItemDetailWindow.tsx + TaskItemDetailWindowView.tsx + useTaskItemDetailWindowState.ts.",
+    "suggestedRename": "TaskItemDetailWindow.tsx + TaskItemDetailWindowView.tsx + useTaskItemDetailWindowState.ts"
+  },
+  {
+    "file": "ui/components/build-progress/eventBufferingUI.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"eventBufferingUI.ts\" does not match primary export \"NotificationType\". Expected \"NotificationType.ts\".",
+    "suggestedRename": "NotificationType.ts"
+  },
+  {
+    "file": "ui/components/build-progress/geometrySimplifyError.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"geometrySimplifyError.ts\" does not match primary export \"GeometrySimplifyErrorDetails\". Expected \"GeometrySimplifyErrorDetails.ts\".",
+    "suggestedRename": "GeometrySimplifyErrorDetails.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionHelpers/debug.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"debug.ts\" does not match primary export \"ShapeProgressStepDebugConfig\". Expected \"ShapeProgressStepDebugConfig.ts\".",
+    "suggestedRename": "ShapeProgressStepDebugConfig.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsedConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"elapsedConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"elapsedConstantsUtils.ts\".",
+    "suggestedRename": "elapsedConstantsUtils.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"errorConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"errorConstantsUtils.ts\".",
+    "suggestedRename": "errorConstantsUtils.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionHelpers/stage.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"stage.ts\" does not match primary export \"StageLikeTask\". Expected \"StageLikeTask.ts\".",
+    "suggestedRename": "StageLikeTask.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionHelpers/startupTrace.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"startupTrace.ts\" does not match primary export \"BuildSessionTransitionPhase\". Expected \"BuildSessionTransitionPhase.ts\".",
+    "suggestedRename": "BuildSessionTransitionPhase.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionHelpers/status.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"status.ts\" does not match primary export \"BuildStartupTransitionWarnStep\". Expected \"BuildStartupTransitionWarnStep.ts\".",
+    "suggestedRename": "BuildStartupTransitionWarnStep.ts"
+  },
+  {
+    "file": "ui/components/build-progress/internal/useShapeBuildSessionLogic.impl.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useShapeBuildSessionLogic.impl.ts\" does not match primary export \"shouldResetElapsedState\". Expected \"shouldResetElapsedState.ts\".",
+    "suggestedRename": "shouldResetElapsedState.ts"
+  },
+  {
+    "file": "ui/components/build-progress/sessionInvalidation.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"sessionInvalidation.ts\" does not match primary export \"resolveShapeNodeId\". Expected \"resolveShapeNodeId.ts\".",
+    "suggestedRename": "resolveShapeNodeId.ts"
+  },
+  {
+    "file": "ui/components/build-progress/shapeBuildProgressRuntimeHelpers.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapeBuildProgressRuntimeHelpers.ts\" does not match primary export \"CountsWithPercentage\". Expected \"CountsWithPercentage.ts\".",
+    "suggestedRename": "CountsWithPercentage.ts"
+  },
+  {
+    "file": "ui/components/build-progress/shapeBuildProgressSummaryCountHelpers.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapeBuildProgressSummaryCountHelpers.ts\" does not match primary export \"StageCountInfo\". Expected \"StageCountInfo.ts\".",
+    "suggestedRename": "StageCountInfo.ts"
+  },
+  {
+    "file": "ui/components/build-progress/shapeBuildProgressSummaryPaneConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"shapeBuildProgressSummaryPaneConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"shapeBuildProgressSummaryPaneConstantsUtils.ts\".",
+    "suggestedRename": "shapeBuildProgressSummaryPaneConstantsUtils.ts"
+  },
+  {
+    "file": "ui/components/build-progress/shapeBuildStepAtomSyncEqualityConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"shapeBuildStepAtomSyncEqualityConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"shapeBuildStepAtomSyncEqualityConstantsUtils.ts\".",
+    "suggestedRename": "shapeBuildStepAtomSyncEqualityConstantsUtils.ts"
+  },
+  {
+    "file": "ui/components/build-progress/shapeBuildTaskSyncDebug.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"shapeBuildTaskSyncDebug.ts\" does not match primary export \"SHAPE_NODE_TYPE\". Expected \"SHAPE_NODE_TYPE.ts\".",
+    "suggestedRename": "SHAPE_NODE_TYPE.ts"
+  },
+  {
+    "file": "ui/components/build-progress/stageIdAliases.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"stageIdAliases.ts\" does not match primary export \"CanonicalUiStageId\". Expected \"CanonicalUiStageId.ts\".",
+    "suggestedRename": "CanonicalUiStageId.ts"
+  },
+  {
+    "file": "ui/components/build-progress/stagePriorityConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"stagePriorityConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"stagePriorityConstantsUtils.ts\".",
+    "suggestedRename": "stagePriorityConstantsUtils.ts"
+  },
+  {
+    "file": "ui/components/build-progress/tile-emit/FeaturePreviewLauncherButtonGroupCard.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"FeaturePreviewLauncherButtonGroupCard.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"FeaturePreviewLauncherButtonGroupCardView.tsx\".",
+    "suggestedRename": "FeaturePreviewLauncherButtonGroupCardView.tsx"
+  },
+  {
+    "file": "ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TileEmitTaskItemDetailWindow.tsx\" exceeds separation threshold (JSX lines: 87 (threshold: 50)). Consider splitting into TileEmitTaskItemDetailWindow.tsx + TileEmitTaskItemDetailWindowView.tsx + useTileEmitTaskItemDetailWindowState.ts.",
+    "suggestedRename": "TileEmitTaskItemDetailWindow.tsx + TileEmitTaskItemDetailWindowView.tsx + useTileEmitTaskItemDetailWindowState.ts"
+  },
+  {
+    "file": "ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useBuildProgressPanelStateComputedHelpers.ts\" does not match primary export \"TranslateFn\". Expected \"TranslateFn.ts\".",
+    "suggestedRename": "TranslateFn.ts"
+  },
+  {
+    "file": "ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.core.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useShapeBuildTaskSync.core.ts\" does not match primary export \"useShapeBuildTaskSyncCore\". Expected \"useShapeBuildTaskSyncCore.ts\".",
+    "suggestedRename": "useShapeBuildTaskSyncCore.ts"
+  },
+  {
+    "file": "ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.core.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 4,
+    "severity": "error",
+    "message": "File \"useShapeBuildTaskSync.core.ts\" is a hook internal implementation using .core.ts (move to sub-directory instead). Suggested: \"useShapeBuildTaskSync/useShapeBuildTaskSync.ts\".",
+    "suggestedRename": "useShapeBuildTaskSync/useShapeBuildTaskSync.ts"
+  },
+  {
+    "file": "ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.debugConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"useShapeBuildTaskSync.debugConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"useShapeBuildTaskSync.debugConstantsUtils.ts\".",
+    "suggestedRename": "useShapeBuildTaskSync.debugConstantsUtils.ts"
+  },
+  {
+    "file": "ui/components/country-selection/ShapeCountrySelectionStep.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ShapeCountrySelectionStep.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into ShapeCountrySelectionStep.tsx + ShapeCountrySelectionStepView.tsx + useShapeCountrySelectionStepState.ts.",
+    "suggestedRename": "ShapeCountrySelectionStep.tsx + ShapeCountrySelectionStepView.tsx + useShapeCountrySelectionStepState.ts"
+  },
+  {
+    "file": "ui/components/country-selection/useShapeCountrySelectionStep.core.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 4,
+    "severity": "error",
+    "message": "File \"useShapeCountrySelectionStep.core.ts\" is a re-export wrapper with .core.ts suffix. Suggested: \"useShapeCountrySelectionStep/useShapeCountrySelectionStep.ts\".",
+    "suggestedRename": "useShapeCountrySelectionStep/useShapeCountrySelectionStep.ts"
+  },
+  {
+    "file": "ui/components/data-source/ShapeDataSourceStep.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"ShapeDataSourceStep.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into ShapeDataSourceStep.tsx + ShapeDataSourceStepView.tsx + useShapeDataSourceStepState.ts.",
+    "suggestedRename": "ShapeDataSourceStep.tsx + ShapeDataSourceStepView.tsx + useShapeDataSourceStepState.ts"
+  },
+  {
+    "file": "ui/components/preview/ShapePreviewStep.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 5,
+    "severity": "error",
+    "message": "File \"ShapePreviewStep.tsx\" is a re-export-only wrapper (Pattern B). Delete this file and rename the implementation file to \"ShapePreviewStep.tsx\".",
+    "suggestedRename": "(delete ShapePreviewStep.tsx, rename target to ShapePreviewStep.tsx)"
+  },
+  {
+    "file": "ui/components/preview/ShapePreviewStepView.tsx",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"ShapePreviewStepView.tsx\" does not match primary export \"ShapeDialogStepProps\". Expected \"ShapeDialogStepProps.tsx\".",
+    "suggestedRename": "ShapeDialogStepProps.tsx"
+  },
+  {
+    "file": "ui/components/preview/useShapePreviewStep.core.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 4,
+    "severity": "error",
+    "message": "File \"useShapePreviewStep.core.ts\" is a re-export wrapper with .core.ts suffix. Suggested: \"useShapePreviewStep/useShapePreviewStep.ts\".",
+    "suggestedRename": "useShapePreviewStep/useShapePreviewStep.ts"
+  },
+  {
+    "file": "ui/components/preview/useShapePreviewStepView.core.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 4,
+    "severity": "error",
+    "message": "File \"useShapePreviewStepView.core.ts\" is a re-export wrapper with .core.ts suffix. Suggested: \"useShapePreviewStepView/useShapePreviewStepView.ts\".",
+    "suggestedRename": "useShapePreviewStepView/useShapePreviewStepView.ts"
+  },
+  {
+    "file": "ui/hooks/useShapeBuildCacheActions/useShapeBuildCacheActions.handlers.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useShapeBuildCacheActions.handlers.ts\" does not match primary export \"CacheActionKey\". Expected \"CacheActionKey.ts\".",
+    "suggestedRename": "CacheActionKey.ts"
+  },
+  {
+    "file": "ui/hooks/useShapeBuildCacheActions/useShapeBuildCacheActions.helpers.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"useShapeBuildCacheActions.helpers.ts\" does not match primary export \"SHAPE_NODE_TYPE\". Expected \"SHAPE_NODE_TYPE.ts\".",
+    "suggestedRename": "SHAPE_NODE_TYPE.ts"
+  },
+  {
+    "file": "ui/utils/buildWarnings.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"buildWarnings.ts\" does not match primary export \"ShapeBuildStage\". Expected \"ShapeBuildStage.ts\".",
+    "suggestedRename": "ShapeBuildStage.ts"
+  },
+  {
+    "file": "worker/api/cacheWriteValidationConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"cacheWriteValidationConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"cacheWriteValidationConstantsUtils.ts\".",
+    "suggestedRename": "cacheWriteValidationConstantsUtils.ts"
+  },
+  {
+    "file": "worker/api/eventEmissionConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"eventEmissionConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"eventEmissionConstantsUtils.ts\".",
+    "suggestedRename": "eventEmissionConstantsUtils.ts"
+  },
+  {
+    "file": "worker/api/progressAnalysis.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"progressAnalysis.ts\" does not match primary export \"buildTaskQueueSummary\". Expected \"buildTaskQueueSummary.ts\".",
+    "suggestedRename": "buildTaskQueueSummary.ts"
+  },
+  {
+    "file": "worker/api/sessionConfigurationConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"sessionConfigurationConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"sessionConfigurationConstantsUtils.ts\".",
+    "suggestedRename": "sessionConfigurationConstantsUtils.ts"
+  },
+  {
+    "file": "worker/api/stateManagement.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"stateManagement.ts\" does not match primary export \"SessionStateSubscription\". Expected \"SessionStateSubscription.ts\".",
+    "suggestedRename": "SessionStateSubscription.ts"
+  },
+  {
+    "file": "worker/api/taskMetadataProcessingConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"taskMetadataProcessingConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"taskMetadataProcessingConstantsUtils.ts\".",
+    "suggestedRename": "taskMetadataProcessingConstantsUtils.ts"
+  },
+  {
+    "file": "worker/api/taskQueueManagement.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"taskQueueManagement.ts\" does not match primary export \"TaskQueueStatusCounts\". Expected \"TaskQueueStatusCounts.ts\".",
+    "suggestedRename": "TaskQueueStatusCounts.ts"
+  },
+  {
+    "file": "worker/api/taskSummaryMapping.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"taskSummaryMapping.ts\" does not match primary export \"ShapeBuildTaskSummary\". Expected \"ShapeBuildTaskSummary.ts\".",
+    "suggestedRename": "ShapeBuildTaskSummary.ts"
+  },
+  {
+    "file": "worker/taskOrderingConstants.ts",
+    "subPackage": "shape-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"taskOrderingConstants.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"taskOrderingConstantsUtils.ts\".",
+    "suggestedRename": "taskOrderingConstantsUtils.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"SPREADSHEET_PLUGIN_ID\". Expected \"SPREADSHEET_PLUGIN_ID.ts\".",
+    "suggestedRename": "SPREADSHEET_PLUGIN_ID.ts"
+  },
+  {
+    "file": "services/spreadsheetTabularApiFactory.ts",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"spreadsheetTabularApiFactory.ts\" does not match primary export \"createSpreadsheetTabularApi\". Expected \"createSpreadsheetTabularApi.ts\".",
+    "suggestedRename": "createSpreadsheetTabularApi.ts"
+  },
+  {
+    "file": "services/utils/filtering.ts",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"filtering.ts\" does not match primary export \"TabularRow\". Expected \"TabularRow.ts\".",
+    "suggestedRename": "TabularRow.ts"
+  },
+  {
+    "file": "ui/components/TabularFilterSections.tsx",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"TabularFilterSections.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"TabularFilterSectionsView.tsx\".",
+    "suggestedRename": "TabularFilterSectionsView.tsx"
+  },
+  {
+    "file": "ui/components/TabularKeyValuePanels.tsx",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TabularKeyValuePanels.tsx\" exceeds separation threshold (JSX lines: 93 (threshold: 50), hook calls: 10 (threshold: 2)). Consider splitting into TabularKeyValuePanels.tsx + TabularKeyValuePanelsView.tsx + useTabularKeyValuePanelsState.ts.",
+    "suggestedRename": "TabularKeyValuePanels.tsx + TabularKeyValuePanelsView.tsx + useTabularKeyValuePanelsState.ts"
+  },
+  {
+    "file": "ui/components/steps/TabularDataSourceStep.tsx",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"TabularDataSourceStep.tsx\" exceeds separation threshold (JSX lines: 53 (threshold: 50), hook calls: 3 (threshold: 2)). Consider splitting into TabularDataSourceStep.tsx + TabularDataSourceStepView.tsx + useTabularDataSourceStepState.ts.",
+    "suggestedRename": "TabularDataSourceStep.tsx + TabularDataSourceStepView.tsx + useTabularDataSourceStepState.ts"
+  },
+  {
+    "file": "ui/state/tabularKeyValueAtoms.ts",
+    "subPackage": "spreadsheet-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tabularKeyValueAtoms.ts\" does not match primary export \"tabularRowsAtom\". Expected \"tabularRowsAtom.ts\".",
+    "suggestedRename": "tabularRowsAtom.ts"
+  },
+  {
+    "file": "common/utils/colorUtils/colorCalculation.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"colorCalculation.ts\" does not match primary export \"calculateLinearColor\". Expected \"calculateLinearColor.ts\".",
+    "suggestedRename": "calculateLinearColor.ts"
+  },
+  {
+    "file": "common/utils/colorUtils/colorCalculation.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"colorCalculation.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"colorCalculationUtils.ts\".",
+    "suggestedRename": "colorCalculationUtils.ts"
+  },
+  {
+    "file": "common/utils/colorUtils/colorConversion.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"colorConversion.ts\" does not match primary export \"hsvToRgb\". Expected \"hsvToRgb.ts\".",
+    "suggestedRename": "hsvToRgb.ts"
+  },
+  {
+    "file": "common/utils/colorUtils/colorConversion.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 2,
+    "severity": "error",
+    "message": "File \"colorConversion.ts\" contains only utils but does not use the \"*Utils.ts\" or \"utils.ts\" suffix. Rename to \"colorConversionUtils.ts\".",
+    "suggestedRename": "colorConversionUtils.ts"
+  },
+  {
+    "file": "common/utils/colorUtils/colorNormalization.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"colorNormalization.ts\" does not match primary export \"DEFAULT_CLASS_COUNT\". Expected \"DEFAULT_CLASS_COUNT.ts\".",
+    "suggestedRename": "DEFAULT_CLASS_COUNT.ts"
+  },
+  {
+    "file": "common/utils/dataAnalysis.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"dataAnalysis.ts\" does not match primary export \"DataStatistics\". Expected \"DataStatistics.ts\".",
+    "suggestedRename": "DataStatistics.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "ui/components/StyleMappingTargetPanel.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StyleMappingTargetPanel.tsx\" exceeds separation threshold (JSX lines: 54 (threshold: 50)). Consider splitting into StyleMappingTargetPanel.tsx + StyleMappingTargetPanelView.tsx + useStyleMappingTargetPanelState.ts.",
+    "suggestedRename": "StyleMappingTargetPanel.tsx + StyleMappingTargetPanelView.tsx + useStyleMappingTargetPanelState.ts"
+  },
+  {
+    "file": "ui/components/StylerAlgorithmPanel.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StylerAlgorithmPanel.tsx\" exceeds separation threshold (JSX lines: 186 (threshold: 50), hook calls: 4 (threshold: 2)). Consider splitting into StylerAlgorithmPanel.tsx + StylerAlgorithmPanelView.tsx + useStylerAlgorithmPanelState.ts.",
+    "suggestedRename": "StylerAlgorithmPanel.tsx + StylerAlgorithmPanelView.tsx + useStylerAlgorithmPanelState.ts"
+  },
+  {
+    "file": "ui/components/StylerAlgorithmStep2.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StylerAlgorithmStep2.tsx\" exceeds separation threshold (JSX lines: 135 (threshold: 50)). Consider splitting into StylerAlgorithmStep2.tsx + StylerAlgorithmStep2View.tsx + useStylerAlgorithmStep2State.ts.",
+    "suggestedRename": "StylerAlgorithmStep2.tsx + StylerAlgorithmStep2View.tsx + useStylerAlgorithmStep2State.ts"
+  },
+  {
+    "file": "ui/components/StylerMappingKeysStep.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StylerMappingKeysStep.tsx\" exceeds separation threshold (hook calls: 5 (threshold: 2)). Consider splitting into StylerMappingKeysStep.tsx + StylerMappingKeysStepView.tsx + useStylerMappingKeysStepState.ts.",
+    "suggestedRename": "StylerMappingKeysStep.tsx + StylerMappingKeysStepView.tsx + useStylerMappingKeysStepState.ts"
+  },
+  {
+    "file": "ui/components/StylerPreviewStep.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StylerPreviewStep.tsx\" exceeds separation threshold (JSX lines: 74 (threshold: 50), hook calls: 8 (threshold: 2)). Consider splitting into StylerPreviewStep.tsx + StylerPreviewStepView.tsx + useStylerPreviewStepState.ts.",
+    "suggestedRename": "StylerPreviewStep.tsx + StylerPreviewStepView.tsx + useStylerPreviewStepState.ts"
+  },
+  {
+    "file": "ui/components/StylerStepProps.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"StylerStepProps.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"StylerStepPropsView.tsx\".",
+    "suggestedRename": "StylerStepPropsView.tsx"
+  },
+  {
+    "file": "ui/components/StylerTargetBehaviorStep.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StylerTargetBehaviorStep.tsx\" exceeds separation threshold (hook calls: 10 (threshold: 2)). Consider splitting into StylerTargetBehaviorStep.tsx + StylerTargetBehaviorStepView.tsx + useStylerTargetBehaviorStepState.ts.",
+    "suggestedRename": "StylerTargetBehaviorStep.tsx + StylerTargetBehaviorStepView.tsx + useStylerTargetBehaviorStepState.ts"
+  },
+  {
+    "file": "ui/components/StylerTargetStep.tsx",
+    "subPackage": "styler-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"StylerTargetStep.tsx\" exceeds separation threshold (hook calls: 4 (threshold: 2)). Consider splitting into StylerTargetStep.tsx + StylerTargetStepView.tsx + useStylerTargetStepState.ts.",
+    "suggestedRename": "StylerTargetStep.tsx + StylerTargetStepView.tsx + useStylerTargetStepState.ts"
+  },
+  {
+    "file": "ui/utils/tabularFilters.ts",
+    "subPackage": "styler-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"tabularFilters.ts\" does not match primary export \"PreparedFilter\". Expected \"PreparedFilter.ts\".",
+    "suggestedRename": "PreparedFilter.ts"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "timeline-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
+    "suggestedRename": "PLUGIN_ID.ts"
+  },
+  {
+    "file": "ui/steps/AnimationViewerStep.tsx",
+    "subPackage": "timeline-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"AnimationViewerStep.tsx\" exceeds separation threshold (hook calls: 3 (threshold: 2)). Consider splitting into AnimationViewerStep.tsx + AnimationViewerStepView.tsx + useAnimationViewerStepState.ts.",
+    "suggestedRename": "AnimationViewerStep.tsx + AnimationViewerStepView.tsx + useAnimationViewerStepState.ts"
+  },
+  {
+    "file": "ui/steps/MapPreviewStep.tsx",
+    "subPackage": "timeline-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"MapPreviewStep.tsx\" exceeds separation threshold (hook calls: 7 (threshold: 2)). Consider splitting into MapPreviewStep.tsx + MapPreviewStepView.tsx + useMapPreviewStepState.ts.",
+    "suggestedRename": "MapPreviewStep.tsx + MapPreviewStepView.tsx + useMapPreviewStepState.ts"
+  },
+  {
+    "file": "icon/YamlPluginIcon.tsx",
+    "subPackage": "yaml-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"YamlPluginIcon.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"YamlPluginIconView.tsx\".",
+    "suggestedRename": "YamlPluginIconView.tsx"
+  },
+  {
+    "file": "plugin-manifest.ts",
+    "subPackage": "yaml-plugin",
+    "pattern": 1,
+    "severity": "error",
+    "message": "File \"plugin-manifest.ts\" does not match primary export \"YAML_PLUGIN_ID\". Expected \"YAML_PLUGIN_ID.ts\".",
+    "suggestedRename": "YAML_PLUGIN_ID.ts"
+  },
+  {
+    "file": "ui/components/steps/YamlBasicInfoStep.tsx",
+    "subPackage": "yaml-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"YamlBasicInfoStep.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"YamlBasicInfoStepView.tsx\".",
+    "suggestedRename": "YamlBasicInfoStepView.tsx"
+  },
+  {
+    "file": "ui/components/steps/YamlIdeGsmCommandStep.tsx",
+    "subPackage": "yaml-plugin",
+    "pattern": 5,
+    "severity": "warning",
+    "message": "Component \"YamlIdeGsmCommandStep.tsx\" exceeds separation threshold (hook calls: 10 (threshold: 2)). Consider splitting into YamlIdeGsmCommandStep.tsx + YamlIdeGsmCommandStepView.tsx + useYamlIdeGsmCommandStepState.ts.",
+    "suggestedRename": "YamlIdeGsmCommandStep.tsx + YamlIdeGsmCommandStepView.tsx + useYamlIdeGsmCommandStepState.ts"
+  },
+  {
+    "file": "ui/components/steps/YamlSchemaEditorStep.tsx",
+    "subPackage": "yaml-plugin",
+    "pattern": 6,
+    "severity": "error",
+    "message": "File \"YamlSchemaEditorStep.tsx\" is a presentational component (0 hook calls) but does not use the \"*View.tsx\" suffix. Rename to \"YamlSchemaEditorStepView.tsx\".",
+    "suggestedRename": "YamlSchemaEditorStepView.tsx"
+  }
+]

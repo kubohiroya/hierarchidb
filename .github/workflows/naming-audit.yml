@@ -11,6 +11,7 @@ on:
       - 'packages/*/src/**/*.tsx'
       - 'plugins/*-plugin/src/**/*.ts'
       - 'plugins/*-plugin/src/**/*.tsx'
+      - 'scripts/naming-audit-baseline.json'
       - 'scripts/naming-audit/**'
       - 'scripts/naming-audit.ts'
 
@@ -46,20 +47,11 @@ jobs:
           NAMING_AUDIT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          naming_audit_parent="$(mktemp -d)"
-          naming_audit_base_dir="${naming_audit_parent}/base"
-          naming_audit_base_report="${RUNNER_TEMP}/naming-audit-base.json"
-
-          git worktree add --detach "${naming_audit_base_dir}" "${NAMING_AUDIT_BASE_SHA}"
-          pnpm tsx scripts/naming-audit.ts \
-            --root "${naming_audit_base_dir}" \
-            --changed-since "${NAMING_AUDIT_BASE_SHA}" \
-            --format json \
-            --report-only > "${naming_audit_base_report}"
-          git worktree remove "${naming_audit_base_dir}"
-          rmdir "${naming_audit_parent}"
-
+          echo "### Naming audit" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- base: ${NAMING_AUDIT_BASE_SHA}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- baseline: scripts/naming-audit-baseline.json" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- scope: current changed files only unless audit implementation changed" >> "${GITHUB_STEP_SUMMARY}"
           pnpm tsx scripts/naming-audit.ts \
             --ci \
             --changed-since "${NAMING_AUDIT_BASE_SHA}" \
-            --baseline "${naming_audit_base_report}"
+            --baseline scripts/naming-audit-baseline.json

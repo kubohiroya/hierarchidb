@@ -26,6 +26,15 @@ test('selects full validation for repository-wide inputs', () => {
   assert.equal(classifyChangedPaths(['scripts/policy/check.mjs']).mode, 'full');
 });
 
+test('keeps lockfile-only and workspace-plus-lockfile changes in affected validation', () => {
+  assert.equal(classifyChangedPaths(['pnpm-lock.yaml']).mode, 'affected');
+  assert.equal(
+    classifyChangedPaths(['packages/core-types/src/index.ts', 'pnpm-lock.yaml']).mode,
+    'affected'
+  );
+  assert.equal(classifyChangedPaths(['pnpm-lock.yaml', 'turbo.json']).mode, 'full');
+});
+
 test('rejects empty and invalid path lists', () => {
   assert.throws(() => classifyChangedPaths([]), /At least one changed path/u);
   assert.throws(

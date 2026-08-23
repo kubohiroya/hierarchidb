@@ -21,6 +21,7 @@ import { createExportAnalyzer } from './naming-audit/exportAnalyzer.js';
 import { scanFiles } from './naming-audit/fileScanner.js';
 import {
   compareNamingAuditViolations,
+  filterNamingAuditBaselineForAuditedFiles,
   parseNamingAuditViolationRecords,
   toNamingAuditViolationRecords,
 } from './naming-audit/namingAuditCiUtils.js';
@@ -233,7 +234,10 @@ function run(): number {
   if (baselinePath === null) {
     throw new Error('CI baseline path is missing after argument validation.');
   }
-  const baselineRecords = parseNamingAuditViolationRecords(readBaselineReport(baselinePath));
+  const baselineRecords = filterNamingAuditBaselineForAuditedFiles(
+    parseNamingAuditViolationRecords(readBaselineReport(baselinePath)),
+    files
+  );
   const currentRecords = toNamingAuditViolationRecords(violations);
   const comparison = compareNamingAuditViolations(baselineRecords, currentRecords);
   return reportNamingAuditComparison(comparison, options.format);

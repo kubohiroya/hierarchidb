@@ -109,7 +109,7 @@ export function reportNamingAuditComparison(
   if (format === 'json') {
     console.error(JSON.stringify({ namingAuditComparison: summary }, null, 2));
   } else {
-    console.log('\n── CI comparison (base → head) ──');
+    console.log('\n── CI comparison (baseline -> head) ──');
     console.log(
       `  Errors: ${summary.baselineErrors} → ${summary.currentErrors} ` +
         `(unchanged: ${summary.unchangedErrors}, new: ${summary.newErrors}, resolved: ${summary.resolvedErrors})`
@@ -125,7 +125,14 @@ export function reportNamingAuditComparison(
         console.log(`    ${violation.message}`);
       }
     }
+
+    if (comparison.resolvedErrors.length > 0) {
+      console.log('\nResolved baseline errors require a baseline update:');
+      for (const violation of comparison.resolvedErrors) {
+        console.log(`  ✖ [P${violation.pattern}] ${violation.subPackage}/${violation.file}`);
+      }
+    }
   }
 
-  return comparison.newErrors.length > 0 ? 1 : 0;
+  return comparison.newErrors.length > 0 || comparison.resolvedErrors.length > 0 ? 1 : 0;
 }
