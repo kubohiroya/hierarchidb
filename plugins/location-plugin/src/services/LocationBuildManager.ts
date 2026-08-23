@@ -9,6 +9,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationBuildConfig } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import { LocationBuildSession } from './LocationBuildSession.js';
+import { clearLocationPoints } from './pointRepository.js';
 
 export class LocationBuildManager extends CanonicalBuildSessionManager {
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -57,5 +58,9 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
     }
     this.sessions.delete(nodeId);
     this.cleanupSessionTracking(nodeId);
+  }
+
+  protected override async cleanupDeletedBuildSessionRuntime(nodeId: NodeId): Promise<void> {
+    await clearLocationPoints(nodeId);
   }
 }

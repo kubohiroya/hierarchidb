@@ -1,5 +1,9 @@
 import { type AbstractBuildSession, BaseBuildSessionManager } from '@hierarchidb/build';
-import type { StageSnapshotUpdatedEvent, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
+import type {
+  BuildSessionStatus,
+  StageSnapshotUpdatedEvent,
+  TaskProgressUpdatedEvent,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
 import { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';
@@ -17,14 +21,17 @@ export abstract class CanonicalBuildSessionManager extends BaseBuildSessionManag
   private readonly heartbeatTimers = new Map<NodeId, ReturnType<typeof setInterval>>();
   private readonly lastSessionStatusPayload = new Map<NodeId, string>();
   private readonly lastStageSnapshotPayload = new Map<NodeId, Map<string, string>>();
+  private readonly runtimeSessionListeners = new Set<() => void>();
 
   protected override onSessionRegistered(session: AbstractBuildSession): Promise<void> {
     this.publishCanonicalState(requireCanonicalSession(session), true);
+    this.notifyRuntimeSessionListeners();
     return Promise.resolve();
   }
 
   protected override onSessionUpdated(session: AbstractBuildSession): Promise<void> {
     this.publishCanonicalState(requireCanonicalSession(session), true);
+    this.notifyRuntimeSessionListeners();
     return Promise.resolve();
   }
 
@@ -38,6 +45,44 @@ export abstract class CanonicalBuildSessionManager extends BaseBuildSessionManag
     this.stopHeartbeat(nodeId);
     this.lastSessionStatusPayload.delete(nodeId);
     this.lastStageSnapshotPayload.delete(nodeId);
+    this.notifyRuntimeSessionListeners();
+  }
+
+  async getBuildSessionRuntimeStatus(nodeId: NodeId): Promise<BuildSessionStatus | null> {
+    return this.sessions.has(nodeId) ? this.getBuildSessionStatus(nodeId) : null;
+  }
+
+  async listBuildSessionRuntimeStatuses(): Promise<BuildSessionStatus[]> {
+    const nodeIds = Array.from(this.sessions.keys()).sort((left, right) =>
+      String(left).localeCompare(String(right))
+    );
+    return Promise.all(nodeIds.map((nodeId) => this.getBuildSessionStatus(nodeId)));
+  }
+
+  async deleteBuildSessionRuntime(nodeId: NodeId): Promise<void> {
+    const session = this.sessions.get(nodeId);
+    if (!session) return;
+    const state = session.getState();
+    if (session.hasActiveRun() || state.status === 'running' || state.status === 'pausing') {
+      throw new Error(`Cannot delete an active build session for node ${String(nodeId)}.`);
+    }
+    await this.cleanupDeletedBuildSessionRuntime(nodeId, session);
+    this.sessions.delete(nodeId);
+    this.cleanupSessionTracking(nodeId);
+  }
+
+  subscribeBuildSessionRuntimeChanges(listener: () => void): () => void {
+    this.runtimeSessionListeners.add(listener);
+    return () => {
+      this.runtimeSessionListeners.delete(listener);
+    };
+  }
+
+  protected cleanupDeletedBuildSessionRuntime(
+    _nodeId: NodeId,
+    _session: AbstractBuildSession
+  ): Promise<void> {
+    return Promise.resolve();
   }
 
   private publishCanonicalState(session: CanonicalSession, includeStageSnapshot: boolean): void {
@@ -110,6 +155,12 @@ export abstract class CanonicalBuildSessionManager extends BaseBuildSessionManag
     if (!timer) return;
     clearInterval(timer);
     this.heartbeatTimers.delete(nodeId);
+  }
+
+  private notifyRuntimeSessionListeners(): void {
+    for (const listener of this.runtimeSessionListeners) {
+      listener();
+    }
   }
 }
 

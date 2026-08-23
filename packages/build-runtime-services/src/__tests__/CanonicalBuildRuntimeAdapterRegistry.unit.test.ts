@@ -6,9 +6,13 @@ import { CanonicalBuildRuntimeError } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  AbstractBuildSession,
   CanonicalBuildRuntimeAdapterRegistry,
   CanonicalBuildRuntimeRevisionTracker,
+  CanonicalBuildSessionManager,
   createBuildSessionRuntimeRecord,
+  createCanonicalBuildRuntimeAdapter,
+  resolveRuntimeStatusFromBuildSessionStatus,
 } from '../index.js';
 
 const shapeNodeType = 'shape' as NodeType;
@@ -38,6 +42,36 @@ const createAdapter = (
   deleteSession: vi.fn(async () => undefined),
   ...override,
 });
+
+class TestCanonicalSession extends AbstractBuildSession {
+  getCanonicalStageSnapshot(): null {
+    return null;
+  }
+
+  takeCanonicalTaskProgressUpdates(): [] {
+    return [];
+  }
+
+  protected async processBatch(): Promise<void> {}
+}
+
+class TestCanonicalBuildSessionManager extends CanonicalBuildSessionManager {
+  readonly deletedRuntimeSessions: NodeId[] = [];
+  cleanupError: Error | null = null;
+
+  async startBuildSession(_nodeId: NodeId): Promise<never> {
+    throw new Error('Not implemented for this unit test');
+  }
+
+  register(session: TestCanonicalSession): void {
+    this.registerSession(session);
+  }
+
+  protected override async cleanupDeletedBuildSessionRuntime(nodeId: NodeId): Promise<void> {
+    this.deletedRuntimeSessions.push(nodeId);
+    if (this.cleanupError) throw this.cleanupError;
+  }
+}
 
 describe('CanonicalBuildRuntimeAdapterRegistry', () => {
   it('registers and requires adapters by node type', () => {
@@ -116,5 +150,119 @@ describe('createBuildSessionRuntimeRecord', () => {
         revision: -1,
       })
     ).toThrow(CanonicalBuildRuntimeError);
+  });
+});
+
+describe('createCanonicalBuildRuntimeAdapter', () => {
+  it('projects manager statuses to runtime records with stable revisions', async () => {
+    let status: BuildSessionRuntimeRecord['status'] | 'queued' = 'queued';
+    const listeners = new Set<() => void>();
+    const adapter = createCanonicalBuildRuntimeAdapter({
+      nodeType: shapeNodeType,
+      inventory: {
+        getBuildSessionRuntimeStatus: vi.fn(async () => ({
+          nodeId,
+          status,
+          progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+        })),
+        listBuildSessionRuntimeStatuses: vi.fn(async () => [
+          {
+            nodeId,
+            status,
+            progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+          },
+        ]),
+        deleteBuildSessionRuntime: vi.fn(async () => undefined),
+        subscribeBuildSessionRuntimeChanges: vi.fn((listener) => {
+          listeners.add(listener);
+          return () => {
+            listeners.delete(listener);
+          };
+        }),
+      },
+    });
+
+    await expect(adapter.getSession(nodeId)).resolves.toMatchObject({
+      nodeType: shapeNodeType,
+      nodeId,
+      status: 'starting',
+      isActive: true,
+      revision: 1,
+    });
+    await expect(adapter.getSession(nodeId)).resolves.toMatchObject({ revision: 1 });
+
+    status = 'completed';
+    await expect(adapter.getSession(nodeId)).resolves.toMatchObject({
+      status: 'completed',
+      isActive: false,
+      revision: 2,
+    });
+  });
+
+  it('subscribes to inventory changes and applies runtime filters', async () => {
+    let status: BuildSessionRuntimeRecord['status'] | 'queued' = 'paused';
+    const listeners = new Set<() => void>();
+    const callback = vi.fn();
+    const adapter = createCanonicalBuildRuntimeAdapter({
+      nodeType: shapeNodeType,
+      inventory: {
+        getBuildSessionRuntimeStatus: vi.fn(async () => null),
+        listBuildSessionRuntimeStatuses: vi.fn(async () => [
+          {
+            nodeId,
+            status,
+            progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+          },
+        ]),
+        deleteBuildSessionRuntime: vi.fn(async () => undefined),
+        subscribeBuildSessionRuntimeChanges: vi.fn((listener) => {
+          listeners.add(listener);
+          return () => {
+            listeners.delete(listener);
+          };
+        }),
+      },
+    });
+
+    const unsubscribe = await adapter.subscribeSessions({ activeOnly: true }, callback);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(callback).toHaveBeenLastCalledWith([]);
+
+    status = 'running';
+    for (const listener of listeners) listener();
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(callback).toHaveBeenLastCalledWith([
+      expect.objectContaining({ status: 'running', isActive: true }),
+    ]);
+
+    unsubscribe();
+    expect(listeners.size).toBe(0);
+  });
+
+  it('throws a typed runtime error for recycled manager status', () => {
+    expect(() => resolveRuntimeStatusFromBuildSessionStatus('recycled')).toThrow(
+      CanonicalBuildRuntimeError
+    );
+  });
+});
+
+describe('CanonicalBuildSessionManager runtime inventory', () => {
+  it('runs plugin cleanup before deleting an inactive runtime session', async () => {
+    const manager = new TestCanonicalBuildSessionManager();
+    manager.register(new TestCanonicalSession(nodeId, {}));
+
+    const cleanupError = new Error('cleanup failed');
+    manager.cleanupError = cleanupError;
+    await expect(manager.deleteBuildSessionRuntime(nodeId)).rejects.toBe(cleanupError);
+    await expect(manager.getBuildSessionRuntimeStatus(nodeId)).resolves.toMatchObject({ nodeId });
+
+    manager.cleanupError = null;
+    await expect(manager.deleteBuildSessionRuntime(nodeId)).resolves.toBeUndefined();
+
+    expect(manager.deletedRuntimeSessions).toEqual([nodeId, nodeId]);
+    await expect(manager.getBuildSessionRuntimeStatus(nodeId)).resolves.toBeNull();
   });
 });

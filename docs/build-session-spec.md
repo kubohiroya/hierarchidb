@@ -35,6 +35,18 @@ build runtime の get/list/subscribe/delete surface は node type ごとの
 へ読み替えてはならない。未登録、重複登録、必須 method 欠落、runtime record
 不正は typed `CanonicalBuildRuntimeError` として失敗させる。
 
+plugin worker module は `canonicalBuildAPI` と同じ module boundary から
+`canonicalBuildRuntimeAdapter` を export できる。location / route のように
+`CanonicalBuildSessionManager` を使う plugin は manager-backed runtime adapter で
+in-memory session inventory を公開し、`get/list/subscribe/delete` が
+`start/pause/cancel/status/tasks` と同じ manager instance を参照する。`delete` は
+inactive session record だけでなく、plugin が管理する build job/task/artifact data の
+cleanup が成功した後に session inventory から削除する。cleanup 失敗時は削除成功へ
+読み替えず、そのまま失敗させる。shape は
+persisted `ShapeQueryService` record と transient command state を合成する既存経路を
+app 内 fallback adapter として維持し、shape plugin-owned adapter へ移すまでは
+duplicate node type 登録時に plugin export を優先する。
+
 `BuildSessionRuntimeRecord` は `nodeType`、`nodeId`、canonical runtime `status`、
 `isActive`、単調増加する `revision` を必須とする。`nodeType` は registry key と
 一致しなければならない。`status` は `idle / starting / running / pausing / paused /
