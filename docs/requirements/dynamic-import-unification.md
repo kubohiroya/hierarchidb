@@ -14,7 +14,7 @@
 4. 型情報は従来どおり静的に配布し、`import type` を活用して `any` へ退避しない設計を保つ。
 
 ## 4. スコープ
-- 対象: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/ui-worker-client`, `packages/plugins/*`、関連ユーティリティ (`WorkerAPIClient`, `WorkerProvider`, `storeRegistry` 等)。
+- 対象: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/ui-worker-client`, `packages/plugins/*`、関連ユーティリティ (`WorkerAPIClient`, `WorkerProvider`, `VTStoreRegistry` 等)。
 - 含む: React Provider/Hook 層の再設計、Worker ローダーの新規実装、プラグイン worker のファクトリ化、テスト/型更新、ドキュメント整備。
 - 含まない: プラグイン個別仕様の大幅変更、既存ビジネスロジックの改修、SSR 全面対応（影響調査と最小差分対応のみ）。
 
@@ -39,7 +39,7 @@
 
 ## 8. 実装指針
 - `WorkerRuntimeProvider` / `WorkerClientProxy` / `WorkerModuleLoader` / `WorkerStateStore` を Phase 1 で導入。
-- プラグイン側では `loadXxxWorkerPeer(storeRegistry)` を導入し、Dexie 初期化等はファクトリ内部で完結させる。
+- プラグイン側では `register<Plugin>WorkerStores` を導入し、Dexie 初期化と `VTStoreRegistry` への vector tile store 登録はファクトリ内部で完結させる。
 - 型情報は `worker-public-plugin-definition.ts`（型のみ）と `worker/RuntimeWorkerService.ts`（実装）へ分離し、呼び出し側は `import type` で参照する。
 - Codemod 方針:
   - `scripts/codemods` 配下に ts-morph ベースのユーティリティを追加し、import 差し替えやファクトリひな形挿入を自動化。

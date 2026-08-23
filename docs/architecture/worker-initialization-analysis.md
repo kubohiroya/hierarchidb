@@ -390,7 +390,7 @@ sequenceDiagram
 const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
 const runtimeModule = await modulePaths.importRuntimeWorker();
 console.table({
-  hasStoreRegistry: Boolean(runtimeModule?.storeRegistry),
+  hasVTStoreRegistry: typeof runtimeModule?.getVTStoreRegistry === 'function',
   exportedKeys: Object.keys(runtimeModule ?? {}),
 });
 

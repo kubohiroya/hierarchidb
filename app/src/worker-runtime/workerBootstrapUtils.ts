@@ -26,7 +26,7 @@ import {
   type HeapPressureContext,
   type HeapPressureEvent,
 } from '@hierarchidb/memory';
-import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
+import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
 import {
   CoreDB,
   configureWorkerContainer,
@@ -53,7 +53,10 @@ import type { UiStorageBridge, YamlCanonicalZipServiceFactory } from '@hierarchi
 import { liveQuery } from 'dexie';
 import { canonicalBuildFeatureFlags } from '~/config/canonicalBuildFeatureFlags';
 import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsProxyBaseURL';
-import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
+import {
+  pluginDefinitions as staticPluginDefinitions,
+  pluginRegistry as staticPluginRegistry,
+} from '~/plugin-loaders/index';
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveCanonicalBuildRuntimeModule } from './resolveCanonicalBuildRuntimeModule.js';
@@ -69,6 +72,7 @@ type RuntimeExportEntry = {
   lifecycle?: unknown;
   createEntityHandler?: () => Promise<unknown>;
 };
+type PluginModuleEntry = { nodeType: string; mod: unknown };
 
 type YamlCanonicalDialogWriter = NonNullable<WorkerServiceOptions['yamlCanonicalDialogWriter']>;
 type RouteCanonicalBuildInputResolverConfigurator = (deps: {
@@ -226,6 +230,32 @@ const resolveManualPluginDefinitions = (): PluginDefinition[] => {
   return pluginDefinitions;
 };
 
+const runWorkerStorePreloads = async (
+  moduleEntries: PluginModuleEntry[],
+  pluginRegistry: PluginRegistryEntry[]
+): Promise<void> => {
+  const registryByNodeType = new Map(pluginRegistry.map((entry) => [entry.nodeType, entry]));
+  for (const entry of moduleEntries) {
+    const registryEntry = registryByNodeType.get(entry.nodeType);
+    const preloadExports = registryEntry?.manifest?.worker?.preload ?? [];
+    const moduleRecord =
+      entry.mod !== null && (typeof entry.mod === 'object' || typeof entry.mod === 'function')
+        ? (entry.mod as Record<string, unknown>)
+        : null;
+    if (moduleRecord === null) continue;
+    for (const exportName of preloadExports) {
+      if (!/^register[A-Z].*WorkerStores$/u.test(exportName)) continue;
+      const preload = moduleRecord[exportName];
+      if (typeof preload !== 'function') {
+        throw new Error(
+          `[worker bootstrap] plugin worker store preload is not exported: ${entry.nodeType}.${exportName}`
+        );
+      }
+      await Promise.resolve((preload as () => unknown)());
+    }
+  }
+};
+
 export const ensureRuntimeWorkerBootstrap = async (options: {
   reporter: WorkerInitializationReporter;
   messageTarget?: WorkerMessageTarget | null;
@@ -300,7 +330,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           .filter(Boolean)
       );
 
-      const moduleEntries: Array<{ nodeType: string; mod: unknown }> = [];
+      const moduleEntries: PluginModuleEntry[] = [];
 
       configureWorkerContainer((container) => {
         container.rebind(WorkerDiTokens.PluginWorkerLoaderMap).toConstantValue(pluginWorkerLoaders);
@@ -432,6 +462,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
         );
         reporter.reportStepProgress('Bootstrap services', 60);
+        await runWorkerStorePreloads(moduleEntries, staticPluginRegistry);
         reporter.reportStepProgress('Bootstrap services', 100);
 
         const routeModule = moduleEntries.find((entry) => entry.nodeType === ROUTE_NODE_TYPE)?.mod;

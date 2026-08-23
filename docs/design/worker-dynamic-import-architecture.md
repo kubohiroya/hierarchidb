@@ -25,7 +25,7 @@ flowchart LR
         C[InitInspector.tsx]
     end
     subgraph Runtime Worker Bundle
-        W[storeRegistry]
+        W[VTStoreRegistry]
         WDB[Dexie-based Entities DB]
     end
     subgraph Plugin Worker Entrypoints
@@ -104,7 +104,7 @@ sequenceDiagram
     UI->>Proxy: ensureInitialized()
     Proxy->>Loader: loadRuntime()
     Loader->>Runtime: modulePaths.importRuntimeWorker()
-    Runtime-->>Loader: storeRegistry, channel APIs
+    Runtime-->>Loader: VTStoreRegistry, channel APIs
     Loader->>Plugin: modulePaths.importPluginWorker(pluginId)
     Plugin-->>Loader: registerGroup/registerRelations (optional)
     Loader->>Proxy: resolve(clientRef)
@@ -167,25 +167,27 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
 
 ### 6.1 参照方式の統一
 - 各プラグインの `src/worker/factory/` にファクトリー関数を集約し、`register<Plugin>WorkerStores`/`load<Plugin>EntitiesDbModule` のような API を提供する。
-- PeerStore は廃止済みのため、Worker 側で行うのは **Group/Relation の登録のみ**。
+- Worker 側の派生 vector tile store は `VTStoreRegistry` に登録する。`LocationQueryAPI` などの公開 query API は別の読み取り境界として維持し、node type 共通の lifecycle/copy/delete 処理が store adapter を必要とする場合だけ `VTStoreRegistry.requireVectorTiles(nodeType)` を使う。
 - 例: `packages/plugins/location-plugin/src/worker/factory/registerLocationWorkerStores.ts`
   ```ts
-  export async function registerLocationWorkerStores({ storeRegistry }: RegisterLocationWorkerStoresOptions = {}) {
-    if (!storeRegistry) return;
-    const { LocationEntitiesDB } = await import('../locationEntitiesDB.js');
-    const db = new LocationEntitiesDB();
+  import { getLocationDB, initializeLocationDB } from '@hierarchidb/location-store';
+  import { getVTStoreRegistry } from '@hierarchidb/runtime-worker';
+  import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+  import { createLocationVectorTileStoreDexie } from '../createLocationVectorTileStoreDexie.js';
+
+  export async function registerLocationWorkerStores() {
+    const db = (() => {
+      try {
+        return getLocationDB();
+      } catch {
+        return initializeLocationDB(getDBName(getBuildDatabasePrefix(), 'location'));
+      }
+    })();
     await db.open?.();
-    if (!storeRegistry.getGroup('location')) {
-      const { createLocationGroupStoreDexie } = await import('../locationGroupStore.dexie.js');
-      storeRegistry.registerGroup('location', createLocationGroupStoreDexie(db));
-    }
-    if (!storeRegistry.getRelations('location')) {
-      const { createLocationRelationStoreDexie } = await import('../locationRelationStore.dexie.js');
-      storeRegistry.registerRelations('location', createLocationRelationStoreDexie(db));
-    }
+    getVTStoreRegistry().registerVectorTiles('location', createLocationVectorTileStoreDexie(db));
   }
   ```
-- `WorkerModuleLoader` は上記ファクトリー関数を `modulePaths.importPluginWorker('location')` で取得し、実行時に呼び出す。
+- Worker bootstrap は plugin manifest の `worker.preload` から `register<Plugin>WorkerStores` を取得し、各 plugin worker module import 後に実行する。二重登録や未登録 node type は `VTStoreRegistry` 側で error とし、fallback しない。
 
 ### 6.2 型定義
 - `dist/worker/index.d.ts` は再エクスポートから関数エクスポートへ更新する必要がある（modulePaths からの import を前提とした公開面に揃える）。
@@ -272,16 +274,16 @@ flowchart LR
 
 ```ts
 // @hierarchidb/runtime-worker-worker-loader.ts
-import type { StoreRegistry, WorkerClientRef } from '@hierarchidb/runtime-worker/types';
+import type { VTStoreRegistry, WorkerClientRef } from '@hierarchidb/runtime-worker/types';
 import type { WorkerPeerLoader } from '@hierarchidb/plugin-loader-styler-plugin/worker-types';
 
 export async function loadWorkerRuntime(): Promise<WorkerClientRef> {
   const runtimeMod = await import('@hierarchidb/runtime-worker');
-  const storeRegistry: StoreRegistry = runtimeMod.storeRegistry;
+  const vtStoreRegistry: VTStoreRegistry = runtimeMod.getVTStoreRegistry();
 
   const stylerPeerMod = await import('@hierarchidb/styler-plugin/worker');
   const loadStylerPeer = stylerPeerMod.loadStylerWorkerPeer as WorkerPeerLoader;
-  await loadStylerPeer(storeRegistry);
+  await loadStylerPeer(vtStoreRegistry);
 
   return runtimeMod.getWorkerClientRef();
 }
