@@ -62,6 +62,7 @@ type UseLocationViewportLayersArgs = {
   locationCirclePaint: Record<string, unknown>;
   locationIconImageExpression: unknown;
   locationIconSizeExpression: unknown;
+  exportControlEnabled?: boolean;
 };
 
 type UseLocationViewportLayersResult = {
@@ -82,6 +83,7 @@ export const useLocationViewportLayers = (
     locationCirclePaint,
     locationIconImageExpression,
     locationIconSizeExpression,
+    exportControlEnabled = true,
   } = args;
 
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
@@ -407,7 +409,7 @@ export const useLocationViewportLayers = (
       setMapInstance(map);
       ensureLocationIcons(map);
       scheduleLocationQuery();
-      if (!exportControlRef.current) {
+      if (exportControlEnabled && !exportControlRef.current) {
         const control = new MaplibreExportControl({
           Format: 'pdf',
           Local: 'ja',
@@ -417,7 +419,7 @@ export const useLocationViewportLayers = (
         exportControlRef.current = control;
       }
     },
-    [ensureLocationIcons, nodeId, scheduleLocationQuery]
+    [ensureLocationIcons, exportControlEnabled, nodeId, scheduleLocationQuery]
   );
 
   const handleLocationMoveEnd = useCallback(

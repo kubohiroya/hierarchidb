@@ -313,6 +313,9 @@ importers:
       '@hierarchidb/location-store':
         specifier: workspace:*
         version: link:../packages/location-store
+      '@hierarchidb/map-export':
+        specifier: workspace:*
+        version: link:../packages/map-export
       '@hierarchidb/memory':
         specifier: workspace:*
         version: link:../packages/memory

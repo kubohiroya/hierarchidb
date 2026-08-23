@@ -1,4 +1,19 @@
 export type {
+  MapExportBrowserApi,
+  MapExportBrowserCommittedNode,
+  MapExportBrowserErrorCode,
+  MapExportBrowserErrorSignal,
+  MapExportBrowserJob,
+  MapExportBrowserState,
+  MapExportBrowserStatus,
+  MapExportBrowserSubmitResult,
+  MapExportBrowserTarget,
+} from './MapExportBrowserTypes.js';
+export {
+  MAP_EXPORT_SCREENSHOT_SELECTOR,
+  MAP_EXPORT_SCREENSHOT_TARGET_ATTRIBUTE,
+} from './MapExportBrowserTypes.js';
+export type {
   MapExportManifestErrorCode,
   MapExportManifestErrorDetails,
 } from './MapExportManifestError.js';
