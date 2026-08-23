@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import { LocationBuildManager } from '../../LocationBuildManager';
-import { createDefaultLocationMvtBuildConfig } from '../../mvt/locationMvtConfig';
+import { createDefaultLocationMvtBuildConfig } from '../../mvt/createDefaultLocationMvtBuildConfig';
 import { createLocationSourcePlan } from '../../source/createLocationSourcePlan';
 
 const {
@@ -40,14 +40,14 @@ vi.mock('../../source/runLocationSourceArtifactCleanup.js', () => ({
   runLocationSourceArtifactCleanup,
 }));
 
-vi.mock('../../mvt/locationMvtGeometryArtifacts.js', () => ({
+vi.mock('../../mvt/persistLocationGeometryArtifacts.js', () => ({
   buildLocationGeometryCacheId: (_nodeId: string, bandIndex: number) =>
     `geometry-${String(bandIndex)}`,
   persistLocationGeometryArtifacts,
   requireLocationMvtBands: () => [{ bandIndex: 0, zMin: 0, zMax: 5, zBase: 0 }],
 }));
 
-vi.mock('../../mvt/locationMvtTileEmit.js', () => ({
+vi.mock('../../mvt/prepareLocationTileEmitTasks.js', () => ({
   prepareLocationTileEmitTasks,
   runLocationTileEmitStage,
 }));

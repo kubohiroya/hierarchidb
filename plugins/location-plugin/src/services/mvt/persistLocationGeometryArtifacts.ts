@@ -15,7 +15,7 @@ import type {
   LocationMvtZoomBandConfig,
 } from '~/common/entities/LocationEntity.js';
 import type { LocationPointProperties, LocationType } from '~/common/entities/LocationPoint.js';
-import { LOCATION_MVT_SOURCE_LAYER } from './locationMvtConfig.js';
+import { LOCATION_MVT_SOURCE_LAYER } from './createDefaultLocationMvtBuildConfig.js';
 
 export type LocationGeometryArtifactOutput = {
   artifacts: Array<{

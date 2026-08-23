@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import type { LocationPointProperties } from '../../../common/entities/LocationPoint';
-import { createDefaultLocationMvtBuildConfig } from '../../mvt/locationMvtConfig';
+import { createDefaultLocationMvtBuildConfig } from '../../mvt/createDefaultLocationMvtBuildConfig';
 import { createLocationSourcePlan } from '../../source/createLocationSourcePlan';
 
 const { strategySearch } = vi.hoisted(() => ({

@@ -43,12 +43,12 @@ import {
   buildLocationGeometryCacheId,
   persistLocationGeometryArtifacts,
   requireLocationMvtBands,
-} from './mvt/locationMvtGeometryArtifacts.js';
+} from './mvt/persistLocationGeometryArtifacts.js';
 import {
   prepareLocationTileEmitTasks,
   runLocationTileEmitStage,
   type LocationTileEmitTask,
-} from './mvt/locationMvtTileEmit.js';
+} from './mvt/prepareLocationTileEmitTasks.js';
 
 const logLocationBuildWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

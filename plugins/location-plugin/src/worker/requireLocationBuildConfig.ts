@@ -4,7 +4,7 @@ import {
   type LocationSourcePlan,
   type PreparedLocationBuild,
 } from '~/services/source/LocationSourcePlan.js';
-import { createDefaultLocationMvtBuildConfig } from '~/services/mvt/locationMvtConfig.js';
+import { createDefaultLocationMvtBuildConfig } from '~/services/mvt/createDefaultLocationMvtBuildConfig.js';
 
 const requireRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {

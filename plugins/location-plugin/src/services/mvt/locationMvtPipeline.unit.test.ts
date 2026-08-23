@@ -12,9 +12,9 @@ import {
   buildLocationGeometryCacheId,
   persistLocationGeometryArtifacts,
   requireLocationMvtBands,
-} from './locationMvtGeometryArtifacts.js';
-import { createDefaultLocationMvtBuildConfig } from './locationMvtConfig.js';
-import { prepareLocationTileEmitTasks } from './locationMvtTileEmit.js';
+} from './persistLocationGeometryArtifacts.js';
+import { createDefaultLocationMvtBuildConfig } from './createDefaultLocationMvtBuildConfig.js';
+import { prepareLocationTileEmitTasks } from './prepareLocationTileEmitTasks.js';
 
 describe('location MVT geometry and tileEmit planning', () => {
   let store: EphemeralDB;
