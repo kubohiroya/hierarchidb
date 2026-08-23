@@ -30,6 +30,13 @@ vi.mock('~/services/LocationBuildManager.js', () => ({
 }));
 
 vi.mock('@hierarchidb/build-runtime-services', () => ({
+  createCanonicalBuildRuntimeAdapter: vi.fn(() => ({
+    nodeType: 'location',
+    getSession: vi.fn(async () => null),
+    listSessions: vi.fn(async () => []),
+    subscribeSessions: vi.fn(() => () => undefined),
+    deleteSession: vi.fn(async () => undefined),
+  })),
   createLiveCanonicalPluginBuildSubscriptions: vi.fn(() => ({
     subscribeStageSnapshots: mocks.subscribeStageSnapshots,
     subscribeTaskProgress: mocks.subscribeTaskProgress,

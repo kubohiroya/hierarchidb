@@ -1,4 +1,4 @@
-export { canonicalBuildAPI } from './canonicalBuildAPI.js';
+export { canonicalBuildAPI, canonicalBuildRuntimeAdapter } from './canonicalBuildAPI.js';
 export type { RegisterLocationWorkerStoresOptions } from './factory/registerLocationWorkerStores.js';
 export {
   loadLocationEntitiesDbModule,

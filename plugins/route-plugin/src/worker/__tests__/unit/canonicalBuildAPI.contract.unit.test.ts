@@ -38,6 +38,13 @@ vi.mock('~/services/RouteBuildSessionOrchestrator.js', () => ({
 
 vi.mock('@hierarchidb/build-runtime-services', async (importOriginal) => ({
   ...(await importOriginal()),
+  createCanonicalBuildRuntimeAdapter: vi.fn(() => ({
+    nodeType: 'route',
+    getSession: vi.fn(async () => null),
+    listSessions: vi.fn(async () => []),
+    subscribeSessions: vi.fn(() => () => undefined),
+    deleteSession: vi.fn(async () => undefined),
+  })),
   createLiveCanonicalPluginBuildSubscriptions: vi.fn(() => ({
     subscribeStageSnapshots: mocks.subscribeStageSnapshots,
     subscribeTaskProgress: mocks.subscribeTaskProgress,

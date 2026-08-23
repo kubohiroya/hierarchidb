@@ -15,6 +15,7 @@ vi.mock('../../download/strategyRegistryUtils.js', () => ({
 
 vi.mock('../../pointRepository.js', () => ({
   appendLocationPoints: vi.fn(async () => {}),
+  clearLocationPoints: vi.fn(async () => {}),
   replaceLocationPoints: vi.fn(async () => {}),
 }));
 

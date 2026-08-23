@@ -19,6 +19,14 @@ export {
   createBuildSessionRuntimeRecord,
   isActiveRuntimeStatus,
 } from './createBuildSessionRuntimeRecord.js';
+export type {
+  CanonicalBuildRuntimeSessionInventory,
+  CreateCanonicalBuildRuntimeAdapterOptions,
+} from './createCanonicalBuildRuntimeAdapter.js';
+export {
+  createCanonicalBuildRuntimeAdapter,
+  resolveRuntimeStatusFromBuildSessionStatus,
+} from './createCanonicalBuildRuntimeAdapter.js';
 export { createLiveCanonicalPluginBuildSubscriptions } from './createLiveCanonicalPluginBuildSubscriptions.js';
 export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
 export { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';

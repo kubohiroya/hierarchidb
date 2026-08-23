@@ -4,7 +4,10 @@ import {
   isLegacyCanonicalPluginBuildStartRequest,
   type LegacyCanonicalPluginBuildStartRequest,
 } from '@hierarchidb/build-api';
-import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
+import {
+  createCanonicalBuildRuntimeAdapter,
+  createLiveCanonicalPluginBuildSubscriptions,
+} from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   ROUTE_MODES,
@@ -13,12 +16,18 @@ import {
   type RouteMode,
 } from '@hierarchidb/route-api';
 import { RouteBuildSessionOrchestrator } from '~/services/RouteBuildSessionOrchestrator.js';
+import { PLUGIN_NODE_TYPE } from '../plugin-manifest.js';
 import { getBuildTasks } from './getBuildTasks.js';
 import { requireRouteBuildConfig } from './requireRouteBuildConfig.js';
 
 const manager = new RouteBuildSessionOrchestrator();
 const subscriptions = createLiveCanonicalPluginBuildSubscriptions();
 const ROUTE_MODE_VALUES = new Set<RouteMode>(Object.values(ROUTE_MODES));
+
+export const canonicalBuildRuntimeAdapter = createCanonicalBuildRuntimeAdapter({
+  nodeType: PLUGIN_NODE_TYPE,
+  inventory: manager,
+});
 
 const requireRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {

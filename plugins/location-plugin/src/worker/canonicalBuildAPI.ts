@@ -4,16 +4,25 @@ import {
   isLegacyCanonicalPluginBuildStartRequest,
   type LegacyCanonicalPluginBuildStartRequest,
 } from '@hierarchidb/build-api';
-import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
+import {
+  createCanonicalBuildRuntimeAdapter,
+  createLiveCanonicalPluginBuildSubscriptions,
+} from '@hierarchidb/build-runtime-services';
 import type {
   LocationBuildConfig,
   LocationDataSource,
   LocationType,
 } from '~/common/entities/LocationEntity.js';
 import { LocationBuildManager } from '~/services/LocationBuildManager.js';
+import { PLUGIN_NODE_TYPE } from '../plugin-manifest.js';
 
 const manager = new LocationBuildManager();
 const subscriptions = createLiveCanonicalPluginBuildSubscriptions();
+
+export const canonicalBuildRuntimeAdapter = createCanonicalBuildRuntimeAdapter({
+  nodeType: PLUGIN_NODE_TYPE,
+  inventory: manager,
+});
 
 const requireRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
