@@ -19,6 +19,11 @@ export interface NamingAuditComparison {
   readonly resolvedErrors: readonly NamingAuditViolationRecord[];
 }
 
+export interface NamingAuditAuditedFileRecord {
+  readonly relativePath: string;
+  readonly subPackage: string;
+}
+
 const VIOLATION_RECORD_KEYS = [
   'file',
   'message',
@@ -104,6 +109,22 @@ function violationKey(record: NamingAuditViolationRecord): string {
 
 function sortRecords(records: readonly NamingAuditViolationRecord[]): NamingAuditViolationRecord[] {
   return [...records].sort((left, right) => violationKey(left).localeCompare(violationKey(right)));
+}
+
+function fileScopeKey(subPackage: string, relativePath: string): string {
+  return JSON.stringify([subPackage, relativePath]);
+}
+
+export function filterNamingAuditBaselineForAuditedFiles(
+  baseline: readonly NamingAuditViolationRecord[],
+  auditedFiles: readonly NamingAuditAuditedFileRecord[]
+): NamingAuditViolationRecord[] {
+  const auditedFileKeys = new Set(
+    auditedFiles.map((file) => fileScopeKey(file.subPackage, file.relativePath))
+  );
+  return baseline.filter((record) =>
+    auditedFileKeys.has(fileScopeKey(record.subPackage, record.file))
+  );
 }
 
 export function compareNamingAuditViolations(
