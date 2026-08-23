@@ -6,8 +6,7 @@ import {
   LOCATION_SYMBOLS_ENTRY_ID,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 
-export const LOCATION_MVT_SOURCE_LAYER = 'location_points';
-export const LOCATION_MVT_PROMOTE_ID = 'pointId';
+const LOCATION_MVT_SOURCE_LAYER = 'location_points';
 
 const LOCATION_MVT_TYPE_COLORS: Record<LocationType, string> = {
   area_centroid: '#1f77b4',
@@ -131,3 +130,6 @@ export const getLocationMvtTypeFilter = (enabledTypes: readonly LocationType[]):
   ['get', 'type'],
   ['literal', enabledTypes],
 ];
+
+export { LOCATION_MVT_SOURCE_LAYER };
+export const LOCATION_MVT_PROMOTE_ID = 'pointId';

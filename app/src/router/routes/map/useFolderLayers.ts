@@ -24,7 +24,10 @@ import { useEffect, useState } from 'react';
 import { canonicalBuildFeatureFlags } from '~/config/canonicalBuildFeatureFlags.js';
 import { parseZxyParam } from '~/router/loaders/mapLoader';
 import type { MapInfoSummary } from '~/router/routes/modeless/modelessDialogContent';
-import { buildLocationMvtLayerStyles, LOCATION_MVT_PROMOTE_ID } from './locationMvtLayerStyles.js';
+import {
+  buildLocationMvtLayerStyles,
+  LOCATION_MVT_PROMOTE_ID,
+} from './buildLocationMvtLayerStyles.js';
 import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
 import type {
   BasemapStyleEntry,

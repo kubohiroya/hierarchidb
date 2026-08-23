@@ -3,7 +3,7 @@ import {
   buildLocationMvtLayerStyles,
   LOCATION_MVT_PROMOTE_ID,
   LOCATION_MVT_SOURCE_LAYER,
-} from '../locationMvtLayerStyles.js';
+} from '../buildLocationMvtLayerStyles.js';
 
 vi.mock('@hierarchidb/ui-plugin-shell/ui-map', () => ({
   DEFAULT_LAYER_SETS: [
