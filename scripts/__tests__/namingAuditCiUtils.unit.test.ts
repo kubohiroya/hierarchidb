@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isExcluded } from '../naming-audit/fileScanner.js';
 import {
   compareNamingAuditViolations,
+  filterNamingAuditBaselineForAuditedFiles,
   type NamingAuditViolationRecord,
   parseNamingAuditViolationRecords,
 } from '../naming-audit/namingAuditCiUtils.js';
@@ -121,6 +122,20 @@ describe('compareNamingAuditViolations', () => {
   });
 });
 
+describe('filterNamingAuditBaselineForAuditedFiles', () => {
+  it('keeps only baseline violations for files included in the current audit scope', () => {
+    const auditedError = makeViolation({ file: 'ui/components/Changed.tsx' });
+    const untouchedError = makeViolation({ file: 'ui/components/Untouched.tsx' });
+
+    expect(
+      filterNamingAuditBaselineForAuditedFiles(
+        [auditedError, untouchedError],
+        [{ relativePath: 'ui/components/Changed.tsx', subPackage: 'shape-plugin' }]
+      )
+    ).toEqual([auditedError]);
+  });
+});
+
 describe('reportNamingAuditComparison', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -137,6 +152,13 @@ describe('reportNamingAuditComparison', () => {
   it('returns failure when the current report contains a new error', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const comparison = compareNamingAuditViolations([], [makeViolation()]);
+
+    expect(reportNamingAuditComparison(comparison, 'table')).toBe(1);
+  });
+
+  it('returns failure when baseline errors were resolved without updating the fixed baseline', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const comparison = compareNamingAuditViolations([makeViolation()], []);
 
     expect(reportNamingAuditComparison(comparison, 'table')).toBe(1);
   });

@@ -5,6 +5,7 @@ import { requiresNamingAuditFullScan } from '../naming-audit/requiresNamingAudit
 describe('requiresNamingAuditFullScan', () => {
   it.each([
     '.github/workflows/naming-audit.yml',
+    'scripts/naming-audit-baseline.json',
     'scripts/naming-audit.ts',
     'scripts/naming-audit/fileScanner.ts',
     'scripts\\naming-audit\\rules\\primaryExportRule.ts',

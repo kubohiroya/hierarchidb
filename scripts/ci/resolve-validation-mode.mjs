@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url';
 
 const DOCUMENTATION_DIRECTORIES = ['.kiro/', 'docs/', 'plans/', 'reports/'];
 const WORKSPACE_DIRECTORIES = ['app/', 'packages/', 'plugins/'];
+const LOCKFILE_PATHS = new Set(['pnpm-lock.yaml']);
 
 const assertRepositoryPath = (filePath) => {
   if (typeof filePath !== 'string' || filePath.length === 0) {
@@ -26,6 +27,8 @@ const isDocumentationOnlyPath = (filePath) =>
 const isWorkspacePath = (filePath) =>
   WORKSPACE_DIRECTORIES.some((directory) => filePath.startsWith(directory));
 
+const isLockfilePath = (filePath) => LOCKFILE_PATHS.has(filePath);
+
 export const classifyChangedPaths = (changedPaths) => {
   if (!Array.isArray(changedPaths) || changedPaths.length === 0) {
     throw new TypeError('At least one changed path is required.');
@@ -40,7 +43,12 @@ export const classifyChangedPaths = (changedPaths) => {
     };
   }
 
-  const fullValidationPaths = validationPaths.filter((filePath) => !isWorkspacePath(filePath));
+  const nonLockfileValidationPaths = validationPaths.filter(
+    (filePath) => !isLockfilePath(filePath)
+  );
+  const fullValidationPaths = nonLockfileValidationPaths.filter(
+    (filePath) => !isWorkspacePath(filePath)
+  );
   if (fullValidationPaths.length > 0) {
     return {
       mode: 'full',
@@ -50,7 +58,10 @@ export const classifyChangedPaths = (changedPaths) => {
 
   return {
     mode: 'affected',
-    reason: `Workspace-local changes detected: ${validationPaths.join(', ')}`,
+    reason:
+      nonLockfileValidationPaths.length === 0
+        ? `Lockfile-only changes detected: ${validationPaths.join(', ')}`
+        : `Workspace-local changes detected: ${validationPaths.join(', ')}`,
   };
 };
 
