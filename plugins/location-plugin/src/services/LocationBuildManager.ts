@@ -9,21 +9,37 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationBuildConfig } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import { LocationBuildSession } from './LocationBuildSession.js';
-import { clearLocationPoints } from './pointRepository.js';
+import { clearLocationArtifacts } from './pointRepository.js';
+import type { LocationSourcePlan } from './source/LocationSourcePlan.js';
+import { runLocationSourceArtifactCleanup } from './source/runLocationSourceArtifactCleanup.js';
 
 export class LocationBuildManager extends CanonicalBuildSessionManager {
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
-    throw new Error(
-      `startBuildSession requires config; use startLocationBuildSession(nodeId, config) instead. nodeId=${nodeId}`
-    );
+    const session = this.sessions.get(nodeId);
+    if (!(session instanceof LocationBuildSession)) {
+      throw new Error(`Location build session ${String(nodeId)} is not prepared`);
+    }
+    const state = session.getState();
+    if (state.status === 'running' || state.status === 'pausing') {
+      throw new Error(`Location build session still has an active run for node ${String(nodeId)}`);
+    }
+    const runPromise = session.start();
+    void runPromise.catch((error: unknown) => {
+      console.warn('[LocationBuildManager] Location build session failed', error);
+    });
+    return this.getBuildSessionStatus(nodeId);
   }
 
-  async startLocationBuildSession(nodeId: NodeId, config: LocationBuildConfig): Promise<NodeId> {
+  async startLocationBuildSession(
+    nodeId: NodeId,
+    config: LocationBuildConfig,
+    sourcePlan: LocationSourcePlan
+  ): Promise<NodeId> {
     const existing = this.sessions.get(nodeId);
     if (existing?.hasActiveRun()) {
       throw new Error(`Location build session still has an active run for node ${String(nodeId)}`);
     }
-    const session = new LocationBuildSession(nodeId, config);
+    const session = new LocationBuildSession(nodeId, config, sourcePlan);
     await session.initialize();
     this.registerSession(session);
 
@@ -45,9 +61,10 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
 
   async collectLocationPoints(
     nodeId: NodeId,
-    config: LocationBuildConfig
+    config: LocationBuildConfig,
+    sourcePlan: LocationSourcePlan
   ): Promise<LocationPointProperties[]> {
-    const session = new LocationBuildSession(nodeId, config);
+    const session = new LocationBuildSession(nodeId, config, sourcePlan);
     return session.collectLocationPoints(config);
   }
 
@@ -61,6 +78,7 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
   }
 
   protected override async cleanupDeletedBuildSessionRuntime(nodeId: NodeId): Promise<void> {
-    await clearLocationPoints(nodeId);
+    await runLocationSourceArtifactCleanup(nodeId);
+    await clearLocationArtifacts(nodeId);
   }
 }

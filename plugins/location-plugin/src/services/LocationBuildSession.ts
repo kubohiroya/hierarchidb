@@ -14,12 +14,7 @@ import {
   type CanonicalBuildSessionEventSource,
 } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  FetchNetworkPort,
-  getCorsProxyBaseURL,
-  notifyPluginAuthRequired,
-  postJson,
-} from '@hierarchidb/download';
+import { FetchNetworkPort, notifyPluginAuthRequired } from '@hierarchidb/download';
 import { resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
 import type {
@@ -29,6 +24,7 @@ import type {
   LocationType,
 } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
+import { createLocationNetworkPort } from './download/createLocationNetworkPort.js';
 import {
   parseOpenFlightsCsv,
   parseOurAirportsCsv,
@@ -37,7 +33,10 @@ import {
 import { mapType, parseNumber } from './download/mapperUtils.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFactoryUtils.js';
-import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
+import { replaceLocationArtifacts, replaceLocationPoints } from './pointRepository.js';
+import type { LocationSourcePlan } from './source/LocationSourcePlan.js';
+import { createLocationSourceArtifactRecord } from './source/persistLocationSourceArtifact.js';
+import { runLocationSourceArtifactCleanup } from './source/runLocationSourceArtifactCleanup.js';
 
 const logLocationBuildWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -77,6 +76,22 @@ type LocationStageTiming = {
   stageCompletedAt?: number;
 };
 
+class LocationAuthRequiredError extends Error {
+  readonly code = 'BUILD_AUTH_REQUIRED';
+
+  constructor(status: number) {
+    super(`Auth required: ${String(status)}`);
+    this.name = 'LocationAuthRequiredError';
+  }
+}
+
+const isAuthRequiredError = (error: unknown): error is LocationAuthRequiredError =>
+  error instanceof LocationAuthRequiredError ||
+  (error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'BUILD_AUTH_REQUIRED');
+
 export class LocationBuildSession
   extends AbstractBuildSession<LocationBuildConfig>
   implements CanonicalBuildSessionEventSource
@@ -87,7 +102,11 @@ export class LocationBuildSession
   private sourceStageTiming: LocationStageTiming | null = null;
   countryNameMap: Map<string, string> | null = null;
 
-  constructor(nodeId: NodeId, config: LocationBuildConfig) {
+  constructor(
+    nodeId: NodeId,
+    config: LocationBuildConfig,
+    private readonly sourcePlan: LocationSourcePlan
+  ) {
     super(nodeId, config);
     this.tasks = config.searchConfigs.map((searchConfig, index) => ({
       taskId: `${String(nodeId)}:source:${String(index)}`,
@@ -104,6 +123,7 @@ export class LocationBuildSession
     const total = this.tasks.length;
     let completed = 0;
     let failed = 0;
+    const sourcePoints: LocationPointProperties[] = [];
 
     this.beginSourceStage();
     this.updateProgress({ total, completed, failed }, 'source');
@@ -131,13 +151,13 @@ export class LocationBuildSession
               this.config.filterCriteria
             );
             requireNotAborted(signal, 'Location build paused during validation');
-            await this.persistLocationPoints(this.nodeId, validated);
-            requireNotAborted(signal, 'Location build paused during persistence');
+            sourcePoints.push(...validated);
             completed += 1;
             task.status = 'completed';
             this.updateLocationTaskProgress(task, 100);
           } catch (error) {
             if (isAbortError(error)) throw error;
+            if (isAuthRequiredError(error)) throw error;
             failed += 1;
             task.status = 'failed';
             task.errorMessage = error instanceof Error ? error.message : String(error);
@@ -153,11 +173,22 @@ export class LocationBuildSession
       if (rejectedTask) throw rejectedTask.reason;
     }
 
-    this.completeSourceStage();
-    this.updateProgress({ total, completed, failed }, 'source');
     if (failed > 0) {
       throw new Error(`Location build completed with ${failed} failures`);
     }
+    const completedAt = Date.now();
+    const sourceArtifact = createLocationSourceArtifactRecord({
+      nodeId: this.nodeId,
+      sourcePlan: this.sourcePlan,
+      points: sourcePoints,
+      completedAt,
+    });
+    await runLocationSourceArtifactCleanup(this.nodeId);
+    requireNotAborted(signal, 'Location build paused during artifact cleanup');
+    await replaceLocationArtifacts(this.nodeId, sourcePoints, sourceArtifact);
+    requireNotAborted(signal, 'Location build paused during persistence');
+    this.completeSourceStage(completedAt);
+    this.updateProgress({ total, completed, failed }, 'source');
   }
 
   getCanonicalStageSnapshot(): StageSnapshotUpdatedEvent['payload'] | null {
@@ -174,6 +205,7 @@ export class LocationBuildSession
         metadata: {
           dataSource: task.searchConfig.dataSource,
           index: task.index,
+          inputHash: this.sourcePlan.identity.inputHash,
         },
       })),
       ...this.sourceStageTiming,
@@ -195,6 +227,7 @@ export class LocationBuildSession
       metadata: {
         dataSource: task.searchConfig.dataSource,
         index: task.index,
+        inputHash: this.sourcePlan.identity.inputHash,
       },
     }));
   }
@@ -206,6 +239,10 @@ export class LocationBuildSession
       task.errorMessage = undefined;
       this.updateLocationTaskProgress(task, 0);
     }
+  }
+
+  protected override shouldPauseOnError(error: unknown): boolean {
+    return isAuthRequiredError(error);
   }
 
   protected override async onCancelQueued(): Promise<void> {
@@ -223,11 +260,14 @@ export class LocationBuildSession
     };
   }
 
-  private completeSourceStage(): void {
+  private completeSourceStage(completedAt: number): void {
     if (!this.sourceStageTiming) {
       throw new Error('Location source stage cannot complete before it starts');
     }
-    this.sourceStageTiming.stageCompletedAt = Date.now();
+    if (!Number.isFinite(completedAt) || completedAt < 0) {
+      throw new Error(`Location source stage completedAt must be finite and non-negative`);
+    }
+    this.sourceStageTiming.stageCompletedAt = completedAt;
   }
 
   private updateLocationTaskProgress(
@@ -249,21 +289,17 @@ export class LocationBuildSession
       metadata: {
         dataSource: task.searchConfig.dataSource,
         index: task.index,
+        inputHash: this.sourcePlan.identity.inputHash,
       },
     });
   }
 
   private async persistLocationPoints(
     nodeId: NodeId,
-    points: LocationPointProperties[],
-    mode: 'append' | 'replace' = 'append'
+    points: LocationPointProperties[]
   ): Promise<void> {
     if (!points.length) return;
-    if (mode === 'replace') {
-      await replaceLocationPoints(nodeId, points);
-      return;
-    }
-    await appendLocationPoints(nodeId, points);
+    await replaceLocationPoints(nodeId, points);
   }
 
   async collectLocationPoints(config: LocationBuildConfig): Promise<LocationPointProperties[]> {
@@ -284,7 +320,7 @@ export class LocationBuildSession
       );
     }
 
-    await this.persistLocationPoints(this.nodeId, collected, 'replace');
+    await this.persistLocationPoints(this.nodeId, collected);
     return collected;
   }
 
@@ -378,7 +414,7 @@ export class LocationBuildSession
       typeof queryOption === 'string' && queryOption.trim().length > 0
         ? queryOption
         : this.buildOverpassQuery(config);
-    const data = await postJson<{ elements?: RawOverpassElement[] }>('location', endpoint, query, {
+    const data = await this.postTextJson<{ elements?: RawOverpassElement[] }>(endpoint, query, {
       'Content-Type': 'application/x-www-form-urlencoded',
     });
     return await this.convertOverpassToLocations(data);
@@ -452,11 +488,11 @@ export class LocationBuildSession
 
   private getNetworkPort(): FetchNetworkPort {
     if (this.net) return this.net;
-    const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-    this.net = new FetchNetworkPort({
-      perHostConcurrency: 4,
-      corsProxyBaseURL,
-      auth: { scope: 'location' },
+    const state = this.getState();
+    this.net = createLocationNetworkPort({
+      concurrent: this.config.concurrentDownloads ?? this.config.processingOptions.concurrent ?? 1,
+      sessionId: String(this.nodeId),
+      sessionStartedAt: state.startedAt,
     });
     return this.net;
   }
@@ -471,7 +507,7 @@ export class LocationBuildSession
         hint: 'Authentication required',
         status: res.status,
       });
-      throw new Error(`Auth required: ${res.status}`);
+      throw new LocationAuthRequiredError(res.status);
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buf = await res.arrayBuffer();
@@ -489,11 +525,36 @@ export class LocationBuildSession
         hint: 'Authentication required',
         status: res.status,
       });
-      throw new Error(`Auth required: ${res.status}`);
+      throw new LocationAuthRequiredError(res.status);
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buf = await res.arrayBuffer();
     return new TextDecoder().decode(buf);
+  }
+
+  private async postTextJson<T>(
+    url: string,
+    body: string,
+    headers: Record<string, string>
+  ): Promise<T> {
+    const net = this.getNetworkPort();
+    const res = await net.post(url, {
+      body,
+      headers,
+    });
+    if (res.status === 401 || res.status === 403) {
+      notifyPluginAuthRequired('location', {
+        resource: url,
+        provider: 'location',
+        hint: 'Authentication required',
+        status: res.status,
+      });
+      throw new LocationAuthRequiredError(res.status);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    const text = new TextDecoder().decode(buf);
+    return JSON.parse(text) as T;
   }
 
   private buildOverpassQuery(config: LocationSearchConfig): string {

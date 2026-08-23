@@ -1,6 +1,10 @@
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationFeature, LocationFeatureId, LocationPointId } from '@hierarchidb/location-api';
+import type {
+  LocationFeature,
+  LocationFeatureId,
+  LocationPointId,
+} from '@hierarchidb/location-api';
 import {
   buildLocationVectorTileId,
   clearLocationDatabases,
@@ -88,7 +92,7 @@ describe('location vector tile runtime services', () => {
     );
   });
 
-  it('clears vector tiles independently from features and clears all artifacts explicitly', async () => {
+  it('clears vector tiles independently and keeps artifact cleanup scoped to features', async () => {
     const db = getLocationDB();
     const mutation = new LocationMutationService();
     await db.features.put(createFeature());
@@ -105,7 +109,7 @@ describe('location vector tile runtime services', () => {
     await mutation.clearLocationArtifacts(nodeId);
 
     await expect(db.features.where('nodeId').equals(nodeId).count()).resolves.toBe(0);
-    await expect(db.vectorTiles.where('nodeId').equals(nodeId).count()).resolves.toBe(0);
+    await expect(db.vectorTiles.where('nodeId').equals(nodeId).count()).resolves.toBe(1);
     await expect(db.vectorTiles.where('nodeId').equals(otherNodeId).count()).resolves.toBe(1);
   });
 });

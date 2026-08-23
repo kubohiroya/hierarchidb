@@ -53,11 +53,7 @@ export const resolveLocationAttribution = (
 ): LocationAttributionInfo | null => {
   if (!dataSource) return null;
   const normalized = dataSource.toLowerCase();
-  const alias =
-    normalized === 'openstreetmap' || normalized === 'overpass'
-      ? 'openstreetmap-overpass'
-      : normalized;
-  const source = LocationDataSources[alias];
+  const source = LocationDataSources[normalized];
   if (source) return buildFromDefinition(normalized, source);
   return FALLBACK_ATTRIBUTIONS[normalized] ?? null;
 };

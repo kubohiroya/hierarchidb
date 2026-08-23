@@ -4,11 +4,15 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import { LocationBuildManager } from '../../LocationBuildManager';
+import { createLocationSourcePlan } from '../../source/createLocationSourcePlan';
 
-const { appendLocationPoints, strategySearch } = vi.hoisted(() => ({
-  appendLocationPoints: vi.fn(),
-  strategySearch: vi.fn(),
-}));
+const { replaceLocationArtifacts, runLocationSourceArtifactCleanup, strategySearch } = vi.hoisted(
+  () => ({
+    replaceLocationArtifacts: vi.fn(),
+    runLocationSourceArtifactCleanup: vi.fn(),
+    strategySearch: vi.fn(),
+  })
+);
 
 vi.mock('../../download/strategyRegistryUtils.js', () => ({
   getLocationStrategy: () => ({
@@ -17,9 +21,14 @@ vi.mock('../../download/strategyRegistryUtils.js', () => ({
 }));
 
 vi.mock('../../pointRepository.js', () => ({
-  appendLocationPoints,
+  replaceLocationArtifacts,
+  clearLocationArtifacts: vi.fn(async () => {}),
   clearLocationPoints: vi.fn(async () => {}),
   replaceLocationPoints: vi.fn(async () => {}),
+}));
+
+vi.mock('../../source/runLocationSourceArtifactCleanup.js', () => ({
+  runLocationSourceArtifactCleanup,
 }));
 
 vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
@@ -29,11 +38,19 @@ vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
 }));
 
 const nodeId = 'location-canonical-events' as NodeId;
+const sourcePlan = createLocationSourcePlan({
+  dataSource: 'ourairports',
+  selectedArrayByCountries: {
+    JP: [false, true, false, false, false],
+  },
+});
 
 describe('LocationBuildSession canonical events', () => {
   beforeEach(() => {
-    appendLocationPoints.mockReset();
-    appendLocationPoints.mockResolvedValue(undefined);
+    replaceLocationArtifacts.mockReset();
+    replaceLocationArtifacts.mockResolvedValue(undefined);
+    runLocationSourceArtifactCleanup.mockReset();
+    runLocationSourceArtifactCleanup.mockResolvedValue(undefined);
     strategySearch.mockReset();
   });
 
@@ -79,7 +96,7 @@ describe('LocationBuildSession canonical events', () => {
       processingOptions: { concurrent: 1 },
     };
     const manager = new LocationBuildManager();
-    await manager.startLocationBuildSession(nodeId, config);
+    await manager.startLocationBuildSession(nodeId, config, sourcePlan);
     await completed;
 
     await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
@@ -117,6 +134,16 @@ describe('LocationBuildSession canonical events', () => {
       expect.objectContaining({ status: 'completed', progress: 100, version: 3 }),
     ]);
     expect(finalSnapshot?.payload.stageCompletedAt).toEqual(expect.any(Number));
+    expect(runLocationSourceArtifactCleanup).toHaveBeenCalledWith(nodeId);
+    expect(replaceLocationArtifacts).toHaveBeenCalledWith(
+      nodeId,
+      expect.arrayContaining([expect.objectContaining({ pointId: 'point-1' })]),
+      expect.objectContaining({
+        nodeId,
+        inputHash: sourcePlan.identity.inputHash,
+        completedAt: finalSnapshot?.payload.stageCompletedAt,
+      })
+    );
   });
 
   it('stops active processing and requeues the task before publishing paused state', async () => {
@@ -138,7 +165,7 @@ describe('LocationBuildSession canonical events', () => {
       processingOptions: { concurrent: 1 },
     };
     const manager = new LocationBuildManager();
-    await manager.startLocationBuildSession(nodeId, config);
+    await manager.startLocationBuildSession(nodeId, config, sourcePlan);
     await vi.waitFor(() => {
       expect(strategySearch).toHaveBeenCalledTimes(1);
     });
@@ -163,7 +190,8 @@ describe('LocationBuildSession canonical events', () => {
         progress: 0,
       }),
     ]);
-    expect(appendLocationPoints).not.toHaveBeenCalled();
+    expect(replaceLocationArtifacts).not.toHaveBeenCalled();
+    expect(runLocationSourceArtifactCleanup).not.toHaveBeenCalled();
   });
 
   it('publishes failed instead of converting a source failure into an empty success', async () => {
@@ -174,10 +202,14 @@ describe('LocationBuildSession canonical events', () => {
       });
     });
     const manager = new LocationBuildManager();
-    await manager.startLocationBuildSession(nodeId, {
-      searchConfigs: [{ dataSource: 'ourairports' }],
-      processingOptions: { concurrent: 1 },
-    });
+    await manager.startLocationBuildSession(
+      nodeId,
+      {
+        searchConfigs: [{ dataSource: 'ourairports' }],
+        processingOptions: { concurrent: 1 },
+      },
+      sourcePlan
+    );
 
     await failed;
 
@@ -189,6 +221,81 @@ describe('LocationBuildSession canonical events', () => {
     await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
       expect.objectContaining({ status: 'failed', errorMessage: 'source unavailable' }),
     ]);
-    expect(appendLocationPoints).not.toHaveBeenCalled();
+    expect(replaceLocationArtifacts).not.toHaveBeenCalled();
+    expect(runLocationSourceArtifactCleanup).not.toHaveBeenCalled();
+  });
+
+  it('publishes auth-required as a paused resumable session', async () => {
+    strategySearch.mockRejectedValue(
+      Object.assign(new Error('Auth required: 401'), { code: 'BUILD_AUTH_REQUIRED' })
+    );
+    const paused = new Promise<void>((resolve) => {
+      unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'paused') resolve();
+      });
+    });
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(
+      nodeId,
+      {
+        searchConfigs: [{ dataSource: 'ourairports' }],
+        processingOptions: { concurrent: 1 },
+      },
+      sourcePlan
+    );
+
+    await paused;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'paused',
+      stopReason: 'auth-required',
+      error: 'Auth required: 401',
+    });
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
+      expect.objectContaining({ status: 'queued', progress: 0 }),
+    ]);
+    expect(replaceLocationArtifacts).not.toHaveBeenCalled();
+    expect(runLocationSourceArtifactCleanup).not.toHaveBeenCalled();
+  });
+
+  it('fails the session before replacing points when downstream artifact cleanup fails', async () => {
+    strategySearch.mockResolvedValue([
+      {
+        schemaVersion: 2,
+        pointId: 'point-1',
+        name: 'Test airport',
+        latitude: 35,
+        longitude: 140,
+        type: 'airport',
+        admin0Code: 'JP',
+        admin0: 'Japan',
+      },
+    ]);
+    runLocationSourceArtifactCleanup.mockRejectedValue(
+      new Error('vt-store-not-registered:location')
+    );
+    const failed = new Promise<void>((resolve) => {
+      unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'failed') resolve();
+      });
+    });
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(
+      nodeId,
+      {
+        searchConfigs: [{ dataSource: 'ourairports' }],
+        processingOptions: { concurrent: 1 },
+      },
+      sourcePlan
+    );
+
+    await failed;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'failed',
+      stopReason: 'failed',
+      error: 'vt-store-not-registered:location',
+    });
+    expect(replaceLocationArtifacts).not.toHaveBeenCalled();
   });
 });

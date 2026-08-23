@@ -150,6 +150,15 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
         this.emitSessionUpdate();
         throw abortError('Session aborted');
       }
+      if (this.shouldPauseOnError(error)) {
+        await this.onPause();
+        this.state.status = 'paused';
+        this.state.error = error instanceof Error ? error.message : String(error);
+        this.state.stopReason = 'auth-required';
+        this.state.lastActivity = Date.now();
+        this.emitSessionUpdate();
+        return;
+      }
       this.state.status = 'failed';
       this.state.error = error instanceof Error ? error.message : String(error);
       this.state.stopReason = 'failed';
@@ -305,6 +314,9 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   protected async onCancelQueued(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
+  protected shouldPauseOnError(_error: unknown): boolean {
+    return false;
+  }
 }
 
 async function waitForRunShutdown(

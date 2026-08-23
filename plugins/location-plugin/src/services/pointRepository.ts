@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import { buildTileIdByZoom } from '@hierarchidb/location-store';
+import { buildTileIdByZoom, type LocationSourceArtifactRecord } from '@hierarchidb/location-store';
 import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
@@ -72,6 +72,24 @@ export async function replaceLocationPoints(
   });
 }
 
+export async function replaceLocationArtifacts(
+  nodeId: NodeId,
+  points: PointProperties[],
+  sourceArtifact: LocationSourceArtifactRecord
+): Promise<void> {
+  const db = await getDb();
+  await db.transaction('rw', [db.features, db.sourceArtifacts], async () => {
+    await db.features.where('nodeId').equals(nodeId).delete();
+    await db.sourceArtifacts.delete(nodeId);
+    if (points.length > 0) {
+      const now = Date.now();
+      const rows = points.map((point) => toGroupRow(nodeId, toItem(point), now));
+      await db.features.bulkPut(rows);
+    }
+    await db.storeSourceArtifact(sourceArtifact);
+  });
+}
+
 export async function replaceLocationPointsChunked(
   nodeId: NodeId,
   points: PointProperties[],
@@ -132,4 +150,12 @@ export async function deleteLocationPoints(nodeId: NodeId, pointIds: string[]): 
 export async function clearLocationPoints(nodeId: NodeId): Promise<void> {
   const db = await getDb();
   await db.features.where('nodeId').equals(nodeId).delete();
+}
+
+export async function clearLocationArtifacts(nodeId: NodeId): Promise<void> {
+  const db = await getDb();
+  await db.transaction('rw', [db.features, db.sourceArtifacts], async () => {
+    await db.features.where('nodeId').equals(nodeId).delete();
+    await db.sourceArtifacts.delete(nodeId);
+  });
 }

@@ -12,14 +12,14 @@ import { createLocationTabularApi } from '~/common/tabular/createLocationTabular
 import type { LocationDataSource, LocationEntity, LocationType } from '~/common/types/index';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
-  'ide-gsm',
   'openstreetmap',
   'overpass',
-  'geonames',
-  'wikidata',
   'ourairports',
   'openflights',
   'world-port-index',
+  'ide-gsm',
+  'geonames',
+  'wikidata',
   'natural-earth',
   'custom',
   'manual',
@@ -120,8 +120,16 @@ const SOURCE_TYPES: Partial<Record<LocationDataSource, LocationType[]>> = {
   'ide-gsm': ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
 };
 
+const CANONICAL_WORKER_SOURCES = new Set<LocationDataSource>([
+  'openstreetmap',
+  'overpass',
+  'ourairports',
+  'openflights',
+  'world-port-index',
+]);
+
 const DISABLED_SOURCES: LocationDataSource[] = ORDERED_DATA_SOURCES.filter(
-  (sourceId) => sourceId !== 'ide-gsm'
+  (sourceId) => !CANONICAL_WORKER_SOURCES.has(sourceId)
 );
 
 const HIDDEN_SOURCES: LocationDataSource[] = ['custom', 'manual'];
@@ -182,7 +190,7 @@ export const useLocationDataSourceStep = ({
   const [importInProgress, setImportInProgress] = useState(false);
 
   const value = useMemo<LocationDataSource>(
-    () => (draft.dataSource as LocationDataSource) ?? 'ide-gsm',
+    () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
     [draft.dataSource]
   );
 

@@ -31,7 +31,9 @@
 ### Step2: データソース選択
 
 - 目的: 地点データの取得元を選択する。
-- 初期実装は **CSV データソースのみ**を提供する。
+- canonical runtime build では、Worker source strategy を持つ source だけを選択可能にする。
+- 選択可能な source は `openstreetmap`（Nominatim）, `overpass`, `ourairports`, `openflights`, `world-port-index` とする。
+- `ide-gsm` など tabular source は TabularReadPort が canonical worker session に接続されるまで選択不可とし、表示後の runtime rejection に任せない。
 - DataSource は Strategy で登録し、UI 側は `dataSourceId` を記録する。
 - ライセンス同意が必要な場合は Step2 で明示的にチェックする（shape と同等の UX）。
 
@@ -126,6 +128,9 @@
 - 解析対象の CSV が **想定ヘッダに一致しない**場合は空配列を返し、Step5 側で「0 件」として扱う。
 - countryCode / countryName が取得できない場合は空欄のまま保存し、Step3 の国フィルタは一致しない。
 - 正常に取得・解析できたデータが0件の場合だけ空結果として成功できる。network/auth失敗、登録strategyの例外、必須endpoint欠落、またはresponse shape違反を空結果へ変換せず、task/sessionを失敗させる。
+- canonical runtime build の source identity は source kind、request target、country/type selection signature、parser/schema version、auth scope を含む `inputHash` として保存する。
+- `401/403` は `auth-required` pause とし、空配列・stale cache・completed success へ変換しない。
+- source stage は LocationPoint dataset hash、point count、selection signature、source artifact lineage の保存が成功した後にのみ completed へ遷移する。
 
 ## データモデル（Location）
 
@@ -166,7 +171,7 @@
 - `bulkUpsertPoints(nodeId, points[])`
 - `clearPoints(nodeId)`
 - `clearLocationVectorTiles(nodeId)`
-- `clearLocationArtifacts(nodeId)` は Point と派生 MVT を明示的にまとめて削除する。MVT cleanup だけを理由に metadata SSOT を削除しない場合は `clearLocationVectorTiles` を使う。
+- `clearLocationArtifacts(nodeId)` は Point と location source artifact metadata を削除する。派生 MVT cleanup は runtime-worker の `VTStoreRegistry` に登録された location vector tile store 経由で実行し、LocationPoint metadata SSOT から推測して削除対象を決めない。
 - `recordSession(nodeId, summary)`
 - `saveBuildConfig(nodeId, buildConfig)`
 

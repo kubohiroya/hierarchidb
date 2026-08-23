@@ -39,6 +39,8 @@ export interface LocationDataSourceBase {
   category?: 'location';
   /** API endpoint configuration */
   endpoints?: Record<string, string>;
+  /** Canonical Worker build source capability. Absence means runtime build does not expose this source. */
+  canonicalBuildStrategy?: 'network';
   /** Default configuration options */
   defaultOptions?: Record<string, unknown>;
 }
@@ -60,7 +62,7 @@ export type LocationType =
  * OpenStreetMap (Overpass API) data source definition
  */
 export const OpenStreetMapOverpassDataSource: LocationDataSourceBase = {
-  id: 'openstreetmap-overpass',
+  id: 'overpass',
   name: 'OpenStreetMap (Overpass API)',
   displayName: 'OpenStreetMap (Overpass API)',
   baseUrl: 'https://overpass-api.de/',
@@ -89,6 +91,7 @@ export const OpenStreetMapOverpassDataSource: LocationDataSourceBase = {
   endpoints: {
     interpreter: 'https://overpass-api.de/api/interpreter',
   },
+  canonicalBuildStrategy: 'network',
   defaultOptions: {
     format: 'json',
     timeout: 25,
@@ -99,7 +102,7 @@ export const OpenStreetMapOverpassDataSource: LocationDataSourceBase = {
  * OpenStreetMap (Nominatim) data source definition
  */
 export const OpenStreetMapNominatimDataSource: LocationDataSourceBase = {
-  id: 'openstreetmap-nominatim',
+  id: 'openstreetmap',
   name: 'OpenStreetMap (Nominatim)',
   displayName: 'OpenStreetMap (Nominatim)',
   baseUrl: 'https://nominatim.openstreetmap.org/',
@@ -128,6 +131,7 @@ export const OpenStreetMapNominatimDataSource: LocationDataSourceBase = {
   endpoints: {
     search: 'https://nominatim.openstreetmap.org/search',
   },
+  canonicalBuildStrategy: 'network',
   defaultOptions: {
     format: 'json',
     limit: 50,
@@ -241,6 +245,7 @@ export const OurAirportsDataSource: LocationDataSourceBase = {
   endpoints: {
     airports: 'https://davidmegginson.github.io/ourairports-data/airports.csv',
   },
+  canonicalBuildStrategy: 'network',
 };
 
 /**
@@ -276,6 +281,7 @@ export const OpenFlightsDataSource: LocationDataSourceBase = {
   endpoints: {
     airports: 'https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat',
   },
+  canonicalBuildStrategy: 'network',
 };
 
 /**
@@ -310,6 +316,7 @@ export const WorldPortIndexDataSource: LocationDataSourceBase = {
     ports:
       'https://msi.nga.mil/api/publications/download?type=view&key=16920959/SFH00000/UpdatedPub150.csv',
   },
+  canonicalBuildStrategy: 'network',
 };
 
 /**
@@ -337,8 +344,8 @@ export const IdeGsmDataSource: LocationDataSourceBase = {
  * Collection of all available location data sources
  */
 export const LocationDataSources: Record<string, LocationDataSourceBase> = {
-  'openstreetmap-overpass': OpenStreetMapOverpassDataSource,
-  'openstreetmap-nominatim': OpenStreetMapNominatimDataSource,
+  overpass: OpenStreetMapOverpassDataSource,
+  openstreetmap: OpenStreetMapNominatimDataSource,
   geonames: GeoNamesDataSource,
   'natural-earth': NaturalEarthDataSource,
   ourairports: OurAirportsDataSource,

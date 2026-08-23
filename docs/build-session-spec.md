@@ -169,10 +169,25 @@ SSOT とし、本節は build session 境界に必要な共通契約だけを定
   parser/schema version、render classification mapping config。
 - 出力: `LocationPoint` dataset、Morton index、tabular metadata rows、dataset hash を
   持つ source artifact。
+- canonical runtime source plan は completed payload から task 生成前に作成する。plan は
+  source kind、data source、国×地点種類 selection、request target、parser/schema version、
+  auth scope `location`、決定的な `inputHash` を持つ。
+- UI に表示する data source は canonical Worker strategy を持つものだけとする。未実装 source
+  を選択可能にして runtime rejection に任せてはならない。
 - `LocationPoint` は metadata/query の SSOT であり、MVT から復元してはならない。
 - `renderRank` / `importance` / `iconKey` / `labelClass` / `minZoom` の欠落、不正、
   範囲外は source task の契約違反である。任意 metadata から推測、丸め、既定補完して
   geometry へ進めてはならない。
+- network source は `FetchNetworkPort` を `auth.scope='location'` で生成した明示 port を必ず
+  通す。`401/403` は `paused / stopReason=auth-required` とし、空結果、stale cache、
+  failed success へ読み替えない。
+- source stage は Point dataset の `contentHash`、point count、selection signature、
+  request target、parser version を持つ source artifact metadata が永続化された後にのみ
+  completed へ進める。artifact persistence failure は session failure とする。
+- source 置換または session runtime 削除時の下流 MVT cleanup は runtime-worker の
+  `VTStoreRegistry` に登録された location vector tile store 経由で行う。store 未登録は
+  cleanup 対象なしとして扱い、LocationDB の vector tile table を source runtime から直接
+  操作しない。
 
 ### Location geometry
 
