@@ -12,6 +12,13 @@ describe('RouteGenerator engine delegation', () => {
       [135.5, 34.7],
     ];
     const fakeEngine: NonNullable<RouteEnginesProvider['osrm']> = {
+      capability: {
+        engineId: 'osrm-fixture',
+        engineVersion: '1',
+        method: 'osm_route',
+        networkRequirement: 'required',
+        supportsWaypoints: true,
+      },
       async route() {
         return {
           line: [
@@ -42,7 +49,7 @@ describe('RouteGenerator engine delegation', () => {
         ],
         { method: 'osm_route' }
       )
-    ).rejects.toThrow('OSRM engine is required');
+    ).rejects.toThrow('Route engine for method osm_route is unavailable');
     await expect(
       gen.generate(
         [
@@ -51,7 +58,7 @@ describe('RouteGenerator engine delegation', () => {
         ],
         { method: 'searoute' }
       )
-    ).rejects.toThrow('Searoute engine is required');
+    ).rejects.toThrow('Route engine for method searoute is unavailable');
     await expect(
       gen.generate(
         [
@@ -60,11 +67,18 @@ describe('RouteGenerator engine delegation', () => {
         ],
         { method: 'custom' }
       )
-    ).rejects.toThrow('Custom route engine is required');
+    ).rejects.toThrow('Route engine for method custom is unavailable');
   });
 
   it('rejects an invalid selected-engine response', async () => {
     const engine: NonNullable<RouteEnginesProvider['custom']> = {
+      capability: {
+        engineId: 'custom-fixture',
+        engineVersion: '1',
+        method: 'custom',
+        networkRequirement: 'optional',
+        supportsWaypoints: true,
+      },
       async route() {
         return {
           line: [[139.7, 35.6]],

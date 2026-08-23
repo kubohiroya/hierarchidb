@@ -220,12 +220,13 @@ export class EntityLifecycleManager {
         const db = getLocationDB();
         await db.open?.();
         const rows = await db.features.where('nodeId').equals(src).toArray();
-        if (!rows.length) continue;
-        const copies = rows.map((row) => ({
-          ...row,
-          nodeId: dst,
-        }));
-        await db.features.bulkPut(copies);
+        if (rows.length > 0) {
+          const copies = rows.map((row) => ({
+            ...row,
+            nodeId: dst,
+          }));
+          await db.features.bulkPut(copies);
+        }
         continue;
       }
       if (nodeType === 'route') {
@@ -289,6 +290,19 @@ export class EntityLifecycleManager {
         await db.vectorTiles.bulkPut(copies);
         continue;
       }
+      if (nodeType === 'location') {
+        const db = getLocationDB();
+        await db.open?.();
+        const rows = await db.vectorTiles.where('nodeId').equals(src).toArray();
+        if (!rows.length) continue;
+        const copies = rows.map((row) => ({
+          ...row,
+          nodeId: dst,
+          tileId: `${String(dst)}-${String(row.z)}-${String(row.x)}-${String(row.y)}`,
+        }));
+        await db.vectorTiles.bulkPut(copies);
+        continue;
+      }
     }
   }
 
@@ -340,6 +354,12 @@ export class EntityLifecycleManager {
     }
     if (nodeType === 'route') {
       const db = getRouteDB();
+      await db.open?.();
+      await db.vectorTiles.where('nodeId').anyOf(nodeIds).delete();
+      return;
+    }
+    if (nodeType === 'location') {
+      const db = getLocationDB();
       await db.open?.();
       await db.vectorTiles.where('nodeId').anyOf(nodeIds).delete();
     }

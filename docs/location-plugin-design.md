@@ -165,6 +165,8 @@
 
 - `bulkUpsertPoints(nodeId, points[])`
 - `clearPoints(nodeId)`
+- `clearLocationVectorTiles(nodeId)`
+- `clearLocationArtifacts(nodeId)` は Point と派生 MVT を明示的にまとめて削除する。MVT cleanup だけを理由に metadata SSOT を削除しない場合は `clearLocationVectorTiles` を使う。
 - `recordSession(nodeId, summary)`
 - `saveBuildConfig(nodeId, buildConfig)`
 
@@ -176,6 +178,7 @@
 
 - `queryByViewport(nodeId, bbox, zoom, kinds?, options?)`
 - `queryByMortonPrefixes(nodeId, prefixes, kinds?)`
+- `getVectorTile(nodeId, z, x, y)` は LocationDB の `vectorTiles` を `nodeId/z/x/y` で取得する。absent tile は `null`、record 破損や座標契約違反は error とし、GeoJSON query へ fallback しない。
 - `getPoint(nodeId, pointId)`
 - `listMetadata(nodeId, filter?)`
 
@@ -254,7 +257,7 @@ arbitrary `metadata` は MVT へ複製しない。
 - LocationPoint は metadata/query の SSOT として維持する。
 - MVT は LocationPoint dataset、LOD config、encoder version、source-layer、`z/x/y` から生成される派生成果物である。
 - 旧 viewport GeoJSON path は正規描画 path ではない。flag OFF rollback や migration 中の検証 surface として残す場合も、MVT 契約とは別 path として明示する。
-- tabular metadata は build-time database prefix から生成した完全名 `<prefix>-location-metadata`（TabularDatabaseManager）に保存し、行データ・index・query は同じく明示した完全名 `<prefix>-tabular-source-rowstore-db` を共有する。`LocationDB` は features の永続化のみを担う。prefix や完全名の fallback は行わない。
+- tabular metadata は build-time database prefix から生成した完全名 `<prefix>-location-metadata`（TabularDatabaseManager）に保存し、行データ・index・query は同じく明示した完全名 `<prefix>-tabular-source-rowstore-db` を共有する。`LocationDB` は `features` を LocationPoint SSOT として、`vectorTiles` を derived MVT artifact として永続化する。prefix や完全名の fallback は行わない。
 
 ## 確認事項
 

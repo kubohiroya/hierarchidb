@@ -148,6 +148,18 @@ export class LocationQueryService implements LocationQueryAPI {
     return [];
   }
 
+  async getVectorTile(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<ArrayBuffer | null> {
+    const db = getLocationDB();
+    await db.open?.();
+    const tile = await db.getVectorTile(nodeId, z, x, y);
+    return tile?.data ?? null;
+  }
+
   async queryByMortonPrefixes(
     nodeId: NodeId,
     prefixes: string[],

@@ -162,6 +162,14 @@ cache identity の正規仕様（SSOT）とする。
 - `source` ステージ:
   - shape と同様にデータソースごとの strategy pattern で実装を切り替える。
   - 交通モードに応じた LineString GeoJSON を生成する。
+  - route generation は明示された `generation.method` を canonical request とし、
+    routeModeからmethodを推測しない。`@hierarchidb/route-engine` のengine registryは
+    engine capability（engine id/version、method、任意のaccepted route modes、network requirement、
+    waypoint対応）を必須入力として検証し、未登録engine、capability不一致、不正responseを失敗させる。
+    mode×method×engine capability matrix が仕様またはIssue commentで確定するまでは、
+    capabilityが宣言したaccepted route modes以外の組み合わせを新たな正規動作として追加しない。
+  - engine resultはWGS84 finite座標、2点以上、始終点一致、finite non-negative distance、
+    任意durationの検証を通過した場合だけsource artifact永続化へ進める。
   - source cache には「オリジナル 1 本のみ」の LineString GeoJSON を保存する。
     - shape のようなズーム帯別 GeoJSON コピーは作成しない。
 - `geometry` ステージ:

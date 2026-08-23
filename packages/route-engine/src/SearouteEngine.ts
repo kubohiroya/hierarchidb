@@ -1,4 +1,5 @@
 import { readRuntimeEnvValue } from '@hierarchidb/util';
+import { createRouteEngineCapability, type RouteEngineCapability } from './RouteEngineCapability.js';
 import type { RoutingEngine } from './RoutingEngine.js';
 
 type Coordinate = [number, number];
@@ -45,6 +46,15 @@ interface SeaRouteResponse {
 type ImportMetaWithEnv = ImportMeta & { env?: Record<string, unknown> };
 
 export class SearouteEngine implements RoutingEngine {
+  readonly capability: RouteEngineCapability = createRouteEngineCapability({
+    engineId: 'searoute',
+    engineVersion: 'searoute-js-runtime',
+    method: 'searoute',
+    acceptedRouteModes: ['waterway'],
+    networkRequirement: 'required',
+    supportsWaypoints: false,
+  });
+
   private libPromise?: Promise<SeaRouteModule>;
 
   async route(

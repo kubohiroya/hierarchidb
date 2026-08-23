@@ -17,6 +17,10 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'src/common/test-shims/runtimeWorkerUtils.ts'),
       },
       {
+        find: '@hierarchidb/location-store',
+        replacement: path.resolve(__dirname, '../../packages/location-store/src/index.ts'),
+      },
+      {
         find: '@hierarchidb/ui-worker-client',
         replacement: path.resolve(__dirname, 'src/common/test-shims/runtimeWorkerUtils.ts'),
       },

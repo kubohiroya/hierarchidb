@@ -46,6 +46,12 @@ route pipelineは次の3ステージを、この順序で実行する。
    location IDと座標を厳格検証する。
 3. `direct / great_circle / osm_route / searoute / custom` の明示されたengineで
    LineStringを生成する。
+   engine registryはmethodごとのcapabilityを必須とし、engine id/version、method、
+   任意のaccepted route modes、network requirement、waypoint対応を検証する。
+   mode×method×engine capability matrixが確定するまで、未宣言のroute mode対応を
+   generator側で推測しない。
+   engine responseはWGS84 finite座標、2点以上、始終点一致、finite non-negative distance、
+   任意durationを満たす場合だけ正規resultとして扱う。
 4. routeごとにオリジナルLineStringを1本だけsource cacheへ永続化する。
 5. geometry taskを、永続化に成功したsource artifactから生成する。
 

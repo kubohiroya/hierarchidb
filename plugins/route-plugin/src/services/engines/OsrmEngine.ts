@@ -1,4 +1,8 @@
-import type { RoutingEngine } from '@hierarchidb/route-engine';
+import {
+  createRouteEngineCapability,
+  type RouteEngineCapability,
+  type RoutingEngine,
+} from '@hierarchidb/route-engine';
 import type { NetworkPortLike } from './types.js';
 
 type Coordinate = [number, number];
@@ -24,6 +28,15 @@ interface AuthNotificationRegistry {
 }
 
 export class OsrmEngine implements RoutingEngine {
+  readonly capability: RouteEngineCapability = createRouteEngineCapability({
+    engineId: 'osrm',
+    engineVersion: 'osrm-route-v1',
+    method: 'osm_route',
+    acceptedRouteModes: ['road', 'highway'],
+    networkRequirement: 'required',
+    supportsWaypoints: true,
+  });
+
   constructor(private readonly net: NetworkPortLike) {}
 
   async route(points: [number, number][], options?: unknown) {

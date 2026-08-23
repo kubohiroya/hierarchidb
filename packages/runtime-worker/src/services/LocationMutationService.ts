@@ -130,13 +130,19 @@ export class LocationMutationService implements LocationMutationAPI {
   async clearLocationEntities(nodeId: NodeId): Promise<void> {
     const db = getLocationDB();
     await db.open?.();
-    await db.features.where('nodeId').equals(nodeId).delete();
+    await db.clearNodeFeatures(nodeId);
+  }
+
+  async clearLocationVectorTiles(nodeId: NodeId): Promise<void> {
+    const db = getLocationDB();
+    await db.open?.();
+    await db.clearNodeVectorTiles(nodeId);
   }
 
   async clearLocationArtifacts(nodeId: NodeId): Promise<void> {
-    await this.clearLocationEntities(nodeId);
     const db = getLocationDB();
-    await db.clearNodeData(nodeId);
+    await db.open?.();
+    await db.clearNodeArtifacts(nodeId);
   }
 
   async deleteLocationBySourceKey(nodeId: NodeId, sourceKey: string): Promise<void> {
