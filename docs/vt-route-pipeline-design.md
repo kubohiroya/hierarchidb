@@ -129,8 +129,8 @@ filtering、simplification、index生成の一部をno-opにしてtaskを`comple
   read-back検証を含む単一EphemeralDB transactionで行う。
 - `RouteDB.tileIndex`をcanonical geometry→tileEmit lineageのSSOTとして参照しない。
 - route MVT の source-layer は `layer0`、`promoteId` は `id`、交通モードpropertyは
-  `routeMode` とする。preview / folder map / artifact property は同じ route plugin common
-  constants を参照する。
+  `routeMode` とする。route plugin 内部は common constants を参照し、folder map は同じ値を返す
+  ui-map の route source-layer helper を使用する。
 
 ## tileEmit stage
 

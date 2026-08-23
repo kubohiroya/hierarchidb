@@ -247,7 +247,8 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
   tile IDはVT orchestratorの共通packed IDを使い、tile境界への接触も交差として含める。
   旧`RouteDB.tileIndex`はcanonical geometry→tileEmit lineageのSSOTとして使用しない。
 - route MVT の正規 source-layer は `layer0`、`promoteId` は `id`、交通モードpropertyは
-  `routeMode` とし、preview と folder map は route plugin common constants を参照する。
+  `routeMode` とする。route plugin 内部は common constants を参照し、folder map は同じ値を返す
+  ui-map の route source-layer helper を使用する。
 - 同一route sourceのgeometry cache更新は、旧band artifact/relation削除、新artifact/meta、
   新relation書込み、read-back検証を1つのEphemeralDB transactionで完了する。
 

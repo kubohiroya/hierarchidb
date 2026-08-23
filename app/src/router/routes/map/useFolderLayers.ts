@@ -1,6 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteQueryAPI } from '@hierarchidb/route-api';
-import { ROUTE_MVT_SOURCE_LAYER } from '@hierarchidb/route-plugin/common';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -13,6 +12,7 @@ import type {
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
+  buildRouteSourceLayerName,
   buildShapeSourceLayerName,
   DEFAULT_LAYER_SETS,
   parseShapeSourceLayerName,
@@ -577,7 +577,7 @@ export const useFolderLayers = ({
                 },
                 layerConfig: {
                   layerType: 'line',
-                  sourceLayer: ROUTE_MVT_SOURCE_LAYER,
+                  sourceLayer: buildRouteSourceLayerName(),
                   layerId,
                   sourceId,
                   paint: {
