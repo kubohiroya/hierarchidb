@@ -7,6 +7,7 @@ import type { BuildSessionQueueEntry } from '~/components/BuildSessionQueuePanel
 import { useWorker } from '~/contexts/WorkerProvider';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
+import type { BuildJobQueue, BuildJobQueueEntry } from '~/router/pages/tree/console/buildJobQueue';
 import { openInNewTab } from '~/utils/openInNewTab';
 
 const runningSessionStatuses = new Set<BuildSessionRuntimeRecord['status']>([
@@ -36,6 +37,11 @@ export type TreeConsoleAppBarState = {
     entry: BuildSessionQueueEntry,
     options?: { openInNewTab?: boolean }
   ) => Promise<void>;
+  handleNavigateToBuildJobEntry: (
+    entry: BuildJobQueueEntry,
+    queue: BuildJobQueue,
+    options?: { openInNewTab?: boolean }
+  ) => void;
   handleResumeDialogEntriesChange: (entries: BuildSessionQueueEntry[]) => void;
   handleResumeQueue: () => Promise<void>;
   handleDeleteQueue: () => Promise<void>;
@@ -92,6 +98,20 @@ export function useTreeConsoleAppBar({
       });
     },
     [data.pageNodeId, data.tree?.id, navigate, returnTo, workerClient]
+  );
+
+  const handleNavigateToBuildJobEntry = useCallback(
+    (entry: BuildJobQueueEntry, queue: BuildJobQueue, options?: { openInNewTab?: boolean }) => {
+      if (queue.mode !== 'web-ui' || !entry.displayUrl) {
+        return;
+      }
+      if (options?.openInNewTab) {
+        openInNewTab(entry.displayUrl);
+        return;
+      }
+      navigate({ to: entry.displayUrl });
+    },
+    [navigate]
   );
 
   const handleResumeDialogEntriesChange = useCallback((entries: BuildSessionQueueEntry[]) => {
@@ -181,6 +201,7 @@ export function useTreeConsoleAppBar({
     isDeletingQueue,
     isResumingQueue,
     handleNavigateToBuild,
+    handleNavigateToBuildJobEntry,
     handleResumeDialogEntriesChange,
     handleResumeQueue,
     handleDeleteQueue,
