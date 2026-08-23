@@ -289,6 +289,9 @@ importers:
       '@hierarchidb/build-api':
         specifier: workspace:*
         version: link:../packages/build-api
+      '@hierarchidb/build-runtime-services':
+        specifier: workspace:*
+        version: link:../packages/build-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../packages/components

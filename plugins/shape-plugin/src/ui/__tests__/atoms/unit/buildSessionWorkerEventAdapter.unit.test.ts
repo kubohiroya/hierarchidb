@@ -30,6 +30,7 @@ describe('buildSessionWorkerEventAdapter', () => {
   it('maps runtime pub/sub event to sessionStatusUpdated', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const runtimeRecord: BuildSessionRuntimeRecord = {
+      nodeType: 'shape',
       nodeId: 'node-1',
       status: 'running',
       isActive: true,
@@ -51,6 +52,7 @@ describe('buildSessionWorkerEventAdapter', () => {
   it('maps a paused runtime record and its persisted endpoint atomically', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const runtimeRecord: BuildSessionRuntimeRecord = {
+      nodeType: 'shape',
       nodeId: 'node-1',
       status: 'paused',
       isActive: false,

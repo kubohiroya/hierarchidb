@@ -4,6 +4,22 @@ export {
   type CanonicalBuildInputErrorDetails,
 } from './CanonicalBuildInputError.js';
 export type {
+  CanonicalBuildRuntimeAdapter,
+  CanonicalBuildRuntimeUnsubscribe,
+} from './CanonicalBuildRuntimeAdapter.js';
+export {
+  assertCanonicalBuildRuntimeRecord,
+  assertCanonicalBuildRuntimeRecords,
+  canonicalBuildRuntimeAdapterMethodNames,
+  canonicalBuildSessionRuntimeStatuses,
+  isBuildSessionRuntimeStatus,
+} from './CanonicalBuildRuntimeAdapter.js';
+export type {
+  CanonicalBuildRuntimeErrorCode,
+  CanonicalBuildRuntimeErrorDetails,
+} from './CanonicalBuildRuntimeError.js';
+export { CanonicalBuildRuntimeError } from './CanonicalBuildRuntimeError.js';
+export type {
   CanonicalBuildInputEnvelope,
   CanonicalBuildInputSource,
   CanonicalPluginBuildAPI,

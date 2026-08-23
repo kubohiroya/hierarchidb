@@ -5,6 +5,7 @@ describe('resolveCanonicalBuildFeatureFlags', () => {
   it('defaults canonicalBuildInputEnvelope to false', () => {
     expect(resolveCanonicalBuildFeatureFlags({})).toEqual({
       canonicalBuildInputEnvelope: false,
+      canonicalBuildRuntimeAdapter: false,
     });
   });
 
@@ -20,5 +21,19 @@ describe('resolveCanonicalBuildFeatureFlags', () => {
     expect(() =>
       resolveCanonicalBuildFeatureFlags({ VITE_CANONICAL_BUILD_INPUT_ENVELOPE: 'true' })
     ).toThrow('VITE_CANONICAL_BUILD_INPUT_ENVELOPE must be unset, 0, or 1');
+  });
+
+  it('accepts only 0 or 1 for canonicalBuildRuntimeAdapter', () => {
+    expect(
+      resolveCanonicalBuildFeatureFlags({ VITE_CANONICAL_BUILD_RUNTIME_ADAPTER: '0' })
+        .canonicalBuildRuntimeAdapter
+    ).toBe(false);
+    expect(
+      resolveCanonicalBuildFeatureFlags({ VITE_CANONICAL_BUILD_RUNTIME_ADAPTER: '1' })
+        .canonicalBuildRuntimeAdapter
+    ).toBe(true);
+    expect(() =>
+      resolveCanonicalBuildFeatureFlags({ VITE_CANONICAL_BUILD_RUNTIME_ADAPTER: 'true' })
+    ).toThrow('VITE_CANONICAL_BUILD_RUNTIME_ADAPTER must be unset, 0, or 1');
   });
 });

@@ -27,6 +27,23 @@ canonical build start は storage field 名を request 契約に露出しない�
 - resolver 通過後の cache identity、auth-required、artifact reconcile、failure semantics は input source に依存して分岐しない。同一 payload は同一 input hash と同一 build behavior を持つ。
 - 旧 `draftData` request は移行中の rollback surface として隔離される。正規 path と新規 call site は input envelope を使用する。
 
+## Canonical runtime adapter boundary
+
+build runtime の get/list/subscribe/delete surface は node type ごとの
+`CanonicalBuildRuntimeAdapter` を registry へ登録して解決する。Worker bootstrap
+は未登録 node type を session 不存在、空リスト、no-op delete、no-op subscription
+へ読み替えてはならない。未登録、重複登録、必須 method 欠落、runtime record
+不正は typed `CanonicalBuildRuntimeError` として失敗させる。
+
+`BuildSessionRuntimeRecord` は `nodeType`、`nodeId`、canonical runtime `status`、
+`isActive`、単調増加する `revision` を必須とする。`nodeType` は registry key と
+一致しなければならない。`status` は `idle / starting / running / pausing / paused /
+resuming / finalizing / completed / failed / deleting` のみを許可する。`revision` は
+node type + nodeId 単位で非負整数として進め、同じ runtime surface 内で status
+や transient command state の変化を観測可能にする。`isActive` は runtime status
+から導出し、`starting / running / pausing / resuming / finalizing` だけを
+active とする。`completed` や `failed` を active として補完してはならない。
+
 ## ビルドセッションライフサイクル
 
 ビルドセッションは以下のフェーズを持つ。
