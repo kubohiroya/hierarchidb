@@ -314,3 +314,11 @@ export const shapeBuildExtensions = {
     ...args: Parameters<typeof shapeBuildAPI.generateDownloadTaskPayloadsFromSelection>
   ) => shapeBuildAPI.generateDownloadTaskPayloadsFromSelection(...args),
 };
+
+export {
+  canonicalBuildRuntimeAdapter,
+  clearShapeBuildRuntimeTransientStatus,
+  configureShapeCanonicalBuildRuntimeAdapter,
+  setShapeBuildRuntimeInputSource,
+  setShapeBuildRuntimeTransientStatus,
+} from './configureShapeCanonicalBuildRuntimeAdapter.js';

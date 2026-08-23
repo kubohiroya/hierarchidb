@@ -4,7 +4,15 @@ import { initializeShapeWorkerDatabases } from './initializeShapeWorkerDatabases
 initializeShapeWorkerDatabases(getBuildDatabasePrefix());
 
 export { shapeBuildAPI } from './api.js';
-export { canonicalBuildAPI, shapeBuildExtensions } from './canonicalBuildAPI.js';
+export {
+  canonicalBuildAPI,
+  canonicalBuildRuntimeAdapter,
+  clearShapeBuildRuntimeTransientStatus,
+  configureShapeCanonicalBuildRuntimeAdapter,
+  setShapeBuildRuntimeInputSource,
+  setShapeBuildRuntimeTransientStatus,
+  shapeBuildExtensions,
+} from './canonicalBuildAPI.js';
 export type { RegisterShapeWorkerStoresOptions } from './factory/registerShapeWorkerStores.js';
 export { registerShapeWorkerStores } from './factory/registerShapeWorkerStores.js';
 export { ShapeWorkerPlugin } from './ShapeWorkerPlugin.js';
