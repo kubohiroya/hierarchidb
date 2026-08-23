@@ -432,6 +432,7 @@ export default function MapExportPage() {
   const { vectorLayers, geoJsonLayers, locationLayers, basemapStyles, styleOverridesByType } =
     useFolderLayers({
       nodeId: renderRequest?.job.target.parentId,
+      refreshKey: renderRequest?.job.id,
       onPersistedZxy: handlePersistedZxy,
     });
 
