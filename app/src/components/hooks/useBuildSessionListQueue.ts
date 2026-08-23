@@ -1,4 +1,4 @@
-import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
+import type { BuildSessionRuntimeRecord, CanonicalBuildInputSource } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -68,6 +68,10 @@ const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =
 
 const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
   session.isActive && SESSION_TIMER_ACTIVE_STATUSES.has(session.status);
+
+const resolveQueueStartInputSource = (
+  session: BuildSessionRuntimeRecord
+): CanonicalBuildInputSource => session.inputSource ?? 'committed';
 
 const createRuntimeRecordSignature = (session: BuildSessionRuntimeRecord): string => {
   const progress = session.progress;
@@ -331,14 +335,19 @@ export function useBuildSessionListQueue({
       autoStartingNodeRef.current = nodeId;
       try {
         const bridge = bridgeRef.current;
-        await bridge.startBuildSession(nodeType, nodeId);
+        const session = rows.find((row) => row.session.nodeId === nodeId)?.session;
+        await bridge.startBuildSession(
+          nodeType,
+          nodeId,
+          session ? resolveQueueStartInputSource(session) : 'committed'
+        );
       } catch (error) {
         console.warn('[BuildSessionQueueList] failed to auto-start queued session', error);
       } finally {
         autoStartingNodeRef.current = null;
       }
     },
-    [nodeType]
+    [nodeType, rows]
   );
 
   useEffect(() => {

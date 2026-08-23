@@ -1,4 +1,9 @@
-import type { CanonicalPluginBuildAPI } from '@hierarchidb/build-api';
+import {
+  type CanonicalPluginBuildAPI,
+  type CanonicalPluginBuildStartRequest,
+  isLegacyCanonicalPluginBuildStartRequest,
+  type LegacyCanonicalPluginBuildStartRequest,
+} from '@hierarchidb/build-api';
 import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
 import type {
   LocationBuildConfig,
@@ -36,7 +41,7 @@ const WORKER_BUILD_DATA_SOURCES = new Set<LocationDataSource>([
 const requireDataSource = (value: unknown): LocationDataSource => {
   if (typeof value !== 'string' || !WORKER_BUILD_DATA_SOURCES.has(value as LocationDataSource)) {
     throw new Error(
-      `[location canonical build API] draftData.dataSource is not supported by the Worker build session: ${String(value)}`
+      `[location canonical build API] payload.dataSource is not supported by the Worker build session: ${String(value)}`
     );
   }
   return value as LocationDataSource;
@@ -45,7 +50,7 @@ const requireDataSource = (value: unknown): LocationDataSource => {
 const requireConcurrentDownloads = (value: unknown): number => {
   if (!Number.isInteger(value) || (value as number) <= 0) {
     throw new Error(
-      `[location canonical build API] draftData.concurrentDownloads must be a positive integer, received ${String(value)}`
+      `[location canonical build API] payload.concurrentDownloads must be a positive integer, received ${String(value)}`
     );
   }
   return value as number;
@@ -56,7 +61,7 @@ const createBuildConfig = (draft: Record<string, unknown>): LocationBuildConfig 
   const concurrent = requireConcurrentDownloads(draft.concurrentDownloads);
   const selection = requireRecord(
     draft.selectedArrayByCountries,
-    'draftData.selectedArrayByCountries'
+    'payload.selectedArrayByCountries'
   );
   const searchConfigs = Object.entries(selection)
     .sort(([left], [right]) => left.localeCompare(right))
@@ -82,7 +87,7 @@ const createBuildConfig = (draft: Record<string, unknown>): LocationBuildConfig 
     });
   if (searchConfigs.length === 0) {
     throw new Error(
-      '[location canonical build API] draftData.selectedArrayByCountries must select at least one location type'
+      '[location canonical build API] payload.selectedArrayByCountries must select at least one location type'
     );
   }
   return {
@@ -92,9 +97,15 @@ const createBuildConfig = (draft: Record<string, unknown>): LocationBuildConfig 
   };
 };
 
+const resolveStartPayload = (
+  request: CanonicalPluginBuildStartRequest | LegacyCanonicalPluginBuildStartRequest
+): unknown =>
+  isLegacyCanonicalPluginBuildStartRequest(request) ? request.draftData : request.input.payload;
+
 export const canonicalBuildAPI = {
-  startBuildSession: async ({ nodeId, draftData }) => {
-    const draft = requireRecord(draftData, 'draftData');
+  startBuildSession: async (request) => {
+    const { nodeId } = request;
+    const draft = requireRecord(resolveStartPayload(request), 'payload');
     const buildConfig = createBuildConfig(draft);
     await manager.startLocationBuildSession(nodeId, buildConfig);
     return manager.getBuildSessionStatus(nodeId);

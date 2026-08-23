@@ -7,6 +7,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
+import type { CanonicalBuildInputSource } from './CanonicalPluginBuildAPI.js';
 import type { TaskDisplayPayload, TaskStage } from './task-queue-types.js';
 
 export type StageKey = TaskStage;
@@ -52,6 +53,7 @@ export interface BuildSessionStatus {
   lastActivity?: number;
   error?: string;
   stopReason?: string;
+  inputSource?: CanonicalBuildInputSource;
 }
 
 export interface BuildSessionState {
@@ -126,6 +128,7 @@ export interface BuildSessionRuntimeRecord {
   lastHeartbeatAt?: number;
   error?: string;
   revision: number;
+  inputSource?: CanonicalBuildInputSource;
 }
 
 export interface BuildSessionRuntimeFilter {

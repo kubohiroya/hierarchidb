@@ -1,10 +1,11 @@
+import type { CanonicalBuildInputSource } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type CanonicalBuildSessionSameRealmCommands = {
   initialize?: () => Promise<void>;
-  startBuildSession: (nodeId: NodeId) => Promise<unknown>;
+  startBuildSession: (nodeId: NodeId, inputSource: CanonicalBuildInputSource) => Promise<unknown>;
   pauseBuildSession: (nodeId: NodeId, reason?: string) => Promise<void>;
   cancelQueuedBuildSession: (nodeId: NodeId, reason?: string) => Promise<void>;
 };
@@ -13,6 +14,7 @@ export type CanonicalBuildSessionCommandTransport =
   | {
       kind: 'worker';
       nodeType: NodeType;
+      inputSource: CanonicalBuildInputSource;
     }
   | {
       kind: 'same-realm';
@@ -45,6 +47,7 @@ const COMMAND_TRANSPORT_NOT_READY_ERROR =
 type CanonicalBuildSessionCommandTarget = {
   nodeId: NodeId;
   workerNodeType: NodeType | undefined;
+  workerInputSource: CanonicalBuildInputSource | undefined;
   sameRealmInitialize: (() => Promise<void>) | undefined;
   sameRealmStartBuildSession:
     | CanonicalBuildSessionSameRealmCommands['startBuildSession']
@@ -62,6 +65,8 @@ export const useCanonicalBuildSessionControls = (
 ): CanonicalBuildSessionControlState => {
   const { commandTransport, nodeId, subscriptionReady } = config;
   const workerNodeType = commandTransport.kind === 'worker' ? commandTransport.nodeType : undefined;
+  const workerInputSource =
+    commandTransport.kind === 'worker' ? commandTransport.inputSource : undefined;
   const sameRealmInitialize =
     commandTransport.kind === 'same-realm' ? commandTransport.commands.initialize : undefined;
   const sameRealmStartBuildSession =
@@ -88,6 +93,7 @@ export const useCanonicalBuildSessionControls = (
   const matchesCurrentCommandTarget = (target: CanonicalBuildSessionCommandTarget): boolean =>
     target.nodeId === nodeId &&
     target.workerNodeType === workerNodeType &&
+    target.workerInputSource === workerInputSource &&
     target.sameRealmInitialize === sameRealmInitialize &&
     target.sameRealmStartBuildSession === sameRealmStartBuildSession &&
     target.sameRealmPauseBuildSession === sameRealmPauseBuildSession &&
@@ -114,6 +120,7 @@ export const useCanonicalBuildSessionControls = (
     const target: CanonicalBuildSessionCommandTarget = {
       nodeId,
       workerNodeType,
+      workerInputSource,
       sameRealmInitialize,
       sameRealmStartBuildSession,
       sameRealmPauseBuildSession,
@@ -143,6 +150,7 @@ export const useCanonicalBuildSessionControls = (
     sameRealmInitialize,
     sameRealmPauseBuildSession,
     sameRealmStartBuildSession,
+    workerInputSource,
     workerNodeType,
   ]);
 
@@ -187,15 +195,29 @@ export const useCanonicalBuildSessionControls = (
     }
     return runMutation('start', async (targetNodeId) => {
       if (workerNodeType !== undefined) {
-        await getBuildWorkerBridge().startBuildSession(workerNodeType, targetNodeId);
+        if (workerInputSource === undefined) {
+          throw new Error('[canonicalBuildSessionControls] worker input source is unavailable');
+        }
+        await getBuildWorkerBridge().startBuildSession(
+          workerNodeType,
+          targetNodeId,
+          workerInputSource
+        );
         return;
       }
       if (!sameRealmStartBuildSession) {
         throw new Error('[canonicalBuildSessionControls] same-realm commands are unavailable');
       }
-      await sameRealmStartBuildSession(targetNodeId);
+      await sameRealmStartBuildSession(targetNodeId, 'working-copy');
     });
-  }, [nodeId, runMutation, sameRealmStartBuildSession, subscriptionReady, workerNodeType]);
+  }, [
+    nodeId,
+    runMutation,
+    sameRealmStartBuildSession,
+    subscriptionReady,
+    workerInputSource,
+    workerNodeType,
+  ]);
 
   const pauseBuildSession = useCallback(
     async (reason?: string): Promise<boolean> =>

@@ -3,6 +3,7 @@ import type {
   BuildSessionRuntimeRecord,
   BuildSessionStatus,
   BuildTaskSummary,
+  CanonicalBuildInputSource,
   HeartbeatEvent,
   SessionStatusUpdatedEvent,
   StageSnapshotUpdatedEvent,
@@ -19,7 +20,11 @@ type WorkerApi = WorkerAPI<TreeNodeData>;
 
 export interface BuildWorkerBridge {
   initialize(): Promise<void>;
-  startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
+  startBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    inputSource: CanonicalBuildInputSource
+  ): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
@@ -180,9 +185,13 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     }
   }
 
-  async startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {
+  async startBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    inputSource: CanonicalBuildInputSource
+  ): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
-    return api.startBuildSession(nodeType, nodeId);
+    return api.startBuildSession(nodeType, nodeId, inputSource);
   }
 
   async getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {

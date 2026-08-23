@@ -3,6 +3,7 @@ import type {
   BuildSessionRuntimeRecord,
   BuildSessionStatus,
   BuildTaskSummary,
+  CanonicalBuildInputSource,
   HeartbeatEvent,
   SessionStatusUpdatedEvent,
   StageSnapshotUpdatedEvent,
@@ -90,7 +91,11 @@ export interface WorkerAPI<T> {
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
   /** Canonical build API. */
-  startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
+  startBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    inputSource: CanonicalBuildInputSource
+  ): Promise<BuildSessionStatus>;
   /** Canonical build API. */
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   /** Canonical build API. */

@@ -6,11 +6,14 @@ import {
   type AuthSuccessNotification,
   type StorageWarningNotification,
 } from '@hierarchidb/auth';
+import { type CanonicalBuildInputSource } from '@hierarchidb/build-api';
 import { type NodeType, toNodeId, toNodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useEffect, useRef, useState } from 'react';
 
 const HANDLER_ID = 'app-auth-required-dialog';
+
+const LEGACY_RUNTIME_INPUT_SOURCE: CanonicalBuildInputSource = 'committed';
 
 export type AuthRequiredDialogHostState = {
   notification: AuthRequiredNotification | null;
@@ -155,7 +158,15 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
             const nodeType = toNodeType(sessionKey.slice(0, separator));
             const nodeId = toNodeId(sessionKey.slice(separator + 1));
             try {
-              await workerBridgeRef.current.startBuildSession(nodeType, nodeId);
+              const runtime = await workerBridgeRef.current.getBuildSessionRuntime(
+                nodeType,
+                nodeId
+              );
+              await workerBridgeRef.current.startBuildSession(
+                nodeType,
+                nodeId,
+                runtime?.inputSource ?? LEGACY_RUNTIME_INPUT_SOURCE
+              );
             } catch (error) {
               console.warn('[auth][ui] failed to restart build session on auth success', error);
             }

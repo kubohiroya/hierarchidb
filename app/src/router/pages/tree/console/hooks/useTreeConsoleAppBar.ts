@@ -1,4 +1,4 @@
-import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
+import type { BuildSessionRuntimeRecord, CanonicalBuildInputSource } from '@hierarchidb/build-api';
 import { type NodeType, toNodeType } from '@hierarchidb/core-types';
 import { type BuildWorkerBridge, getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
@@ -19,6 +19,9 @@ const runningSessionStatuses = new Set<BuildSessionRuntimeRecord['status']>([
 
 const isActiveQueueSession = (session: BuildSessionRuntimeRecord): boolean =>
   session.isActive || runningSessionStatuses.has(session.status);
+
+const resolveResumeInputSource = (session: BuildSessionRuntimeRecord): CanonicalBuildInputSource =>
+  session.inputSource ?? 'committed';
 
 export const RESUME_SESSION_NODE_TYPE = toNodeType('shape');
 
@@ -128,7 +131,11 @@ export function useTreeConsoleAppBar({
     try {
       const bridge = buildWorkerBridgeRef.current;
       await bridge.initialize();
-      await bridge.startBuildSession(RESUME_SESSION_NODE_TYPE, first.session.nodeId);
+      await bridge.startBuildSession(
+        RESUME_SESSION_NODE_TYPE,
+        first.session.nodeId,
+        resolveResumeInputSource(first.session)
+      );
       setIsQueueAutoStartEnabled(true);
       setIsResumeDialogOpen(false);
     } catch (error) {

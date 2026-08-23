@@ -41,7 +41,7 @@ describe('useCanonicalBuildSessionControls', () => {
     await act(async () => {
       await expect(result.current.startBuildSession()).resolves.toBe(true);
     });
-    expect(commands.startBuildSession).toHaveBeenCalledWith(NODE_ID);
+    expect(commands.startBuildSession).toHaveBeenCalledWith(NODE_ID, 'working-copy');
     expect(result.current.mutationError).toBeNull();
   });
 
@@ -96,7 +96,7 @@ describe('useCanonicalBuildSessionControls', () => {
     await act(async () => {
       await expect(result.current.startBuildSession()).resolves.toBe(true);
     });
-    expect(commands.startBuildSession).toHaveBeenCalledWith(NODE_ID);
+    expect(commands.startBuildSession).toHaveBeenCalledWith(NODE_ID, 'working-copy');
   });
 
   it('keeps command rejection visible without synthesizing lifecycle state', async () => {

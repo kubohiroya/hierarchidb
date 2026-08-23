@@ -8,6 +8,7 @@ const FOLDER_NODE_TYPE = 'folder' as NodeType;
 const NODE_ID = 'node-1' as NodeId;
 
 describe('WorkerBridge subscribeAll', () => {
+  let startBuildSessionMock: ReturnType<typeof vi.fn>;
   let subscribeSessionStateMock: ReturnType<typeof vi.fn>;
   let subscribeSessionHeartbeatMock: ReturnType<typeof vi.fn>;
   let subscribeWorkerLogMock: ReturnType<typeof vi.fn>;
@@ -26,6 +27,11 @@ describe('WorkerBridge subscribeAll', () => {
   let workerLogUnsubscribeMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    startBuildSessionMock = vi.fn(async () => ({
+      nodeId: NODE_ID,
+      status: 'running',
+      progress: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+    }));
     taskEventProxyCallback = null;
     progressEventProxyCallback = null;
     sessionStateProxyCallback = null;
@@ -75,6 +81,7 @@ describe('WorkerBridge subscribeAll', () => {
 
     __setWorkerBridgeClientRef({
       client: {
+        startBuildSession: startBuildSessionMock,
         subscribeStageSnapshots: subscribeStageSnapshotsMock,
         subscribeTaskProgress: subscribeTaskProgressMock,
         subscribeSessionState: subscribeSessionStateMock,
@@ -86,6 +93,7 @@ describe('WorkerBridge subscribeAll', () => {
       getAPI: () =>
         ({
           subscribeStageSnapshots: subscribeStageSnapshotsMock,
+          startBuildSession: startBuildSessionMock,
           subscribeTaskProgress: subscribeTaskProgressMock,
           subscribeSessionState: subscribeSessionStateMock,
           subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
@@ -148,6 +156,21 @@ describe('WorkerBridge subscribeAll', () => {
     expect(sessionStateUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(heartbeatUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(workerLogUnsubscribeMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards explicit start input source to the Worker API', async () => {
+    const bridge = getBuildWorkerBridge();
+
+    await bridge.startBuildSession(SHAPE_NODE_TYPE, NODE_ID, 'committed');
+    await bridge.startBuildSession(SHAPE_NODE_TYPE, NODE_ID, 'working-copy');
+
+    expect(startBuildSessionMock).toHaveBeenNthCalledWith(1, SHAPE_NODE_TYPE, NODE_ID, 'committed');
+    expect(startBuildSessionMock).toHaveBeenNthCalledWith(
+      2,
+      SHAPE_NODE_TYPE,
+      NODE_ID,
+      'working-copy'
+    );
   });
 
   it('subscribes all channels for non-shape node types', async () => {

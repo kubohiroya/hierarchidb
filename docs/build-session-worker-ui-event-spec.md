@@ -84,6 +84,13 @@ type SessionStatusUpdatedEvent = {
 - A node switch or newer request invalidates an older count response. Both request generation and the currently rendered `nodeId` must match before count results or loading state are committed.
 - Counts are read through the Shape query APIs and task-queue API boundary. UI-side direct Dexie access or a compatibility fallback is prohibited.
 
+**Build input source synchronization**:
+
+- Runtime start commands carry `inputSource: 'committed' | 'working-copy'`. The Worker reads only the corresponding `TreeNode.data` or `TreeNode.draftData` slot before invoking the plugin canonical build API.
+- Runtime/session list records may expose `inputSource` so queue, resume, and auth-required restarts can reuse the original source within the same runtime. Consumers must not infer `working-copy` from UI context.
+- Legacy persisted session records that predate `inputSource` do not have a recoverable source owner. Restarting such records must explicitly choose `committed`; it must not inspect `draftData` as a convenience fallback.
+- Worker→UI event payloads do not carry the raw build payload. Payload validation and route selection resolution happen before task/session event emission.
+
 **Pause completion contract**:
 
 - Shape accepts only its canonical stop-reason set. `auth-required` means source planning, the active pipeline, or the auth-dialog host required an authenticated request before processing could continue. Planning failures persist it before pipeline start; active-pipeline failures persist it only after confirmed drain. In both cases it is emitted as `paused / canResume=true`, and only the auth-dialog host resumes it after authentication succeeds. It is not converted to `route-leave`.

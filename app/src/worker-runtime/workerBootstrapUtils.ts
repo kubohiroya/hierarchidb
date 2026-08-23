@@ -10,6 +10,7 @@ import type {
   BuildSessionRuntimeStatus,
   BuildSessionStatus,
   BuildTaskSummary,
+  CanonicalBuildInputSource,
   CanonicalPluginBuildAPI,
   HeartbeatEvent,
   SessionStatusUpdatedEvent,
@@ -59,6 +60,7 @@ import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsPro
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { resolveCanonicalBuildStartInput } from './resolveCanonicalBuildStartInput.js';
 import { resolveCanonicalPluginBuildAPI } from './resolveCanonicalPluginBuildAPI.js';
 import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 import {
@@ -529,6 +531,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         const runtimeActiveHints = new Map<string, boolean>();
         const runtimeRevisions = new Map<string, number>();
         const runtimeNodeIndex = new Map<string, { nodeType: NodeType; nodeId: NodeId }>();
+        const runtimeInputSources = new Map<string, CanonicalBuildInputSource>();
 
         const bumpRuntimeRevision = (nodeType: NodeType, nodeId: NodeId): number => {
           const key = toRuntimeKey(nodeType, nodeId);
@@ -603,6 +606,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             lastHeartbeatAt: session.lastHeartbeatAt,
             error: session.status === 'failed' ? 'failed' : undefined,
             revision,
+            inputSource: runtimeInputSources.get(key),
           };
         };
 
@@ -620,6 +624,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             isActive,
             revision: runtimeRevisions.get(key) ?? bumpRuntimeRevision(nodeType, nodeId),
             updatedAt: Date.now(),
+            inputSource: runtimeInputSources.get(key),
           };
         };
 
@@ -669,11 +674,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return filteredByActive.sort((a, b) => String(a.nodeId).localeCompare(String(b.nodeId)));
         };
 
-        const requireRouteDraftRecord = (draftData: unknown): Record<string, unknown> => {
-          if (draftData === null || typeof draftData !== 'object' || Array.isArray(draftData)) {
-            throw new Error('[worker bootstrap] route draftData must be an object');
+        const requireRoutePayloadRecord = (payload: unknown): Record<string, unknown> => {
+          if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+            throw new Error('[worker bootstrap] route canonical payload must be an object');
           }
-          return draftData as Record<string, unknown>;
+          return payload as Record<string, unknown>;
         };
 
         const hasRouteDirectInput = (draft: Record<string, unknown>): boolean =>
@@ -689,17 +694,17 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         const requireRouteTabularSourceId = (value: unknown): string => {
           if (typeof value !== 'string' || value.length === 0 || value !== value.trim()) {
             throw new Error(
-              '[worker bootstrap] route selection-driven start requires draftData.tabularSourceId'
+              '[worker bootstrap] route selection-driven start requires canonical payload tabularSourceId'
             );
           }
           return value;
         };
 
-        const resolveRouteStartDraftData = async (
+        const resolveRouteStartPayload = async (
           nodeId: NodeId,
-          draftData: unknown
+          payload: unknown
         ): Promise<unknown> => {
-          const draft = requireRouteDraftRecord(draftData);
+          const draft = requireRoutePayloadRecord(payload);
           const direct = hasRouteDirectInput(draft);
           const selection = hasRouteSelectionInput(draft);
           if (direct && selection) {
@@ -732,43 +737,48 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           };
         };
 
-        const resolveBuildStartDraftData = async (
+        const resolveBuildStartPayload = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          draftData: unknown
+          payload: unknown
         ): Promise<unknown> => {
-          if (nodeType !== ROUTE_NODE_TYPE) return draftData;
-          return resolveRouteStartDraftData(nodeId, draftData);
+          if (nodeType !== ROUTE_NODE_TYPE) return payload;
+          return resolveRouteStartPayload(nodeId, payload);
         };
 
         const runStartBuildSession = async (
           nodeType: NodeType,
-          nodeId: NodeId
+          nodeId: NodeId,
+          inputSource: CanonicalBuildInputSource
         ): Promise<BuildSessionStatus> => {
           const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
           setRuntimeTransientStatus(nodeType, nodeId, 'starting', true);
           try {
             const treeNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
-            const draftData = (treeNode as { draftData?: unknown } | undefined)?.draftData;
-            if (draftData === undefined) {
-              throw new Error(
-                `[worker bootstrap] draftData is required to start build for nodeType=${String(nodeType)}, nodeId=${String(nodeId)}`
-              );
-            }
-            const resolvedDraftData = await resolveBuildStartDraftData(nodeType, nodeId, draftData);
+            const input = resolveCanonicalBuildStartInput({
+              nodeType,
+              nodeId,
+              source: inputSource,
+              treeNode,
+            });
+            const resolvedPayload = await resolveBuildStartPayload(nodeType, nodeId, input.payload);
             const status = await buildApi.startBuildSession({
               nodeId,
-              draftData: resolvedDraftData,
+              input: {
+                source: input.source,
+                payload: resolvedPayload,
+              },
             });
             if (status.nodeId !== nodeId) {
               throw new Error(
                 `[worker bootstrap] canonical build status nodeId mismatch: expected=${String(nodeId)}, actual=${String(status.nodeId)}`
               );
             }
+            runtimeInputSources.set(toRuntimeKey(nodeType, nodeId), input.source);
             setHeapContext({ nodeType, nodeId: status.nodeId });
             const runtimeStatus = resolveRuntimeStatusFromBuildSession(status.status);
             clearRuntimeTransientStatus(nodeType, nodeId, runtimeStatus === 'running');
-            return status;
+            return { ...status, inputSource: input.source };
           } catch (error) {
             clearRuntimeTransientStatus(nodeType, nodeId, false);
             throw error;
@@ -824,7 +834,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeType: NodeType,
           nodeId: NodeId
         ): Promise<void> => {
-          await runStartBuildSession(nodeType, nodeId);
+          await runStartBuildSession(
+            nodeType,
+            nodeId,
+            runtimeInputSources.get(toRuntimeKey(nodeType, nodeId)) ?? 'committed'
+          );
         };
 
         const RESUME_SESSION_FRESHNESS_WINDOW_MS = 5 * 60 * 1000;
@@ -944,8 +958,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         const startBuildSession = async (
           nodeType: NodeType,
-          nodeId: NodeId
-        ): Promise<BuildSessionStatus> => runStartBuildSession(nodeType, nodeId);
+          nodeId: NodeId,
+          inputSource: CanonicalBuildInputSource
+        ): Promise<BuildSessionStatus> => runStartBuildSession(nodeType, nodeId, inputSource);
 
         const getBuildSessionStatus = async (
           nodeType: NodeType,
