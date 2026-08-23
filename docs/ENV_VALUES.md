@@ -116,6 +116,11 @@ This document lists all environment variables used by the browser application an
   - Default: `0`
   - Example: `1`
   - Used by: `app/src/config/canonicalBuildFeatureFlags.ts`
+- Name: `VITE_CANONICAL_BUILD_RUNTIME_ADAPTER`
+  - Meaning: Enables the canonical build runtime adapter registry for build-session get/list/subscribe/delete.
+  - Default: `0`
+  - Example: `1`
+  - Used by: `app/src/config/canonicalBuildFeatureFlags.ts`
 - Name: `VITE_MAP_ADAPTER_MAPLIBRE_PKG`
   - Meaning: Override MapLibre package name for lazy import in adapter.
   - Default: `maplibre-gl`

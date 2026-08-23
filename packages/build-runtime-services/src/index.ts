@@ -10,8 +10,15 @@ export {
   type UseBuildSessionTimingArgs,
   useBuildSessionTiming,
 } from '@hierarchidb/build';
+export { CanonicalBuildRuntimeAdapterRegistry } from './CanonicalBuildRuntimeAdapterRegistry.js';
+export { CanonicalBuildRuntimeRevisionTracker } from './CanonicalBuildRuntimeRevisionTracker.js';
 export type { CanonicalBuildSessionEventSource } from './CanonicalBuildSessionManager.js';
 export { CanonicalBuildSessionManager } from './CanonicalBuildSessionManager.js';
+export type { CreateBuildSessionRuntimeRecordInput } from './createBuildSessionRuntimeRecord.js';
+export {
+  createBuildSessionRuntimeRecord,
+  isActiveRuntimeStatus,
+} from './createBuildSessionRuntimeRecord.js';
 export { createLiveCanonicalPluginBuildSubscriptions } from './createLiveCanonicalPluginBuildSubscriptions.js';
 export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
 export { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';

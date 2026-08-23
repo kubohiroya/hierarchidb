@@ -91,6 +91,13 @@ type SessionStatusUpdatedEvent = {
 - Legacy persisted session records that predate `inputSource` do not have a recoverable source owner. Restarting such records must explicitly choose `committed`; it must not inspect `draftData` as a convenience fallback.
 - Worker→UI event payloads do not carry the raw build payload. Payload validation and route selection resolution happen before task/session event emission.
 
+**Canonical runtime record synchronization**:
+
+- Runtime/session list records carry `nodeType` as well as `nodeId`. UI queue, auth host, and external runner consumers must treat the pair as the runtime identity.
+- `revision` is monotonic per `nodeType + nodeId`. Consumers may use it to drop older snapshots for the same pair, but must not compare revisions across different node types.
+- Unsupported node types and malformed runtime records are contract errors. Worker bridge consumers must not convert them to an empty list, `null`, or a successful unsubscribe-only subscription.
+- `isActive` is derived from canonical runtime status, not from UI-local pending state. UI-local pending state can only drive control loading and duplicate-command prevention.
+
 **Pause completion contract**:
 
 - Shape accepts only its canonical stop-reason set. `auth-required` means source planning, the active pipeline, or the auth-dialog host required an authenticated request before processing could continue. Planning failures persist it before pipeline start; active-pipeline failures persist it only after confirmed drain. In both cases it is emitted as `paused / canResume=true`, and only the auth-dialog host resumes it after authentication succeeds. It is not converted to `route-leave`.
@@ -270,6 +277,11 @@ type TaskProgressUpdatedEvent = {
   common command/query/subscription contract; moving the current Route and Location
   UI-owned execution path to that transport is a separate migration. Runtime bootstrap
   never resolves a plugin-specific build API name or listener fallback.
+- Runtime list/control surfaces use the node-type keyed
+  `CanonicalBuildRuntimeAdapter` registry. `BuildSessionRuntimeRecord.nodeType` is
+  required and must match the adapter key. Unsupported node types and contract-invalid
+  records are surfaced as typed runtime errors; consumers must not convert them to
+  empty queues or missing sessions.
 - Route canonical progress and commands use the Worker-owned canonical API. Location
   command ownership remains separate while its build manager is UI-realm owned.
 - Shape Worker diagnostics remain outside the canonical state tree and are subscribed

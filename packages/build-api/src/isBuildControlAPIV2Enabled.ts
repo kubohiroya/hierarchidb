@@ -6,7 +6,7 @@
  * Use this name in new code.
  */
 
-import type { NodeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { CanonicalBuildInputSource } from './CanonicalPluginBuildAPI.js';
 import type { TaskDisplayPayload, TaskStage } from './task-queue-types.js';
 
@@ -117,6 +117,7 @@ export type BuildSessionRuntimeStatus =
   | 'deleting';
 
 export interface BuildSessionRuntimeRecord {
+  nodeType: NodeType;
   nodeId: NodeId;
   status: BuildSessionRuntimeStatus;
   isActive: boolean;
