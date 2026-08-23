@@ -158,6 +158,64 @@ graph LR
   - 入力: Geometry Cache と Tile 関係
   - 出力: Vector Tile（`originKey`, `meta` または `updatedAt`）
 
+## Location stage contract
+
+Location は Shape / Route と同じ `source -> geometry -> tileEmit` の canonical stage
+集合を使用する。Location 固有の詳細は `docs/location-mvt-pipeline-design.md` を
+SSOT とし、本節は build session 境界に必要な共通契約だけを定義する。
+
+### Location source
+
+- 入力: completed Location build payload、data source、国×地点種類 selection、
+  parser/schema version、render classification mapping config。
+- 出力: `LocationPoint` dataset、Morton index、tabular metadata rows、dataset hash を
+  持つ source artifact。
+- `LocationPoint` は metadata/query の SSOT であり、MVT から復元してはならない。
+- `renderRank` / `importance` / `iconKey` / `labelClass` / `minZoom` の欠落、不正、
+  範囲外は source task の契約違反である。任意 metadata から推測、丸め、既定補完して
+  geometry へ進めてはならない。
+
+### Location geometry
+
+- 入力: source artifact、LocationPoint dataset hash、build-time LOD config、tile scheme、
+  source-layer `location_points`。
+- 出力: LOD 選別済み Point artifact、tile relation plan、geometry artifact metadata。
+- Location の geometry stage は no-op ではない。zoom band × type × `renderRank` /
+  `importance` / `minZoom` で MVT 収録対象を決める。
+- geometry artifact と tile relation は同じ `nodeId` の source artifact に lineage を
+  持つ。別 node の artifact を参照する record は契約違反として失敗させる。
+
+### Location tileEmit
+
+- 入力: geometry artifact、tile relation、encoder version、MVT property schema。
+- 出力: source-layer `location_points` の vector tile、tile summary、read-back validation。
+- empty tile は valid artifact として明示的に記録できる。absent tile は cache miss、
+  corrupt tile は失敗であり、empty tile へ読み替えない。
+- read-back validation は layer 名、feature id、property 型、feature count を検証する。
+  不一致を成功へ読み替えない。
+
+### Location pause/resume checkpoint
+
+- pause は実 pipeline Promise の settle と active worker/job の停止確認後にのみ
+  `paused / canResume=true` を永続化する。
+- source 完了後に pause した場合、再開は永続済み LocationPoint dataset hash と source
+  artifact を checkpoint として検証し、geometry 以降を reconcile する。
+- geometry 完了後に pause した場合、再開は geometry artifact と tile relation の cache
+  identity を検証し、tileEmit を reconcile する。
+- checkpoint の必須 identity 欠落、不正、lineage 不一致を stale / missing artifact に
+  読み替えて fresh build へ fallback してはならない。
+
+### Location cleanup failure semantics
+
+- source selection、data source content、parser/schema、render classification、LOD config、
+  encoder version、source-layer の変更は downstream artifact cleanup を要求する。
+- cleanup は MVT tile、tile summary、read-back validation、tile relation、geometry artifact、
+  source artifact の順で下流から上流へ実行する。
+- cleanup の一部失敗を黙殺して session を継続しない。該当 task/session は `failed` に
+  遷移し、stale artifact は再利用不可とする。
+- LocationPoint と tabular metadata の削除または更新は source selection または parser 結果の
+  変更を伴う場合だけ行う。MVT cleanup を理由に metadata SSOT を削除してはならない。
+
 ## タスク生成規則（定式）
 
 ### 記号

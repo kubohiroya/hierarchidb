@@ -7,10 +7,20 @@
 > `docs/vt-route-pipeline-design.md`を参照する。本書のrouteに関する「確定事項」「現状」
 > 「開発再開」の記述は作成時点の調査記録であり、正規仕様や現在の実装状態として扱わない。
 > Worker→UI eventに関する節だけはIssue #1142/#1143/#1342の移行記録として維持する。
+>
+> **Location status (Issue #1506): historical unless explicitly referenced.**
+> locationの正規仕様は`docs/location-plugin-design.md`、derived MVT pipelineの正規契約は
+> `docs/location-mvt-pipeline-design.md`を参照する。本書のlocationに関する旧「要求仕様」、
+> 「旧実装スナップショット」、「必要な開発作業」は当時の差分棚卸しであり、LocationPoint
+> SSOT + derived MVT の現行判断と矛盾する場合は正規仕様として扱わない。
 
 ## 設計概要（要求仕様）
 
 ### location ノード
+
+> Historical note: この節は作成時点の要求整理であり、現行の正規仕様ではない。
+> 現行仕様では LocationPoint を metadata/query の SSOT、MVT を描画/画像生成用の派生成果物とする。
+> 詳細は `docs/location-plugin-design.md` と `docs/location-mvt-pipeline-design.md` を参照する。
 
 - データモデル: GroupEntity として GeoJSON Point の集合を扱う。
 - 作成フロー:
@@ -62,6 +72,10 @@
 
 ### location 実装の現状
 
+> Historical note: この節は旧実装スナップショットであり、現行の実装状態や正規仕様を表さない。
+> `LocationVectorTileService` や Point 一覧からのタイル化に関する記述は棚卸し記録である。
+> 現行仕様の MVT 契約は `docs/location-mvt-pipeline-design.md` を参照する。
+
 - Step2 データソース選択: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`
 - Step3 国×タイプ選択: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`
 - Step4 設定: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`（入力仕様は `docs/vt-pipeline-design.md` を参照）
@@ -88,6 +102,10 @@
 ## 設計との差分（不足/齟齬）
 
 ### location の差分
+
+> Historical note: この節は旧仕様との差分整理であり、現行のDoDや実装順序ではない。
+> Issue #1506 以降の実装Issueは `docs/location-mvt-pipeline-design.md#implementation-issue-anchor-map`
+> の対応表を参照する。
 
 - Step5 がデータソースからのダウンロード処理を実施していない。既存 DB の Point をタイル化するのみ。
 - Step3 の国×タイプ選択が build 処理に反映されない。
@@ -132,6 +150,9 @@ location/route の独自実装のうち、shape と共通化して置換すべ�
 ## 必要な開発作業の計画（段階）
 
 ### フェーズ 1: location の差分解消
+
+> Historical note: このフェーズ計画は旧再開メモであり、現行計画ではない。
+> LocationPoint SSOT + derived MVT の段階導入は `docs/location-mvt-pipeline-design.md` を優先する。
 
 - Step2/Step3 の選択結果をビルド処理へ反映する導線を追加。
 - データソースから Point/メタデータを取得する実装をバッチ処理に統合。
