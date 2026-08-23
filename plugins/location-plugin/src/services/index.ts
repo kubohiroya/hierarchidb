@@ -11,6 +11,7 @@ export {
   clearLocationPoints,
   deleteLocationPoints,
   listLocationPoints,
+  replaceLocationArtifacts,
   replaceLocationPoints,
   replaceLocationPointsChunked,
 } from './pointRepository.js';

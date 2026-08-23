@@ -81,7 +81,7 @@ const normalizeLocationDraft = (
     ...draftData,
     name: draftMetadata?.name ?? fallbackName,
     description: draftMetadata?.description ?? fallbackDescription,
-    ...(mode === 'create' && !draftData.dataSource ? { dataSource: 'ide-gsm' } : {}),
+    ...(mode === 'create' && !draftData.dataSource ? { dataSource: 'openstreetmap' } : {}),
   };
 
   return {

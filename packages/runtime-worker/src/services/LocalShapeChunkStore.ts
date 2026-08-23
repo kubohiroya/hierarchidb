@@ -28,6 +28,7 @@ const rejectNetworkAccess = (operation: string): Promise<never> =>
 const localOnlyNetworkPort: NetworkPort = {
   head: () => rejectNetworkAccess('head'),
   get: () => rejectNetworkAccess('get'),
+  post: () => rejectNetworkAccess('post'),
   getRange: () => rejectNetworkAccess('getRange'),
 };
 

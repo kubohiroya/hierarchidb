@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import type { LocationPointProperties } from '../../../common/entities/LocationPoint';
+import { createLocationSourcePlan } from '../../source/createLocationSourcePlan';
 
 const { strategySearch } = vi.hoisted(() => ({
   strategySearch: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('../../download/strategyRegistryUtils.js', () => ({
 
 vi.mock('../../pointRepository.js', () => ({
   appendLocationPoints: vi.fn(async () => {}),
+  clearLocationArtifacts: vi.fn(async () => {}),
   clearLocationPoints: vi.fn(async () => {}),
   replaceLocationPoints: vi.fn(async () => {}),
 }));
@@ -98,7 +100,16 @@ describe('LocationBuildManager country normalization', () => {
       processingOptions: { concurrent: 1 },
     };
 
-    const points = await manager.collectLocationPoints(nodeId, config);
+    const points = await manager.collectLocationPoints(
+      nodeId,
+      config,
+      createLocationSourcePlan({
+        dataSource: 'ourairports',
+        selectedArrayByCountries: {
+          JP: [false, true, false, false, false],
+        },
+      })
+    );
     const byId = new Map(points.map((point) => [point.pointId, point]));
 
     expect(byId.get('point-1' as LocationPointProperties['pointId'])?.admin0Code).toBe('US');

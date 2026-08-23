@@ -6,7 +6,7 @@ import type { ILocationDownloadStrategy } from '~/services/download/types';
 import { buildOsmPointProperties } from '~/services/pointFactoryUtils';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
-  readonly id = 'openstreetmap-nominatim';
+  readonly id = 'openstreetmap';
 
   supports(config: LocationSearchConfig): boolean {
     return config.dataSource === 'openstreetmap';

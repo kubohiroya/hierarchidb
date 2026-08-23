@@ -157,6 +157,10 @@ export class FetchNetworkPort implements NetworkPort {
     return await this.request(url, { ...init, method: 'GET' });
   }
 
+  async post(url: string, init?: NetworkRequestInit): Promise<ResponseLike> {
+    return await this.request(url, { ...init, method: 'POST' });
+  }
+
   async getRange(
     url: string,
     start: number,

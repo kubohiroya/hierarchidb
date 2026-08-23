@@ -7,6 +7,10 @@ import type { LocationFeature } from '@hierarchidb/location-api';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import { Dexie, type Table } from 'dexie';
 import {
+  type LocationSourceArtifactRecord,
+  validateLocationSourceArtifactRecord,
+} from './LocationSourceArtifactRecord.js';
+import {
   buildLocationVectorTileId,
   LOCATION_VECTOR_TILE_CONTENT_TYPE,
   type LocationVectorTileRecord,
@@ -15,6 +19,7 @@ import {
 export class LocationDB extends VectorTileDbBase {
   declare features: Table<LocationFeature, [NodeId, string]>;
   declare vectorTiles: Table<LocationVectorTileRecord, string>;
+  declare sourceArtifacts: Table<LocationSourceArtifactRecord, NodeId>;
 
   constructor(databaseName: string) {
     super(databaseName);
@@ -29,9 +34,18 @@ export class LocationDB extends VectorTileDbBase {
         vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
       })
     );
+    this.version(3).stores(
+      this.mergeVectorTileStores({
+        features:
+          '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
+        vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+        sourceArtifacts: '&nodeId, inputHash, contentHash, completedAt',
+      })
+    );
 
     this.features = this.table('features');
     this.vectorTiles = this.table('vectorTiles');
+    this.sourceArtifacts = this.table('sourceArtifacts');
     this.initVectorTileTables();
   }
 
@@ -48,9 +62,9 @@ export class LocationDB extends VectorTileDbBase {
   }
 
   async clearNodeArtifacts(nodeId: NodeId): Promise<void> {
-    await this.transaction('rw', [this.features, this.vectorTiles], async () => {
+    await this.transaction('rw', [this.features, this.sourceArtifacts], async () => {
       await this.features.where('nodeId').equals(nodeId).delete();
-      await this.vectorTiles.where('nodeId').equals(nodeId).delete();
+      await this.sourceArtifacts.delete(nodeId);
     });
   }
 
@@ -61,6 +75,11 @@ export class LocationDB extends VectorTileDbBase {
   async storeVectorTile(tile: LocationVectorTileRecord): Promise<void> {
     validateLocationVectorTileRecord(tile);
     await this.vectorTiles.put(tile);
+  }
+
+  async storeSourceArtifact(record: LocationSourceArtifactRecord): Promise<void> {
+    validateLocationSourceArtifactRecord(record);
+    await this.sourceArtifacts.put(record);
   }
 
   async getVectorTile(

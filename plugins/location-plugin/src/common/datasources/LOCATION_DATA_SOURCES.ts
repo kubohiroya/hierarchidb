@@ -21,6 +21,7 @@ export interface LocationDataSourceConfig {
   maxAdminLevel: number;
   category: LocationDataSourceCategory; // always 'location'
   licenseType: 'public' | 'odbl' | 'cc' | 'mit' | 'academic' | 'commercial' | 'varies';
+  canonicalBuildStrategy?: 'network';
 }
 
 function toConfig(source: LocationDataSourceBase): LocationDataSourceConfig {
@@ -35,6 +36,7 @@ function toConfig(source: LocationDataSourceBase): LocationDataSourceConfig {
     maxAdminLevel: source.maxAdminLevel ?? 0,
     category: source.category ?? 'location',
     licenseType: source.licenseType ?? 'varies',
+    canonicalBuildStrategy: source.canonicalBuildStrategy,
   };
 }
 

@@ -63,7 +63,7 @@ describe('location canonicalBuildAPI contract', () => {
         nodeId: 'location-contract-node',
         input: { source: 'working-copy', payload: {} },
       })
-    ).rejects.toThrow('payload.dataSource is not supported by the Worker build session');
+    ).rejects.toThrow('payload.dataSource must be a string');
   });
 
   it('delegates commands, queries, and subscriptions through the canonical surface', async () => {
@@ -99,22 +99,34 @@ describe('location canonicalBuildAPI contract', () => {
     await expect(
       canonicalBuildAPI.startBuildSession(startRequest(nodeId, draftData))
     ).resolves.toBe(status);
-    expect(mocks.startLocationBuildSession).toHaveBeenCalledWith(nodeId, {
-      searchConfigs: [
-        {
-          dataSource: 'openstreetmap',
-          countryCode: 'JP',
-          types: ['area_centroid', 'port'],
-        },
-        {
-          dataSource: 'openstreetmap',
-          countryCode: 'US',
-          types: ['airport', 'interchange'],
-        },
-      ],
-      concurrentDownloads: 3,
-      processingOptions: { concurrent: 3 },
-    });
+    expect(mocks.startLocationBuildSession).toHaveBeenCalledWith(
+      nodeId,
+      {
+        searchConfigs: [
+          {
+            dataSource: 'openstreetmap',
+            countryCode: 'JP',
+            types: ['area_centroid', 'port'],
+          },
+          {
+            dataSource: 'openstreetmap',
+            countryCode: 'US',
+            types: ['airport', 'interchange'],
+          },
+        ],
+        concurrentDownloads: 3,
+        processingOptions: { concurrent: 3 },
+      },
+      expect.objectContaining({
+        sourceKind: 'network',
+        dataSource: 'openstreetmap',
+        identity: expect.objectContaining({
+          authScope: 'location',
+          parserVersion: 'nominatim-json-v1',
+          selectionSignature: 'JP:area_centroid,port|US:airport,interchange',
+        }),
+      })
+    );
     await expect(canonicalBuildAPI.getBuildSessionStatus(nodeId)).resolves.toBe(status);
     await canonicalBuildAPI.pauseBuildSession(nodeId, 'pause reason');
     expect(mocks.pauseBuildSession).toHaveBeenCalledWith(nodeId, 'pause reason');
@@ -170,7 +182,7 @@ describe('location canonicalBuildAPI contract', () => {
             },
           })
         )
-      ).rejects.toThrow('is not supported by the Worker build session');
+      ).rejects.toThrow('does not have a canonical Worker source strategy');
     }
   );
 });

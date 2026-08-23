@@ -10,4 +10,5 @@ export {
   validateLocationVectorTileRecord,
   validateTileCoordinates,
 } from './LocationDB.js';
+export * from './LocationSourceArtifactRecord.js';
 export * from './LocationVectorTileRecord.js';

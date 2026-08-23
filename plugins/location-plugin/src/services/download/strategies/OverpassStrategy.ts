@@ -6,7 +6,7 @@ import type { ILocationDownloadStrategy } from '~/services/download/types';
 import { buildOverpassPointProperties } from '~/services/pointFactoryUtils';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
-  readonly id = 'openstreetmap-overpass';
+  readonly id = 'overpass';
 
   supports(config: LocationSearchConfig): boolean {
     return config.dataSource === 'overpass';

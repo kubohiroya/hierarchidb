@@ -13,6 +13,8 @@ export interface NetworkPort {
 
   get(url: string, init?: NetworkRequestInit): Promise<ResponseLike>;
 
+  post(url: string, init?: NetworkRequestInit): Promise<ResponseLike>;
+
   getRange(
     url: string,
     start: number,

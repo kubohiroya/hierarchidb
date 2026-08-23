@@ -117,6 +117,7 @@ describe('DexieChunkStore', () => {
     const networkPort: NetworkPort = {
       head: async () => makeResponse(405),
       get: async () => responses.shift() ?? makeResponse(500),
+      post: async () => makeResponse(405),
       getRange: async () => makeResponse(405),
     };
     const store = createStore(dbName, networkPort);
