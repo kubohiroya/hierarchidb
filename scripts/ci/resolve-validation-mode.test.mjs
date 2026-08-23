@@ -10,10 +10,23 @@ test('skips documentation-only changes', () => {
   assert.equal(classifyChangedPaths(['docs/ci-validation.md', 'README.md']).mode, 'skip');
 });
 
+test('skips naming audit workflow and baseline-only changes', () => {
+  assert.equal(classifyChangedPaths(['.github/workflows/naming-audit.yml']).mode, 'skip');
+  assert.equal(classifyChangedPaths(['.github/workflows/naming-audit-baseline.yml']).mode, 'skip');
+  assert.equal(classifyChangedPaths(['scripts/naming-audit-baseline.json']).mode, 'skip');
+});
+
 test('selects affected validation for workspace-local changes', () => {
   assert.equal(
     classifyChangedPaths(['packages/core-types/src/index.ts', 'packages/core-types/README.md'])
       .mode,
+    'affected'
+  );
+  assert.equal(
+    classifyChangedPaths([
+      'packages/core-types/src/index.ts',
+      'scripts/naming-audit-baseline.json',
+    ]).mode,
     'affected'
   );
 });

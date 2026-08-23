@@ -4,6 +4,11 @@ import { pathToFileURL } from 'node:url';
 const DOCUMENTATION_DIRECTORIES = ['.kiro/', 'docs/', 'plans/', 'reports/'];
 const WORKSPACE_DIRECTORIES = ['app/', 'packages/', 'plugins/'];
 const LOCKFILE_PATHS = new Set(['pnpm-lock.yaml']);
+const CI_IGNORED_PATHS = new Set([
+  '.github/workflows/naming-audit.yml',
+  '.github/workflows/naming-audit-baseline.yml',
+  'scripts/naming-audit-baseline.json',
+]);
 
 const assertRepositoryPath = (filePath) => {
   if (typeof filePath !== 'string' || filePath.length === 0) {
@@ -21,6 +26,7 @@ const assertRepositoryPath = (filePath) => {
 
 const isDocumentationOnlyPath = (filePath) =>
   filePath === 'LICENSE' ||
+  CI_IGNORED_PATHS.has(filePath) ||
   filePath.endsWith('.md') ||
   DOCUMENTATION_DIRECTORIES.some((directory) => filePath.startsWith(directory));
 
