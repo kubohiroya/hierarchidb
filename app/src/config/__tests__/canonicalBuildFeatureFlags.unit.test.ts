@@ -6,6 +6,7 @@ describe('resolveCanonicalBuildFeatureFlags', () => {
     expect(resolveCanonicalBuildFeatureFlags({})).toEqual({
       canonicalBuildInputEnvelope: false,
       canonicalBuildRuntimeAdapter: false,
+      locationMvt: false,
     });
   });
 
@@ -35,5 +36,13 @@ describe('resolveCanonicalBuildFeatureFlags', () => {
     expect(() =>
       resolveCanonicalBuildFeatureFlags({ VITE_CANONICAL_BUILD_RUNTIME_ADAPTER: 'true' })
     ).toThrow('VITE_CANONICAL_BUILD_RUNTIME_ADAPTER must be unset, 0, or 1');
+  });
+
+  it('accepts only 0 or 1 for locationMvt', () => {
+    expect(resolveCanonicalBuildFeatureFlags({ VITE_LOCATION_MVT: '0' }).locationMvt).toBe(false);
+    expect(resolveCanonicalBuildFeatureFlags({ VITE_LOCATION_MVT: '1' }).locationMvt).toBe(true);
+    expect(() => resolveCanonicalBuildFeatureFlags({ VITE_LOCATION_MVT: 'true' })).toThrow(
+      'VITE_LOCATION_MVT must be unset, 0, or 1'
+    );
   });
 });

@@ -196,6 +196,8 @@ export type {
   VectorTileDataSource,
   VectorTileLayerConfig,
   VectorTileProps,
+  VectorTileRequestError,
+  VectorTileRequestStats,
 } from './types/unified-map-props.js';
 // Default configuration
 export { DEFAULT_MAP_CONFIG, DEFAULT_MAP_STYLE_URL } from './types/unified-map-props.js';

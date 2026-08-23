@@ -148,6 +148,20 @@ export class LocationQueryService implements LocationQueryAPI {
     return [];
   }
 
+  async getPoint(nodeId: NodeId, pointId: string): Promise<LocationFeature | null> {
+    if (typeof pointId !== 'string' || pointId.length === 0) {
+      throw new Error('location-point-id-invalid');
+    }
+    const db = getLocationDB();
+    await db.open?.();
+    const rows = await db.features.where('nodeId').equals(nodeId).toArray();
+    const row = rows.find((item) => {
+      const data = item.data as { pointId?: unknown } | undefined;
+      return data?.pointId === pointId;
+    });
+    return row ? sanitizeFeature(row) : null;
+  }
+
   async getVectorTile(
     nodeId: NodeId,
     z: number,

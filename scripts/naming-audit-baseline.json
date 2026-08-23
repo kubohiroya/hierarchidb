@@ -612,7 +612,7 @@
     "subPackage": "app",
     "pattern": 5,
     "severity": "warning",
-    "message": "Component \"MapPage.tsx\" exceeds separation threshold (hook calls: 48 (threshold: 2)). Consider splitting into MapPage.tsx + MapPageView.tsx + useMapPageState.ts.",
+    "message": "Component \"MapPage.tsx\" exceeds separation threshold (hook calls: 51 (threshold: 2)). Consider splitting into MapPage.tsx + MapPageView.tsx + useMapPageState.ts.",
     "suggestedRename": "MapPage.tsx + MapPageView.tsx + useMapPageState.ts"
   },
   {
@@ -2238,14 +2238,6 @@
     "severity": "error",
     "message": "File \"plugin-manifest.ts\" does not match primary export \"PLUGIN_ID\". Expected \"PLUGIN_ID.ts\".",
     "suggestedRename": "PLUGIN_ID.ts"
-  },
-  {
-    "file": "services/build/ShapeBuildAPIClient.ts",
-    "subPackage": "shape-plugin",
-    "pattern": 1,
-    "severity": "error",
-    "message": "File \"ShapeBuildAPIClient.ts\" does not match primary export \"ShapeQueryAPIImpl\". Expected \"ShapeQueryAPIImpl.ts\".",
-    "suggestedRename": "ShapeQueryAPIImpl.ts"
   },
   {
     "file": "services/build/stageAliasConstants.ts",

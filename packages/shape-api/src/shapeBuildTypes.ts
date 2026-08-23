@@ -269,7 +269,7 @@ export type ShapeErrorLineFeature = {
   type: 'Feature';
   id?: string | number;
   geometry: ShapeErrorLineString;
-  properties?: Record<string, unknown>;
+  properties: Record<string, unknown>;
 };
 
 export type ShapeErrorLineFeatureCollection = {

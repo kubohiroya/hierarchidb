@@ -1,11 +1,13 @@
 type CanonicalBuildFeatureFlagEnv = {
   VITE_CANONICAL_BUILD_INPUT_ENVELOPE?: string;
   VITE_CANONICAL_BUILD_RUNTIME_ADAPTER?: string;
+  VITE_LOCATION_MVT?: string;
 };
 
 export type CanonicalBuildFeatureFlags = {
   canonicalBuildInputEnvelope: boolean;
   canonicalBuildRuntimeAdapter: boolean;
+  locationMvt: boolean;
 };
 
 const readStartupFlag = (
@@ -24,6 +26,7 @@ export const resolveCanonicalBuildFeatureFlags = (
 ): CanonicalBuildFeatureFlags => ({
   canonicalBuildInputEnvelope: readStartupFlag(env, 'VITE_CANONICAL_BUILD_INPUT_ENVELOPE'),
   canonicalBuildRuntimeAdapter: readStartupFlag(env, 'VITE_CANONICAL_BUILD_RUNTIME_ADAPTER'),
+  locationMvt: readStartupFlag(env, 'VITE_LOCATION_MVT'),
 });
 
 export const canonicalBuildFeatureFlags = resolveCanonicalBuildFeatureFlags(

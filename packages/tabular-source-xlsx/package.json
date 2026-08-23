@@ -25,7 +25,8 @@
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/tabular-source": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*"
+    "@hierarchidb/tabular-store": "workspace:*",
+    "xlsx": "^0.18.5"
   },
   "tsdown": {
     "platform": "neutral"

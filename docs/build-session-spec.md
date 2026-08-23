@@ -207,6 +207,10 @@ SSOT とし、本節は build session 境界に必要な共通契約だけを定
   corrupt tile は失敗であり、empty tile へ読み替えない。
 - read-back validation は layer 名、feature id、property 型、feature count を検証する。
   不一致を成功へ読み替えない。
+- `VITE_LOCATION_MVT` は UI 表示 path の起動時固定 flag であり、build session の stage
+  契約を変更しない。flag OFF でも LocationPoint、geometry artifact、tileEmit artifact の
+  契約違反を受理してはならない。flag ON の UI は absent tile や provider error を旧
+  viewport GeoJSON query へ fallback せず、エラーとして扱う。
 
 ### Location pause/resume checkpoint
 

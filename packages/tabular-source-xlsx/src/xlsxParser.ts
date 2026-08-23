@@ -1,5 +1,3 @@
-// NOTE: Module shims live under /types/*.d.ts (do not keep hand-maintained .d.ts under src/).
-
 import type {
   DetectionResult,
   FileLike,
@@ -36,18 +34,17 @@ export const xlsxParser: TabularParserPort = {
     return { format: 'xlsx', confidence };
   },
   async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
-    const xlsxModule = await import('xlsx/xlsx.mjs');
-    const XLSX = ((xlsxModule as { default?: typeof import('xlsx/xlsx.mjs') }).default ??
-      xlsxModule) as typeof import('xlsx/xlsx.mjs');
+    const xlsxModule = await import('xlsx');
+    const XLSX = ((xlsxModule as { default?: typeof import('xlsx') }).default ??
+      xlsxModule) as typeof import('xlsx');
 
     // Ensure Node-specific helpers are disabled when running in the browser.
-    if (
-      typeof (XLSX as { set_fs?: (fs: unknown) => void }).set_fs === 'function' &&
-      (XLSX.utils as { fs_stub?: unknown }).fs_stub
-    ) {
-      (XLSX as { set_fs: (fs: unknown) => void }).set_fs(
-        (XLSX.utils as { fs_stub: unknown }).fs_stub
-      );
+    const xlsxRuntime = XLSX as typeof import('xlsx') & {
+      set_fs?: (fs: unknown) => void;
+      utils: typeof XLSX.utils & { fs_stub?: unknown };
+    };
+    if (typeof xlsxRuntime.set_fs === 'function' && xlsxRuntime.utils.fs_stub) {
+      xlsxRuntime.set_fs(xlsxRuntime.utils.fs_stub);
     }
 
     const decodeBase64ToArrayBuffer = (base64: string): ArrayBuffer => {

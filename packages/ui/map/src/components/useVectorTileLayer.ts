@@ -6,7 +6,10 @@ import type {
 } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
-import type { FeatureStateRecord, VectorTileProps } from '~/types/unified-map-props';
+import type {
+  FeatureStateRecord,
+  VectorTileProps,
+} from '~/types/unified-map-props';
 import { loadMapLibreModule } from '~/utils/maplibre-loader';
 import { normalizePaintLiteralArrays } from '~/utils/maplibre-style-utils';
 
@@ -125,7 +128,10 @@ export function useVectorTileLayer({
   const onTileErrorRef = useRef<UseVectorTileLayerArgs['onTileError']>(onTileError);
   const tileProviderOwnerIdRef = useRef(`vector-tile-layer-${++tileProviderOwnerSequence}`);
   const paintRef = useRef<Record<string, unknown>>(normalizePaintLiteralArrays(paint ?? {}));
-  const layoutRef = useRef<Record<string, unknown>>({});
+  const layoutRef = useRef<Record<string, unknown>>({
+    visibility: visible ? 'visible' : 'none',
+    ...(layout ?? {}),
+  });
   const filterRef = useRef<unknown>(filter ?? null);
   const sourceConfigRef = useRef<{
     sourceId?: string;
@@ -217,9 +223,17 @@ export function useVectorTileLayer({
               );
 
               if (!providerEntry) {
-                throw new Error(
+                const error = new Error(
                   `No vector tile provider registered for ${dbNameFromUrl}/${nodeIdFromUrl}`
                 );
+                notifyTileError(undefined, {
+                  dbName: dbNameFromUrl,
+                  nodeId: nodeIdFromUrl,
+                  url: params.url,
+                  kind: 'provider-missing',
+                  error,
+                });
+                throw error;
               }
 
               const activeOwner = providerEntry.owners.get(providerEntry.activeOwnerId);
@@ -245,26 +259,29 @@ export function useVectorTileLayer({
                     expires: null,
                   };
                 }
-                return {
-                  data: new ArrayBuffer(0),
-                  cacheControl: null,
-                  expires: null,
-                };
+                const error = new Error(
+                  `Vector tile is missing for ${dbNameFromUrl}/${nodeIdFromUrl}/${z}/${x}/${y}`
+                );
+                throw error;
               } catch (error) {
                 const normalizedError = toError(error);
-                notifyTileRequest(activeOwner, {
-                  bytes: 0,
-                  dbName: dbNameFromUrl,
-                  nodeId: nodeIdFromUrl,
-                  sourceId: activeOwner?.sourceId,
-                  url: params.url,
-                });
+                const missingTile = normalizedError.message.startsWith('Vector tile is missing');
+                if (!missingTile) {
+                  notifyTileRequest(activeOwner, {
+                    bytes: 0,
+                    dbName: dbNameFromUrl,
+                    nodeId: nodeIdFromUrl,
+                    sourceId: activeOwner?.sourceId,
+                    url: params.url,
+                  });
+                }
                 notifyTileError(activeOwner, {
-                  error: normalizedError,
                   dbName: dbNameFromUrl,
                   nodeId: nodeIdFromUrl,
                   sourceId: activeOwner?.sourceId,
                   url: params.url,
+                  kind: missingTile ? 'tile-missing' : 'provider-error',
+                  error: normalizedError,
                 });
                 throw normalizedError;
               }
@@ -462,10 +479,7 @@ export function useVectorTileLayer({
         type: layerType,
         source: sourceId,
         paint: paintRef.current,
-        layout: {
-          visibility: visible ? 'visible' : 'none',
-          ...layout,
-        },
+        layout: layoutRef.current,
         minzoom,
         maxzoom,
       };

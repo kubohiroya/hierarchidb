@@ -52,6 +52,8 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
   nodeId,
   tiles,
   tileDataProvider,
+  onTileRequest,
+  onTileError,
 
   // Base map props
   initialViewState,
@@ -134,6 +136,8 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
           sourceLayer={mergedLayerConfig.sourceLayer}
           visible={mergedLayerConfig.visible}
           tileDataProvider={tileDataProvider}
+          onTileRequest={onTileRequest}
+          onTileError={onTileError}
         />
       )}
     </MapComponent>

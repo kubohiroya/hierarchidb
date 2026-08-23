@@ -87,6 +87,10 @@ const toPath = (
   return parts.join(' ');
 };
 
+const hasCoordinates = (
+  geometry: Geometry
+): geometry is Exclude<Geometry, { type: 'GeometryCollection' }> => 'coordinates' in geometry;
+
 const resolveFeatureId = (feature: Feature): string | null => {
   const props = feature.properties as Record<string, unknown> | undefined;
   const metadataFeatureId = props?.__hdbFeatureId;
@@ -216,12 +220,8 @@ export const TransposedFeaturePreviewCard = ({
                         );
                       });
                     }
-                    const path = toPath(
-                      feature.geometry.coordinates as Position[] | Position[][] | Position[][][],
-                      view,
-                      width,
-                      height
-                    );
+                    if (!hasCoordinates(feature.geometry)) return null;
+                    const path = toPath(feature.geometry.coordinates, view, width, height);
                     if (!path) return null;
                     return (
                       <path

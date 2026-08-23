@@ -9,6 +9,7 @@ import type {
   LayerSetId,
   LayerSetVisibility,
   MapAttributionItem,
+  MapFeatureIdentifyResult,
   MapLibreGeoJSONFeature,
   MapToggleSelection,
   MapViewState,
@@ -21,6 +22,7 @@ import {
   ResourceLayerMap,
   ScreenCenterSnackbar,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
+import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import {
   loadTreeConsoleSettings,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
@@ -40,6 +42,7 @@ import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
+import { canonicalBuildFeatureFlags } from '~/config/canonicalBuildFeatureFlags.js';
 import type { MapViewState as LoaderMapViewState } from '~/router/loaders/mapLoader';
 import { ModelessDialogManager } from '~/router/routes/modeless/ModelessDialogManager';
 import type { MapLayerInfo } from '~/state/mapSearch.atoms';
@@ -139,6 +142,7 @@ export default function MapPage() {
   const theme = useTheme();
   const { nodeId } = useParams({ from: '/map/$nodeId' });
   const debugFlags = useMemo(() => getMapDebugFlags(), []);
+  const locationMvtEnabled = canonicalBuildFeatureFlags.locationMvt;
   const search = useSearch({ from: '/map/$nodeId' }) as MapSearch;
   const loaderViewState = useLoaderData({ from: '/map/$nodeId' }) as LoaderMapViewState;
   const geolocation = useGeolocation();
@@ -273,6 +277,50 @@ export default function MapPage() {
       };
     },
     [layerInfoById, layerInfoBySource]
+  );
+
+  const handleIdentifyLocationPoint = useCallback(
+    (result: MapFeatureIdentifyResult) => {
+      if (!locationMvtEnabled || result.features.length === 0) return;
+      const locationFeature = result.features.find((feature) => {
+        const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
+        const sourceId = typeof feature.source === 'string' ? feature.source : undefined;
+        const info =
+          (layerId ? layerInfoById.get(layerId) : undefined) ??
+          (sourceId ? layerInfoBySource.get(sourceId) : undefined);
+        return info?.nodeType === 'location';
+      });
+      if (!locationFeature) return;
+      const layerId =
+        typeof locationFeature.layer?.id === 'string' ? locationFeature.layer.id : undefined;
+      const sourceId = typeof locationFeature.source === 'string' ? locationFeature.source : '';
+      const info =
+        (layerId ? layerInfoById.get(layerId) : undefined) ?? layerInfoBySource.get(sourceId);
+      if (!info?.nodeId) {
+        throw new Error('Location MVT identify result is missing nodeId');
+      }
+      const pointIdCandidate = locationFeature.id ?? locationFeature.properties?.pointId;
+      if (typeof pointIdCandidate !== 'string' && typeof pointIdCandidate !== 'number') {
+        throw new Error('Location MVT identify result is missing pointId');
+      }
+      void ensureWorkerAPI()
+        .then((api) => api.getLocationQueryAPI())
+        .then((api) => api.getPoint(info.nodeId as NodeId, String(pointIdCandidate)))
+        .then((point) => {
+          if (!point) {
+            throw new Error(`Location point metadata not found: ${String(pointIdCandidate)}`);
+          }
+          console.debug('[MapPage] Resolved location point metadata from SSOT', {
+            nodeId: info.nodeId,
+            pointId: pointIdCandidate,
+            featureId: point.id,
+          });
+        })
+        .catch((error) => {
+          console.warn('[MapPage] Failed to resolve location point metadata from SSOT', error);
+        });
+    },
+    [layerInfoById, layerInfoBySource, locationMvtEnabled]
   );
 
   const routeModeOptions = useMemo(
@@ -808,6 +856,7 @@ export default function MapPage() {
             layerIds: highlightLayerIds,
             radius: LOCATION_INTERACTION_RADIUS_PX,
             disableDefaultSnackbar: true,
+            onIdentify: handleIdentifyLocationPoint,
           }}
           controls={{ navigation: { position: 'top-right' } }}
           mapOptions={{

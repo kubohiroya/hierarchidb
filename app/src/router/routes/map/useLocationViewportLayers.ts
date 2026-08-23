@@ -106,6 +106,7 @@ export const useLocationViewportLayers = (
     exportControlEnabled = true,
     disabled = false,
   } = args;
+  const enabled = !disabled;
 
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
   const exportControlRef = useRef<MaplibreExportControl | null>(null);
@@ -276,6 +277,10 @@ export const useLocationViewportLayers = (
 
   const fetchLocationViewportPoints = useCallback(
     async (viewState?: MapViewState) => {
+      if (!enabled) {
+        setLocationGeoJsonLayers([]);
+        return;
+      }
       if (!mapInstanceRef.current) return;
       if (disabled) {
         setLocationGeoJsonLayers([]);
@@ -402,6 +407,10 @@ export const useLocationViewportLayers = (
 
   const scheduleLocationQuery = useCallback(
     (viewState?: MapViewState) => {
+      if (!enabled) {
+        setLocationGeoJsonLayers([]);
+        return;
+      }
       if (locationQueryTimerRef.current) {
         window.clearTimeout(locationQueryTimerRef.current);
       }
@@ -409,7 +418,7 @@ export const useLocationViewportLayers = (
         void fetchLocationViewportPoints(viewState);
       }, 150);
     },
-    [fetchLocationViewportPoints]
+    [enabled, fetchLocationViewportPoints]
   );
 
   useEffect(() => {
@@ -483,7 +492,9 @@ export const useLocationViewportLayers = (
       mapInstanceRef.current = map;
       setMapInstance(map);
       ensureLocationIcons(map);
-      scheduleLocationQuery();
+      if (enabled) {
+        scheduleLocationQuery();
+      }
       if (exportControlEnabled && !exportControlRef.current) {
         const control = new MaplibreExportControl({
           Format: 'pdf',
@@ -494,14 +505,15 @@ export const useLocationViewportLayers = (
         exportControlRef.current = control;
       }
     },
-    [ensureLocationIcons, exportControlEnabled, nodeId, scheduleLocationQuery]
+    [enabled, ensureLocationIcons, exportControlEnabled, nodeId, scheduleLocationQuery]
   );
 
   const handleLocationMoveEnd = useCallback(
     (viewState: MapViewState) => {
+      if (!enabled) return;
       scheduleLocationQuery(viewState);
     },
-    [scheduleLocationQuery]
+    [enabled, scheduleLocationQuery]
   );
 
   return {

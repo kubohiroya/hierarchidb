@@ -97,6 +97,23 @@ describe('location vector tile runtime services', () => {
     );
   });
 
+  it('resolves point metadata by pointId from the Location SSOT feature table', async () => {
+    const db = getLocationDB();
+    const query = new LocationQueryService();
+    await db.features.put(createFeature());
+
+    await expect(query.getPoint(nodeId, 'point-a')).resolves.toMatchObject({
+      nodeId,
+      id: 'feature-a',
+      data: {
+        pointId: 'point-a',
+        name: 'Airport A',
+      },
+    });
+    await expect(query.getPoint(nodeId, 'missing-point')).resolves.toBeNull();
+    await expect(query.getPoint(nodeId, '')).rejects.toThrow('location-point-id-invalid');
+  });
+
   it('clears vector tiles independently and keeps artifact cleanup scoped to features', async () => {
     const db = getLocationDB();
     const mutation = new LocationMutationService();

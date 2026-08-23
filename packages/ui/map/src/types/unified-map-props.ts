@@ -289,11 +289,12 @@ export type VectorTileRequestStats = {
 };
 
 export type VectorTileRequestError = {
-  error: Error;
   dbName?: string;
   nodeId?: string;
   sourceId?: string;
   url?: string;
+  kind: 'invalid-url' | 'provider-missing' | 'tile-missing' | 'provider-error';
+  error: Error;
 };
 
 // Complete vector tile props combining all configurations

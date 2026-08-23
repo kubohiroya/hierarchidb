@@ -67,6 +67,11 @@ import {
 const shapeBuildTaskTable = (): Table<ShapeBuildTaskRecord, string> =>
   ephemeralDB.buildTasks as Table<ShapeBuildTaskRecord, string>;
 
+export type ShapeBuildAPIClient = {
+  query: ShapeQueryAPI;
+  mutation: ShapeMutationAPI;
+};
+
 const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
   if (status === 'idle') return 'idle';
@@ -341,7 +346,11 @@ const toShapeVectorTileRecord = (tile: VectorTileRecord): ShapeVectorTileRecord 
 const isShapeGeometryCacheComplete = (
   record: EphemeralGeometryCacheRecord | null | undefined
 ): record is ShapeGeometryCache => (
-  Boolean(record && record.domainType === 'shape' && record.timestamp > 0)
+  Boolean(
+    record &&
+      (record.domainType === 'shape' || record.domainType === 'route') &&
+      record.timestamp > 0
+  )
 );
 
 const markGeometryCacheWriteComplete = async (buffers: Array<{ id: string }>): Promise<void> => {
@@ -1262,7 +1271,7 @@ export const getShapeDbApiClient = (): ReturnType<typeof createShapeDbApiClient>
   return cachedShapeDbApiClient;
 };
 
-export const createShapeBuildApiClient = (): { query: ShapeQueryAPI; mutation: ShapeMutationAPI } => {
+export const createShapeBuildApiClient = (): ShapeBuildAPIClient => {
   const { query, mutation } = getShapeDbApiClient();
   return { query, mutation };
 };

@@ -81,6 +81,8 @@
 - MapLibreGL は MVT source-layer `location_points` を描画 source とする。
 - hover/click/detail panel は MVT feature の `pointId` から `LocationQueryAPI.getPoint` / `listMetadata` で完全 metadata を取得する。
 - テーブルは Step5 で保存した `LocationPoint.metadata` を仮想テーブル表示で参照する。
+- 通常地図の location MVT 表示は `VITE_LOCATION_MVT=1` で有効化する。既定は OFF であり、OFF の間だけ旧 viewport GeoJSON path を rollback surface として使用できる。
+- MVT 表示が ON の場合、旧 viewport GeoJSON の `queryByViewport` を同時実行しない。tile 欠落、provider 例外、破損 record は error として扱い、GeoJSON へ自動 fallback しない。
 
 ## CSV 列定義（参照実装）
 
@@ -184,7 +186,7 @@
 - `queryByViewport(nodeId, bbox, zoom, kinds?, options?)`
 - `queryByMortonPrefixes(nodeId, prefixes, kinds?)`
 - `getVectorTile(nodeId, z, x, y)` は LocationDB の `vectorTiles` を `nodeId/z/x/y` で取得する。absent tile は `null`、record 破損や座標契約違反は error とし、GeoJSON query へ fallback しない。
-- `getPoint(nodeId, pointId)`
+- `getPoint(nodeId, pointId)` は LocationPoint SSOT の `data.pointId` で検索し、該当 `LocationFeature` を返す。MVT の feature id や properties から metadata を合成しない。空 `pointId` は契約違反として error にする。
 - `listMetadata(nodeId, filter?)`
 
 ## Worker store registration
@@ -234,6 +236,8 @@ Location worker は `registerLocationWorkerStores()` で `VTStoreRegistry` に `
 - 描画 layer は `location-points-circle`, `location-points-icon`, `location-points-label` を標準名とする。
 - layer filter は `type`, `renderRank`, `importance`, `minZoom`, `labelClass` を使う。
 - style-time LOD は Step4 の `representationByZoomLevelConfig`, `iconConfig`, `labelConfig` から生成する。
+- app の folder map では node ごとに point/icon/label の vector layer を生成し、各 layer は source-layer `location_points` と `promoteId=pointId` を使う。
+- `circle` / `icon` / `label` の初期 layout は MapLibre layer 追加時に適用する。後続の layout 更新だけに依存して初回 render を不完全にしてはならない。
 - hover/click は feature の `pointId` だけを query key とし、detail panel は `LocationQueryAPI` で取得した full metadata を表示する。
 - icon sprite 登録、style load、source load、初回 visible tile load が完了するまで、画像生成 runner は map ready と扱ってはならない。
 
