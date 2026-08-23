@@ -168,7 +168,7 @@ Storage identity と schema の正規契約は `docs/shape-border-geometry-stora
 | metadata | `featureMetadata`, `sourceMetadata`, `tabularMetadata` | `packages/shape-store/src/ShapeDB.ts` | preview/search 用 metadata。shared arc topology の SSOT ではない。 |
 | task/session | `buildTasks`, `buildSession*`, `buildStageStatuses` | `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`, `packages/shape-store/src/ShapeDB.ts` | build lifecycle の状態。geometry topology を保存しない。 |
 
-現行の `geometryCache` は `id / nodeId / domainType / bandIndex / sourceKey / data / featureCount / vertexCount / polygonCount / extractionRatio / tolerance / timestamp` を中心とする artifact cache である。共有境界 arc、隣接関係、arc-to-polygon reconstruction relation、topology-preserving simplification metadata は正規 field として存在しない。#548 の storage workstream は、これらを既存 field へ詰め込まず、正規 schema と ownership を先に定義する。
+現行の `geometryCache` は `id / nodeId / domainType / bandIndex / sourceKey / data / featureCount / vertexCount / polygonCount / extractionRatio / tolerance / timestamp` を中心とする artifact cache である。共有境界 arc、隣接関係、arc-to-polygon reconstruction relation、topology-preserving simplification metadata は正規 field として存在しない。#548 の storage workstream は、これらを既存 field へ詰め込まず、正規 schema と ownership を先に定義する。`geometryCache` table は route/location など他 domain と共有されるため、Shape query API は `domainType === "shape"` の geometry artifact のみを返す。
 
 ### 現行処理境界
 

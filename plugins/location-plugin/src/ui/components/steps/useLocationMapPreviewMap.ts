@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type {
   LocationGroupItem,
   LocationIconConfig,
+  LocationIconId,
   LocationLabelConfig,
   LocationRepresentationByZoomLevelConfig,
   LocationType,
@@ -12,6 +13,7 @@ import type {
   MapToggleSelection,
   MapViewState,
   ResourceGeoJsonLayer,
+  ResourceVectorLayer,
 } from '@hierarchidb/ui-map';
 import {
   buildCategoryFilter,
@@ -23,6 +25,7 @@ import {
   resolveTileIdField,
 } from '@hierarchidb/ui-map';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import {
   createElement,
@@ -40,6 +43,7 @@ import type {
   LocationPreviewHoverSnackbarProps,
 } from './LocationMapPreviewMapElements.js';
 import { LocationMapPreviewIcon } from './LocationMapPreviewMapElements.js';
+import { buildLocationMvtStyleExpressions, buildLocationVectorLayers } from '~/common/index.js';
 import {
   CIRCLE_RADIUS_AT_MAX,
   CIRCLE_RADIUS_MAX_ZOOM,
@@ -190,10 +194,12 @@ type UseLocationMapPreviewMapArgs = {
   t: (key: string, fallback?: string) => string;
   isDarkMode: boolean;
   refreshKey?: string | number | null;
+  mvtEnabled?: boolean;
 };
 
 type UseLocationMapPreviewMapResult = {
   previewPoints: PreviewPoint[];
+  locationVectorLayers: ResourceVectorLayer[];
   locationGeoJsonLayers: ResourceGeoJsonLayer[];
   locationPreviewSnackbarProps?: LocationPreviewHoverSnackbarProps;
   hoverMatches: HoverMatch[];
@@ -218,6 +224,7 @@ export const useLocationMapPreviewMap = (
     t,
     isDarkMode,
     refreshKey,
+    mvtEnabled = false,
   } = args;
 
   const previewNodeId = nodeId ?? ('preview' as NodeId);
@@ -251,6 +258,10 @@ export const useLocationMapPreviewMap = (
         nodeId: previewNodeId,
         enabledTypes: enabledLocationTypes.length,
       });
+      if (mvtEnabled) {
+        setPreviewPoints([]);
+        return;
+      }
       if (!previewNodeId || previewNodeId === 'preview') {
         setPreviewPoints([]);
         return;
@@ -350,11 +361,15 @@ export const useLocationMapPreviewMap = (
         console.error(DEBUG_PREFIX, 'viewport-fetch:error', { nodeId: previewNodeId, error: err });
       }
     },
-    [enabledLocationTypes, previewNodeId, workerReady]
+    [enabledLocationTypes, mvtEnabled, previewNodeId, workerReady]
   );
 
   const scheduleViewportQuery = useCallback(
     (viewState?: MapViewState) => {
+      if (mvtEnabled) {
+        setPreviewPoints([]);
+        return;
+      }
       if (queryTimerRef.current) {
         window.clearTimeout(queryTimerRef.current);
       }
@@ -362,7 +377,7 @@ export const useLocationMapPreviewMap = (
         void fetchViewportPoints(viewState);
       }, 150);
     },
-    [fetchViewportPoints]
+    [fetchViewportPoints, mvtEnabled]
   );
 
   useEffect(() => {
@@ -392,10 +407,25 @@ export const useLocationMapPreviewMap = (
   );
 
   const iconAssets = useMemo(() => {
-    return KNOWN_LOCATION_TYPES.map((type) => {
+    const mvtIconAssets = (Object.keys(LOCATION_ICON_COMPONENTS) as LocationIconId[]).map(
+      (iconId) => {
+        const defaultType = KNOWN_LOCATION_TYPES.find((type) => DEFAULT_ICON_IDS[type] === iconId);
+        return {
+          type: defaultType ?? 'area_centroid',
+          iconId,
+          Icon: LOCATION_ICON_COMPONENTS[iconId],
+          color: defaultType ? DEFAULT_TYPE_COLORS[defaultType] : DEFAULT_TYPE_COLORS.area_centroid,
+          imageId: iconId,
+        };
+      }
+    );
+    const fallbackPreviewAssets = KNOWN_LOCATION_TYPES.map((type) => {
       const entry = iconConfig[type];
       const iconId = entry?.iconId ?? DEFAULT_ICON_IDS[type];
-      const Icon = LOCATION_ICON_COMPONENTS[iconId] ?? LOCATION_TYPE_STYLES[type].icon;
+      const Icon =
+        LOCATION_ICON_COMPONENTS[iconId] ??
+        LOCATION_TYPE_STYLES[type]?.icon ??
+        LOCATION_ICON_COMPONENTS.public;
       const color = entry?.color ?? DEFAULT_TYPE_COLORS[type];
       return {
         type,
@@ -405,6 +435,11 @@ export const useLocationMapPreviewMap = (
         imageId: `location-preview-icon-${type}`,
       };
     });
+    const assets = [...mvtIconAssets, ...fallbackPreviewAssets];
+    return assets.filter(
+      (asset, index) =>
+        assets.findIndex((candidate) => candidate.imageId === asset.imageId) === index
+    );
   }, [iconConfig]);
 
   const iconAssetsById = useMemo(
@@ -621,7 +656,41 @@ export const useLocationMapPreviewMap = (
     return buildThresholdedZoomMatchExpression(entries, 0, MIN_ZOOM_LEVEL, tilesMaxZoom);
   }, [labelConfig, tilesMaxZoom]);
 
+  const locationMvtStyleExpressions = useMemo(
+    () =>
+      buildLocationMvtStyleExpressions({
+        locationTypes: KNOWN_LOCATION_TYPES,
+        enabledLocationTypes,
+        iconConfig,
+        labelConfig,
+        representationConfig,
+        tilesMaxZoom,
+        typeColors: DEFAULT_TYPE_COLORS,
+      }),
+    [enabledLocationTypes, iconConfig, labelConfig, representationConfig, tilesMaxZoom]
+  );
+
+  const locationVectorLayers = useMemo<ResourceVectorLayer[]>(() => {
+    if (!mvtEnabled) return [];
+    if (!workerReady || previewNodeId === 'preview') return [];
+    return buildLocationVectorLayers({
+      nodeId: previewNodeId,
+      sourceId: `location-preview-vector-source-${previewNodeId}`,
+      layerIdPrefix: `location-preview-${previewNodeId}`,
+      dbName: getDBName(getBuildDatabasePrefix(), 'location'),
+      queryApiProvider: async () => {
+        const activeWorkerApi = workerApiRef.current;
+        if (!activeWorkerApi) {
+          throw new Error('[LocationPreview] LocationQueryAPI is not available');
+        }
+        return activeWorkerApi.getLocationQueryAPI();
+      },
+      styles: locationMvtStyleExpressions,
+    });
+  }, [locationMvtStyleExpressions, mvtEnabled, previewNodeId, workerReady]);
+
   const locationGeoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {
+    if (mvtEnabled) return [];
     if (enabledLocationTypes.length === 0) return [];
     if (previewPoints.length === 0) return [];
     const labelFilter = locationFilter ? ['all', locationFilter, ['has', 'name']] : ['has', 'name'];
@@ -728,6 +797,7 @@ export const useLocationMapPreviewMap = (
     labelOpacityExpression,
     labelSizeExpression,
     locationFilter,
+    mvtEnabled,
     previewNodeId,
     previewPoints,
   ]);
@@ -815,7 +885,10 @@ export const useLocationMapPreviewMap = (
             : undefined;
         const iconEntry = iconConfig[type];
         const iconId = iconEntry?.iconId ?? DEFAULT_ICON_IDS[type];
-        const Icon = LOCATION_ICON_COMPONENTS[iconId] ?? LOCATION_TYPE_STYLES[type].icon;
+        const Icon =
+          LOCATION_ICON_COMPONENTS[iconId] ??
+          LOCATION_TYPE_STYLES[type]?.icon ??
+          LOCATION_ICON_COMPONENTS.public;
         const circleColor = iconEntry?.color ?? DEFAULT_TYPE_COLORS[type];
         const iconColor = iconEntry?.color ?? DEFAULT_TYPE_COLORS[type];
         const color = useIcon ? iconColor : circleColor;
@@ -975,6 +1048,7 @@ export const useLocationMapPreviewMap = (
 
   return {
     previewPoints,
+    locationVectorLayers,
     locationGeoJsonLayers,
     locationPreviewSnackbarProps,
     hoverMatches,

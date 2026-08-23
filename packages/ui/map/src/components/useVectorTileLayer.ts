@@ -9,7 +9,6 @@ import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type {
   FeatureStateRecord,
   VectorTileProps,
-  VectorTileRequestError,
 } from '~/types/unified-map-props';
 import { loadMapLibreModule } from '~/utils/maplibre-loader';
 import { normalizePaintLiteralArrays } from '~/utils/maplibre-style-utils';
@@ -20,62 +19,79 @@ type MapLibreLayerUpdater = MapLibreMapInstance & {
 };
 
 let protocolRegistered = false;
-
-type TileProviderEntry = {
-  provider: NonNullable<VectorTileProps['tileDataProvider']>;
+type TileProviderRegistryEntry = {
+  tileDataProvider: NonNullable<VectorTileProps['tileDataProvider']>;
+  activeOwnerId: string;
+  owners: Map<string, TileProviderRegistryOwner>;
+};
+type TileProviderRegistryOwner = {
   onTileRequest?: VectorTileProps['onTileRequest'];
   onTileError?: VectorTileProps['onTileError'];
   sourceId?: string;
 };
-
-type TileProviderRegistryEntry = {
-  entries: Map<symbol, TileProviderEntry>;
-  currentToken?: symbol;
-};
-
 const tileProviderRegistry = new Map<string, TileProviderRegistryEntry>();
+let tileProviderOwnerSequence = 0;
 
-const buildTileProviderKey = (dbName: string, nodeId: string): string => `${dbName}/${nodeId}`;
+const toProviderRegistryKey = (dbName: string, nodeId: string): string => `${dbName}/${nodeId}`;
 
-const getCurrentProviderEntry = (dbName: string, nodeId: string): TileProviderEntry | undefined => {
-  const registryEntry = tileProviderRegistry.get(buildTileProviderKey(dbName, nodeId));
-  if (!registryEntry?.currentToken) return undefined;
-  return registryEntry.entries.get(registryEntry.currentToken);
-};
+const toError = (value: unknown): Error =>
+  value instanceof Error ? value : new Error(String(value));
 
-const registerTileProvider = (
-  dbName: string,
-  nodeId: string,
-  token: symbol,
-  entry: TileProviderEntry
+const notifyTileRequest = (
+  owner: TileProviderRegistryOwner | undefined,
+  stats: Parameters<NonNullable<VectorTileProps['onTileRequest']>>[0]
 ): void => {
-  const key = buildTileProviderKey(dbName, nodeId);
-  const registryEntry: TileProviderRegistryEntry = tileProviderRegistry.get(key) ?? {
-    entries: new Map<symbol, TileProviderEntry>(),
-  };
-  registryEntry.entries.set(token, entry);
-  registryEntry.currentToken = token;
-  tileProviderRegistry.set(key, registryEntry);
-};
-
-const unregisterTileProvider = (dbName: string, nodeId: string, token: symbol): void => {
-  const key = buildTileProviderKey(dbName, nodeId);
-  const registryEntry = tileProviderRegistry.get(key);
-  if (!registryEntry) return;
-  registryEntry.entries.delete(token);
-  if (registryEntry.currentToken === token) {
-    registryEntry.currentToken = Array.from(registryEntry.entries.keys()).at(-1);
-  }
-  if (registryEntry.entries.size === 0) {
-    tileProviderRegistry.delete(key);
+  try {
+    owner?.onTileRequest?.(stats);
+  } catch (error) {
+    console.warn('VectorTileLayer tile request observer failed:', error);
   }
 };
 
 const notifyTileError = (
-  entry: TileProviderEntry | undefined,
-  error: VectorTileRequestError
+  owner: TileProviderRegistryOwner | undefined,
+  error: Parameters<NonNullable<VectorTileProps['onTileError']>>[0]
 ): void => {
-  entry?.onTileError?.(error);
+  try {
+    owner?.onTileError?.(error);
+  } catch (observerError) {
+    console.warn('VectorTileLayer tile error observer failed:', observerError);
+  }
+};
+
+const registerTileProviderOwner = (
+  registryKey: string,
+  ownerId: string,
+  tileDataProvider: NonNullable<VectorTileProps['tileDataProvider']>,
+  owner: TileProviderRegistryOwner
+): void => {
+  const entry = tileProviderRegistry.get(registryKey);
+  if (!entry) {
+    tileProviderRegistry.set(registryKey, {
+      tileDataProvider,
+      activeOwnerId: ownerId,
+      owners: new Map([[ownerId, owner]]),
+    });
+    return;
+  }
+  entry.tileDataProvider = tileDataProvider;
+  entry.activeOwnerId = ownerId;
+  entry.owners.set(ownerId, owner);
+};
+
+const unregisterTileProviderOwner = (registryKey: string, ownerId: string): void => {
+  const entry = tileProviderRegistry.get(registryKey);
+  if (!entry) return;
+  entry.owners.delete(ownerId);
+  if (entry.owners.size === 0) {
+    tileProviderRegistry.delete(registryKey);
+    return;
+  }
+  if (entry.activeOwnerId !== ownerId) return;
+  const nextOwnerId = entry.owners.keys().next().value;
+  if (typeof nextOwnerId === 'string') {
+    entry.activeOwnerId = nextOwnerId;
+  }
 };
 
 export interface UseVectorTileLayerArgs extends VectorTileProps {
@@ -110,6 +126,7 @@ export function useVectorTileLayer({
   const prevFeatureStateRef = useRef<Map<string | number, FeatureStateRecord>>(new Map());
   const onTileRequestRef = useRef<UseVectorTileLayerArgs['onTileRequest']>(onTileRequest);
   const onTileErrorRef = useRef<UseVectorTileLayerArgs['onTileError']>(onTileError);
+  const tileProviderOwnerIdRef = useRef(`vector-tile-layer-${++tileProviderOwnerSequence}`);
   const paintRef = useRef<Record<string, unknown>>(normalizePaintLiteralArrays(paint ?? {}));
   const layoutRef = useRef<Record<string, unknown>>({
     visibility: visible ? 'visible' : 'none',
@@ -137,6 +154,17 @@ export function useVectorTileLayer({
   }, [onTileError]);
 
   useEffect(() => {
+    if (!dbName || !nodeId) return;
+    const entry = tileProviderRegistry.get(toProviderRegistryKey(dbName, nodeId));
+    if (!entry) return;
+    const owner = entry.owners.get(tileProviderOwnerIdRef.current);
+    if (!owner) return;
+    owner.onTileRequest = onTileRequest;
+    owner.onTileError = onTileError;
+    owner.sourceId = sourceId;
+  }, [dbName, nodeId, onTileError, onTileRequest, sourceId]);
+
+  useEffect(() => {
     const nextPaint = normalizePaintLiteralArrays(paint ?? {});
     const prevPaint = paintRef.current;
     paintRef.current = nextPaint;
@@ -162,6 +190,14 @@ export function useVectorTileLayer({
     async function ensureProtocolAndTiles() {
       if (!dbName || !nodeId || !tileDataProvider) return;
 
+      const registryKey = toProviderRegistryKey(dbName, nodeId);
+      const ownerId = tileProviderOwnerIdRef.current;
+      registerTileProviderOwner(registryKey, ownerId, tileDataProvider, {
+        onTileRequest: onTileRequestRef.current,
+        onTileError: onTileErrorRef.current,
+        sourceId,
+      });
+
       if (!protocolRegistered) {
         const mlib = await loadMapLibreModule();
         if (cancelled || !mlib) return;
@@ -182,13 +218,15 @@ export function useVectorTileLayer({
               const zInt = parseInt(z, 10);
               const xInt = parseInt(x, 10);
               const yInt = parseInt(y, 10);
-              const entry = getCurrentProviderEntry(dbNameFromUrl, nodeIdFromUrl);
+              const providerEntry = tileProviderRegistry.get(
+                toProviderRegistryKey(dbNameFromUrl, nodeIdFromUrl)
+              );
 
-              if (!entry) {
+              if (!providerEntry) {
                 const error = new Error(
                   `No vector tile provider registered for ${dbNameFromUrl}/${nodeIdFromUrl}`
                 );
-                notifyTileError(entry, {
+                notifyTileError(undefined, {
                   dbName: dbNameFromUrl,
                   nodeId: nodeIdFromUrl,
                   url: params.url,
@@ -198,13 +236,19 @@ export function useVectorTileLayer({
                 throw error;
               }
 
+              const activeOwner = providerEntry.owners.get(providerEntry.activeOwnerId);
               try {
-                const tileData = await entry.provider(zInt, xInt, yInt, nodeIdFromUrl);
-                entry.onTileRequest?.({
+                const tileData = await providerEntry.tileDataProvider(
+                  zInt,
+                  xInt,
+                  yInt,
+                  nodeIdFromUrl
+                );
+                notifyTileRequest(activeOwner, {
                   bytes: tileData?.byteLength ?? 0,
                   dbName: dbNameFromUrl,
                   nodeId: nodeIdFromUrl,
-                  sourceId: entry.sourceId,
+                  sourceId: activeOwner?.sourceId,
                   url: params.url,
                 });
 
@@ -219,27 +263,27 @@ export function useVectorTileLayer({
                   `Vector tile is missing for ${dbNameFromUrl}/${nodeIdFromUrl}/${z}/${x}/${y}`
                 );
                 throw error;
-              } catch (caught) {
-                const error = caught instanceof Error ? caught : new Error(String(caught));
-                const missingTile = error.message.startsWith('Vector tile is missing');
+              } catch (error) {
+                const normalizedError = toError(error);
+                const missingTile = normalizedError.message.startsWith('Vector tile is missing');
                 if (!missingTile) {
-                  entry.onTileRequest?.({
+                  notifyTileRequest(activeOwner, {
                     bytes: 0,
                     dbName: dbNameFromUrl,
                     nodeId: nodeIdFromUrl,
-                    sourceId: entry.sourceId,
+                    sourceId: activeOwner?.sourceId,
                     url: params.url,
                   });
                 }
-                notifyTileError(entry, {
+                notifyTileError(activeOwner, {
                   dbName: dbNameFromUrl,
                   nodeId: nodeIdFromUrl,
-                  sourceId: entry.sourceId,
+                  sourceId: activeOwner?.sourceId,
                   url: params.url,
                   kind: missingTile ? 'tile-missing' : 'provider-error',
-                  error,
+                  error: normalizedError,
                 });
-                throw error;
+                throw normalizedError;
               }
             }
           );
@@ -260,22 +304,14 @@ export function useVectorTileLayer({
 
     return () => {
       cancelled = true;
+      if (dbName && nodeId) {
+        unregisterTileProviderOwner(
+          toProviderRegistryKey(dbName, nodeId),
+          tileProviderOwnerIdRef.current
+        );
+      }
     };
   }, [dbName, nodeId, sourceId, tileDataProvider]);
-
-  useEffect(() => {
-    if (!dbName || !nodeId || !tileDataProvider) return;
-    const token = Symbol(`${dbName}/${nodeId}/${sourceId ?? ''}`);
-    registerTileProvider(dbName, nodeId, token, {
-      provider: tileDataProvider,
-      onTileRequest: onTileRequestRef.current,
-      onTileError: onTileErrorRef.current,
-      sourceId,
-    });
-    return () => {
-      unregisterTileProvider(dbName, nodeId, token);
-    };
-  }, [dbName, nodeId, sourceId, tileDataProvider, onTileRequest, onTileError]);
 
   useEffect(() => {
     if (!map || !computedTiles || !sourceId) return;
@@ -478,7 +514,18 @@ export function useVectorTileLayer({
         console.debug('VectorTileLayer layer cleanup skipped due to map atoms:', error);
       }
     };
-  }, [map, sourceAdded, layerId, layerType, sourceId, sourceLayer, minzoom, maxzoom]);
+  }, [
+    map,
+    sourceAdded,
+    layerId,
+    layerType,
+    sourceId,
+    sourceLayer,
+    minzoom,
+    maxzoom,
+    layout,
+    visible,
+  ]);
 
   useEffect(() => {
     if (!layerId || !map || !map.getLayer || !map.getLayer(layerId)) return;

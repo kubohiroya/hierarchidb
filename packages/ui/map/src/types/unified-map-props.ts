@@ -270,7 +270,7 @@ export interface VectorTileDataSource {
   /** Optional hook for tile request stats (Dexie or custom providers) */
   onTileRequest?: (stats: VectorTileRequestStats) => void;
 
-  /** Optional hook for tile request errors (Dexie or custom providers) */
+  /** Optional hook for provider/protocol tile errors */
   onTileError?: (error: VectorTileRequestError) => void;
 
   /** Promote a feature property to be its ID */
