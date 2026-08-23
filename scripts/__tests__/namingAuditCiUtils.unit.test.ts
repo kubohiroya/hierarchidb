@@ -156,11 +156,11 @@ describe('reportNamingAuditComparison', () => {
     expect(reportNamingAuditComparison(comparison, 'table')).toBe(1);
   });
 
-  it('returns failure when baseline errors were resolved without updating the fixed baseline', () => {
+  it('returns success when baseline errors were resolved without updating the fixed baseline', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const comparison = compareNamingAuditViolations([makeViolation()], []);
 
-    expect(reportNamingAuditComparison(comparison, 'table')).toBe(1);
+    expect(reportNamingAuditComparison(comparison, 'table')).toBe(0);
   });
 });
 

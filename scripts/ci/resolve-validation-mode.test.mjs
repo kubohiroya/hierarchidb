@@ -45,19 +45,32 @@ test('rejects empty and invalid path lists', () => {
 
 test('builds an exact changed-package Turbo filter', () => {
   const args = createTurboArguments({ baseSha: BASE_SHA, headSha: HEAD_SHA });
-  assert.deepEqual(args.slice(0, 8), [
+  assert.deepEqual(args.slice(0, 6), [
     'exec',
     'turbo',
     'run',
-    'build',
     'typecheck',
     'test',
-    'lint',
     '--filter',
   ]);
-  assert.equal(args[8], `[${BASE_SHA}...${HEAD_SHA}]`);
-  assert.equal(args[9], '--log-order=grouped');
-  assert.equal(args[10], '--output-logs=errors-only');
+  assert.equal(args[6], `[${BASE_SHA}...${HEAD_SHA}]`);
+  assert.equal(args[7], '--log-order=grouped');
+  assert.equal(args[8], '--output-logs=errors-only');
+});
+
+test('allows affected Turbo task escalation through CI_AFFECTED_TASKS', () => {
+  const previousTasks = process.env.CI_AFFECTED_TASKS;
+  process.env.CI_AFFECTED_TASKS = 'build,typecheck,test,lint';
+  try {
+    const args = createTurboArguments({ baseSha: BASE_SHA, headSha: HEAD_SHA });
+    assert.deepEqual(args.slice(3, 7), ['build', 'typecheck', 'test', 'lint']);
+  } finally {
+    if (previousTasks === undefined) {
+      delete process.env.CI_AFFECTED_TASKS;
+    } else {
+      process.env.CI_AFFECTED_TASKS = previousTasks;
+    }
+  }
 });
 
 test('rejects missing or malformed Turbo comparison refs', () => {

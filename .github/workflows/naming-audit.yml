@@ -11,7 +11,6 @@ on:
       - 'packages/*/src/**/*.tsx'
       - 'plugins/*-plugin/src/**/*.ts'
       - 'plugins/*-plugin/src/**/*.tsx'
-      - 'scripts/naming-audit-baseline.json'
       - 'scripts/naming-audit/**'
       - 'scripts/naming-audit.ts'
 
@@ -50,7 +49,8 @@ jobs:
           echo "### Naming audit" >> "${GITHUB_STEP_SUMMARY}"
           echo "- base: ${NAMING_AUDIT_BASE_SHA}" >> "${GITHUB_STEP_SUMMARY}"
           echo "- baseline: scripts/naming-audit-baseline.json" >> "${GITHUB_STEP_SUMMARY}"
-          echo "- scope: current changed files only unless audit implementation changed" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- scope: current changed files only unless audit implementation or workflow changed" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- baseline verification: handled by the dedicated baseline workflow" >> "${GITHUB_STEP_SUMMARY}"
           pnpm tsx scripts/naming-audit.ts \
             --ci \
             --changed-since "${NAMING_AUDIT_BASE_SHA}" \

@@ -1,6 +1,5 @@
 const FULL_SCAN_FILES: ReadonlySet<string> = new Set([
   '.github/workflows/naming-audit.yml',
-  'scripts/naming-audit-baseline.json',
   'scripts/naming-audit.ts',
 ]);
 

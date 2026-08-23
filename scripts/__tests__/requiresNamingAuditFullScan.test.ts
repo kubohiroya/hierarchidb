@@ -5,7 +5,6 @@ import { requiresNamingAuditFullScan } from '../naming-audit/requiresNamingAudit
 describe('requiresNamingAuditFullScan', () => {
   it.each([
     '.github/workflows/naming-audit.yml',
-    'scripts/naming-audit-baseline.json',
     'scripts/naming-audit.ts',
     'scripts/naming-audit/fileScanner.ts',
     'scripts\\naming-audit\\rules\\primaryExportRule.ts',
@@ -16,7 +15,9 @@ describe('requiresNamingAuditFullScan', () => {
   it.each([
     'app/src/components/AppLogoIcon.tsx',
     'plugins/shape-plugin/src/ui/ShapePanel.tsx',
+    '.github/workflows/naming-audit-baseline.yml',
     'scripts/__tests__/fileScanner.test.ts',
+    'scripts/naming-audit-baseline.json',
     'docs/ts-file-naming-guideline.md',
   ])('returns false for ordinary path %s', (filePath) => {
     expect(requiresNamingAuditFullScan(filePath)).toBe(false);
