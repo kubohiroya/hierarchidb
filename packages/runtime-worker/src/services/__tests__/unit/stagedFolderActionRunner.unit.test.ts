@@ -343,6 +343,119 @@ describe('runStagedFolderAction', () => {
     expect(dependencies.runMapImageCaptureAction).not.toHaveBeenCalled();
   });
 
+  it('runs export file actions through the injected export runner and stores action results', async () => {
+    const runExportFileAction = vi.fn(async () => ({
+      type: 'export-csv' as const,
+      status: 'completed' as const,
+      outputPath: '/tmp/locations.csv',
+      entityType: 'location' as const,
+      rowCount: 2,
+    }));
+    const dependencies = createDependencies({ runExportFileAction });
+    const action = {
+      type: 'export-csv' as const,
+      entityType: 'location' as const,
+      source: { path: '.' },
+      output: { path: 'locations.csv' },
+      columns: ['name', 'lat', 'lng'],
+    };
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-export-csv' as NodeId,
+      sourceNodeId: 'source-export-csv' as NodeId,
+      config: createConfig({
+        actions: [action],
+      }),
+    });
+
+    expect(runExportFileAction).toHaveBeenCalledWith({
+      action,
+      actionIndex: 0,
+      config: expect.any(Object),
+      stagingRootNodeId: 'staging-root',
+      runId: 'run-export-csv',
+    });
+    expect(result).toMatchObject({
+      status: 'completed',
+      actionResults: [
+        {
+          type: 'export-csv',
+          status: 'completed',
+          outputPath: '/tmp/locations.csv',
+          entityType: 'location',
+          rowCount: 2,
+        },
+      ],
+    });
+  });
+
+  it('records failure when export file action has no configured runner', async () => {
+    const dependencies = createDependencies();
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-missing-export' as NodeId,
+        sourceNodeId: 'source-missing-export' as NodeId,
+        config: createConfig({
+          actions: [
+            {
+              type: 'export-xlsx',
+              entityType: 'route',
+              source: { path: '.' },
+              output: { path: 'routes.xlsx' },
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow(/export-xlsx action runner is not configured/);
+    await expect(store.getRun('run-missing-export' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      error: 'export-xlsx action runner is not configured',
+      currentAction: {
+        actionIndex: 0,
+        actionType: 'export-xlsx',
+      },
+    });
+  });
+
+  it('rejects export runner results that do not match the executed action', async () => {
+    const dependencies = createDependencies({
+      runExportFileAction: vi.fn(async () => ({
+        type: 'export-xlsx' as const,
+        status: 'completed' as const,
+        outputPath: '/tmp/locations.xlsx',
+        entityType: 'location' as const,
+        rowCount: 2,
+        sheetName: 'location',
+      })),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-export-mismatch' as NodeId,
+        sourceNodeId: 'source-export-mismatch' as NodeId,
+        config: createConfig({
+          actions: [
+            {
+              type: 'export-csv',
+              entityType: 'location',
+              source: { path: '.' },
+              output: { path: 'locations.csv' },
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow(
+      /export action result type export-xlsx does not match action type export-csv/
+    );
+    await expect(store.getRun('run-export-mismatch' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      error: 'export action result type export-xlsx does not match action type export-csv',
+    });
+  });
+
   it('records failure when map image capture has no configured runner', async () => {
     const dependencies = createDependencies();
 

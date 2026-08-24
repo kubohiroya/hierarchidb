@@ -92,10 +92,13 @@ export type {
   StagedFolderActionPendingReference,
   StagedFolderActionProgressCounts,
   StagedFolderActionReferenceWarning,
+  StagedFolderActionResult,
   StagedFolderActionRunPhase,
   StagedFolderActionRunRecord,
   StagedFolderActionRunRecordPatch,
   StagedFolderActionRunStatus,
+  StagedFolderExportCsvActionResult,
+  StagedFolderExportXlsxActionResult,
 } from './StagedFolderActionProgressTypes.js';
 export {
   assertStagedFolderActionRunRecord,

@@ -135,6 +135,7 @@ type StagedFolderAction =
 - `export-csv.source.path` / `export-xlsx.source.path` は staging root からの相対 node path。`.` は staging root 自身を表す。
 - `export-csv.output.path` / `export-xlsx.output.path` は config file 所在 directory からの相対 file path。絶対 path、NUL、`..`、空 segment を禁止する。
 - `export-xlsx.output.sheetName` を指定する場合は、Excel worksheet 名として有効な 31 文字以下の non-empty trimmed string でなければならない。
+- `export-xlsx.output.sheetName` が未指定の場合、実行時の shared export file host は `entityType` (`location` / `route`) を sheet name として使う。
 - `map-image-capture` action の `mode` は `map-ui` のみ有効。
 - `staging.mode: permanent-copy` の場合、CLI の `--output-parent-node-id` が必須。
 - `staging.mode: temporary-copy` の場合、CLI の `--output-parent-node-id` は不要。system-managed `temporary-folder` に copy-on-write node tree を作成する。

@@ -45,6 +45,24 @@ const mapCaptureConfig: StagedFolderActionConfig = {
   ],
 };
 
+const exportFileConfig: StagedFolderActionConfig = {
+  ...emptyConfig,
+  actions: [
+    {
+      type: 'export-csv',
+      entityType: 'location',
+      source: { path: '.' },
+      output: { path: 'locations.csv' },
+    },
+    {
+      type: 'export-xlsx',
+      entityType: 'route',
+      source: { path: 'routes' },
+      output: { path: 'routes.xlsx' },
+    },
+  ],
+};
+
 describe('createStagedFolderActionCliExecutionHost', () => {
   it('bridges non-dry-run CLI execution into the injected runner', async () => {
     vi.useFakeTimers();
@@ -265,6 +283,72 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it('includes completed CSV and XLSX export action results from the runner record', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(exportFileConfig) });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async (input) =>
+        createCompletedRecord({
+          runId: input.runId,
+          sourceNodeId: input.sourceNodeId,
+          actionResults: [
+            {
+              type: 'export-csv',
+              status: 'completed',
+              outputPath: '/tmp/locations.csv',
+              entityType: 'location',
+              rowCount: 12,
+            },
+            {
+              type: 'export-xlsx',
+              status: 'completed',
+              outputPath: '/tmp/routes.xlsx',
+              entityType: 'route',
+              rowCount: 7,
+              sheetName: 'route',
+            },
+          ],
+        }),
+      createRunId: () => 'run-export-success',
+      now: () => 130,
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      actionResults: Array<{
+        type: string;
+        outputPath: string;
+        entityType: string;
+        rowCount: number;
+        sheetName?: string;
+      }>;
+    };
+
+    expect(exitCode).toBe(0);
+    expect(result).toMatchObject({
+      ok: true,
+      actionResults: [
+        {
+          type: 'export-csv',
+          outputPath: '/tmp/locations.csv',
+          entityType: 'location',
+          rowCount: 12,
+        },
+        {
+          type: 'export-xlsx',
+          outputPath: '/tmp/routes.xlsx',
+          entityType: 'route',
+          rowCount: 7,
+          sheetName: 'route',
+        },
+      ],
+    });
+  });
+
   it('maps missing map image capture host failures to the map-image-capture category', async () => {
     const io = createIo({ 'config.json': JSON.stringify(mapCaptureConfig) });
     const failedRecord = createFailedRecord({
@@ -314,6 +398,51 @@ describe('createStagedFolderActionCliExecutionHost', () => {
         category: 'map-image-capture',
         code: 'STAGED_FOLDER_ACTION_MAP_IMAGE_CAPTURE_HOST_NOT_CONFIGURED',
         actionType: 'map-image-capture',
+      },
+    });
+  });
+
+  it('maps missing export file host failures to export action categories', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(exportFileConfig) });
+    const failedRecord = createFailedRecord({
+      runId: 'run-export',
+      sourceNodeId: 'source-1',
+      currentAction: {
+        actionIndex: 0,
+        actionType: 'export-csv',
+        phase: 'starting',
+        percentage: 0,
+      },
+    });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async () => {
+        throw new Error('export-csv action runner is not configured');
+      },
+      getRun: async () => failedRecord,
+      createRunId: () => 'run-export',
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      actionIndex: number;
+      actionType: string;
+      error: { category: string; code: string; actionType: string };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      actionIndex: 0,
+      actionType: 'export-csv',
+      error: {
+        category: 'export-csv',
+        code: 'STAGED_FOLDER_ACTION_EXPORT_FILE_HOST_NOT_CONFIGURED',
+        actionType: 'export-csv',
       },
     });
   });
@@ -527,6 +656,7 @@ function createCompletedRecord(input: TestRunRecordInput): StagedFolderActionRun
     warnings: input.warnings ?? [],
     pendingReferences: input.pendingReferences ?? [],
     dependencyChanges: input.dependencyChanges ?? [],
+    actionResults: input.actionResults ?? [],
     buildSession: input.buildSession,
     startedAt: 100,
     completedAt: 115,
@@ -548,6 +678,7 @@ function createFailedRecord(input: TestRunRecordInput): StagedFolderActionRunRec
     warnings: [],
     pendingReferences: [],
     dependencyChanges: input.dependencyChanges ?? [],
+    actionResults: input.actionResults ?? [],
     startedAt: 100,
     completedAt: 115,
     updatedAt: 115,

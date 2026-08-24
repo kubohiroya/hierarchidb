@@ -753,9 +753,10 @@ action 追加時に `StagedFolderActionRunProgress.status` の top-level enum �
 - build artifact の geometry や cache binary を CSV / XLSX に暗黙展開してはならない。tabular export は Step2 local-file input が表す source data / editable field / reference field を対象にする。
 - stale edge、pending reference、orphaned edge がある場合、`includeDependencyStatus: true` では diagnostic status column を追加出力してよい。この column は Step2 import では未知カラムとして無視されるため、round-trip import 互換性を壊さない。`includeDependencyStatus: false` でも、stale/pending/orphaned が存在することは action result warning に残す。
 - column order は Step2 local-file input adapter が定義する canonical import/export order を既定とする。manifest の `columns` が指定された場合、export adapter が生成できない column、required column の欠落、Step2 import schema と互換でない required column set は fail-fast する。ただし Step2 import 側は file 内の未知カラムを無視する。
+- shared export file host は canonical column order を row data から推測してはならない。Step2 adapter が materialized rows と同時に canonical columns を返し、host はその columns を CSV/XLSX writer に渡す。
 - derived display column は、Step2 import schema が明示的に受け付ける field でない限り出力してはならない。UI 表示用の resolved label、distance、bbox、area、artifact-derived geometry などを再 import 可能な source column のように出力してはならない。
 
-`export-xlsx` の出力は workbook 形式とし、初期仕様では 1 entity type につき 1 worksheet を出力する。`output.sheetName` が未指定の場合、実装は Step2 local-file input adapter が定義する stable default sheet name を使ってよい。ただし空 sheet name、不正文字、重複 sheet name、Excel の上限を超える sheet name は fail-fast する。cell type は Step2 import schema の column metadata に従い、数値、真偽値、日付相当、文字列を区別してよいが、未知型を推測変換してはならない。
+`export-xlsx` の出力は workbook 形式とし、初期仕様では 1 entity type につき 1 worksheet を出力する。`output.sheetName` が未指定の場合、shared export file host は `entityType` (`location` / `route`) を stable default sheet name として使う。plugin adapter が entity type ごとの Step2 local-file input schema を拡張する場合も、未指定時の sheet name はこの shared default と一致させる。ただし空 sheet name、不正文字、重複 sheet name、Excel の上限を超える sheet name は fail-fast する。cell type は Step2 import schema の column metadata に従い、数値、真偽値、日付相当、文字列を区別してよいが、未知型を推測変換してはならない。
 
 CSV / XLSX export は canonical backup ではない。ただし本 action が出力する file は、同じ plugin version の Step2 local-file input で再指定できることを互換性要件とする。CSV / XLSX から既存 node へ差分 patch する action は別 action として設計する。
 
