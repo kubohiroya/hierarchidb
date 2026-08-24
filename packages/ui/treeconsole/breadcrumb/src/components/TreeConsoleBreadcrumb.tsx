@@ -3,6 +3,12 @@
  * eria-cartographTreeConsoleBreadcrumbUI
  */
 
+import {
+  isNodeBuildRequired,
+  resolveBuildAvailability,
+  resolveSubtreeBuildAvailability,
+} from '@hierarchidb/build-api';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
@@ -30,6 +36,77 @@ import { getPluginIconColor, isFolderNodeType } from '~/utils/nodeTypeIconColor'
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
 const buildActionNodeTypes = new Set(['shape', 'route', 'styler']);
+
+const resolveBreadcrumbNodeId = (node: BreadcrumbNode | null | undefined): string | undefined => {
+  const nodeId = node?.id ?? node?.treeNodeId;
+  return nodeId === undefined ? undefined : String(nodeId);
+};
+
+export type BreadcrumbContextMenuBuildState = {
+  buildRequired: boolean;
+  canBuild: boolean;
+};
+
+export const resolveBreadcrumbContextMenuBuildState = (
+  node: BreadcrumbNode | null,
+  activeBuildNodeIds?: ReadonlySet<string>,
+  descendants: readonly BreadcrumbNode[] = []
+): BreadcrumbContextMenuBuildState => {
+  const rawNodeType = String(node?.nodeType ?? node?.type ?? '');
+  const normalizedNodeType = rawNodeType.toLowerCase();
+  const isFolder = isFolderNodeType(node?.nodeType ?? node?.type);
+  const isBuildCandidateNodeType = buildActionNodeTypes.has(normalizedNodeType) || isFolder;
+  const nodeId = resolveBreadcrumbNodeId(node);
+  const buildNode =
+    node !== null && nodeId && normalizedNodeType
+      ? {
+          id: nodeId as NodeId,
+          nodeType: rawNodeType as NodeType,
+          metadata: node.metadata,
+          draftMetadata: node.draftMetadata,
+        }
+      : null;
+  const activeNodeIds =
+    activeBuildNodeIds === undefined
+      ? undefined
+      : new Set(Array.from(activeBuildNodeIds, (nodeId) => nodeId as NodeId));
+  const availability =
+    buildNode && isFolder
+      ? resolveSubtreeBuildAvailability({
+          root: buildNode,
+          descendants: descendants
+            .filter((descendant) => resolveBreadcrumbNodeId(descendant) !== nodeId)
+            .filter(
+              (descendant) =>
+                resolveBreadcrumbNodeId(descendant) !== undefined &&
+                String(descendant.nodeType ?? descendant.type ?? '').length > 0
+            )
+            .map((descendant) => ({
+              id: resolveBreadcrumbNodeId(descendant) as NodeId,
+              nodeType: String(descendant.nodeType ?? descendant.type ?? '') as NodeType,
+              metadata: descendant.metadata,
+              draftMetadata: descendant.draftMetadata,
+            })),
+          canBuildNodeType: (nodeType) =>
+            buildActionNodeTypes.has(String(nodeType).trim().toLowerCase()),
+          activeNodeIds,
+        })
+      : buildNode && isBuildCandidateNodeType
+        ? resolveBuildAvailability({
+            candidates: [buildNode],
+            activeNodeIds,
+          })
+        : null;
+
+  return {
+    buildRequired: availability?.requiredTargets.length
+      ? availability.requiredTargets.length > 0
+      : buildNode
+        ? isNodeBuildRequired(buildNode)
+        : false,
+    canBuild: availability?.canStartBuild === true,
+  };
+};
 
 const parseDescendantPayload = (event: DragEvent<HTMLElement>): string[] => {
   const raw = event.dataTransfer?.getData(DESCENDANT_MIME);
@@ -191,13 +268,11 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     contextMenuNodeId && props.archiveDisabledNodeIds?.has(String(contextMenuNodeId))
   );
   const canArchiveFromContextMenu = !isRootContext && !isArchiveDisabledForContextNode;
-  const contextMenuNodeType = String(
-    contextMenuNode?.nodeType ?? contextMenuNode?.type ?? ''
-  ).toLowerCase();
-  const isBuildActionNodeType = buildActionNodeTypes.has(contextMenuNodeType);
-  const contextMenuBuildRequired =
-    Boolean(contextMenuNode?.draftMetadata?.buildMetadata?.buildRequired) ||
-    Boolean(contextMenuNode?.metadata?.buildMetadata?.buildRequired);
+  const contextMenuBuildState = resolveBreadcrumbContextMenuBuildState(
+    contextMenuNode,
+    props.activeBuildNodeIds,
+    contextMenuNodeId ? props.collectDescendantNodes?.(String(contextMenuNodeId)) : []
+  );
 
   return (
     <>
@@ -237,10 +312,12 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
               const baseIconColor = rainbowColors[fallbackDepth % rainbowColors.length];
               const nodeType =
                 nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
-              const isBuildRequiredForNode = Boolean(
-                nodeWithAbsolute.draftMetadata?.buildMetadata?.buildRequired ||
-                  nodeWithAbsolute.metadata?.buildMetadata?.buildRequired
-              );
+              const isBuildRequiredForNode = isNodeBuildRequired({
+                id: nodeId as NodeId,
+                nodeType: nodeType as NodeType,
+                metadata: nodeWithAbsolute.metadata,
+                draftMetadata: nodeWithAbsolute.draftMetadata,
+              });
               const manifestIconColor = getPluginIconColor(nodeType);
               const iconColor = isFolderNodeType(nodeType)
                 ? baseIconColor
@@ -416,12 +493,8 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
             onContextAction(`open-step:${step}`, contextMenuNode, { source: 'breadcrumb' });
           }
         }}
-        buildRequired={contextMenuBuildRequired}
-        canBuild={
-          isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)
-            ? contextMenuBuildRequired
-            : isBuildActionNodeType
-        }
+        buildRequired={contextMenuBuildState.buildRequired}
+        canBuild={contextMenuBuildState.canBuild}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
         onToggleVisible={(nextVisible) => {

@@ -1,6 +1,7 @@
 import { type NodeId, type NodeType, toNodeId, toNodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type {
+  BreadcrumbNode,
   OpenStepOption,
   TreeConsoleBreadcrumbProps,
   TreeConsoleBreadcrumbRendererProps,
@@ -299,6 +300,38 @@ export function useTreeConsolePanel({
     }
     return new Set(Array.from(buildSessionIndicator.runningNodeIds, (id) => String(id)));
   }, [buildSessionIndicator?.runningNodeIds]);
+  const activeBuildNodeIds = useMemo<ReadonlySet<string>>(() => {
+    if (!buildSessionIndicator?.activeNodeIds) {
+      return new Set<string>();
+    }
+    return new Set(Array.from(buildSessionIndicator.activeNodeIds, (id) => String(id)));
+  }, [buildSessionIndicator?.activeNodeIds]);
+  const collectBreadcrumbDescendantNodes = useMemo(
+    () =>
+      (nodeId: string): readonly BreadcrumbNode[] => {
+        const result: BreadcrumbNode[] = [];
+        const visited = new Set<string>();
+        const queue = [toNodeId(nodeId)];
+
+        while (queue.length > 0) {
+          const parentId = queue.shift();
+          if (parentId === undefined) break;
+          if (visited.has(String(parentId))) continue;
+          visited.add(String(parentId));
+
+          for (const child of nodeIndex.getValuesBySecondary(parentId)) {
+            const childBreadcrumbNode = child as BreadcrumbNode;
+            const childNodeId = childBreadcrumbNode.id ?? childBreadcrumbNode.treeNodeId;
+            if (childNodeId === undefined) continue;
+            result.push(child as BreadcrumbNode);
+            queue.push(childNodeId as NodeId);
+          }
+        }
+
+        return result;
+      },
+    [nodeIndex]
+  );
 
   const defaultBreadcrumbProps = useMemo<DefaultBreadcrumbProps>(
     () => ({
@@ -316,6 +349,8 @@ export function useTreeConsolePanel({
       onContextAction: onBreadcrumbContextAction,
       resolveOpenSteps,
       archiveDisabledNodeIds,
+      activeBuildNodeIds,
+      collectDescendantNodes: collectBreadcrumbDescendantNodes,
       leftSlot,
     }),
     [
@@ -326,6 +361,8 @@ export function useTreeConsolePanel({
       pageNodeId,
       resolveOpenSteps,
       archiveDisabledNodeIds,
+      activeBuildNodeIds,
+      collectBreadcrumbDescendantNodes,
       treeId,
       archiveAction,
       useArchiveColumns,

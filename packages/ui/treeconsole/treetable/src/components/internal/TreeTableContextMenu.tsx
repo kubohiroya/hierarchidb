@@ -3,6 +3,7 @@
  * Wraps the TreeTable node context menu interactions with controller actions.
  */
 
+import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName } from '@hierarchidb/tree-api';
 import { type NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { type ComponentType } from 'react';
@@ -18,6 +19,7 @@ interface TreeTableContextMenuProps {
   treeId?: string;
   controller?: TreeTableController;
   buildSessionIndicator?: BuildSessionIndicator;
+  collectDescendantIds?: (nodeId: NodeId) => string[];
   ContextMenuComponent: ComponentType<NodeContextMenuProps>;
 }
 
@@ -27,6 +29,7 @@ export function TreeTableContextMenu({
   treeId,
   controller,
   buildSessionIndicator,
+  collectDescendantIds,
   ContextMenuComponent,
 }: TreeTableContextMenuProps) {
   const {
@@ -62,6 +65,7 @@ export function TreeTableContextMenu({
     onClose,
     controller,
     buildSessionIndicator,
+    collectDescendantIds,
   });
 
   return (

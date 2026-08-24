@@ -1,7 +1,7 @@
 {
   "name": "@hierarchidb/build-api",
   "version": "0.1.0",
-  "private": true,
+  "description": "Shared build API contracts and availability helpers for HierarchiDB",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -9,14 +9,22 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
   "peerDependencies": {
     "@hierarchidb/core-types": "workspace:*"
   },

@@ -193,6 +193,7 @@ export function TreeTableCore({
         treeId={treeId}
         controller={controller ?? undefined}
         buildSessionIndicator={buildSessionIndicator}
+        collectDescendantIds={structure.collectDescendantIds}
         ContextMenuComponent={ContextMenuComponent}
       />
     </StyledTableContainer>

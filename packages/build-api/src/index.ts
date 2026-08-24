@@ -1,4 +1,23 @@
 export {
+  type BuildAvailability,
+  type BuildAvailabilityDetail,
+  type BuildAvailabilityDetailKind,
+  type BuildAvailabilityDetailSeverity,
+  type BuildAvailabilityDiagnostic,
+  type BuildAvailabilityNode,
+  type BuildAvailabilityReason,
+  type BuildAvailabilityStatus,
+  type BuildDependencyAvailabilitySummary,
+  type BuildPluginPrerequisiteFailure,
+  type DependencyEdgeStatus,
+  type DependencyEdgeStatusCounts,
+  isNodeBuildRequired,
+  type ResolveBuildAvailabilityInput,
+  type ResolveSubtreeBuildAvailabilityInput,
+  resolveBuildAvailability,
+  resolveSubtreeBuildAvailability,
+} from './BuildAvailabilityResolver.js';
+export {
   CanonicalBuildInputError,
   type CanonicalBuildInputErrorCode,
   type CanonicalBuildInputErrorDetails,

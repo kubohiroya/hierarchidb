@@ -97,6 +97,45 @@ describe('createStagedFolderActionWorkerExecutionHost', () => {
     expect(getBuildSessionStatus).not.toHaveBeenCalled();
   });
 
+  it('passes an injected map image capture runner to the core runner dependencies', async () => {
+    const runMapImageCaptureAction = vi.fn(async () => {});
+    const host = createStagedFolderActionWorkerExecutionHost({
+      coreDB: {} as never,
+      progressStore: {} as never,
+      getNode: vi.fn(
+        async () =>
+          ({
+            id: 'stage-1',
+            nodeType: 'shape' as NodeType,
+            metadata: { buildMetadata: { buildRequired: true } },
+          }) as never
+      ),
+      listDescendants: vi.fn(async () => []),
+      canBuildNodeType: (nodeType) => nodeType === 'shape',
+      startBuildSession: vi.fn(async () => createStatus('completed')),
+      getBuildSessionStatus: vi.fn(async () => createStatus('completed')),
+      runMapImageCaptureAction,
+      now: () => 1,
+    });
+
+    await host({
+      runId: 'run-1' as NodeId,
+      sourceNodeId: 'source-1' as NodeId,
+      config: {
+        version: 1,
+        staging: { mode: 'patch-source', cleanup: 'retain' },
+        overlay: { nodes: [] },
+        actions: [{ type: 'build', mode: 'session-manager' }],
+      },
+    });
+
+    expect(runtimeWorkerMocks.createStagedFolderActionCoreRunnerDependencies).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runMapImageCaptureAction,
+      })
+    );
+  });
+
   it('fails when the canonical build reaches a non-completed terminal state', async () => {
     const host = createStagedFolderActionWorkerExecutionHost({
       coreDB: {} as never,
@@ -213,7 +252,14 @@ describe('collectStagedFolderActionBuildTargets', () => {
       canBuildNodeType: (nodeType) => nodeType === 'shape',
     });
 
-    expect(collection).toEqual({ candidates: [root], targets: [root] });
+    expect(collection).toMatchObject({
+      candidates: [root],
+      targets: [root],
+      availability: {
+        status: 'build-required',
+        canStartBuild: true,
+      },
+    });
     expect(listDescendants).not.toHaveBeenCalled();
   });
 
@@ -231,7 +277,14 @@ describe('collectStagedFolderActionBuildTargets', () => {
       canBuildNodeType: (nodeType) => nodeType === 'shape',
     });
 
-    expect(collection).toEqual({ candidates: [root], targets: [] });
+    expect(collection).toMatchObject({
+      candidates: [root],
+      targets: [],
+      availability: {
+        status: 'build-not-required',
+        canStartBuild: false,
+      },
+    });
     expect(listDescendants).not.toHaveBeenCalled();
   });
 
@@ -259,9 +312,13 @@ describe('collectStagedFolderActionBuildTargets', () => {
       canBuildNodeType: (nodeType) => nodeType === 'shape',
     });
 
-    expect(collection).toEqual({
+    expect(collection).toMatchObject({
       candidates: [buildRequiredShape, notRequiredShape],
       targets: [buildRequiredShape],
+      availability: {
+        status: 'build-required',
+        canStartBuild: true,
+      },
     });
   });
 });

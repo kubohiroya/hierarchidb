@@ -3,12 +3,14 @@ import type {
   BuildSessionStatusValue,
   CanonicalBuildInputSource,
 } from '@hierarchidb/build-api';
+import { resolveSubtreeBuildAvailability } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {
   type CoreDB,
   createStagedFolderActionCoreRunnerDependencies,
   runStagedFolderAction,
   type StagedFolderActionProgressStore,
+  type StagedFolderActionRunnerDependencies,
 } from '@hierarchidb/runtime-worker';
 import type { StagedFolderActionRunRecord } from '@hierarchidb/staged-folder-action';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -30,6 +32,7 @@ export type CreateStagedFolderActionWorkerExecutionHostInput = {
     inputSource: CanonicalBuildInputSource
   ): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
+  runMapImageCaptureAction?: StagedFolderActionRunnerDependencies['runMapImageCaptureAction'];
   now?: () => number;
   delay?: (ms: number) => Promise<void>;
   buildPollIntervalMs?: number;
@@ -54,6 +57,7 @@ export function createStagedFolderActionWorkerExecutionHost({
   canBuildNodeType,
   startBuildSession,
   getBuildSessionStatus,
+  runMapImageCaptureAction,
   now = Date.now,
   delay = defaultDelay,
   buildPollIntervalMs = DEFAULT_BUILD_POLL_INTERVAL_MS,
@@ -64,6 +68,7 @@ export function createStagedFolderActionWorkerExecutionHost({
       coreDB,
       progressStore,
       now,
+      runMapImageCaptureAction,
       runBuildAction: async ({ stagingRootNodeId }) => {
         const stagingRoot = await getNode(stagingRootNodeId);
         if (!stagingRoot) {
@@ -128,6 +133,7 @@ type CollectStagedFolderActionBuildTargetsInput = {
 export type StagedFolderActionBuildTargetCollection = {
   candidates: TreeNode[];
   targets: TreeNode[];
+  availability: ReturnType<typeof resolveSubtreeBuildAvailability<TreeNode>>;
 };
 
 export async function collectStagedFolderActionBuildTargets({
@@ -135,23 +141,20 @@ export async function collectStagedFolderActionBuildTargets({
   listDescendants,
   canBuildNodeType,
 }: CollectStagedFolderActionBuildTargetsInput): Promise<StagedFolderActionBuildTargetCollection> {
-  if (canBuildNodeType(stagingRoot.nodeType as NodeType)) {
-    return {
-      candidates: [stagingRoot],
-      targets: isBuildRequired(stagingRoot) ? [stagingRoot] : [],
-    };
-  }
-  const descendants = await listDescendants(stagingRoot.id as NodeId);
-  const candidates = descendants.filter((node) => canBuildNodeType(node.nodeType as NodeType));
+  const descendants = canBuildNodeType(stagingRoot.nodeType as NodeType)
+    ? []
+    : await listDescendants(stagingRoot.id as NodeId);
+  const availability = resolveSubtreeBuildAvailability({
+    root: stagingRoot,
+    descendants,
+    canBuildNodeType,
+  });
   return {
-    candidates,
-    targets: candidates.filter(isBuildRequired),
+    candidates: [...availability.candidates],
+    targets: [...availability.requiredTargets],
+    availability,
   };
 }
-
-const isBuildRequired = (node: TreeNode): boolean =>
-  Boolean(node.draftMetadata?.buildMetadata?.buildRequired) ||
-  Boolean(node.metadata?.buildMetadata?.buildRequired);
 
 type WaitForStagedFolderActionBuildTerminalInput = {
   nodeType: NodeType;

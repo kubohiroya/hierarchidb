@@ -432,6 +432,8 @@ vector tile などの build artifact に reference が地理的図形データ�
 
 artifact dependency edge は build artifact / dependency index / mount record から追跡できなければならない。TreeNode.data に参照元セットを埋め込まず、artifact/build result 側が作成した dependency index を SSOT とする。編集 UI、CLI overlay、`patch-source`、import/mount cleanup は dependency index を逆引きし、影響を受ける artifact と incremental rebuild target を特定する。
 
+Phase 2 child #1588 では、dependency index の永続化境界を runtime-worker 管理の dedicated Dexie store として導入する。CoreDB の tree/node schema は YAML activation の canonical native version と強く結合しているため、この child issue では CoreDB 本体の version を上げない。dependency lifecycle store は `TreeNode.data` ではなく artifact 側 index を SSOT とし、後続の edit/overlay/patch-source 経路は source data の変更と lifecycle store 更新を同一 action sequence の必須 step として扱う。source data と lifecycle state を同じ CoreDB transaction へ統合するかどうかは、YAML canonical DB versioning と合わせて別 issue で再確定する。
+
 dependency edge は少なくとも以下の状態を持つ。
 
 | Status | 意味 |
@@ -481,10 +483,15 @@ build availability は少なくとも以下の状態を持つ。
 | `not-buildable` | node/folder が build target を持たない、build prerequisite を満たさない、dependency error / orphaned edge / schema error により build を開始できない | disabled |
 | `build-not-required` | build 可能だが、現在の source data と artifact が整合しており、rebuild すべき target がない | disabled |
 | `build-required` | build 可能で、未生成 artifact、stale artifact、または再実行が必要な build target が存在する | enabled |
+| `build-blocked-by-active-session` | build は必要だが、同一 target の build session が `queued` または `running` として既に存在する | disabled |
 
 `not-buildable` と `build-not-required` はどちらも button disabled だが、ユーザー向け理由は区別して表示する。`not-buildable` では不足 prerequisite、dependency error、orphaned edge、schema error、unsupported plugin participant などの原因を表示し、diagnostics / repair flow への導線を出す。`build-not-required` では「最新」または「ビルド不要」であることを表示し、エラーとして扱わない。
 
-`build-required` の場合だけ通常の build button を enabled にする。button 押下時には既存 folder build queue / session manager 経由で build session を作成する。既に同一 node/folder の build が `queued` または `running` の場合は、availability が `build-required` であっても重複投入を避けるため button は disabled とし、既存 session への導線を表示する。
+`build-required` の場合だけ通常の build button を enabled にする。button 押下時には既存 folder build queue / session manager 経由で build session を作成する。既に同一 node/folder の build が `queued` または `running` の場合は、availability を `build-blocked-by-active-session` として扱い、重複投入を避けるため button は disabled とし、既存 session への導線を表示する。
+
+Phase 1 の初期 resolver は `@hierarchidb/build-api` の `resolveBuildAvailability` / `resolveSubtreeBuildAvailability` を SSOT とする。この初期版は canonical build API availability、`metadata.buildMetadata.buildRequired` / `draftMetadata.buildMetadata.buildRequired`、呼び出し側から渡された active session set による重複抑止を評価する。TreeConsole UI は active session set を渡して重複投入を抑止する。TreeTable と Breadcrumb は folder context でロード済み descendants を resolver に渡し、配下の required target と active session を同じ判定で扱う。WorkerAPI execution host は build target collection に同じ resolver を使うが、active session preflight は標準 Worker host の追加入力接続後に同じ resolver 境界へ統合する。
+
+Phase 2 child #1584 では、同じ resolver 境界に dependency-aware な availability contract を追加する。`DependencyEdgeStatus` は `active` / `stale` / `rebuilding` / `resolved` / `orphaned` の shared type とし、artifact lifecycle summary、plugin prerequisite failure、dependency/schema/unsupported participant diagnostics を resolver input に渡せる。resolver output は従来の `status` / `reason` に加えて `details[]` を返し、UI は disabled Build entry の理由を独自推測せずこの detail を表示する。`stale` edge が存在する場合は、対応する rebuild target ID が input に含まれていなければ contract violation として fail-fast する。`orphaned` edge、dependency error、schema error、unsupported plugin participant、plugin prerequisite failure は `not-buildable` とし、`build-not-required` と混同しない。`rebuilding` edge は対応 target ID を要求し、既に rebuild が予約または実行中であることを `build-blocked-by-active-session` 相当の disabled reason/detail として表現する。
 
 build session は modal dialog として UI 全体をブロックしてはならない。build button 押下後、session manager が閉じていても新しい session は登録され、AppBar 上の icon / badge / indicator により running session の存在を確認できなければならない。詳細進捗、pause/resume/cancel、error detail は AppBar から session manager を開いて確認する。
 
@@ -941,7 +948,8 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 - Phase 0 実装では temporary-copy / permanent-copy について CoW subtree 作成、Map UI/capture の TreeQueryService 経由 effective data 読み取り、canonical build session 開始時の CoW effective committed data 読み取りを接続済みである。Preview feature table、TreeTable、CSV/XLSX export、diagnostics への resolver 接続は後続 phase で行う。
 - Phase 0 実装では runtime-worker が staged-folder-action runner 用の core dependency adapter を提供する。この adapter は `temporary-copy` の CoW staging、`permanent-copy` の output parent 配下 CoW staging、`patch-source` の source node staging、overlay 適用、temporary-copy cleanup policy を CoreDB 上で実行する。
 - Phase 0 実装では WorkerAPI に `runStagedFolderAction(input)` を追加し、WebUI または後続 CLI bridge から同一 application profile の Worker 内 runner を起動できる。WebUI 側の標準入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` も同じ WorkerAPI method に転送する。WorkerAPI execution host は staging/overlay/action/cleanup の状態を `StagedFolderActionProgressStore` に記録する。`build` action では、staging root 自身が canonical build API を持つ場合は root を build candidate とし、folder など直接 build できない場合は配下 descendants から canonical build API を持つ node を candidate として収集する。candidate のうち `buildRequired` な node だけを build target とし、candidate がない場合は fail-fast、candidate はあるが target がない場合は no-op completed とする。各 build target は既存 canonical build session を開始し、terminal state まで待つ。`completed` 以外の terminal state は action failure として扱う。
-- Phase 0 の WorkerAPI execution host は browser handoff をまだ接続しない。`map-image-capture` intent、Map UI readiness、capture page port helper、canvas nonblank 判定は実装済みだが、WorkerAPI から `map-image-capture` を end-to-end 実行するには後続 phase で headed/headless browser host を注入する必要がある。
+- Phase 1 初期実装では `@hierarchidb/build-api` に build availability resolver を追加し、WorkerAPI execution host の build target collection、TreeTable context menu、Breadcrumb context menu、通常 TreeConsole build flow の `buildRequired` 判定を共有 API 経由に寄せる。TreeTable context menu と Breadcrumb context menu は folder context でロード済み descendants と active session set を resolver に渡す。通常 TreeConsole build flow は現時点で `isNodeBuildRequired` を共有し、完全な availability status 表現は後続 phase で統合する。
+- Phase 1 初期の WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へ渡せる。`map-image-capture` intent、Map UI readiness、capture page port helper、canvas nonblank 判定は実装済みだが、標準 Worker bootstrap / CLI bridge はまだ headed/headless browser host を注入しないため、未注入時の WorkerAPI run は `map-image-capture action runner is not configured` として fail-fast する。
 - 追加定義が必要なのは、build 入力が TreeNode.data 以外の Group/Relation store に存在する plugin の copy-on-write 参照または materialize participant 境界である。
 - 現状の Preview / Map UI feature table は read-only 一覧としては使えるが、DependencyEdgeStatus 表示、field-level status、dependency-aware cell editing、map feature popover 連動、stale 化と incremental rebuild plan 作成の入口としては不足している。この不足分は本仕様で追加仕様として定義し、ただちに Issue 化せず次 phase で詳細設計から分解する。
 
@@ -955,12 +963,12 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 6. artifact dependency index と `active/stale/rebuilding/resolved/orphaned` lifecycle を実装する。
 7. target field 編集時に stale 化と incremental rebuild plan を同一 transaction/action sequence で作る。
 8. stale artifact の preview/capture/export/build policy を実装する。
-9. folder/node ごとの build availability resolver を実装し、`not-buildable` / `build-not-required` / `build-required` によって build button disabled 状態と理由表示を制御する。
+9. build availability resolver を dependency lifecycle と plugin-specific prerequisite へ拡張し、disabled 理由表示と diagnostics / repair flow への導線を完成させる。Phase 1 初期版では canonical build API availability、`buildRequired`、呼び出し側が active session set を渡せる resolver contract まで実装済みである。
 10. build button 押下後は modal blocking ではなく AppBar session indicator / session manager に登録し、対象 data / draftData field だけを canonical session state に基づいて edit lock する。
 11. build 完了後の対象 field 編集で stale edge を発生させ、個別 UI、node dialog、TreeTable / 上位 folder の aggregate warning、build availability に伝播させる。
 12. TreeTable / node 詳細 Dialog に集合 node の dependency status 集約 badge と診断導線を実装する。
 13. Preview / Map UI の feature table row、cell editing、feature click toast/popover、編集 menu に個別 feature の dependency status と修正導線を実装する。これは即時実装 Issue ではなく、まず read-only 現状との差分と editable table substrate を固める design phase を先行する。
-14. staging root を既存 folder build queue / session manager に接続する。Phase 0 では WorkerAPI execution host が build action を canonical build session に接続済みであり、root が直接 build できない場合の descendants build target collection も実装済みである。plugin 固有 prerequisite、build availability resolver、session manager 詳細 UI は後続 phase で行う。
+14. staging root を既存 folder build queue / session manager に接続する。Phase 0 では WorkerAPI execution host が build action を canonical build session に接続済みであり、root が直接 build できない場合の descendants build target collection も実装済みである。plugin 固有 prerequisite、dependency-aware availability 拡張、session manager 詳細 UI は後続 phase で行う。
 15. CLI 主導 phase を Worker / IndexedDB progress state に報告する。Phase 0 CLI は dry-run validation host までであり、WorkerAPI execution host への CLI bridge は後続 phase で行う。
 16. `map-image-capture` action intent を実装する。Phase 0 では intent store、WorkerAPI の intent read、Map UI readiness、browser page port helper を実装済みである。
 17. `export-csv` / `export-xlsx` action intent、location/route Step2 local-file import/export adapter、TreeTable context menu `Export` submenu item を実装する。

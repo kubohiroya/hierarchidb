@@ -8,6 +8,14 @@ const isRecord = (value: unknown): value is JsonRecord =>
 
 export type CompiledFunction = (data: unknown) => JsonRecord;
 
+interface CompiledRule {
+  sourceProperty: string;
+  sourcePath: string[];
+  targetPath: string[];
+  transformFunction?: TransformFunction;
+  defaultValue?: unknown;
+}
+
 /**
  * Simple MappingCompiler for testing
  */
@@ -16,31 +24,26 @@ export class MappingCompiler {
    * Compile mapping rules into a function
    */
   compile(mappingRules: PropertyMappingRule[]): CompiledFunction {
+    const compiledRules = mappingRules.map((rule): CompiledRule => ({
+      sourceProperty: rule.sourceProperty,
+      sourcePath: rule.sourceProperty.split('.'),
+      targetPath: this.compileTargetPath(rule.targetProperty),
+      transformFunction: this.compileTransformFunction(rule.transformFunction),
+      defaultValue: rule.defaultValue,
+    }));
+
     return (data: unknown) => {
       const result: JsonRecord = {};
 
-      for (const rule of mappingRules) {
+      for (const rule of compiledRules) {
         // Get value from source path
-        const value = this.getValueByPath(data, rule.sourceProperty);
+        const value = this.getValueByPath(data, rule.sourcePath);
 
         // Apply transformation if specified
         let transformedValue = value;
         if (rule.transformFunction && value !== undefined) {
           try {
-            // Create a safe evaluation context
-            // Handle both single expressions and multi-line functions
-            const funcBody = rule.transformFunction.trim();
-            let transformFn: TransformFunction;
-
-            if (funcBody.includes('return') || funcBody.includes(';')) {
-              // Multi-line function body
-              transformFn = new Function('value', funcBody) as TransformFunction;
-            } else {
-              // Single expression
-              transformFn = new Function('value', `return (${funcBody})`) as TransformFunction;
-            }
-
-            transformedValue = transformFn(value);
+            transformedValue = rule.transformFunction(value);
           } catch (e) {
             console.error(`Transform error for ${rule.sourceProperty}:`, e);
             transformedValue = value;
@@ -53,18 +56,39 @@ export class MappingCompiler {
         }
 
         // Set value in result
-        this.setValueByPath(result, rule.targetProperty, transformedValue);
+        this.setValueByPath(result, rule.targetPath, transformedValue);
       }
 
       return result;
     };
   }
 
+  private compileTransformFunction(transformFunction: string | undefined): TransformFunction | undefined {
+    if (!transformFunction) {
+      return undefined;
+    }
+
+    // Create a safe evaluation context once per rule.
+    // Handle both single expressions and multi-line functions.
+    const funcBody = transformFunction.trim();
+    if (funcBody.includes('return') || funcBody.includes(';')) {
+      return new Function('value', funcBody) as TransformFunction;
+    }
+    return new Function('value', `return (${funcBody})`) as TransformFunction;
+  }
+
+  private compileTargetPath(path: string): string[] {
+    const parts = path.split('.');
+    if (!parts[parts.length - 1]) {
+      throw new Error('Mapping target path must not be empty');
+    }
+    return parts;
+  }
+
   /**
    * Get value from object by dot-notation path
    */
-  private getValueByPath(obj: unknown, path: string): unknown {
-    const parts = path.split('.');
+  private getValueByPath(obj: unknown, parts: string[]): unknown {
     let current = obj;
 
     for (const part of parts) {
@@ -83,15 +107,18 @@ export class MappingCompiler {
   /**
    * Set value in object by dot-notation path
    */
-  private setValueByPath(obj: JsonRecord, path: string, value: unknown): void {
-    const parts = path.split('.');
-    const lastPart = parts.pop();
+  private setValueByPath(obj: JsonRecord, parts: string[], value: unknown): void {
+    const lastPart = parts[parts.length - 1];
     if (!lastPart) {
       throw new Error('Mapping target path must not be empty');
     }
     let current = obj;
 
-    for (const part of parts) {
+    for (let index = 0; index < parts.length - 1; index += 1) {
+      const part = parts[index];
+      if (part === undefined) {
+        throw new Error('Mapping target path segment must not be undefined');
+      }
       if (!(part in current)) {
         current[part] = {};
       }

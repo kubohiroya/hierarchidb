@@ -155,6 +155,16 @@ export interface TreeConsoleBreadcrumbProps {
    */
   archiveDisabledNodeIds?: ReadonlySet<string>;
 
+  /**
+   * Optional node-id set with queued or running build sessions.
+   */
+  activeBuildNodeIds?: ReadonlySet<string>;
+
+  /**
+   * Optional descendant collector used to resolve folder build availability.
+   */
+  collectDescendantNodes?: (nodeId: string) => readonly BreadcrumbNode[];
+
   /** Current view mode to preserve in breadcrumb navigation links. */
   viewMode?: string;
   /** Current sort mode to preserve in breadcrumb navigation links. */

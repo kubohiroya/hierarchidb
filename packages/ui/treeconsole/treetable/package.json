@@ -23,6 +23,7 @@
     "@hierarchidb/core-types": "workspace:*"
   },
   "peerDependencies": {
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
@@ -53,6 +54,7 @@
   },
   "type": "module",
   "devDependencies": {
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
