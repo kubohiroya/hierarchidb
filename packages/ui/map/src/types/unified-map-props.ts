@@ -59,6 +59,7 @@ export interface MapInteractionOptions {
   dragRotate?: boolean;
   doubleClickZoom?: boolean;
   touchZoomRotate?: boolean;
+  preserveDrawingBuffer?: boolean;
   minZoom?: number;
   maxZoom?: number;
 }

@@ -148,6 +148,8 @@ runner は manifest の `map-image-capture` action をそのまま Map UI へ渡
 
 Phase 0 の state channel は runtime-worker の `StagedFolderActionProgressStore` に `captureIntents` table として保持する。runner は `map-image-capture` action の実行直前に `MapImageCaptureIntentRecord` を保存し、その後に browser handoff を行う。Map UI は通常 route `/map/$nodeId` の search に含まれる `captureIntentId` を使い、WorkerAPI の `getMapImageCaptureIntent(intentId)` から intent 実体を取得する。取得した intent の `stagingRootNodeId` が route の `$nodeId` と一致しない場合は contract violation として capture 実行へ進まない。
 
+Map UI は `captureIntentId` が指定された場合だけ MapLibre の `preserveDrawingBuffer` を有効にする。intent 取得後、Map UI は `viewport.bbox` を `fitBounds` で適用し、MapLibre `idle` 後に DOM readiness marker として `data-map-image-capture-render-status="ready"` を出す。`viewport.bbox`、`viewport.width`、`viewport.height` が有限数でない場合、または bbox が `[minLng, minLat, maxLng, maxLat]` として順序を満たさない場合は contract violation として `error` を出し、capture を進めない。
+
 terminal run を削除する場合、同じ run に属する capture intent record も削除する。active run の削除は従来どおり拒否し、実行中 capture intent を orphan にしてはならない。
 
 却下する代替案:

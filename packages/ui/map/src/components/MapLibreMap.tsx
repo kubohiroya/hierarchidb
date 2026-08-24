@@ -53,6 +53,9 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({ children, ...props }) 
           dragRotate={mapOptions.dragRotate}
           doubleClickZoom={mapOptions.doubleClickZoom}
           touchZoomRotate={mapOptions.touchZoomRotate}
+          canvasContextAttributes={
+            mapOptions.preserveDrawingBuffer ? { preserveDrawingBuffer: true } : undefined
+          }
           minZoom={resolvedZoomBounds.minZoom}
           maxZoom={resolvedZoomBounds.maxZoom}
         >

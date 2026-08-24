@@ -11,6 +11,7 @@ import type {
   MapAttributionItem,
   MapFeatureIdentifyResult,
   MapLibreGeoJSONFeature,
+  MapLibreMapInstance,
   MapToggleSelection,
   MapViewState,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
@@ -60,6 +61,7 @@ import { useFolderLayers } from './useFolderLayers.js';
 import { useLocationVectorLayers } from './useLocationVectorLayers.js';
 import { useLocationViewportLayers } from './useLocationViewportLayers.js';
 import { useMapImageCaptureIntent } from './useMapImageCaptureIntent.js';
+import { useMapImageCaptureReadiness } from './useMapImageCaptureReadiness.js';
 import { useMapViewState } from './useMapViewState.js';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
@@ -175,6 +177,7 @@ export default function MapPage() {
   const lastZoomRef = useRef<number | null>(null);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
+  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
   const { initialViewState, formattedZxy, handleViewStateChange, applyPersistedZxy } =
     useMapViewState({
@@ -697,6 +700,19 @@ export default function MapPage() {
     }
   );
 
+  const handleResourceMapLoad = useCallback(
+    (map: MapLibreMapInstance) => {
+      setMapInstance(map);
+      handleMapLoad(map);
+    },
+    [handleMapLoad]
+  );
+
+  const captureReadinessState = useMapImageCaptureReadiness({
+    intentState: captureIntentState,
+    mapInstance,
+  });
+
   const combinedGeoJsonLayers = useMemo(
     () => [
       ...geoJsonLayers,
@@ -761,6 +777,7 @@ export default function MapPage() {
     <Box
       data-map-image-capture-intent-id={search?.captureIntentId}
       data-map-image-capture-intent-status={captureIntentState.status}
+      data-map-image-capture-render-status={captureReadinessState.status}
       sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}
     >
       {!debugFlags.skipModelessDialogs && nodeId ? (
@@ -856,7 +873,7 @@ export default function MapPage() {
               position: 'bottom-center',
             },
           }}
-          onLoad={handleMapLoad}
+          onLoad={handleResourceMapLoad}
           onViewStateChange={handleMapViewStateChange}
           onMoveEnd={handleLocationMoveEnd}
           identifyFeatureOnClick={{
@@ -873,6 +890,7 @@ export default function MapPage() {
             dragRotate: true,
             doubleClickZoom: true,
             touchZoomRotate: true,
+            preserveDrawingBuffer: Boolean(search?.captureIntentId),
             minZoom: commonZoomBounds.minZoom,
             maxZoom: commonZoomBounds.maxZoom,
           }}
