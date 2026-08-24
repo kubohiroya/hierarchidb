@@ -30,6 +30,17 @@ export {
   type StagedFolderActionOverlayStagingMode,
 } from './services/applyStagedFolderActionOverlays.js';
 export {
+  type ArtifactDependencyEdgeRecord,
+  ArtifactDependencyLifecycleStore,
+  type ArtifactDependencyOrphanDetectionResult,
+  type ArtifactDependencyOrphanReason,
+  type CreateArtifactDependencyEdgeInput,
+  type DetectArtifactDependencyOrphansInput,
+  type MarkArtifactDependenciesRebuildingInput,
+  type MarkArtifactDependenciesStaleInput,
+  type ResolveArtifactDependenciesInput,
+} from './services/artifactDependencyLifecycleStore.js';
+export {
   publishBuildSessionUpdate,
   subscribeToBuildSessionBroadcast,
 } from './services/buildSessionBroadcastUtils.js';
