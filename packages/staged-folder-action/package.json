@@ -17,10 +17,10 @@
     }
   },
   "bin": {
-    "hdb-staged-folder-action": "./dist/runStagedFolderActionCli.js"
+    "hdb-staged-folder-action": "./dist/runStagedFolderActionCliEntry.js"
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/runStagedFolderActionCli.ts --config ../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
+    "build": "tsdown src/index.ts src/runStagedFolderActionCli.ts src/runStagedFolderActionCliEntry.ts --config ../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "vitest run --passWithNoTests",

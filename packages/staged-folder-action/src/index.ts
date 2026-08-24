@@ -1,3 +1,9 @@
+export {
+  type CreateStagedFolderActionCliExecutionHostInput,
+  createStagedFolderActionCliExecutionHost,
+  type StagedFolderActionCliRunner,
+  type StagedFolderActionCliRunnerInput,
+} from './createStagedFolderActionCliExecutionHost.js';
 export type {
   CreateMapImageCaptureIntentInput,
   MapImageCaptureBrowserMode,
@@ -82,6 +88,7 @@ export type {
 export type {
   CreateStagedFolderActionRunRecordInput,
   StagedFolderActionCurrentActionProgress,
+  StagedFolderActionDependencyChange,
   StagedFolderActionPendingReference,
   StagedFolderActionProgressCounts,
   StagedFolderActionReferenceWarning,
