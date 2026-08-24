@@ -36,6 +36,16 @@ export {
   updateTreeNodeDraftMetadata,
 } from './services/draft/lookupOperationUtils.js';
 export {
+  EffectiveTreeNodeDataResolverError,
+  resolveEffectiveTreeNodeData,
+  type EffectiveTreeNodeDataResolverErrorCode,
+  type EffectiveTreeNodeDataResolverInput,
+  type EffectiveTreeNodeDataResolverMetadata,
+  type EffectiveTreeNodeDataResolverResult,
+  type EffectiveTreeNodeDataSlot,
+  type TreeNodeReader,
+} from './services/effectiveTreeNodeDataResolver.js';
+export {
   getRuntimeWorkerClient,
   hasRuntimeWorkerClient,
   type RuntimeWorkerClientProvider,

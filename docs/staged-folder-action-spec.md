@@ -277,7 +277,7 @@ actions:
 - `copyOnWriteOf`
 - `patchData`
 
-copy-on-write node の effective committed data は、参照元 node の committed `data` に copied node の `patchData` を strict merge した結果である。copied node 自身の `data` に参照元 data を物理複製してはならない。ただし、後続で materialize operation を定義する場合は別仕様で扱う。
+copy-on-write node の effective committed data は、参照元 node の committed `data` に copied node の `patchData` を strict merge した結果である。`patchData` は `copyOnWriteOf` を持つ node の属性であり、通常 node に単独で設定してはならない。copied node 自身の `data` に参照元 data を物理複製してはならない。ただし、後続で materialize operation を定義する場合は別仕様で扱う。
 
 ## Effective Data Resolver Contract
 
@@ -325,7 +325,9 @@ slot の意味:
 
 resolver は strict merge rules を `Overlay Contract` と共有する。object は再帰 merge、scalar と array は replace、未知の patch 操作は contract violation とする。resolver の利用者が独自 merge、fallback、default 補完、近似 node 探索、slot 間 fallback を実装してはならない。
 
-resolver は `copyOnWriteOf` の参照先欠落、循環、`patchData` の不正 shape、draftData の不正 shape、mount record 不整合を typed error として返す。呼び出し側はこれらを握りつぶして空 object や元 node data に fallback してはならない。
+Phase 0 の resolver 実装では、`effective-staged` は copy-on-write と `patchData` を反映する。`import-mount`、`patch-source` の action 実行結果、staging context の mount record 適用は後続 phase で resolver input に接続する。それまでは `mountedContentApplied: false` を返し、呼び出し側で独自に mount record を混ぜてはならない。
+
+resolver は `copyOnWriteOf` の参照先欠落、循環、`patchData` の不正 shape、`copyOnWriteOf` を持たない node への `patchData` 設定、draftData の不正 shape、mount record 不整合を typed error として返す。呼び出し側はこれらを握りつぶして空 object や元 node data に fallback してはならない。
 
 CSV / XLSX export など、どの slot を出力するかがユーザー操作に依存する UI は、呼び出し前に `committed` / `draft` / `effective-staged` のいずれを使うかを明示する。未保存 draft を含めるかどうかを UI component 内の独自判定にしてはならない。
 
