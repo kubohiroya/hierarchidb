@@ -155,6 +155,15 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     typeof folderBuildReady === 'boolean' ? folderBuildReady : undefined;
   const nodeBuildRequired = typeof buildRequired === 'boolean' ? buildRequired : undefined;
   const isBuildAllowed = typeof nodeBuildRequired === 'boolean' ? nodeBuildRequired : true;
+  const showBuildForNode = (() => {
+    if (nodeBuildRequired === true) return true;
+    if (buildableNodeTypes.has(normalizedNodeType)) return true;
+    if (typeof canBuild === 'boolean') return canBuild;
+    if (isFolderNode) {
+      return typeof folderBuildReadyForNode === 'boolean' ? folderBuildReadyForNode : isFolderNode;
+    }
+    return buildableNodeTypes.has(normalizedNodeType);
+  })();
   const canBuildForNode = (() => {
     if (typeof canBuild === 'boolean') return canBuild;
     if (isFolderNode) {
@@ -167,7 +176,7 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
   })();
 
   const canBuildEntry = Boolean(props.onBuild) && canBuildForNode && isBuildAllowed;
-  const showBuildEntry = Boolean(props.onBuild) && (canBuildForNode || isLocationNode);
+  const showBuildEntry = Boolean(props.onBuild) && (showBuildForNode || isLocationNode);
   const buildDisabled = !canBuildEntry || isLocationNode;
 
   const propsRef = useRef(props);

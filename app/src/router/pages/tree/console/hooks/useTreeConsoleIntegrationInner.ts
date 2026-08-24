@@ -1,6 +1,7 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build-sessions';
+import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type {
   TreeConsolePanelProps as BaseTreeConsolePanelProps,
   HierarchicalTreeNode,
@@ -485,6 +486,31 @@ export function useTreeConsoleIntegrationInner({
           onNavigate: handleTagsNavigate,
         })
       : undefined;
+  const collectBreadcrumbDescendantNodes = useCallback(
+    (nodeId: string): readonly BreadcrumbNode[] => {
+      const result: BreadcrumbNode[] = [];
+      const visited = new Set<string>();
+      const queue = [nodeId as NodeId];
+
+      while (queue.length > 0) {
+        const parentId = queue.shift();
+        if (parentId === undefined) break;
+        if (visited.has(String(parentId))) continue;
+        visited.add(String(parentId));
+
+        for (const child of nodeIndex.getValuesBySecondary(parentId)) {
+          const childBreadcrumbNode = child as BreadcrumbNode;
+          const childNodeId = childBreadcrumbNode.id ?? childBreadcrumbNode.treeNodeId;
+          if (childNodeId === undefined) continue;
+          result.push(childBreadcrumbNode);
+          queue.push(childNodeId as NodeId);
+        }
+      }
+
+      return result;
+    },
+    [nodeIndex]
+  );
 
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {
     nodePath: breadcrumbItems,
@@ -496,6 +522,10 @@ export function useTreeConsoleIntegrationInner({
     onContextAction: handleBreadcrumbContextAction,
     resolveOpenSteps,
     leftSlot: tagsLeftSlot,
+    activeBuildNodeIds: new Set(
+      Array.from(buildSessionIndicator.activeNodeIds, (id) => String(id))
+    ),
+    collectDescendantNodes: collectBreadcrumbDescendantNodes,
     viewMode,
     sortMode,
   } as TreeConsoleBreadcrumbProps;

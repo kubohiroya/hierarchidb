@@ -13,7 +13,186 @@ import type {
 
 export { runStagedFolderActionCli };
 
-export type StagedFolderActionCliErrorCategory = 'cli' | 'manifest' | 'profile' | 'internal';
+export type StagedFolderActionCliErrorCategory =
+  | 'cli'
+  | 'manifest'
+  | 'profile'
+  | 'source'
+  | 'staging'
+  | 'overlay'
+  | 'reference'
+  | 'dependency'
+  | 'build'
+  | 'action'
+  | 'export-archive'
+  | 'import-mount'
+  | 'map-image-capture'
+  | 'simulation-run'
+  | 'map-pdf-render'
+  | 'map-print'
+  | 'folder-diagnostics'
+  | 'backup-export'
+  | 'output'
+  | 'cleanup'
+  | 'progress'
+  | 'internal';
+
+export type StagedFolderActionCliActionResult =
+  | {
+      type: 'build';
+      status: 'completed';
+      buildQueueId: string;
+    }
+  | {
+      type: 'map-image-capture';
+      status: 'completed';
+      outputPath: string;
+      width: number;
+      height: number;
+    }
+  | {
+      type: 'export-archive';
+      status: 'completed';
+      outputPath: string;
+    }
+  | {
+      type: 'import-mount';
+      status: 'completed';
+      mountId: string;
+      mountedRootNodeId: string;
+      lifetime: 'run' | 'retain' | 'permanent';
+    }
+  | {
+      type: string;
+      status: 'completed';
+      artifacts?: Array<{
+        kind: string;
+        path?: string;
+        nodeId?: string;
+        id?: string;
+      }>;
+      metrics?: Record<string, number>;
+    };
+
+export type StagedFolderActionCliReferenceWarning = {
+  category: 'reference';
+  code: string;
+  message: string;
+  nodeId?: string;
+  dependentNodeId?: string;
+  referencePath?: string;
+  expectedTargetType?: string;
+  actualTargetType?: string;
+  actionIndex?: number;
+  actionType?: string;
+  mountId?: string;
+  pluginId?: string;
+};
+
+export type StagedFolderActionCliPendingReference = {
+  status: 'pending' | 'resolved';
+  code: string;
+  nodeId?: string;
+  dependentNodeId?: string;
+  referencePath: string;
+  expectedTargetType?: string;
+  resolvedTargetNodeId?: string;
+  actionIndex?: number;
+  actionType?: string;
+  mountId?: string;
+  pluginId?: string;
+};
+
+export type StagedFolderActionCliDependencyChange = {
+  edgeId: string;
+  previousStatus: 'active' | 'stale' | 'rebuilding' | 'resolved' | 'orphaned';
+  nextStatus: 'active' | 'stale' | 'rebuilding' | 'resolved' | 'orphaned';
+  artifactId?: string;
+  buildTargetId?: string;
+  sourceNodeId?: string;
+  targetNodeId?: string;
+  targetFieldPath?: string;
+  rebuildPlanId?: string;
+};
+
+export type StagedFolderActionCliExecutionSuccessResult = {
+  ok: true;
+  version: 1;
+  dryRun: false;
+  runId: string;
+  sourceNodeId: string;
+  outputParentNodeId?: string;
+  browserMode?: StagedFolderActionCliBrowserMode;
+  profileName: string;
+  configPath: string;
+  format: StagedFolderActionManifestFormat;
+  stagingMode: StagedFolderActionConfig['staging']['mode'];
+  actions: StagedFolderActionConfig['actions'][number]['type'][];
+  stagingRootNodeId?: string;
+  buildQueueId?: string;
+  actionResults: StagedFolderActionCliActionResult[];
+  cleanup: {
+    policy: StagedFolderActionConfig['staging']['cleanup'];
+    status: 'not-run' | 'retained' | 'deleted' | 'failed';
+    error?: string;
+  };
+  warnings: StagedFolderActionCliReferenceWarning[];
+  pendingReferences: StagedFolderActionCliPendingReference[];
+  dependencyChanges: StagedFolderActionCliDependencyChange[];
+  elapsedMs: number;
+};
+
+export type StagedFolderActionCliFailureError = {
+  category: StagedFolderActionCliErrorCategory;
+  code: string;
+  message: string;
+  path?: string;
+  cause?: string;
+  runId?: string;
+  nodeId?: string;
+  sourceNodeId?: string;
+  stagingRootNodeId?: string;
+  buildQueueId?: string;
+  actionIndex?: number;
+  actionType?: string;
+};
+
+export type StagedFolderActionCliExecutionFailureResult = {
+  ok: false;
+  version: 1;
+  dryRun?: false;
+  runId?: string;
+  sourceNodeId?: string;
+  nodeId?: string;
+  stagingRootNodeId?: string;
+  buildQueueId?: string;
+  actionIndex?: number;
+  actionType?: string;
+  error: StagedFolderActionCliFailureError;
+};
+
+export type StagedFolderActionCliExecutionResult =
+  | StagedFolderActionCliExecutionSuccessResult
+  | StagedFolderActionCliExecutionFailureResult;
+
+export type StagedFolderActionCliExecutionInput = {
+  sourceNodeId: string;
+  outputParentNodeId?: string;
+  browserMode?: StagedFolderActionCliBrowserMode;
+  profileName: string;
+  configPath: string;
+  format: StagedFolderActionManifestFormat;
+  config: StagedFolderActionConfig;
+  startedAt: number;
+};
+
+export interface StagedFolderActionCliExecutionHost {
+  run(input: StagedFolderActionCliExecutionInput): Promise<StagedFolderActionCliExecutionResult>;
+}
+
+export type StagedFolderActionCliOptions = {
+  executionHost?: StagedFolderActionCliExecutionHost;
+};
 
 export type StagedFolderActionCliResult =
   | {
@@ -31,17 +210,8 @@ export type StagedFolderActionCliResult =
       actions: StagedFolderActionConfig['actions'][number]['type'][];
       config: StagedFolderActionConfig;
     }
-  | {
-      ok: false;
-      version: 1;
-      error: {
-        category: StagedFolderActionCliErrorCategory;
-        code: string;
-        message: string;
-        path?: string;
-        cause?: string;
-      };
-    };
+  | StagedFolderActionCliExecutionSuccessResult
+  | StagedFolderActionCliExecutionFailureResult;
 
 export interface StagedFolderActionCliIo {
   readTextFile(path: string): Promise<string>;
@@ -64,7 +234,8 @@ const DEFAULT_PROFILE_NAME = 'default';
 
 async function runStagedFolderActionCli(
   argv: readonly string[],
-  io: StagedFolderActionCliIo = nodeIo
+  io: StagedFolderActionCliIo = nodeIo,
+  options: StagedFolderActionCliOptions = {}
 ): Promise<number> {
   const startedAt = Date.now();
   try {
@@ -75,13 +246,6 @@ async function runStagedFolderActionCli(
     if (!args.sourceNodeId) {
       throw cliError('STAGED_FOLDER_ACTION_CLI_MISSING_ARGUMENT', '--source-node-id is required');
     }
-    if (!args.dryRun) {
-      throw cliError(
-        'STAGED_FOLDER_ACTION_CLI_EXECUTION_HOST_NOT_CONFIGURED',
-        'Phase 0 CLI supports --dry-run validation only; execution host integration is not configured yet'
-      );
-    }
-
     const format = args.format ?? inferManifestFormat(args.configPath);
     const source = await io.readTextFile(args.configPath);
     const config = parseStagedFolderActionManifest(source, { format });
@@ -91,6 +255,38 @@ async function runStagedFolderActionCli(
       outputParentNodeId: args.outputParentNodeId,
       browserMode: args.browserMode,
     });
+
+    if (!args.dryRun) {
+      const host = options.executionHost;
+      if (host === undefined) {
+        throw cliError(
+          'STAGED_FOLDER_ACTION_CLI_EXECUTION_HOST_NOT_CONFIGURED',
+          'CLI execution requires an injected execution host; the bundled entrypoint is validation-only'
+        );
+      }
+      const result = await host.run({
+        sourceNodeId: args.sourceNodeId,
+        ...(args.outputParentNodeId === undefined
+          ? {}
+          : { outputParentNodeId: args.outputParentNodeId }),
+        ...(args.browserMode === undefined ? {} : { browserMode: args.browserMode }),
+        profileName: args.profileName,
+        configPath: args.configPath,
+        format,
+        config,
+        startedAt,
+      });
+      writeCliResult(io, result, args.json);
+      if (!result.ok) {
+        return resolveExitCode(result.error.category);
+      }
+      if (!args.json) {
+        io.writeStderr(
+          `completed staged-folder-action run ${result.runId} in ${result.elapsedMs}ms\n`
+        );
+      }
+      return resolveSuccessExitCode(result);
+    }
 
     const result: StagedFolderActionCliResult = {
       ok: true,
@@ -241,7 +437,13 @@ function writeCliResult(
     io.writeStdout(serialized);
     return;
   }
-  io.writeStderr(`staged-folder-action dry-run ok: ${result.actions.join(', ') || 'no actions'}\n`);
+  if (result.dryRun) {
+    io.writeStderr(
+      `staged-folder-action dry-run ok: ${result.actions.join(', ') || 'no actions'}\n`
+    );
+    return;
+  }
+  io.writeStderr(`staged-folder-action run ok: ${result.runId}\n`);
 }
 
 function toCliErrorResult(error: unknown): Extract<StagedFolderActionCliResult, { ok: false }> {
@@ -269,6 +471,9 @@ function toCliErrorResult(error: unknown): Extract<StagedFolderActionCliResult, 
       },
     };
   }
+  if (error instanceof StagedFolderActionCliHostError) {
+    return error.toResult();
+  }
   return {
     ok: false,
     version: 1,
@@ -280,12 +485,44 @@ function toCliErrorResult(error: unknown): Extract<StagedFolderActionCliResult, 
   };
 }
 
+function resolveSuccessExitCode(result: StagedFolderActionCliExecutionSuccessResult): number {
+  if (result.cleanup.status === 'failed') {
+    return 7;
+  }
+  return 0;
+}
+
 function resolveExitCode(category: StagedFolderActionCliErrorCategory): number {
   if (category === 'cli' || category === 'manifest') {
     return 1;
   }
   if (category === 'profile') {
     return 2;
+  }
+  if (category === 'source' || category === 'staging' || category === 'overlay') {
+    return 3;
+  }
+  if (category === 'build') {
+    return 4;
+  }
+  if (
+    category === 'action' ||
+    category === 'export-archive' ||
+    category === 'import-mount' ||
+    category === 'map-image-capture' ||
+    category === 'simulation-run' ||
+    category === 'map-pdf-render' ||
+    category === 'map-print' ||
+    category === 'folder-diagnostics' ||
+    category === 'backup-export'
+  ) {
+    return 5;
+  }
+  if (category === 'output') {
+    return 6;
+  }
+  if (category === 'cleanup') {
+    return 7;
   }
   return 70;
 }
@@ -306,6 +543,20 @@ class StagedFolderActionCliError extends Error {
     this.category = input.category;
     this.code = input.code;
     this.path = input.path;
+  }
+}
+
+export class StagedFolderActionCliHostError extends Error {
+  readonly result: StagedFolderActionCliExecutionFailureResult;
+
+  constructor(input: StagedFolderActionCliExecutionFailureResult) {
+    super(input.error.message);
+    this.name = 'StagedFolderActionCliHostError';
+    this.result = input;
+  }
+
+  toResult(): StagedFolderActionCliExecutionFailureResult {
+    return this.result;
   }
 }
 

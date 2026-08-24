@@ -1,3 +1,8 @@
+import {
+  isNodeBuildRequired,
+  resolveBuildAvailability,
+  resolveSubtreeBuildAvailability,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { isFolderNodeType, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -17,6 +22,7 @@ interface UseTreeTableContextMenuParams {
   onClose: () => void;
   controller?: TreeTableController;
   buildSessionIndicator?: BuildSessionIndicator;
+  collectDescendantIds?: (nodeId: NodeId) => string[];
 }
 
 interface ContextActionOptions {
@@ -62,6 +68,7 @@ export function useTreeTableContextMenu({
   onClose,
   controller,
   buildSessionIndicator,
+  collectDescendantIds,
 }: UseTreeTableContextMenuParams): UseTreeTableContextMenuResult {
   const node = contextMenuState.node;
   const isRoot = !!node && node.depth === 0;
@@ -71,21 +78,39 @@ export function useTreeTableContextMenu({
     node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
   );
 
-  const nodeDraftMetadata = node?.draftMetadata as
-    | { buildMetadata?: { buildRequired?: boolean } }
-    | undefined;
-
-  const isBuildRequiredForNode = Boolean(
-    node?.metadata?.buildMetadata?.buildRequired || nodeDraftMetadata?.buildMetadata?.buildRequired
-  );
+  const isBuildRequiredForNode = node ? isNodeBuildRequired(node) : false;
 
   const nodeType = String(node?.nodeType ?? '');
-  const isBuildActionNodeType = buildActionNodeTypes.has(nodeType.trim().toLowerCase());
+  const canBuildNodeType = buildActionNodeTypes.has(nodeType.trim().toLowerCase());
+  const activeNodeIds = buildSessionIndicator?.activeNodeIds;
+  const buildAvailability =
+    node && isFolderNodeType(node.nodeType)
+      ? resolveSubtreeBuildAvailability({
+          root: node,
+          descendants:
+            collectDescendantIds?.(node.id as NodeId)
+              .filter((descendantId) => descendantId !== node.id)
+              .map((descendantId) => controller?.nodeIndex?.get(descendantId as NodeId))
+              .filter((descendant): descendant is TreeNode => Boolean(descendant)) ?? [],
+          canBuildNodeType: (candidateNodeType) =>
+            buildActionNodeTypes.has(String(candidateNodeType).trim().toLowerCase()),
+          activeNodeIds,
+        })
+      : node && canBuildNodeType
+        ? resolveBuildAvailability({
+            candidates: [node],
+            activeNodeIds,
+          })
+        : null;
 
   const canArchive = !isRoot && !isBuildRunning;
   const canCreate = isFolderNodeType(node?.nodeType);
   const canImportExport = isFolderNodeType(node?.nodeType);
-  const canBuild = canCreate ? isBuildRequiredForNode : isBuildActionNodeType;
+  const hasBuildRequiredTarget =
+    buildAvailability?.requiredTargets.length !== undefined
+      ? buildAvailability.requiredTargets.length > 0
+      : isBuildRequiredForNode;
+  const canBuild = buildAvailability?.canStartBuild === true;
 
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
@@ -289,7 +314,7 @@ export function useTreeTableContextMenu({
     node,
     open,
     isRoot,
-    isBuildRequiredForNode,
+    isBuildRequiredForNode: hasBuildRequiredTarget,
     canArchive,
     canBuild,
     canCreate,

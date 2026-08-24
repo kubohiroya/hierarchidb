@@ -1,4 +1,4 @@
-import type { CanonicalBuildInputSource } from '@hierarchidb/build-api';
+import { type CanonicalBuildInputSource, isNodeBuildRequired } from '@hierarchidb/build-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
@@ -83,10 +83,6 @@ export const resolveBuildStepTarget = async (
   return { stepId, stepNumber, shouldAutoStart };
 };
 
-const isBuildRequired = (node: TreeNode): boolean =>
-  Boolean(node.draftMetadata?.buildMetadata?.buildRequired) ||
-  Boolean(node.metadata?.buildMetadata?.buildRequired);
-
 type FolderQueryApi = {
   listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
 };
@@ -103,7 +99,7 @@ const collectBuildTargetsFromDescendants = async (params: {
   for (const item of descendants) {
     const itemType = String(item.nodeType ?? '');
     if (isFolderNodeType(itemType)) continue;
-    if (!isBuildRequired(item)) continue;
+    if (!isNodeBuildRequired(item)) continue;
     await loadUIPlugin(itemType).catch(() => false);
     const target = await resolveBuildStepTarget(itemType, mergeNodeData(item));
     if (!target) continue;
