@@ -52,6 +52,7 @@ export type {
 export {
   createMapImageCaptureRouteUrl,
   createPlaywrightMapImageCapturePagePort,
+  MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
   MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
   MAP_IMAGE_CAPTURE_READY_SELECTOR,
   MAP_IMAGE_CAPTURE_RENDER_STATUS_ATTRIBUTE,

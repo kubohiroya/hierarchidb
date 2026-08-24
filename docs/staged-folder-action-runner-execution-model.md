@@ -152,7 +152,7 @@ Map UI は `captureIntentId` が指定された場合だけ MapLibre の `preser
 
 runtime-worker runner は `MapImageCaptureIntentRecord` 保存後、`currentAction.phase = "handoff-created"` を記録してから browser handoff 実装を呼ぶ。browser handoff 実装は runner から渡される progress callback だけを使って `currentAction.phase` を更新する。Phase 0 で固定する `map-image-capture` action-specific phase は `opening-map-ui`、`waiting-render-ready`、`capturing-canvas`、`writing-output`、`completed` である。これらは top-level `phase` を増やさず、常に `phase: "running-action"` と `currentAction.actionType: "map-image-capture"` の下に記録する。
 
-browser handoff は `@hierarchidb/staged-folder-action` の page port contract で表現する。port は `setViewportSize`、`goto`、`waitForRenderStatus`、`screenshot` だけを要求し、Playwright などの具体 browser 実装を shared manifest/runner contract に持ち込まない。route URL は通常 route `/map/$nodeId?captureIntentId=<intentId>` を `browser` または `hash` router mode に応じて生成する。`waitForRenderStatus` は `data-map-image-capture-render-status="ready"` を成功、`"error"` を contract failure として扱う。
+browser handoff は `@hierarchidb/staged-folder-action` の page port contract で表現する。port は `setViewportSize`、`goto`、`waitForRenderStatus`、`assertNonBlankCanvas`、`screenshot` だけを要求し、Playwright などの具体 browser 実装を shared manifest/runner contract に持ち込まない。route URL は通常 route `/map/$nodeId?captureIntentId=<intentId>` を `browser` または `hash` router mode に応じて生成する。`waitForRenderStatus` は `data-map-image-capture-render-status="ready"` を成功、`"error"` を contract failure として扱う。ready 後は `.maplibregl-canvas` を検査し、存在しない、描画サイズが 0、または sampled pixel が blank の場合は screenshot せず action failure にする。
 
 terminal run を削除する場合、同じ run に属する capture intent record も削除する。active run の削除は従来どおり拒否し、実行中 capture intent を orphan にしてはならない。
 

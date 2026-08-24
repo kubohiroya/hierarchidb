@@ -806,6 +806,8 @@ render ready 条件:
 - canvas/WebGL が nonblank である。
 - page error、unhandled rejection、WebGL context loss が発生していない。
 
+Map UI は `data-map-image-capture-render-status="ready"` により bbox / viewport / layer visibility / MapLibre idle までを通知する。browser handoff は ready 通知後に `.maplibregl-canvas` の存在、描画サイズ、sampled pixel の nonblank を検査し、blank の場合は画像ファイルを書き出さず失敗として progress に記録する。
+
 ## Progress SSOT
 
 progress は Worker / IndexedDB 管理を正とする。最低限、以下を記録する。

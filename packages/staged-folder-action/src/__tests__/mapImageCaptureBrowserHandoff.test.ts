@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createMapImageCaptureRouteUrl,
   createPlaywrightMapImageCapturePagePort,
+  MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
   MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
   MAP_IMAGE_CAPTURE_READY_SELECTOR,
   type MapImageCaptureBrowserPagePort,
@@ -78,6 +79,9 @@ describe('runMapImageCaptureBrowserHandoff', () => {
       errorSelector: MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
       timeoutMs: 5000,
     });
+    expect(page.assertNonBlankCanvas).toHaveBeenCalledWith({
+      canvasSelector: MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
+    });
     expect(page.screenshot).toHaveBeenCalledWith({ path: 'exports/out.png', fullPage: false });
     expect(progress.map((update) => update.phase)).toEqual([
       'opening-map-ui',
@@ -102,6 +106,22 @@ describe('runMapImageCaptureBrowserHandoff', () => {
     ).rejects.toThrow(/Map UI reported render error/);
     expect(page.screenshot).not.toHaveBeenCalled();
   });
+
+  it('fails before screenshot when the rendered canvas is blank', async () => {
+    const page = createPagePort('ready', false);
+
+    await expect(
+      runMapImageCaptureBrowserHandoff({
+        page,
+        intent: createIntent(),
+        baseUrl: 'http://localhost:3000/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        reportProgress: async () => {},
+      })
+    ).rejects.toThrow(/blank canvas/);
+    expect(page.screenshot).not.toHaveBeenCalled();
+  });
 });
 
 describe('createPlaywrightMapImageCapturePagePort', () => {
@@ -118,6 +138,9 @@ describe('createPlaywrightMapImageCapturePagePort', () => {
         timeoutMs: 5000,
       })
     ).resolves.toBe('ready');
+    await expect(
+      port.assertNonBlankCanvas({ canvasSelector: MAP_IMAGE_CAPTURE_CANVAS_SELECTOR })
+    ).resolves.toBe(true);
     await port.screenshot({ path: 'exports/out.png', fullPage: false });
 
     expect(page.setViewportSize).toHaveBeenCalledWith({ width: 320, height: 240 });
@@ -125,14 +148,19 @@ describe('createPlaywrightMapImageCapturePagePort', () => {
     expect(page.waitForSelector).toHaveBeenCalledWith(MAP_IMAGE_CAPTURE_READY_SELECTOR, {
       timeout: 5000,
     });
+    expect(page.evaluate).toHaveBeenCalled();
     expect(page.screenshot).toHaveBeenCalledWith({ path: 'exports/out.png', fullPage: false });
   });
 });
 
-const createPagePort = (renderStatus: 'ready' | 'error'): MapImageCaptureBrowserPagePort => ({
+const createPagePort = (
+  renderStatus: 'ready' | 'error',
+  canvasIsNonBlank = true
+): MapImageCaptureBrowserPagePort => ({
   setViewportSize: vi.fn(async () => {}),
   goto: vi.fn(async () => {}),
   waitForRenderStatus: vi.fn(async () => renderStatus),
+  assertNonBlankCanvas: vi.fn(async () => canvasIsNonBlank),
   screenshot: vi.fn(async () => {}),
 });
 
@@ -150,5 +178,6 @@ const createPlaywrightLikePage = (
     }
     return new Promise(() => {});
   }),
+  evaluate: vi.fn(async () => true),
   screenshot: vi.fn(async () => {}),
 });
