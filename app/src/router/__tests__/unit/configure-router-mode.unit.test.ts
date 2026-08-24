@@ -44,10 +44,6 @@ vi.mock('../../routes/mapRoute.js', () => ({
   mapRoute: createMockRoute(),
 }));
 
-vi.mock('../../routes/mapExportRoute.js', () => ({
-  mapExportRoute: createMockRoute(),
-}));
-
 vi.mock('../../routes/maintenanceRoute.js', () => ({
   maintenanceRoute: createMockRoute(),
 }));

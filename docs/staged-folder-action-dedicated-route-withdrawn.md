@@ -43,3 +43,7 @@ These requirements now apply to `map-image-capture` through the existing Map UI.
 ## Rollback
 
 No runtime rollback is required for this documentation change. If a `/map-export` implementation exists, it should be treated as legacy/internal until removed or repurposed; new staged folder action work must not build on it.
+
+Implementation note:
+
+- The application router must not register `/map-export` as a top-level route. If legacy files remain during transition, they are unreachable implementation leftovers and must not be used as the staged-folder-action browser handoff path.
