@@ -135,6 +135,8 @@ Phase 2 child #1592 の edit lock は runner behavior を変更しない。Plugi
 
 Phase 2 child #1594 の post-build edit stale propagation は runner の build dispatch 順序を変更しない。runtime-worker の final save 境界は、成功した committed node 更新の後で dependency lifecycle service/API を呼び、変更された target field に対応する `active` edge を `stale` に遷移させ、deterministic incremental rebuild plan と `BuildDependencyAvailabilitySummary` を返す。`save-draft` は committed data を変更しないため dependency lifecycle を更新しない。後続 runner/build availability integration はこの summary を入力として扱い、UI/app 側で dependency store を直接読んだり rebuild target を推測したりしてはならない。
 
+Phase 2 child #1596 では、runner が reference resolver injection を受け取り、overlay 適用後、各 action 実行前、各 action 実行後に `phase: "resolving-references"` を progress record へ記録して resolver を呼ぶ。resolver input には config、staging root node ID、run ID、現在 phase、action/actionIndex、直前までの `pendingReferences` を渡す。resolver result の `warnings` と `pendingReferences` は `StagedFolderActionRunRecord` に保存し、後続 action で解決された reference は `status: "resolved"` として保持する。resolver が hard dependency failure を投げた場合、runner は warning へ変換せず run を `failed` にし、既存の error 記録経路で fail-fast する。
+
 Phase 1 初期 WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へそのまま渡す。標準 Worker bootstrap / CLI bridge はまだ browser handoff implementation を注入しない。したがって標準 host で `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary

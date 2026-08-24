@@ -89,6 +89,88 @@ describe('StagedFolderActionProgressStore', () => {
     });
   });
 
+  it('persists reference warnings and pending references on run records', async () => {
+    const run = await store.createRun({
+      runId: 'run-references' as NodeId,
+      sourceNodeId: 'source-references' as NodeId,
+      now: 100,
+    });
+
+    await store.updateRun(run.runId, {
+      status: 'running',
+      phase: 'resolving-references',
+      warnings: [
+        {
+          category: 'reference',
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+          message: 'lazy reference is unresolved',
+          dependentNodeId: 'dependent-1',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+      pendingReferences: [
+        {
+          status: 'pending',
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+          dependentNodeId: 'dependent-1',
+          referencePath: 'imports/shape-a',
+          expectedTargetType: 'shape',
+        },
+        {
+          status: 'resolved',
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_RESOLVED',
+          dependentNodeId: 'dependent-2',
+          referencePath: 'imports/shape-b',
+          resolvedTargetNodeId: 'target-shape-b',
+        },
+      ],
+      updatedAt: 120,
+    });
+
+    await expect(store.getRun(run.runId)).resolves.toMatchObject({
+      phase: 'resolving-references',
+      warnings: [
+        {
+          category: 'reference',
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+      pendingReferences: [
+        {
+          status: 'pending',
+          referencePath: 'imports/shape-a',
+        },
+        {
+          status: 'resolved',
+          referencePath: 'imports/shape-b',
+          resolvedTargetNodeId: 'target-shape-b',
+        },
+      ],
+    });
+  });
+
+  it('rejects invalid pending reference contracts', async () => {
+    const run = await store.createRun({
+      runId: 'run-invalid-reference' as NodeId,
+      sourceNodeId: 'source-invalid-reference' as NodeId,
+      now: 100,
+    });
+
+    await expect(
+      store.updateRun(run.runId, {
+        pendingReferences: [
+          {
+            status: 'pending',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            referencePath: '',
+          },
+        ],
+        updatedAt: 120,
+      })
+    ).rejects.toThrow(/pendingReferences\[0\]\.referencePath/);
+  });
+
   it('dispatches an initial snapshot when subscribing through the build runtime adapter', async () => {
     const run = await store.createRun({
       runId: 'run-4' as NodeId,

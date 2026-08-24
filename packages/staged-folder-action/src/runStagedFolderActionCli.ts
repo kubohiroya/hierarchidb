@@ -10,6 +10,10 @@ import type {
   StagedFolderActionConfig,
   StagedFolderActionManifestFormat,
 } from './StagedFolderActionManifestTypes.js';
+import type {
+  StagedFolderActionPendingReference,
+  StagedFolderActionReferenceWarning,
+} from './StagedFolderActionProgressTypes.js';
 
 export { runStagedFolderActionCli };
 
@@ -74,34 +78,9 @@ export type StagedFolderActionCliActionResult =
       metrics?: Record<string, number>;
     };
 
-export type StagedFolderActionCliReferenceWarning = {
-  category: 'reference';
-  code: string;
-  message: string;
-  nodeId?: string;
-  dependentNodeId?: string;
-  referencePath?: string;
-  expectedTargetType?: string;
-  actualTargetType?: string;
-  actionIndex?: number;
-  actionType?: string;
-  mountId?: string;
-  pluginId?: string;
-};
+export type StagedFolderActionCliReferenceWarning = StagedFolderActionReferenceWarning;
 
-export type StagedFolderActionCliPendingReference = {
-  status: 'pending' | 'resolved';
-  code: string;
-  nodeId?: string;
-  dependentNodeId?: string;
-  referencePath: string;
-  expectedTargetType?: string;
-  resolvedTargetNodeId?: string;
-  actionIndex?: number;
-  actionType?: string;
-  mountId?: string;
-  pluginId?: string;
-};
+export type StagedFolderActionCliPendingReference = StagedFolderActionPendingReference;
 
 export type StagedFolderActionCliDependencyChange = {
   edgeId: string;
@@ -155,6 +134,12 @@ export type StagedFolderActionCliFailureError = {
   buildQueueId?: string;
   actionIndex?: number;
   actionType?: string;
+  mountId?: string;
+  pluginId?: string;
+  dependentNodeId?: string;
+  referencePath?: string;
+  expectedTargetType?: string;
+  actualTargetType?: string;
 };
 
 export type StagedFolderActionCliExecutionFailureResult = {
@@ -506,6 +491,8 @@ function resolveExitCode(category: StagedFolderActionCliErrorCategory): number {
     return 4;
   }
   if (
+    category === 'reference' ||
+    category === 'dependency' ||
     category === 'action' ||
     category === 'export-archive' ||
     category === 'import-mount' ||

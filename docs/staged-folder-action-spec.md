@@ -416,6 +416,10 @@ pending reference / warning には同じ診断情報を含めるが、exit code 
 
 pending reference は action sequence の進行に応じて再解決する。たとえば route definition を先に `import-mount` し、その時点では start/end location が存在しない場合、runner は unresolved route location を pending reference として記録して import を成功させる。後続 action で location definition を `import-mount` した場合、runner は pending reference を再評価し、解決済みに遷移させる。location が存在しないまま vector tile build を開始する場合、その pending reference は build input dependency に昇格し、typed dependency error として失敗する。
 
+Phase 2 child #1596 では、pending reference / warning の共有型を `@hierarchidb/staged-folder-action` の progress contract と CLI contract で共通化する。runtime-worker runner は overlay 適用後、各 action 実行前、各 action 実行後に注入された reference resolver を呼び、resolver が返す `pendingReferences` と `warnings` を Worker / IndexedDB progress record に保存する。後続 action で解決された entry は削除して隠すのではなく、`status: "resolved"` として保存し、解決先 node がある場合は `resolvedTargetNodeId` を記録する。
+
+runner は reference resolver の例外や hard dependency error を warning に変換しない。dependency 未解決は `dependency` category の typed failure として扱い、CLI exit code は action failure 系の `5` とする。CLI success JSON は host が返した `warnings`、`pendingReferences`、`dependencyChanges` を空配列でない場合もそのまま出力し、progress store と result のどちらからも pending/resolved reference entry を欠落させてはならない。
+
 preview / Map UI 表示では、pending reference は warning として表示する。表示可能な部分は表示してよいが、未解決 location や shape membership を推測補完してはならない。
 
 依存関係の扱いは action 固有 prerequisite の一部である。`build` action は build target collection 前に build input dependency を検証し、vector tile build など artifact に参照値を焼き込む処理では dependency 未解決を失敗にする。`map-image-capture` action は requested layer と viewport/capture dependency を検証する。`folder-diagnostics` は dependency error を失敗として返す mode と、診断結果として列挙する mode を action schema で明示的に分けなければならない。

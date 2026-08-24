@@ -82,7 +82,9 @@ export type {
 export type {
   CreateStagedFolderActionRunRecordInput,
   StagedFolderActionCurrentActionProgress,
+  StagedFolderActionPendingReference,
   StagedFolderActionProgressCounts,
+  StagedFolderActionReferenceWarning,
   StagedFolderActionRunPhase,
   StagedFolderActionRunRecord,
   StagedFolderActionRunRecordPatch,

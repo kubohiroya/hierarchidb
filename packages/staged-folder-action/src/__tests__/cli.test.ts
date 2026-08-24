@@ -214,6 +214,106 @@ describe('runStagedFolderActionCli', () => {
     });
   });
 
+  it('preserves non-empty reference and dependency result arrays from the injected host', async () => {
+    const io = createIo({ 'config.json': jsonManifest });
+    const host: StagedFolderActionCliExecutionHost = {
+      run: async (input) => ({
+        ok: true,
+        version: 1,
+        dryRun: false,
+        runId: 'run-references',
+        sourceNodeId: input.sourceNodeId,
+        profileName: input.profileName,
+        configPath: input.configPath,
+        format: input.format,
+        stagingMode: input.config.staging.mode,
+        actions: input.config.actions.map((action) => action.type),
+        stagingRootNodeId: 'stage-1',
+        actionResults: [],
+        cleanup: {
+          policy: input.config.staging.cleanup,
+          status: 'retained',
+        },
+        warnings: [
+          {
+            category: 'reference',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            message: 'lazy reference is unresolved',
+            dependentNodeId: 'dependent-1',
+            referencePath: 'imports/shape-a',
+          },
+        ],
+        pendingReferences: [
+          {
+            status: 'pending',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            dependentNodeId: 'dependent-1',
+            referencePath: 'imports/shape-a',
+            expectedTargetType: 'shape',
+          },
+          {
+            status: 'resolved',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_RESOLVED',
+            dependentNodeId: 'dependent-2',
+            referencePath: 'imports/shape-b',
+            resolvedTargetNodeId: 'target-shape-b',
+          },
+        ],
+        dependencyChanges: [
+          {
+            edgeId: 'edge-1',
+            previousStatus: 'active',
+            nextStatus: 'stale',
+            sourceNodeId: 'dependent-1',
+            targetNodeId: 'dependency-1',
+          },
+        ],
+        elapsedMs: 12,
+      }),
+    };
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      warnings: unknown[];
+      pendingReferences: Array<{ status: string; referencePath: string }>;
+      dependencyChanges: Array<{ edgeId: string; previousStatus: string; nextStatus: string }>;
+    };
+
+    expect(exitCode).toBe(0);
+    expect(result).toMatchObject({
+      ok: true,
+      warnings: [
+        {
+          category: 'reference',
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+      pendingReferences: [
+        {
+          status: 'pending',
+          referencePath: 'imports/shape-a',
+        },
+        {
+          status: 'resolved',
+          referencePath: 'imports/shape-b',
+        },
+      ],
+      dependencyChanges: [
+        {
+          edgeId: 'edge-1',
+          previousStatus: 'active',
+          nextStatus: 'stale',
+        },
+      ],
+    });
+  });
+
   it('returns cleanup exit code when the injected host reports cleanup failure', async () => {
     const io = createIo({ 'config.json': jsonManifest });
     const host: StagedFolderActionCliExecutionHost = {
@@ -305,6 +405,52 @@ describe('runStagedFolderActionCli', () => {
         buildQueueId: 'build-1',
       },
     });
+  });
+
+  it('returns dependency exit code for typed dependency failures', async () => {
+    const io = createIo({ 'config.json': jsonManifest });
+    const host: StagedFolderActionCliExecutionHost = {
+      run: async (input) => ({
+        ok: false,
+        version: 1,
+        dryRun: false,
+        runId: 'run-dependency-failed',
+        sourceNodeId: input.sourceNodeId,
+        stagingRootNodeId: 'stage-1',
+        error: {
+          category: 'dependency',
+          code: 'STAGED_FOLDER_ACTION_DEPENDENCY_UNRESOLVED',
+          message: 'dependency is unresolved',
+          runId: 'run-dependency-failed',
+          sourceNodeId: input.sourceNodeId,
+          stagingRootNodeId: 'stage-1',
+          dependentNodeId: 'dependent-1',
+          referencePath: 'imports/shape-a',
+        },
+      }),
+    };
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      error: { category: string; code: string; referencePath: string };
+      warnings?: unknown[];
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_UNRESOLVED',
+        referencePath: 'imports/shape-a',
+      },
+    });
+    expect(result.warnings).toBeUndefined();
   });
 
   it('preserves a typed host error thrown by the injected host', async () => {

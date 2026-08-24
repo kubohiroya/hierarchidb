@@ -140,6 +140,8 @@ type StagedFolderActionCliSuccessResult = {
 
 遅延解決される reference の未解決は `pendingReferences` に記録し、ユーザー向け表示として `warnings` にも反映できる。後続 import/mount/overlay で解決されたものは `status: 'resolved'` とし、解決先が node の場合は `resolvedTargetNodeId` を記録する。dependency 未解決、artifact dependency lifecycle violation、contract violation は warning にしてはならない。
 
+Phase 2 child #1596 では、CLI は injected execution host が返した `warnings`、`pendingReferences`、`dependencyChanges` を成功 JSON にそのまま保持する。空配列でない pending/resolved reference entry を CLI 側で落としたり、`warnings` だけに畳み込んだりしてはならない。typed failure result の `dependency` / `reference` category には dependent node、reference path、expected/actual target、mount/plugin context を含められる。
+
 artifact dependency edge の状態変化は `dependencyChanges` に記録する。元データ変更により artifact を `stale` にした場合、または incremental rebuild を `rebuilding` として予約した場合、CLI result から追跡できなければならない。
 
 ## 失敗 JSON
@@ -217,7 +219,7 @@ type StagedFolderActionCliErrorResult = {
 | `2` | profile / Worker / browser startup failure |
 | `3` | source / staging / overlay failure |
 | `4` | build failure / paused / auth-required timeout |
-| `5` | action failure other than build |
+| `5` | reference / dependency / action failure other than build |
 | `6` | output/artifact write failure |
 | `7` | cleanup failure after otherwise successful output |
 | `70` | unexpected internal error |
@@ -232,6 +234,7 @@ CLI は以下を Worker / IndexedDB progress API に報告する。
 - staging preparation start / success / failure
 - overlay application start / success / failure
 - pending reference resolution start / success / warning / failure
+- dependency resolution failure。unresolved hard dependency は warning へ変換しない
 - action start / success / failure
 - export-archive start / success / failure
 - import-mount start / success / failure

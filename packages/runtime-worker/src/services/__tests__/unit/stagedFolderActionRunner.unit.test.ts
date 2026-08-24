@@ -76,6 +76,123 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('persists pending references and resolved references from the injected resolver', async () => {
+    const resolveReferences = vi
+      .fn<StagedFolderActionRunnerDependencies['resolveReferences']>()
+      .mockResolvedValueOnce({
+        warnings: [
+          {
+            category: 'reference',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            message: 'lazy reference is unresolved',
+            referencePath: 'imports/shape-a',
+          },
+        ],
+        pendingReferences: [
+          {
+            status: 'pending',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            referencePath: 'imports/shape-a',
+            expectedTargetType: 'shape',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        warnings: [
+          {
+            category: 'reference',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            message: 'lazy reference is unresolved before build',
+            actionIndex: 0,
+            actionType: 'build',
+            referencePath: 'imports/shape-a',
+          },
+        ],
+        pendingReferences: [
+          {
+            status: 'pending',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+            actionIndex: 0,
+            actionType: 'build',
+            referencePath: 'imports/shape-a',
+            expectedTargetType: 'shape',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        warnings: [],
+        pendingReferences: [
+          {
+            status: 'resolved',
+            code: 'STAGED_FOLDER_ACTION_REFERENCE_RESOLVED',
+            actionIndex: 0,
+            actionType: 'build',
+            referencePath: 'imports/shape-a',
+            expectedTargetType: 'shape',
+            resolvedTargetNodeId: 'target-shape-a',
+          },
+        ],
+      });
+    const dependencies = createDependencies({ resolveReferences });
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-reference-resolution' as NodeId,
+      sourceNodeId: 'source-reference-resolution' as NodeId,
+      config: createConfig({
+        actions: [{ type: 'build', mode: 'session-manager' }],
+      }),
+    });
+
+    expect(resolveReferences).toHaveBeenCalledTimes(3);
+    expect(resolveReferences.mock.calls.map(([input]) => input?.phase)).toEqual([
+      'after-overlay',
+      'before-action',
+      'after-action',
+    ]);
+    expect(resolveReferences.mock.calls[2]?.[0]?.pendingReferences).toEqual([
+      expect.objectContaining({
+        status: 'pending',
+        referencePath: 'imports/shape-a',
+        actionType: 'build',
+      }),
+    ]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      phase: 'completed',
+      warnings: [],
+      pendingReferences: [
+        {
+          status: 'resolved',
+          referencePath: 'imports/shape-a',
+          resolvedTargetNodeId: 'target-shape-a',
+        },
+      ],
+    });
+  });
+
+  it('fails dependency resolver errors without converting them to warnings', async () => {
+    const dependencies = createDependencies({
+      resolveReferences: vi.fn(async () => {
+        throw new Error('hard dependency missing');
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-dependency-failure' as NodeId,
+        sourceNodeId: 'source-dependency-failure' as NodeId,
+        config: createConfig({ actions: [] }),
+      })
+    ).rejects.toThrow(/hard dependency missing/);
+    await expect(store.getRun('run-dependency-failure' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      error: 'hard dependency missing',
+      warnings: [],
+      pendingReferences: [],
+    });
+  });
+
   it('runs map image capture only after the preceding build action completes', async () => {
     const order: string[] = [];
     const dependencies = createDependencies({

@@ -4,6 +4,8 @@ import type {
   MapImageCaptureIntent,
   StagedFolderAction,
   StagedFolderActionConfig,
+  StagedFolderActionPendingReference,
+  StagedFolderActionReferenceWarning,
 } from '@hierarchidb/staged-folder-action';
 import { createMapImageCaptureIntent } from '@hierarchidb/staged-folder-action';
 import type { StagedFolderActionProgressStore } from './stagedFolderActionProgressStore.js';
@@ -38,6 +40,26 @@ export interface StagedFolderActionProgressUpdate {
   percentage: number;
 }
 
+export type StagedFolderActionReferenceResolutionPhase =
+  | 'after-overlay'
+  | 'before-action'
+  | 'after-action';
+
+export interface StagedFolderActionReferenceResolverInput {
+  config: StagedFolderActionConfig;
+  stagingRootNodeId: NodeId;
+  runId: NodeId;
+  phase: StagedFolderActionReferenceResolutionPhase;
+  action?: StagedFolderAction;
+  actionIndex?: number;
+  pendingReferences: readonly StagedFolderActionPendingReference[];
+}
+
+export interface StagedFolderActionReferenceResolutionResult {
+  warnings: readonly StagedFolderActionReferenceWarning[];
+  pendingReferences: readonly StagedFolderActionPendingReference[];
+}
+
 export interface StagedFolderActionRunnerDependencies {
   progressStore: StagedFolderActionProgressStore;
   now: () => number;
@@ -64,6 +86,9 @@ export interface StagedFolderActionRunnerDependencies {
     stagingRootNodeId: NodeId;
     runId: NodeId;
   }): Promise<void>;
+  resolveReferences?(
+    input: StagedFolderActionReferenceResolverInput
+  ): Promise<StagedFolderActionReferenceResolutionResult>;
 }
 
 const runStagedFolderAction = async (
@@ -100,9 +125,22 @@ const runStagedFolderAction = async (
       config: input.config,
       stagingRootNodeId,
     });
+    await resolveAndPersistReferences(dependencies, input, stagingRootNodeId, {
+      phase: 'after-overlay',
+    });
 
     for (const [actionIndex, action] of input.config.actions.entries()) {
+      await resolveAndPersistReferences(dependencies, input, stagingRootNodeId, {
+        phase: 'before-action',
+        action,
+        actionIndex,
+      });
       await runAction(dependencies, input, stagingRootNodeId, action, actionIndex);
+      await resolveAndPersistReferences(dependencies, input, stagingRootNodeId, {
+        phase: 'after-action',
+        action,
+        actionIndex,
+      });
     }
 
     if (dependencies.cleanup && shouldCleanupAfterSuccess(input.config.staging.cleanup)) {
@@ -164,6 +202,68 @@ const runStagedFolderAction = async (
     }
     throw failureError;
   }
+};
+
+const resolveAndPersistReferences = async (
+  dependencies: StagedFolderActionRunnerDependencies,
+  input: StagedFolderActionRunnerInput,
+  stagingRootNodeId: NodeId,
+  resolution: {
+    phase: StagedFolderActionReferenceResolutionPhase;
+    action?: StagedFolderAction;
+    actionIndex?: number;
+  }
+): Promise<void> => {
+  if (!dependencies.resolveReferences) return;
+  const progressStore = dependencies.progressStore;
+  const current = await progressStore.getRun(input.runId);
+  if (current === null) {
+    throw new Error(`staged-folder-action run ${String(input.runId)} was not found`);
+  }
+  await progressStore.updateRun(input.runId, {
+    status: 'running',
+    phase: 'resolving-references',
+    ...(resolution.action === undefined || resolution.actionIndex === undefined
+      ? {}
+      : {
+          currentAction: {
+            actionIndex: resolution.actionIndex,
+            actionType: resolution.action.type,
+            phase: 'resolving-references',
+            percentage: 0,
+          },
+        }),
+    progress: progressFor(
+      input.config.actions.length,
+      resolution.phase === 'after-action' && resolution.actionIndex !== undefined
+        ? resolution.actionIndex + 1
+        : (resolution.actionIndex ?? 0)
+    ),
+    updatedAt: dependencies.now(),
+  });
+  const result = await dependencies.resolveReferences({
+    config: input.config,
+    stagingRootNodeId,
+    runId: input.runId,
+    phase: resolution.phase,
+    ...(resolution.action === undefined ? {} : { action: resolution.action }),
+    ...(resolution.actionIndex === undefined ? {} : { actionIndex: resolution.actionIndex }),
+    pendingReferences: current.pendingReferences ?? [],
+  });
+  assertReferenceResolutionResult(result);
+  await progressStore.updateRun(input.runId, {
+    status: 'running',
+    phase: 'resolving-references',
+    warnings: normalizeWarnings(result.warnings),
+    pendingReferences: normalizePendingReferences(result.pendingReferences),
+    progress: progressFor(
+      input.config.actions.length,
+      resolution.phase === 'after-action' && resolution.actionIndex !== undefined
+        ? resolution.actionIndex + 1
+        : (resolution.actionIndex ?? 0)
+    ),
+    updatedAt: dependencies.now(),
+  });
 };
 
 const shouldCleanupAfterSuccess = (cleanup: StagedFolderActionConfig['staging']['cleanup']) =>
@@ -281,6 +381,108 @@ const updateCurrentActionProgress = async (
     updatedAt: dependencies.now(),
   });
 };
+
+const assertReferenceResolutionResult = (
+  result: StagedFolderActionReferenceResolutionResult
+): void => {
+  if (typeof result !== 'object' || result === null) {
+    throw new Error('reference resolution result must be an object');
+  }
+  if (!Array.isArray(result.warnings)) {
+    throw new Error('reference resolution warnings must be an array');
+  }
+  if (!Array.isArray(result.pendingReferences)) {
+    throw new Error('reference resolution pendingReferences must be an array');
+  }
+};
+
+const normalizeWarnings = (
+  warnings: readonly StagedFolderActionReferenceWarning[]
+): StagedFolderActionReferenceWarning[] =>
+  [...warnings]
+    .map((warning) => ({
+      ...warning,
+      ...(warning.referencePath === undefined
+        ? {}
+        : {
+            referencePath: normalizeTrimmedString(warning.referencePath, 'warning.referencePath'),
+          }),
+    }))
+    .sort(compareWarnings);
+
+const normalizePendingReferences = (
+  pendingReferences: readonly StagedFolderActionPendingReference[]
+): StagedFolderActionPendingReference[] =>
+  [...pendingReferences]
+    .map((reference) => ({
+      ...reference,
+      referencePath: normalizeTrimmedString(
+        reference.referencePath,
+        'pendingReference.referencePath'
+      ),
+      ...(reference.resolvedTargetNodeId === undefined
+        ? {}
+        : {
+            resolvedTargetNodeId: normalizeTrimmedString(
+              reference.resolvedTargetNodeId,
+              'pendingReference.resolvedTargetNodeId'
+            ),
+          }),
+    }))
+    .sort(comparePendingReferences);
+
+const normalizeTrimmedString = (value: string, field: string): string => {
+  if (typeof value !== 'string' || value.length === 0 || value !== value.trim()) {
+    throw new Error(`reference resolution ${field} must be a non-empty trimmed string`);
+  }
+  return value;
+};
+
+const compareWarnings = (
+  left: StagedFolderActionReferenceWarning,
+  right: StagedFolderActionReferenceWarning
+): number =>
+  [
+    left.actionIndex ?? -1,
+    left.actionType ?? '',
+    left.dependentNodeId ?? '',
+    left.referencePath ?? '',
+    left.code,
+  ]
+    .join('\0')
+    .localeCompare(
+      [
+        right.actionIndex ?? -1,
+        right.actionType ?? '',
+        right.dependentNodeId ?? '',
+        right.referencePath ?? '',
+        right.code,
+      ].join('\0')
+    );
+
+const comparePendingReferences = (
+  left: StagedFolderActionPendingReference,
+  right: StagedFolderActionPendingReference
+): number =>
+  [
+    left.actionIndex ?? -1,
+    left.actionType ?? '',
+    left.dependentNodeId ?? '',
+    left.referencePath,
+    left.status,
+    left.code,
+  ]
+    .join('\0')
+    .localeCompare(
+      [
+        right.actionIndex ?? -1,
+        right.actionType ?? '',
+        right.dependentNodeId ?? '',
+        right.referencePath,
+        right.status,
+        right.code,
+      ].join('\0')
+    );
 
 const progressFor = (total: number, completed: number) => ({
   total,
