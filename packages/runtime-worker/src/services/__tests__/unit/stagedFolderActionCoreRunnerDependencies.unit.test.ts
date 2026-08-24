@@ -88,6 +88,81 @@ describe('createStagedFolderActionCoreRunnerDependencies', () => {
     });
   });
 
+  it('passes the injected reference resolver through the core runner dependencies', async () => {
+    const source = await createNode({
+      id: 'source-reference-resolver',
+      parentId: 'r:root' as NodeId,
+      name: 'Source Reference Resolver',
+      data: { value: 'source' },
+    });
+    const resolveReferences = vi.fn(async () => ({
+      warnings: [
+        {
+          category: 'reference' as const,
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+          message: 'lazy reference is unresolved',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+      pendingReferences: [
+        {
+          status: 'pending' as const,
+          code: 'STAGED_FOLDER_ACTION_REFERENCE_PENDING',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+    }));
+    const dependencies = createStagedFolderActionCoreRunnerDependencies({
+      coreDB,
+      progressStore: store,
+      now: () => nowValue++,
+      runBuildAction: vi.fn(async ({ stagingRootNodeId }) => ({
+        nodeType: 'shape' as NodeType,
+        nodeId: stagingRootNodeId,
+        status: 'completed',
+      })),
+      resolveReferences,
+    });
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-core-reference-resolver' as NodeId,
+      sourceNodeId: source.id as NodeId,
+      config: {
+        version: 1,
+        staging: {
+          mode: 'temporary-copy',
+          cleanup: 'retain',
+        },
+        overlay: {
+          nodes: [],
+        },
+        actions: [],
+      },
+    });
+
+    expect(resolveReferences).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phase: 'after-overlay',
+        runId: 'run-core-reference-resolver',
+        pendingReferences: [],
+      })
+    );
+    expect(result).toMatchObject({
+      warnings: [
+        {
+          category: 'reference',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+      pendingReferences: [
+        {
+          status: 'pending',
+          referencePath: 'imports/shape-a',
+        },
+      ],
+    });
+  });
+
   it('deletes temporary staging roots when cleanup is delete-on-success', async () => {
     const source = await createNode({
       id: 'source-cleanup',
