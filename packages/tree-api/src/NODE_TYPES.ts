@@ -83,6 +83,14 @@ export type TreeNode<TData extends NodePayload | null = NodePayload | null> = No
    */
   draftData?: TData;
   /**
+   * Optional source node for copy-on-write effective data resolution.
+   */
+  copyOnWriteOf?: NodeId;
+  /**
+   * Data patch merged onto the copy-on-write source data.
+   */
+  patchData?: NodePayload;
+  /**
    * Temporary flag for pre-commit nodes created from UI flows.
    */
   isTemporary?: boolean;

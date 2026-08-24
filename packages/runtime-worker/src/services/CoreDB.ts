@@ -62,6 +62,8 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     removedAt,
     lastTouchedAt,
     visible,
+    copyOnWriteOf,
+    patchData,
   } = node as TreeNode;
 
   const normalizedVisible = typeof visible === 'boolean' ? visible : true;
@@ -111,6 +113,8 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     removedAt,
     lastTouchedAt,
     visible: normalizedVisible,
+    copyOnWriteOf,
+    patchData,
   };
 };
 
