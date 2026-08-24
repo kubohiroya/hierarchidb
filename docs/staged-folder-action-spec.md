@@ -432,6 +432,8 @@ vector tile などの build artifact に reference が地理的図形データ�
 
 artifact dependency edge は build artifact / dependency index / mount record から追跡できなければならない。TreeNode.data に参照元セットを埋め込まず、artifact/build result 側が作成した dependency index を SSOT とする。編集 UI、CLI overlay、`patch-source`、import/mount cleanup は dependency index を逆引きし、影響を受ける artifact と incremental rebuild target を特定する。
 
+Phase 2 child #1588 では、dependency index の永続化境界を runtime-worker 管理の dedicated Dexie store として導入する。CoreDB の tree/node schema は YAML activation の canonical native version と強く結合しているため、この child issue では CoreDB 本体の version を上げない。dependency lifecycle store は `TreeNode.data` ではなく artifact 側 index を SSOT とし、後続の edit/overlay/patch-source 経路は source data の変更と lifecycle store 更新を同一 action sequence の必須 step として扱う。source data と lifecycle state を同じ CoreDB transaction へ統合するかどうかは、YAML canonical DB versioning と合わせて別 issue で再確定する。
+
 dependency edge は少なくとも以下の状態を持つ。
 
 | Status | 意味 |

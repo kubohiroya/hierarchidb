@@ -127,6 +127,8 @@ Runner orchestration は staging preparation、overlay application、action exec
 
 Phase 2 child #1584 以降の `build` action は、同じ resolver に artifact dependency lifecycle summary と plugin prerequisite failure を渡す。`stale` edge は resolver が返す `build-required` / `details[]` により rebuild target として扱い、`orphaned` edge、dependency error、schema error、unsupported participant、plugin prerequisite failure は `not-buildable` として action failure にする。`stale` または `rebuilding` edge を報告する input が rebuild target ID を持たない場合、runner は target を推測せず resolver の contract violation をそのまま failure として記録する。
 
+Phase 2 child #1588 では、artifact dependency lifecycle manager の保存境界を runtime-worker 専用 Dexie store として追加する。store は `active` edge の記録、target field 逆引きによる `stale` 化、build target/session 単位の `rebuilding` 化、replacement active edge 記録時の `resolved` 化、missing artifact/source/target/mount に基づく deterministic orphan detection を提供する。runner は build artifact が dependency edge を生成できるようになった時点でこの store に active edge を記録し、build start/terminal の後続 integration では同じ service API を通じて `rebuilding` / `active` / `resolved` を更新する。CoreDB の tree/node schema version はこの child issue では変更しない。
+
 Phase 1 初期 WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へそのまま渡す。標準 Worker bootstrap / CLI bridge はまだ browser handoff implementation を注入しない。したがって標準 host で `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary
