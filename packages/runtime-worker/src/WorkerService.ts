@@ -31,6 +31,8 @@ import type {
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
+import { ArtifactDependencyLifecycleStore } from './services/artifactDependencyLifecycleStore.js';
+import { ArtifactDependencyRebuildPlanner } from './services/artifactDependencyRebuildPlanner.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
 import { CoreDB } from './services/CoreDB.js';
 import { generateNodeId } from './services/generateNodeId.js';
@@ -157,12 +159,20 @@ export class WorkerService {
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB, shapeDB);
       const importExportService: ImportExportAPI<TreeNodeData> =
         await ImportExportLifecycleService.getSingleton<TreeNodeData>(iePort);
+      const artifactDependencyLifecycleStore = new ArtifactDependencyLifecycleStore(
+        getDBName(options.databasePrefix, 'artifact-dependency-lifecycle')
+      );
+      await artifactDependencyLifecycleStore.open();
+      const artifactDependencyRebuildPlanner = new ArtifactDependencyRebuildPlanner(
+        artifactDependencyLifecycleStore
+      );
 
       const treeNodeUpdaterService: TreeNodeUpdaterAPI<TreeNodeData> = new TreeNodeUpdaterService(
         coreDB,
         commandProcessor,
         tagService,
-        options.yamlCanonicalDialogWriter
+        options.yamlCanonicalDialogWriter,
+        artifactDependencyRebuildPlanner
       );
       const assertCanonicalAccess =
         options.assertYamlStorageCanonicalAccess ??

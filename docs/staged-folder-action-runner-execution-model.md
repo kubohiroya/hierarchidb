@@ -133,6 +133,8 @@ Phase 2 child #1590 の UI 表示は runner behavior を変更しない。TreeTa
 
 Phase 2 child #1592 の edit lock は runner behavior を変更しない。Plugin dialog などの編集 surface は canonical build session runtime context の active session を SSOT とし、field id と lock 対象 field id の明示リストで個別 field の disabled state と理由を解決する。modal blocking は追加せず、対象外 field の編集は継続できる。field id が空、または lock 対象 field id が空の場合は contract violation として fail-fast する。
 
+Phase 2 child #1594 の post-build edit stale propagation は runner の build dispatch 順序を変更しない。runtime-worker の final save 境界は、成功した committed node 更新の後で dependency lifecycle service/API を呼び、変更された target field に対応する `active` edge を `stale` に遷移させ、deterministic incremental rebuild plan と `BuildDependencyAvailabilitySummary` を返す。`save-draft` は committed data を変更しないため dependency lifecycle を更新しない。後続 runner/build availability integration はこの summary を入力として扱い、UI/app 側で dependency store を直接読んだり rebuild target を推測したりしてはならない。
+
 Phase 1 初期 WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へそのまま渡す。標準 Worker bootstrap / CLI bridge はまだ browser handoff implementation を注入しない。したがって標準 host で `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary
