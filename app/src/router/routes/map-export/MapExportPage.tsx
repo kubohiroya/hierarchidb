@@ -12,7 +12,7 @@ import {
   type MapExportBrowserStatus,
   type MapExportBrowserSubmitResult,
   type MapExportNodePayload,
-} from '@hierarchidb/map-export';
+} from '@hierarchidb/staged-folder-action';
 import type {
   LayerSetVisibility,
   MapLibreMapInstance,

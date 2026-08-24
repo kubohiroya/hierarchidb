@@ -1,4 +1,34 @@
 export type {
+  StagedFolderActionManifestErrorCode,
+  StagedFolderActionManifestErrorDetails,
+} from './StagedFolderActionManifestError.js';
+export { StagedFolderActionManifestError } from './StagedFolderActionManifestError.js';
+export type {
+  ParseStagedFolderActionManifestOptions,
+  StagedFolderAction,
+  StagedFolderActionBbox,
+  StagedFolderActionCleanup,
+  StagedFolderActionConfig,
+  StagedFolderActionExecutionOwner,
+  StagedFolderActionManifestFormat,
+  StagedFolderActionOverlayNode,
+  StagedFolderActionRegistryEntry,
+  StagedFolderActionStagingMode,
+  StagedFolderActionType,
+  StagedFolderBuildAction,
+  StagedFolderExportArchiveAction,
+  StagedFolderExportCsvAction,
+  StagedFolderExportXlsxAction,
+  StagedFolderImportMountAction,
+  StagedFolderMapImageCaptureAction,
+  ValidateStagedFolderActionCliOptionsInput,
+} from './StagedFolderActionManifestTypes.js';
+export {
+  parseStagedFolderActionManifest,
+  stagedFolderActionRegistry,
+  validateStagedFolderActionCliOptions,
+} from './parseStagedFolderActionManifest.js';
+export type {
   MapExportBrowserApi,
   MapExportBrowserCommittedNode,
   MapExportBrowserErrorCode,
