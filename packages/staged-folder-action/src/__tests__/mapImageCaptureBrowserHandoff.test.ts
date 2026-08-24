@@ -9,6 +9,7 @@ import {
   type MapImageCaptureBrowserPagePort,
   type MapImageCaptureBrowserProgress,
   type MapImageCaptureIntent,
+  type MapImageCapturePageFailure,
   type PlaywrightLikeMapImageCapturePage,
   runMapImageCaptureBrowserHandoff,
 } from '../index.js';
@@ -71,6 +72,7 @@ describe('runMapImageCaptureBrowserHandoff', () => {
     });
 
     expect(page.setViewportSize).toHaveBeenCalledWith({ width: 800, height: 600 });
+    expect(page.startPageFailureMonitoring).toHaveBeenCalledOnce();
     expect(page.goto).toHaveBeenCalledWith(
       'http://localhost:3000/map/staging-root?captureIntentId=run-1%3A0'
     );
@@ -82,6 +84,7 @@ describe('runMapImageCaptureBrowserHandoff', () => {
     expect(page.assertNonBlankCanvas).toHaveBeenCalledWith({
       canvasSelector: MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
     });
+    expect(page.collectPageFailures).toHaveBeenCalledOnce();
     expect(page.screenshot).toHaveBeenCalledWith({ path: 'exports/out.png', fullPage: false });
     expect(progress.map((update) => update.phase)).toEqual([
       'opening-map-ui',
@@ -122,6 +125,24 @@ describe('runMapImageCaptureBrowserHandoff', () => {
     ).rejects.toThrow(/blank canvas/);
     expect(page.screenshot).not.toHaveBeenCalled();
   });
+
+  it('fails before screenshot when the page reports browser failures', async () => {
+    const page = createPagePort('ready', true, [
+      { kind: 'unhandled-rejection', message: 'failed to load layer' },
+    ]);
+
+    await expect(
+      runMapImageCaptureBrowserHandoff({
+        page,
+        intent: createIntent(),
+        baseUrl: 'http://localhost:3000/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        reportProgress: async () => {},
+      })
+    ).rejects.toThrow(/unhandled-rejection: failed to load layer/);
+    expect(page.screenshot).not.toHaveBeenCalled();
+  });
 });
 
 describe('createPlaywrightMapImageCapturePagePort', () => {
@@ -129,6 +150,7 @@ describe('createPlaywrightMapImageCapturePagePort', () => {
     const page = createPlaywrightLikePage('ready');
     const port = createPlaywrightMapImageCapturePagePort(page);
 
+    await port.startPageFailureMonitoring();
     await port.setViewportSize({ width: 320, height: 240 });
     await port.goto('http://localhost:3000/map/node');
     await expect(
@@ -141,8 +163,11 @@ describe('createPlaywrightMapImageCapturePagePort', () => {
     await expect(
       port.assertNonBlankCanvas({ canvasSelector: MAP_IMAGE_CAPTURE_CANVAS_SELECTOR })
     ).resolves.toBe(true);
+    await expect(port.collectPageFailures()).resolves.toEqual([]);
     await port.screenshot({ path: 'exports/out.png', fullPage: false });
 
+    expect(page.addInitScript).toHaveBeenCalled();
+    expect(page.on).toHaveBeenCalledWith('pageerror', expect.any(Function));
     expect(page.setViewportSize).toHaveBeenCalledWith({ width: 320, height: 240 });
     expect(page.goto).toHaveBeenCalledWith('http://localhost:3000/map/node');
     expect(page.waitForSelector).toHaveBeenCalledWith(MAP_IMAGE_CAPTURE_READY_SELECTOR, {
@@ -155,18 +180,23 @@ describe('createPlaywrightMapImageCapturePagePort', () => {
 
 const createPagePort = (
   renderStatus: 'ready' | 'error',
-  canvasIsNonBlank = true
+  canvasIsNonBlank = true,
+  pageFailures: MapImageCapturePageFailure[] = []
 ): MapImageCaptureBrowserPagePort => ({
+  startPageFailureMonitoring: vi.fn(async () => {}),
   setViewportSize: vi.fn(async () => {}),
   goto: vi.fn(async () => {}),
   waitForRenderStatus: vi.fn(async () => renderStatus),
   assertNonBlankCanvas: vi.fn(async () => canvasIsNonBlank),
+  collectPageFailures: vi.fn(async () => pageFailures),
   screenshot: vi.fn(async () => {}),
 });
 
 const createPlaywrightLikePage = (
   renderStatus: 'ready' | 'error'
 ): PlaywrightLikeMapImageCapturePage => ({
+  addInitScript: vi.fn(async () => {}),
+  on: vi.fn(() => {}),
   setViewportSize: vi.fn(async () => {}),
   goto: vi.fn(async () => {}),
   waitForSelector: vi.fn(async (selector: string) => {
@@ -178,6 +208,6 @@ const createPlaywrightLikePage = (
     }
     return new Promise(() => {});
   }),
-  evaluate: vi.fn(async () => true),
+  evaluate: vi.fn(async (_pageFunction, arg) => (arg === undefined ? [] : true)),
   screenshot: vi.fn(async () => {}),
 });

@@ -45,6 +45,8 @@ export type {
   MapImageCaptureBrowserPagePort,
   MapImageCaptureBrowserProgress,
   MapImageCaptureBrowserProgressPhase,
+  MapImageCapturePageFailure,
+  MapImageCapturePageFailureKind,
   MapImageCaptureRouteMode,
   PlaywrightLikeMapImageCapturePage,
   RunMapImageCaptureBrowserHandoffInput,
