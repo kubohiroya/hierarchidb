@@ -31,6 +31,10 @@ import {
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
 } from './DraftTreeNodeOperations.js';
+import {
+  assertNodeIsNotTemporaryStagingNode,
+  isNodeInTemporaryFolderSubtree,
+} from './temporaryFolderHolderLifecycleUtils.js';
 
 interface YamlCanonicalDialogWriteRequest {
   readonly nodeId: NodeId;
@@ -500,10 +504,20 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
   async listDrafts(): Promise<TreeNode[]> {
     // Drafts are nodes with draftData present
     const allNodes = await this.coreDB.nodes.toArray();
-    return allNodes.filter((node) => node.draftData !== undefined);
+    const drafts: TreeNode[] = [];
+    for (const node of allNodes) {
+      if (
+        node.draftData !== undefined &&
+        !(await isNodeInTemporaryFolderSubtree(this.coreDB, node.id as NodeId))
+      ) {
+        drafts.push(node);
+      }
+    }
+    return drafts;
   }
 
   async hasDraft(nodeId: NodeId): Promise<boolean> {
+    if (await isNodeInTemporaryFolderSubtree(this.coreDB, nodeId)) return false;
     const wc = await getTreeNode(this.coreDB, nodeId);
     return !!wc;
   }
@@ -555,6 +569,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     draftId: NodeId,
     request?: CommitDraftRequest<TreeNodeData>
   ): Promise<CommitResult> {
+    await assertNodeIsNotTemporaryStagingNode(this.coreDB, draftId);
     const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'error';
     const mode: CommitDraftMode = request?.mode ?? 'save';
 
@@ -723,6 +738,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
   }
 
   async discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void> {
+    await assertNodeIsNotTemporaryStagingNode(this.coreDB, nodeId);
     const wc = await getTreeNode(this.coreDB, nodeId);
     if (!wc) return;
     await discardWc(this.coreDB, nodeId, options);

@@ -75,6 +75,7 @@
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
+    "@hierarchidb/staged-folder-action": "workspace:*",
     "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",

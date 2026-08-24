@@ -9,6 +9,7 @@ const NODE_ID = 'node-1' as NodeId;
 
 describe('WorkerBridge subscribeAll', () => {
   let startBuildSessionMock: ReturnType<typeof vi.fn>;
+  let runStagedFolderActionMock: ReturnType<typeof vi.fn>;
   let subscribeSessionStateMock: ReturnType<typeof vi.fn>;
   let subscribeSessionHeartbeatMock: ReturnType<typeof vi.fn>;
   let subscribeWorkerLogMock: ReturnType<typeof vi.fn>;
@@ -31,6 +32,17 @@ describe('WorkerBridge subscribeAll', () => {
       nodeId: NODE_ID,
       status: 'running',
       progress: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+    }));
+    runStagedFolderActionMock = vi.fn(async (input) => ({
+      runId: input.runId,
+      sourceNodeId: input.sourceNodeId,
+      status: 'completed',
+      phase: 'completed',
+      progress: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 100 },
+      startedAt: 1,
+      updatedAt: 2,
+      completedAt: 2,
+      revision: 1,
     }));
     taskEventProxyCallback = null;
     progressEventProxyCallback = null;
@@ -82,6 +94,7 @@ describe('WorkerBridge subscribeAll', () => {
     __setWorkerBridgeClientRef({
       client: {
         startBuildSession: startBuildSessionMock,
+        runStagedFolderAction: runStagedFolderActionMock,
         subscribeStageSnapshots: subscribeStageSnapshotsMock,
         subscribeTaskProgress: subscribeTaskProgressMock,
         subscribeSessionState: subscribeSessionStateMock,
@@ -94,6 +107,7 @@ describe('WorkerBridge subscribeAll', () => {
         ({
           subscribeStageSnapshots: subscribeStageSnapshotsMock,
           startBuildSession: startBuildSessionMock,
+          runStagedFolderAction: runStagedFolderActionMock,
           subscribeTaskProgress: subscribeTaskProgressMock,
           subscribeSessionState: subscribeSessionStateMock,
           subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
@@ -104,6 +118,26 @@ describe('WorkerBridge subscribeAll', () => {
 
   afterEach(() => {
     __setWorkerBridgeClientRef(null);
+  });
+
+  it('forwards staged-folder-action execution requests to WorkerAPI', async () => {
+    const bridge = getBuildWorkerBridge();
+    const input = {
+      runId: 'run-1' as NodeId,
+      sourceNodeId: NODE_ID,
+      config: {
+        version: 1,
+        staging: { mode: 'patch-source', cleanup: 'retain' },
+        overlay: { nodes: [] },
+        actions: [],
+      },
+    } as const;
+
+    const result = await bridge.runStagedFolderAction(input);
+
+    expect(runStagedFolderActionMock).toHaveBeenCalledWith(input);
+    expect(result.runId).toBe('run-1');
+    expect(result.status).toBe('completed');
   });
 
   it('subscribes the four canonical channels and routes events to correct handlers', async () => {

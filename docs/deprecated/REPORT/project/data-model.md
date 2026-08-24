@@ -291,7 +291,7 @@ export interface ExportConfiguration extends AutoEntity {
 
 export type ExportType = 
   | 'image'             // Static image export
-  | 'interactive'       // Interactive map export
+  | 'interactive'       // Interactive map image output
   | 'data'              // Raw data export
   | 'configuration'     // Project configuration export
   | 'template';         // Reusable template export

@@ -13,7 +13,7 @@ import type {
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { RunStagedFolderActionInput, WorkerAPI } from '@hierarchidb/worker-api';
 import { proxy, type Remote } from 'comlink';
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
@@ -43,6 +43,9 @@ export interface BuildWorkerBridge {
     cb: (sessions: BuildSessionRuntimeRecord[]) => void
   ): Promise<() => void>;
   deleteBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  runStagedFolderAction(
+    input: RunStagedFolderActionInput
+  ): ReturnType<WorkerApi['runStagedFolderAction']>;
   getStyleQueryAPI(): ReturnType<WorkerApi['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerApi['getStyleMutationAPI']>;
   getShapeQueryAPI(): ReturnType<WorkerApi['getShapeQueryAPI']>;
@@ -259,6 +262,13 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async deleteBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.deleteBuildSession(nodeType, nodeId);
+  }
+
+  async runStagedFolderAction(
+    input: RunStagedFolderActionInput
+  ): ReturnType<WorkerApi['runStagedFolderAction']> {
+    const api = await ensureWorkerAPI();
+    return api.runStagedFolderAction(input);
   }
 
   async getStyleQueryAPI(): Promise<Awaited<ReturnType<WorkerApi['getStyleQueryAPI']>>> {

@@ -1,3 +1,4 @@
+import { STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE } from '@hierarchidb/staged-folder-action';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
@@ -79,14 +80,21 @@ export function TreeConsoleAppBar({
 
         <Stack direction="row" spacing={2} alignItems="center">
           {data.tree?.id ? (
-            <BuildSessionQueuePanelBadgeButton
-              treeId={data.tree.id}
-              nodeType={resumeSessionNodeType}
-              onNavigateToBuild={handleNavigateToBuild}
-              onNavigateToBuildJobEntry={handleNavigateToBuildJobEntry}
-              autoStartTopSession={isQueueAutoStartEnabled}
-              onEntriesChange={handleResumeDialogEntriesChange}
-            />
+            <>
+              <BuildSessionQueuePanelBadgeButton
+                treeId={data.tree.id}
+                nodeType={resumeSessionNodeType}
+                onNavigateToBuild={handleNavigateToBuild}
+                onNavigateToBuildJobEntry={handleNavigateToBuildJobEntry}
+                autoStartTopSession={isQueueAutoStartEnabled}
+                onEntriesChange={handleResumeDialogEntriesChange}
+              />
+              <BuildSessionQueuePanelBadgeButton
+                treeId={data.tree.id}
+                nodeType={STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE}
+                autoStartTopSession={false}
+              />
+            </>
           ) : null}
           {isUserMenuReady ? <UserLoginButton onOpenMaintenance={onOpenMaintenance} /> : null}
         </Stack>

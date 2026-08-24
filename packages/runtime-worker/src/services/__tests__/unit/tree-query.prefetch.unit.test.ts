@@ -60,4 +60,25 @@ describe('TreeQueryService listChildren prefetch', () => {
     ]);
     expect(stubCoreDB.listChildren as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1 + 2 + 3);
   });
+
+  it('returns effective data for copy-on-write children', async () => {
+    const source = { ...makeNode('source', 'root', 'Source'), data: { nested: { keep: true } } };
+    const staged = {
+      ...makeNode('staged', 'root', 'Staged'),
+      data: null,
+      copyOnWriteOf: source.id as NodeId,
+      patchData: { nested: { value: 'patched' } },
+    };
+    const nodes = new Map<string, TreeNode>([
+      ['source', source],
+      ['staged', staged],
+    ]);
+    tree.root = [staged];
+    (stubCoreDB as { getNode: (nodeId: NodeId) => Promise<TreeNode | undefined> }).getNode =
+      vi.fn(async (nodeId: NodeId) => nodes.get(String(nodeId)));
+
+    const result = await service.listChildren('root' as NodeId);
+
+    expect(result[0]?.data).toEqual({ nested: { keep: true, value: 'patched' } });
+  });
 });

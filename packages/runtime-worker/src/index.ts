@@ -22,11 +22,27 @@ export type {
 export { VTStoreRegistry } from './entity/VTStoreRegistry.js';
 export * from './module-paths.js';
 export {
+  type ApplyStagedFolderActionOverlaysInput,
+  applyStagedFolderActionOverlays,
+  StagedFolderActionOverlayApplicationError,
+  type StagedFolderActionOverlayApplicationErrorCode,
+  type StagedFolderActionOverlayEntry,
+  type StagedFolderActionOverlayStagingMode,
+} from './services/applyStagedFolderActionOverlays.js';
+export {
   publishBuildSessionUpdate,
   subscribeToBuildSessionBroadcast,
 } from './services/buildSessionBroadcastUtils.js';
 // CoreDB and draft utilities (for plugin-side usage)
 export { CoreDB } from './services/CoreDB.js';
+export {
+  type CreateCopyOnWriteSubtreeInput,
+  createCopyOnWriteSubtree,
+} from './services/createCopyOnWriteSubtree.js';
+export {
+  type CreateStagedFolderActionCoreRunnerDependenciesInput,
+  createStagedFolderActionCoreRunnerDependencies,
+} from './services/createStagedFolderActionCoreRunnerDependencies.js';
 export * from './services/downloadAdapter.js';
 export { commitTreeNodeDraft } from './services/draft/commitOperations.js';
 export { discardTreeNodeDraft } from './services/draft/discardTreeNodeDraft.js';
@@ -47,6 +63,24 @@ export {
   type RuntimeWorkerAdapterOptions,
   registerPluginRuntimeWorkerAdapters,
 } from './services/registerPluginRuntimeWorkerAdapters.js';
+export {
+  EffectiveTreeNodeDataResolverError,
+  type EffectiveTreeNodeDataResolverErrorCode,
+  type EffectiveTreeNodeDataResolverInput,
+  type EffectiveTreeNodeDataResolverMetadata,
+  type EffectiveTreeNodeDataResolverResult,
+  type EffectiveTreeNodeDataSlot,
+  resolveEffectiveTreeNodeData,
+  strictMergeNodePayload,
+  type TreeNodeReader,
+} from './services/resolveEffectiveTreeNodeData.js';
+export {
+  runStagedFolderAction,
+  type StagedFolderActionBuildResult,
+  type StagedFolderActionPreparedStaging,
+  type StagedFolderActionRunnerDependencies,
+  type StagedFolderActionRunnerInput,
+} from './services/runStagedFolderAction.js';
 export { ShapeMutationService } from './services/ShapeMutationService.js';
 export { ShapeQueryService } from './services/ShapeQueryService.js';
 export {
@@ -54,7 +88,27 @@ export {
   getStageProcessingClient,
   getStageWorkerProxy,
 } from './services/StageProcessingService.js';
+export {
+  createStagedFolderActionBuildRuntimeAdapter,
+  isStagedFolderActionRunActive,
+  type StagedFolderActionProgressFilter,
+  StagedFolderActionProgressStore,
+  toBuildSessionRuntimeRecord,
+} from './services/stagedFolderActionProgressStore.js';
 export { TreeQueryService } from './services/TreeQueryService.js';
+export {
+  assertNodeIsNotTemporaryStagingNode,
+  cleanupTemporaryStagingRoot,
+  createTemporaryCopyStagingRoot,
+  ensureTemporaryFolderHolder,
+  getTemporaryFolderNodeId,
+  isNodeInTemporaryFolderSubtree,
+  isTemporaryFolderHolderNode,
+  refreshTemporaryFolderVisibility,
+  TEMPORARY_FOLDER_NAME,
+  TEMPORARY_FOLDER_NODE_TYPE,
+  TEMPORARY_STAGING_NODE_ERROR,
+} from './services/temporaryFolderHolderLifecycleUtils.js';
 export {
   runVectorTileStage,
   type VectorTileStageInput,

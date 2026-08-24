@@ -63,7 +63,7 @@ export interface MapLibreMapInstance {
 
   setTerrain(options: { source: string; exaggeration?: number } | null): void;
 
-  once(event: 'styledata', cb: () => void): void;
+  once(event: string, cb: (...args: unknown[]) => void): void;
 
   on(event: string, cb: (...args: unknown[]) => void): void;
 

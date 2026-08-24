@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/map-export",
+  "name": "@hierarchidb/staged-folder-action",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,16 +10,24 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/runStagedFolderActionCli.d.ts",
+      "import": "./dist/runStagedFolderActionCli.js"
     }
   },
+  "bin": {
+    "hdb-staged-folder-action": "./dist/runStagedFolderActionCli.js"
+  },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts src/runStagedFolderActionCli.ts --config ../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "vitest run --passWithNoTests",
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@hierarchidb/core-types": "workspace:*",
     "yaml": "^2.0.0"
   },
   "devDependencies": {

@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type { RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
+import type { MapImageCaptureLayerIntent } from '@hierarchidb/staged-folder-action';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type {
@@ -127,6 +128,7 @@ export type UseFolderLayersResult = {
   styleOverridesByType: LayerStyleOverrides;
   mapInfo: MapInfoSummary;
   stylerSummaries: MapStylerSummary[];
+  loadError: string | null;
 };
 
 export type LocationLayerEntry = {
@@ -144,6 +146,7 @@ export type UseFolderLayersParams = {
   searchZxy?: string;
   onPersistedZxy: PersistedZxyHandler;
   stylerToggles?: Record<string, boolean>;
+  captureLayers?: readonly MapImageCaptureLayerIntent[];
 };
 
 type ParsedStylerNode = {
@@ -168,6 +171,7 @@ export const useFolderLayers = ({
   searchZxy,
   onPersistedZxy,
   stylerToggles,
+  captureLayers,
 }: UseFolderLayersParams): UseFolderLayersResult => {
   const [basemapStyles, setBasemapStyles] = useState<BasemapStyleEntry[]>([]);
   const [vectorLayers, setVectorLayers] = useState<ResourceVectorLayer[]>([]);
@@ -176,6 +180,7 @@ export const useFolderLayers = ({
   const [styleOverridesByType, setStyleOverridesByType] = useState<LayerStyleOverrides>({});
   const [stylerSummaries, setStylerSummaries] = useState<MapStylerSummary[]>([]);
   const [mapInfo, setMapInfo] = useState<MapInfoSummary>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!nodeId) return;
@@ -212,11 +217,22 @@ export const useFolderLayers = ({
               }
               return true;
             });
-        const nodesForLayers = isFolderNodeType(rootNode.nodeType)
-          ? visibleDescendants
-          : isNodeVisible(rootNode)
-            ? [rootNode, ...visibleDescendants]
-            : visibleDescendants;
+        const nodesForLayers =
+          captureLayers !== undefined
+            ? isFolderNodeType(rootNode.nodeType)
+              ? descendants
+              : [rootNode, ...descendants]
+            : isFolderNodeType(rootNode.nodeType)
+              ? visibleDescendants
+              : isNodeVisible(rootNode)
+                ? [rootNode, ...visibleDescendants]
+                : visibleDescendants;
+        const captureFilteredNodes = filterNodesByCaptureLayers({
+          rootNode,
+          descendants: captureLayers !== undefined ? descendants : visibleDescendants,
+          nodesForLayers,
+          captureLayers,
+        });
 
         setMapInfo({
           name: rootNode.metadata?.name ?? '',
@@ -250,7 +266,7 @@ export const useFolderLayers = ({
         const stylerSummaries: MapStylerSummary[] = [];
         const parsedStylers: ParsedStylerNode[] = [];
 
-        const stylerNodes = nodesForLayers.filter((node) => node.nodeType === 'styler');
+        const stylerNodes = captureFilteredNodes.filter((node) => node.nodeType === 'styler');
         const sortedStylers = sortByPath(
           stylerNodes.map((node) => ({
             nodeId: String(node.id),
@@ -467,7 +483,7 @@ export const useFolderLayers = ({
           }
         };
 
-        for (const node of nodesForLayers) {
+        for (const node of captureFilteredNodes) {
           const absolutePath = buildAbsolutePath(String(node.id), nodeById);
           if (node.nodeType === 'basemap') {
             const data = node.data as { mapStyle?: MapStyle } | null;
@@ -652,6 +668,7 @@ export const useFolderLayers = ({
           setLocationLayers(sortByPath(locationEntries));
           setStyleOverridesByType(styleOverrides);
           setStylerSummaries(stylerSummaries);
+          setLoadError(null);
         }
       } catch (error) {
         if (cancelled) return;
@@ -662,6 +679,7 @@ export const useFolderLayers = ({
         setLocationLayers([]);
         setStyleOverridesByType({});
         setStylerSummaries([]);
+        setLoadError(error instanceof Error ? error.message : String(error));
       }
     };
 
@@ -669,7 +687,7 @@ export const useFolderLayers = ({
     return () => {
       cancelled = true;
     };
-  }, [nodeId, onPersistedZxy, refreshKey, searchZxy, stylerToggles]);
+  }, [captureLayers, nodeId, onPersistedZxy, refreshKey, searchZxy, stylerToggles]);
 
   return {
     basemapStyles,
@@ -679,5 +697,121 @@ export const useFolderLayers = ({
     styleOverridesByType,
     mapInfo,
     stylerSummaries,
+    loadError,
   };
+};
+
+export type FilterNodesByCaptureLayersInput = {
+  rootNode: TreeNode;
+  descendants: readonly TreeNode[];
+  nodesForLayers: readonly TreeNode[];
+  captureLayers?: readonly MapImageCaptureLayerIntent[];
+};
+
+export const filterNodesByCaptureLayers = ({
+  rootNode,
+  descendants,
+  nodesForLayers,
+  captureLayers,
+}: FilterNodesByCaptureLayersInput): TreeNode[] => {
+  if (!captureLayers) {
+    return [...nodesForLayers];
+  }
+
+  const nodesByPath = new Map<string, TreeNode>();
+  for (const node of [rootNode, ...descendants]) {
+    const relativePath = buildRelativePathFromRoot(rootNode, node, descendants);
+    if (relativePath === null) continue;
+    if (nodesByPath.has(relativePath)) {
+      throw new Error(`Duplicate map-image-capture layer path: ${relativePath}`);
+    }
+    nodesByPath.set(relativePath, node);
+  }
+
+  const selectedNodeIds = new Set<string>();
+  for (const layer of captureLayers) {
+    const normalizedPath = normalizeMapImageCaptureLayerPath(layer.path);
+    if (!nodesByPath.has(normalizedPath)) {
+      throw new Error(`map-image-capture layer path was not found: ${layer.path}`);
+    }
+    const subtreeNodeIds = resolveSubtreeNodeIds(nodesByPath, normalizedPath);
+    for (const nodeId of subtreeNodeIds) {
+      if (layer.visible) {
+        selectedNodeIds.add(nodeId);
+      } else {
+        selectedNodeIds.delete(nodeId);
+      }
+    }
+  }
+
+  return nodesForLayers.filter((node) => selectedNodeIds.has(String(node.id)));
+};
+
+export const normalizeMapImageCaptureLayerPath = (path: string): string => {
+  if (path === '.') {
+    return path;
+  }
+  const pathWithoutExplicitRoot = path.startsWith('./') ? path.slice(2) : path;
+  if (
+    pathWithoutExplicitRoot.length === 0 ||
+    path.startsWith('/') ||
+    path.includes('\0') ||
+    pathWithoutExplicitRoot
+      .split('/')
+      .some((segment) => segment.length === 0 || segment === '..' || segment === '.')
+  ) {
+    throw new Error(
+      `Invalid map-image-capture layer path: ${path}. Expected a staging-root-relative path without empty, current-directory, or parent-directory segments`
+    );
+  }
+  return pathWithoutExplicitRoot;
+};
+
+const resolveSubtreeNodeIds = (nodesByPath: Map<string, TreeNode>, path: string): Set<string> => {
+  const ids = new Set<string>();
+  const prefix = path === '.' ? '' : `${path}/`;
+  for (const [candidatePath, node] of nodesByPath) {
+    if (path === '.' || candidatePath === path || candidatePath.startsWith(prefix)) {
+      ids.add(String(node.id));
+    }
+  }
+  return ids;
+};
+
+const buildRelativePathFromRoot = (
+  rootNode: TreeNode,
+  node: TreeNode,
+  descendants: readonly TreeNode[]
+): string | null => {
+  const rootId = String(rootNode.id);
+  const nodeId = String(node.id);
+  if (nodeId === rootId) {
+    return '.';
+  }
+
+  const descendantsById = new Map<string, TreeNode>();
+  descendants.forEach((descendant) => {
+    descendantsById.set(String(descendant.id), descendant);
+  });
+
+  const segments: string[] = [];
+  const visited = new Set<string>();
+  let current: TreeNode | undefined = node;
+  while (current) {
+    const currentId: string = String(current.id);
+    if (visited.has(currentId)) {
+      return null;
+    }
+    visited.add(currentId);
+    if (currentId === rootId) {
+      return segments.length === 0 ? '.' : segments.reverse().join('/');
+    }
+    segments.push(current.metadata?.name ?? currentId);
+    const parentId: string = current.parentId ? String(current.parentId) : '';
+    if (!parentId) {
+      return null;
+    }
+    current = parentId === rootId ? rootNode : descendantsById.get(parentId);
+  }
+  return null;
 };
