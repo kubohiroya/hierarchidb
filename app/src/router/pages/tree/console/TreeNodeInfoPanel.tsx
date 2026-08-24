@@ -7,11 +7,16 @@ import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build-sessions';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
-import { isFolderNodeType, NodeContextMenu } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import {
+  formatBuildAvailabilityView,
+  isFolderNodeType,
+  NodeContextMenu,
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import {
   ArrowBack as ArrowBackIcon,
   Construction as ConstructionIcon,
   Edit as EditIcon,
+  InfoOutlined as InfoOutlinedIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import {
@@ -34,6 +39,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { type MouseEvent, useCallback, useMemo } from 'react';
 import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton';
 import { useTreeNodeInfoPanel } from './hooks/useTreeNodeInfoPanel.js';
+import {
+  resolveTreeNodeInfoPanelBuildAvailabilityView,
+  shouldShowTreeNodeInfoPanelBuildButton,
+} from './treeNodeInfoPanelBuildAvailabilityView.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -81,6 +90,7 @@ export function TreeNodeInfoPanel({
     isBuildable,
     isBuildRequired,
     folderBuildReady,
+    folderDescendantNodes,
     buildTargetLoading,
     canPreview,
     previewGuardLoading,
@@ -91,6 +101,22 @@ export function TreeNodeInfoPanel({
   const isBuildRunning = currentNode?.id
     ? Boolean(runtimeContext?.runningNodeIds.has(currentNode.id as NodeId))
     : false;
+  const activeNodeIds = runtimeContext?.activeNodeIds as ReadonlySet<NodeId> | undefined;
+  const buildAvailabilityView = useMemo(
+    () =>
+      resolveTreeNodeInfoPanelBuildAvailabilityView({
+        currentNode,
+        folderDescendantNodes,
+        buildTargetLoading,
+        activeNodeIds,
+      }),
+    [activeNodeIds, buildTargetLoading, currentNode, folderDescendantNodes]
+  );
+  const showBuildButton = shouldShowTreeNodeInfoPanelBuildButton({
+    currentNode,
+    isBuildable,
+    buildAvailabilityView,
+  });
   const isVisible = currentNode?.visible !== false;
   const displayName = currentNode ? getTreeNodeName(currentNode).trim() : '';
   const originalName =
@@ -234,7 +260,11 @@ export function TreeNodeInfoPanel({
               sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
             >
               {isBuildRequired && (
-                <Tooltip arrow placement="top" title={labels.buildRequiredLabel}>
+                <Tooltip
+                  arrow
+                  placement="top"
+                  title={buildAvailabilityView?.tooltip ?? labels.buildRequiredLabel}
+                >
                   <span>
                     <Chip
                       label={labels.buildRequiredLabel}
@@ -328,17 +358,48 @@ export function TreeNodeInfoPanel({
           >
             {labels.editLabel}
           </Button>
-          {isBuildable && currentNode?.nodeType !== 'location' && (
+          {showBuildButton && (
+            <Stack spacing={0.5} alignItems="center">
+              <Tooltip
+                arrow
+                placement="top"
+                title={buildAvailabilityView?.tooltip ?? buildAvailabilityView?.summary ?? ''}
+                disableHoverListener={!buildAvailabilityView}
+              >
+                <span>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ConstructionIcon />}
+                    onClick={handleBuild}
+                    aria-label={
+                      buildAvailabilityView?.summary
+                        ? `${labels.buildAria}: ${buildAvailabilityView.summary}`
+                        : labels.buildAria
+                    }
+                    disabled={buildTargetLoading || !isBuildable || isBuildRequired === false}
+                    id="tree-node-build-button"
+                    role="button"
+                  >
+                    {labels.buildLabel}
+                  </Button>
+                </span>
+              </Tooltip>
+              {buildAvailabilityView?.summary && !isBuildRequired && (
+                <Typography variant="caption" color="text.secondary">
+                  {buildAvailabilityView.summary}
+                </Typography>
+              )}
+            </Stack>
+          )}
+          {buildAvailabilityView?.diagnosticsLabel && (
             <Button
-              variant="outlined"
-              startIcon={<ConstructionIcon />}
-              onClick={handleBuild}
-              aria-label={labels.buildAria}
-              disabled={buildTargetLoading || isBuildRequired === false}
-              id="tree-node-build-button"
-              role="button"
+              variant="text"
+              size="small"
+              startIcon={<InfoOutlinedIcon />}
+              onClick={() => handleContextMenuTrigger('build-diagnostics')}
+              aria-label={buildAvailabilityView.diagnosticsLabel}
             >
-              {labels.buildLabel}
+              {buildAvailabilityView.diagnosticsLabel}
             </Button>
           )}
           <Button
@@ -386,6 +447,9 @@ export function TreeNodeInfoPanel({
         canExport={canCreate}
         folderBuildReady={isFolderNode ? folderBuildReady : undefined}
         buildRequired={isBuildRequired && !isFolderNode}
+        buildAvailabilitySummary={buildAvailabilityView?.summary}
+        buildAvailabilityTooltip={buildAvailabilityView?.tooltip}
+        buildDiagnosticsLabel={buildAvailabilityView?.diagnosticsLabel}
         canArchive={canMutate && !isBuildRunning}
         canRemove={canMutate && !isBuildRunning}
         canBuild={isBuildable}
@@ -399,6 +463,7 @@ export function TreeNodeInfoPanel({
         }
         onPreview={(options) => handleContextMenuTrigger('preview', options)}
         onBuild={(options) => handleContextMenuTrigger('build', options)}
+        onBuildDiagnostics={() => handleContextMenuTrigger('build-diagnostics')}
         onEdit={(options) => handleContextMenuTrigger('edit', options)}
         onCreate={(type, options) => handleContextMenuTrigger(`create:${type}`, options)}
         onDuplicate={() => handleContextMenuTrigger('duplicate')}

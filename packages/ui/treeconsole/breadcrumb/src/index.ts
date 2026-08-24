@@ -21,7 +21,9 @@ export type {
   TreeConsoleBreadcrumbProps,
   TreeConsoleBreadcrumbRendererProps,
 } from './types.js';
-export type { BuildTreeConsoleLinkOptions } from './utils/linkFactory.js';
 // Utilities
+export type { BuildAvailabilityView } from './utils/buildAvailabilityView.js';
+export { formatBuildAvailabilityView } from './utils/buildAvailabilityView.js';
+export type { BuildTreeConsoleLinkOptions } from './utils/linkFactory.js';
 export { buildTreeConsoleLinkHref } from './utils/linkFactory.js';
 export { getPluginIconColor, isFolderNodeType } from './utils/nodeTypeIconColor.js';

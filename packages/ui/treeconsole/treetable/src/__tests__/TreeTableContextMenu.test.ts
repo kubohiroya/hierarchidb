@@ -136,6 +136,7 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
 
     expect(latestProps?.buildRequired).toBe(true);
     expect(latestProps?.canBuild).toBe(true);
+    expect(latestProps?.buildAvailabilitySummary).toBe('Build required');
   });
 
   it('disables folder build when a required descendant already has an active session', () => {
@@ -180,5 +181,78 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
 
     expect(latestProps?.buildRequired).toBe(true);
     expect(latestProps?.canBuild).toBe(false);
+    expect(latestProps?.buildAvailabilitySummary).toBe('Build already running');
+  });
+
+  it('passes resolver reason for a buildable node with no required rebuild', () => {
+    let latestProps: NodeContextMenuProps | null = null;
+    const ContextMenuComponent = (props: NodeContextMenuProps) => {
+      latestProps = props;
+      return React.createElement('div', { 'data-testid': 'context-menu-stub' });
+    };
+
+    const node = createNode('shape-3', {
+      metadata: {
+        name: 'shape-3',
+        description: undefined,
+        tags: [],
+        buildMetadata: { buildRequired: false },
+      },
+    });
+
+    render(
+      React.createElement(TreeTableContextMenu, {
+        contextMenuState: {
+          anchorEl: document.createElement('button'),
+          anchorPosition: null,
+          node,
+        },
+        onClose: () => {},
+        treeId: 'r',
+        buildSessionIndicator: {
+          runningNodeIds: new Set<NodeId>(),
+          activeNodeIds: new Set<NodeId>(),
+        },
+        ContextMenuComponent,
+      })
+    );
+
+    expect(latestProps?.buildRequired).toBe(false);
+    expect(latestProps?.canBuild).toBe(false);
+    expect(latestProps?.buildAvailabilitySummary).toBe('Up to date');
+  });
+
+  it('passes diagnostics entrypoint props for a folder with no build candidates', () => {
+    let latestProps: NodeContextMenuProps | null = null;
+    const ContextMenuComponent = (props: NodeContextMenuProps) => {
+      latestProps = props;
+      return React.createElement('div', { 'data-testid': 'context-menu-stub' });
+    };
+
+    const folder = createNode('folder-3', { nodeType: asNodeType('folder'), depth: 1 });
+
+    render(
+      React.createElement(TreeTableContextMenu, {
+        contextMenuState: {
+          anchorEl: document.createElement('button'),
+          anchorPosition: null,
+          node: folder,
+        },
+        onClose: () => {},
+        treeId: 'r',
+        controller: { nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>() },
+        collectDescendantIds: () => [folder.id].map(String),
+        buildSessionIndicator: {
+          runningNodeIds: new Set<NodeId>(),
+          activeNodeIds: new Set<NodeId>(),
+        },
+        ContextMenuComponent,
+      })
+    );
+
+    expect(latestProps?.buildRequired).toBe(false);
+    expect(latestProps?.canBuild).toBe(false);
+    expect(latestProps?.buildAvailabilitySummary).toBe('No build target');
+    expect(latestProps?.buildDiagnosticsLabel).toBe('Build diagnostics');
   });
 });

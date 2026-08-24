@@ -39,6 +39,9 @@ export function TreeTableContextMenu({
     isBuildRequiredForNode,
     canArchive,
     canBuild,
+    buildAvailabilitySummary,
+    buildAvailabilityTooltip,
+    buildDiagnosticsLabel,
     canCreate,
     canImportExport,
     canPreview,
@@ -60,6 +63,7 @@ export function TreeTableContextMenu({
     onOpenStep,
     onPreview,
     onBuild,
+    onBuildDiagnostics,
   } = useTreeTableContextMenu({
     contextMenuState,
     onClose,
@@ -81,6 +85,9 @@ export function TreeTableContextMenu({
       isVisible={node?.visible ?? true}
       buildRequired={isBuildRequiredForNode}
       canBuild={canBuild}
+      buildAvailabilitySummary={buildAvailabilitySummary}
+      buildAvailabilityTooltip={buildAvailabilityTooltip}
+      buildDiagnosticsLabel={buildDiagnosticsLabel}
       canCreate={canCreate}
       canEdit={!isRoot}
       canRemove={canArchive}
@@ -108,6 +115,7 @@ export function TreeTableContextMenu({
       openStepsLoading={openStepsLoading}
       onPreview={onPreview}
       onBuild={onBuild}
+      onBuildDiagnostics={onBuildDiagnostics}
     />
   );
 }

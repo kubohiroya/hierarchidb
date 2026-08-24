@@ -5,7 +5,11 @@ import {
 } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { isFolderNodeType, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import {
+  formatBuildAvailabilityView,
+  isFolderNodeType,
+  type OpenStepOption,
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 
@@ -40,6 +44,9 @@ export interface UseTreeTableContextMenuResult {
   isBuildRequiredForNode: boolean;
   canArchive: boolean;
   canBuild: boolean;
+  buildAvailabilitySummary?: string;
+  buildAvailabilityTooltip?: string;
+  buildDiagnosticsLabel?: string;
   canCreate: boolean;
   canImportExport: boolean;
   canPreview: boolean;
@@ -61,6 +68,7 @@ export interface UseTreeTableContextMenuResult {
   onOpenStep: (step: number, options?: { openInNewTab?: boolean }) => void;
   onPreview: () => void;
   onBuild: () => void;
+  onBuildDiagnostics: () => void;
 }
 
 export function useTreeTableContextMenu({
@@ -111,6 +119,7 @@ export function useTreeTableContextMenu({
       ? buildAvailability.requiredTargets.length > 0
       : isBuildRequiredForNode;
   const canBuild = buildAvailability?.canStartBuild === true;
+  const buildAvailabilityView = formatBuildAvailabilityView(buildAvailability);
 
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
@@ -305,6 +314,13 @@ export function useTreeTableContextMenu({
     handleClose();
   }, [handleClose, node, triggerContextAction]);
 
+  const onBuildDiagnostics = useCallback(() => {
+    if (node) {
+      triggerContextAction('build-diagnostics', { source: 'treetable' });
+    }
+    handleClose();
+  }, [handleClose, node, triggerContextAction]);
+
   const canPreview = useMemo(
     () => (previewGuardState?.canOpen ?? true) && !previewGuardLoading,
     [previewGuardLoading, previewGuardState?.canOpen]
@@ -317,6 +333,9 @@ export function useTreeTableContextMenu({
     isBuildRequiredForNode: hasBuildRequiredTarget,
     canArchive,
     canBuild,
+    buildAvailabilitySummary: buildAvailabilityView?.summary,
+    buildAvailabilityTooltip: buildAvailabilityView?.tooltip,
+    buildDiagnosticsLabel: buildAvailabilityView?.diagnosticsLabel,
     canCreate,
     canImportExport,
     canPreview,
@@ -338,5 +357,6 @@ export function useTreeTableContextMenu({
     onOpenStep,
     onPreview,
     onBuild,
+    onBuildDiagnostics,
   };
 }
