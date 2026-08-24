@@ -38,6 +38,9 @@ export type UseNodeContextMenuResult = {
   hiddenLabel: string;
   previewLabel: string;
   buildLabel: string;
+  buildAvailabilitySummary?: string;
+  buildAvailabilityTooltip?: string;
+  buildDiagnosticsLabel?: string;
   effectiveVisible: boolean;
   effectiveInvisible: boolean;
   canPreview: boolean;
@@ -70,6 +73,7 @@ export type UseNodeContextMenuResult = {
   handleExportClick: () => void;
   handlePreviewClick: (event?: MouseEvent<HTMLElement>) => void;
   handleBuildClick: (event?: MouseEvent<HTMLElement>) => void;
+  handleBuildDiagnosticsClick: () => void;
   handleToggleVisible: () => void;
   handleCreateSubmenuClose: () => void;
 };
@@ -88,6 +92,9 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     canExport = true,
     folderBuildReady,
     buildRequired,
+    buildAvailabilitySummary,
+    buildAvailabilityTooltip,
+    buildDiagnosticsLabel,
     canBuild,
     canPreview: canPreviewOverride,
     isVisible,
@@ -176,8 +183,15 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
   })();
 
   const canBuildEntry = Boolean(props.onBuild) && canBuildForNode && isBuildAllowed;
-  const showBuildEntry = Boolean(props.onBuild) && (showBuildForNode || isLocationNode);
+  const hasBuildAvailabilityView = Boolean(
+    buildAvailabilitySummary || buildAvailabilityTooltip || buildDiagnosticsLabel
+  );
+  const showBuildEntry =
+    Boolean(props.onBuild) && (showBuildForNode || isLocationNode || hasBuildAvailabilityView);
   const buildDisabled = !canBuildEntry || isLocationNode;
+  const effectiveBuildDiagnosticsLabel = props.onBuildDiagnostics
+    ? buildDiagnosticsLabel
+    : undefined;
 
   const propsRef = useRef(props);
   useEffect(() => {
@@ -430,6 +444,15 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     [blurActive, handleMainMenuClose, resolveOpenInNew]
   );
 
+  const handleBuildDiagnosticsClick = useCallback(() => {
+    const onBuildDiagnostics = propsRef.current.onBuildDiagnostics;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => {
+      onBuildDiagnostics?.();
+    }, 0);
+  }, [blurActive, handleMainMenuClose]);
+
   const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
     const nextVisible = !effectiveVisible;
@@ -508,6 +531,9 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     hiddenLabel,
     previewLabel,
     buildLabel,
+    buildAvailabilitySummary,
+    buildAvailabilityTooltip,
+    buildDiagnosticsLabel: effectiveBuildDiagnosticsLabel,
     effectiveVisible,
     effectiveInvisible,
     canPreview,
@@ -540,6 +566,7 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     handleExportClick,
     handlePreviewClick,
     handleBuildClick,
+    handleBuildDiagnosticsClick,
     handleToggleVisible,
     handleCreateSubmenuClose,
   };

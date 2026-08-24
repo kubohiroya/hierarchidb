@@ -29,6 +29,7 @@ import { Link as RouterLink } from '@tanstack/react-router';
 import type { DragEvent, KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import { useTreeConsoleBreadcrumb } from '~/hooks/useTreeConsoleBreadcrumb';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
+import { formatBuildAvailabilityView } from '~/utils/buildAvailabilityView';
 import type { BuildTreeConsoleLinkOptions } from '~/utils/linkFactory';
 import { buildTreeConsoleLinkHref } from '~/utils/linkFactory';
 import { getPluginIconColor, isFolderNodeType } from '~/utils/nodeTypeIconColor';
@@ -45,6 +46,9 @@ const resolveBreadcrumbNodeId = (node: BreadcrumbNode | null | undefined): strin
 export type BreadcrumbContextMenuBuildState = {
   buildRequired: boolean;
   canBuild: boolean;
+  buildAvailabilitySummary?: string;
+  buildAvailabilityTooltip?: string;
+  buildDiagnosticsLabel?: string;
 };
 
 export const resolveBreadcrumbContextMenuBuildState = (
@@ -98,6 +102,8 @@ export const resolveBreadcrumbContextMenuBuildState = (
           })
         : null;
 
+  const availabilityView = formatBuildAvailabilityView(availability);
+
   return {
     buildRequired: availability?.requiredTargets.length
       ? availability.requiredTargets.length > 0
@@ -105,6 +111,9 @@ export const resolveBreadcrumbContextMenuBuildState = (
         ? isNodeBuildRequired(buildNode)
         : false,
     canBuild: availability?.canStartBuild === true,
+    buildAvailabilitySummary: availabilityView?.summary,
+    buildAvailabilityTooltip: availabilityView?.tooltip,
+    buildDiagnosticsLabel: availabilityView?.diagnosticsLabel,
   };
 };
 
@@ -495,6 +504,9 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
         }}
         buildRequired={contextMenuBuildState.buildRequired}
         canBuild={contextMenuBuildState.canBuild}
+        buildAvailabilitySummary={contextMenuBuildState.buildAvailabilitySummary}
+        buildAvailabilityTooltip={contextMenuBuildState.buildAvailabilityTooltip}
+        buildDiagnosticsLabel={contextMenuBuildState.buildDiagnosticsLabel}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
         onToggleVisible={(nextVisible) => {
@@ -513,6 +525,12 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
         }}
         onBuild={() => {
           handleBuild();
+          handleContextMenuClose();
+        }}
+        onBuildDiagnostics={() => {
+          if (contextMenuNode && onContextAction) {
+            onContextAction('build-diagnostics', contextMenuNode, { source: 'breadcrumb' });
+          }
           handleContextMenuClose();
         }}
       />

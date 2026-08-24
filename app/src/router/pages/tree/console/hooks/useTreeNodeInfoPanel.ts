@@ -67,6 +67,29 @@ export function useTreeNodeInfoPanel({
   const [pendingArchiveNode, setPendingArchiveNode] = useState<HierarchicalTreeNode | null>(null);
   const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
   const [openStepsLoading, setOpenStepsLoading] = useState(false);
+  const folderDescendantNodes = useMemo((): readonly TreeNode[] | undefined => {
+    const rootNode = currentNode ?? node;
+    const nodeIndex = ssot.nodeIndex;
+    if (!rootNode?.id || !isFolderNodeType(rootNode.nodeType)) return [];
+    if (!nodeIndex) return undefined;
+    const result: TreeNode[] = [];
+    const visited = new Set<string>();
+    const queue: NodeId[] = [rootNode.id as NodeId];
+
+    while (queue.length > 0) {
+      const parentId = queue.shift();
+      if (parentId === undefined) break;
+      if (visited.has(String(parentId))) continue;
+      visited.add(String(parentId));
+
+      for (const child of nodeIndex.getValuesBySecondary(parentId)) {
+        result.push(child);
+        queue.push(child.id as NodeId);
+      }
+    }
+
+    return result;
+  }, [currentNode, node, ssot.nodeIndex]);
   const returnTo = useMemo(() => {
     const search = location.searchStr ?? '';
     return `${location.pathname}${search}`;
@@ -471,6 +494,7 @@ export function useTreeNodeInfoPanel({
     isBuildable: isBuildableByMetadata,
     isBuildRequired,
     folderBuildReady,
+    folderDescendantNodes,
     buildTargetLoading,
     canPreview,
     previewGuardLoading,

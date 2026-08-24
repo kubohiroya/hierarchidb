@@ -16,6 +16,7 @@ import {
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
   Folder as FolderIcon,
+  InfoOutlined as InfoOutlinedIcon,
   OpenInNew as OpenInNewIcon,
   PlayArrow as PlayArrowIcon,
   Visibility as VisibilityIcon,
@@ -58,12 +59,16 @@ export interface NodeContextMenuProps {
   canBuild?: boolean;
   folderBuildReady?: boolean;
   buildRequired?: boolean;
+  buildAvailabilitySummary?: string;
+  buildAvailabilityTooltip?: string;
+  buildDiagnosticsLabel?: string;
   canPreview?: boolean;
   onOpen?: (options?: { openInNewTab?: boolean }) => void;
   onOpenFolder?: (options?: { openInNewTab?: boolean }) => void;
   onOpenStep?: (step: number, options?: { openInNewTab?: boolean }) => void;
   onPreview?: (options?: { openInNewTab?: boolean }) => void;
   onBuild?: (options?: { openInNewTab?: boolean }) => void;
+  onBuildDiagnostics?: () => void;
   onEdit?: (options?: { openInNewTab?: boolean }) => void;
   onCreate?: (type: string, options?: { openInNewTab?: boolean }) => void;
   onDuplicate?: () => void;
@@ -146,6 +151,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     hiddenLabel,
     previewLabel,
     buildLabel,
+    buildAvailabilitySummary,
+    buildAvailabilityTooltip,
+    buildDiagnosticsLabel,
     effectiveVisible,
     effectiveInvisible,
     canPreview,
@@ -178,6 +186,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     handleExportClick,
     handlePreviewClick,
     handleBuildClick,
+    handleBuildDiagnosticsClick,
     handleToggleVisible,
     handleCreateSubmenuClose,
   } = useNodeContextMenu(props);
@@ -381,21 +390,47 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             ) : null}
           </MenuItem>,
           showBuildEntry ? (
-            <MenuItem
+            <Tooltip
               key="menuitem-build"
-              onClick={(event) => handleBuildClick(event)}
-              aria-label={buildLabel}
-              disabled={buildDisabled}
+              title={buildAvailabilityTooltip ?? ''}
+              placement="right"
+              enterDelay={300}
+              arrow
+              disableHoverListener={!buildAvailabilityTooltip}
+            >
+              <span style={{ display: 'block' }}>
+                <MenuItem
+                  onClick={(event) => handleBuildClick(event)}
+                  aria-label={
+                    buildAvailabilitySummary
+                      ? `${buildLabel}: ${buildAvailabilitySummary}`
+                      : buildLabel
+                  }
+                  disabled={buildDisabled}
+                >
+                  <ListItemIcon>
+                    <ConstructionIcon />
+                  </ListItemIcon>
+                  <ListItemText primary={buildLabel} secondary={buildAvailabilitySummary} />
+                  {isShiftPressed ? (
+                    <span style={{ marginLeft: 'auto' }}>
+                      <OpenInNewIcon fontSize="small" sx={{ m: 0, p: 0, fontSize: '95%' }} />
+                    </span>
+                  ) : null}
+                </MenuItem>
+              </span>
+            </Tooltip>
+          ) : null,
+          buildDiagnosticsLabel ? (
+            <MenuItem
+              key="menuitem-build-diagnostics"
+              onClick={handleBuildDiagnosticsClick}
+              aria-label={buildDiagnosticsLabel}
             >
               <ListItemIcon>
-                <ConstructionIcon />
+                <InfoOutlinedIcon />
               </ListItemIcon>
-              <ListItemText primary={buildLabel} />
-              {isShiftPressed ? (
-                <span style={{ marginLeft: 'auto' }}>
-                  <OpenInNewIcon fontSize="small" sx={{ m: 0, p: 0, fontSize: '95%' }} />
-                </span>
-              ) : null}
+              <ListItemText primary={buildDiagnosticsLabel} />
             </MenuItem>
           ) : null,
           <MenuItem

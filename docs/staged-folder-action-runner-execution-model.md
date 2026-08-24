@@ -129,6 +129,8 @@ Phase 2 child #1584 以降の `build` action は、同じ resolver に artifact 
 
 Phase 2 child #1588 では、artifact dependency lifecycle manager の保存境界を runtime-worker 専用 Dexie store として追加する。store は `active` edge の記録、target field 逆引きによる `stale` 化、build target/session 単位の `rebuilding` 化、replacement active edge 記録時の `resolved` 化、missing artifact/source/target/mount に基づく deterministic orphan detection を提供する。runner は build artifact が dependency edge を生成できるようになった時点でこの store に active edge を記録し、build start/terminal の後続 integration では同じ service API を通じて `rebuilding` / `active` / `resolved` を更新する。CoreDB の tree/node schema version はこの child issue では変更しない。
 
+Phase 2 child #1590 の UI 表示は runner behavior を変更しない。TreeTable / Breadcrumb / node info panel は `@hierarchidb/build-api` resolver の `status` / `reason` / `details[]` を表示用 helper に渡し、disabled Build entry の理由と diagnostics entry を表示する。runner は引き続き resolver の contract violation を fail-fast として扱い、UI 表示の有無で build target collection や action failure 判定を変えてはならない。
+
 Phase 1 初期 WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へそのまま渡す。標準 Worker bootstrap / CLI bridge はまだ browser handoff implementation を注入しない。したがって標準 host で `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary
