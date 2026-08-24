@@ -146,6 +146,10 @@ runner は manifest の `map-image-capture` action をそのまま Map UI へ渡
 
 選定する handoff path は、`Worker / IndexedDB progress` と同じ profile 内に保持される capture intent state channel と、通常 Map route `/map/$nodeId?captureIntentId=<intentId>` の組み合わせである。この方式により、CLI から開く headless tab と、実 browser window で開く headed tab のどちらも同じ route/component/readiness contract を使う。
 
+Phase 0 の state channel は runtime-worker の `StagedFolderActionProgressStore` に `captureIntents` table として保持する。runner は `map-image-capture` action の実行直前に `MapImageCaptureIntentRecord` を保存し、その後に browser handoff を行う。Map UI は通常 route `/map/$nodeId` の search に含まれる `captureIntentId` を使い、WorkerAPI の `getMapImageCaptureIntent(intentId)` から intent 実体を取得する。取得した intent の `stagingRootNodeId` が route の `$nodeId` と一致しない場合は contract violation として capture 実行へ進まない。
+
+terminal run を削除する場合、同じ run に属する capture intent record も削除する。active run の削除は従来どおり拒否し、実行中 capture intent を orphan にしてはならない。
+
 却下する代替案:
 
 - 専用 `/map-export` route: 通常 Map UI と別実装になり、既存 route/component/readiness と乖離するため採用しない。

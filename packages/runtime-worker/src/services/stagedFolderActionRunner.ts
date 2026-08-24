@@ -181,6 +181,7 @@ const runAction = async (
       stagingRootNodeId,
       browserMode: input.browserMode,
     });
+    await progressStore.putMapImageCaptureIntent(intent, dependencies.now());
     await dependencies.runMapImageCaptureAction({
       intent,
       config: input.config,

@@ -3562,6 +3562,9 @@ importers:
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../shape-api
+      '@hierarchidb/staged-folder-action':
+        specifier: workspace:*
+        version: link:../staged-folder-action
       '@hierarchidb/style-api':
         specifier: workspace:*
         version: link:../style-api

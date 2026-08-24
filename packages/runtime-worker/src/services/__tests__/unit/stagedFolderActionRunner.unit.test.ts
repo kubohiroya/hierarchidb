@@ -137,6 +137,12 @@ describe('runStagedFolderAction', () => {
       stagingRootNodeId: 'staging-root',
       runId: 'run-capture',
     });
+    await expect(store.getMapImageCaptureIntent('run-capture:1')).resolves.toMatchObject({
+      intentId: 'run-capture:1',
+      runId: 'run-capture',
+      stagingRootNodeId: 'staging-root',
+      browserMode: 'headed',
+    });
     await expect(store.getRun('run-capture' as NodeId)).resolves.toMatchObject({
       status: 'completed',
       phase: 'completed',

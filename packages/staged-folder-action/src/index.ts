@@ -44,9 +44,13 @@ export type {
   CreateMapImageCaptureIntentInput,
   MapImageCaptureBrowserMode,
   MapImageCaptureIntent,
+  MapImageCaptureIntentRecord,
   MapImageCaptureLayerIntent,
 } from './MapImageCaptureIntentTypes.js';
-export { createMapImageCaptureIntent } from './MapImageCaptureIntentTypes.js';
+export {
+  createMapImageCaptureIntent,
+  createMapImageCaptureIntentRecord,
+} from './MapImageCaptureIntentTypes.js';
 export { parseMapExportManifest } from './parseMapExportManifest.js';
 export {
   parseStagedFolderActionManifest,

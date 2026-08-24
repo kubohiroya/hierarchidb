@@ -29,6 +29,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
+    "@hierarchidb/staged-folder-action": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*"
@@ -42,6 +43,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
+    "@hierarchidb/staged-folder-action": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",

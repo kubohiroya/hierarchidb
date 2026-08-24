@@ -9,7 +9,10 @@ import type { NodeId } from '@hierarchidb/core-types';
 import {
   assertStagedFolderActionRunRecord,
   type CreateStagedFolderActionRunRecordInput,
+  createMapImageCaptureIntentRecord,
   createStagedFolderActionRunRecord,
+  type MapImageCaptureIntent,
+  type MapImageCaptureIntentRecord,
   STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE,
   type StagedFolderActionRunRecord,
   type StagedFolderActionRunRecordPatch,
@@ -28,6 +31,7 @@ export type StagedFolderActionProgressFilter = {
 
 export class StagedFolderActionProgressStore extends Dexie {
   runs!: Table<StagedFolderActionRunRecord, NodeId>;
+  captureIntents!: Table<MapImageCaptureIntentRecord, string>;
 
   private readonly changes = new Subject<void>();
 
@@ -35,6 +39,10 @@ export class StagedFolderActionProgressStore extends Dexie {
     super(databaseName);
     this.version(1).stores({
       runs: '&runId, sourceNodeId, status, phase, updatedAt',
+    });
+    this.version(2).stores({
+      runs: '&runId, sourceNodeId, status, phase, updatedAt',
+      captureIntents: '&intentId, runId, stagingRootNodeId, updatedAt',
     });
   }
 
@@ -80,17 +88,39 @@ export class StagedFolderActionProgressStore extends Dexie {
   }
 
   async deleteRun(runId: NodeId): Promise<void> {
-    const record = await this.runs.get(runId);
-    if (record && isStagedFolderActionRunActive(record)) {
-      throw new Error(`Cannot delete active staged-folder-action run ${String(runId)}.`);
-    }
-    await this.runs.delete(runId);
+    await this.transaction('rw', this.runs, this.captureIntents, async () => {
+      const record = await this.runs.get(runId);
+      if (record && isStagedFolderActionRunActive(record)) {
+        throw new Error(`Cannot delete active staged-folder-action run ${String(runId)}.`);
+      }
+      await this.captureIntents.where('runId').equals(runId).delete();
+      await this.runs.delete(runId);
+    });
     this.changes.next();
   }
 
   subscribeRuns(listener: () => void): StagedFolderActionProgressUnsubscribe {
     const subscription = this.changes.subscribe(listener);
     return () => subscription.unsubscribe();
+  }
+
+  async putMapImageCaptureIntent(
+    intent: MapImageCaptureIntent,
+    now: number
+  ): Promise<MapImageCaptureIntentRecord> {
+    const record = createMapImageCaptureIntentRecord(intent, now);
+    await this.captureIntents.put(record);
+    this.changes.next();
+    return record;
+  }
+
+  async getMapImageCaptureIntent(intentId: string): Promise<MapImageCaptureIntentRecord | null> {
+    return (await this.captureIntents.get(intentId)) ?? null;
+  }
+
+  async deleteMapImageCaptureIntent(intentId: string): Promise<void> {
+    await this.captureIntents.delete(intentId);
+    this.changes.next();
   }
 }
 

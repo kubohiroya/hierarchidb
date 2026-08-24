@@ -133,4 +133,56 @@ describe('StagedFolderActionProgressStore', () => {
     await store.deleteRun(run.runId);
     await expect(store.getRun(run.runId)).resolves.toBeNull();
   });
+
+  it('stores map image capture intents and removes them with the terminal run', async () => {
+    const run = await store.createRun({
+      runId: 'run-capture' as NodeId,
+      sourceNodeId: 'source-capture' as NodeId,
+      now: 100,
+    });
+    await store.putMapImageCaptureIntent(
+      {
+        intentId: 'run-capture:1',
+        runId: run.runId,
+        stagingRootNodeId: 'staging-root' as NodeId,
+        browserMode: 'headless',
+        mapRoute: {
+          nodeId: 'staging-root' as NodeId,
+          search: { captureIntentId: 'run-capture:1' },
+        },
+        viewport: {
+          bbox: [139, 35, 140, 36],
+          width: 800,
+          height: 600,
+        },
+        layers: [{ path: '.', visible: true }],
+        output: { path: 'exports/out.png' },
+      },
+      120
+    );
+
+    await expect(store.getMapImageCaptureIntent('run-capture:1')).resolves.toMatchObject({
+      intentId: 'run-capture:1',
+      runId: 'run-capture',
+      createdAt: 120,
+      updatedAt: 120,
+    });
+
+    await store.updateRun(run.runId, {
+      status: 'completed',
+      phase: 'completed',
+      progress: {
+        total: 1,
+        completed: 1,
+        failed: 0,
+        skipped: 0,
+        percentage: 100,
+      },
+      completedAt: 130,
+      updatedAt: 130,
+    });
+    await store.deleteRun(run.runId);
+
+    await expect(store.getMapImageCaptureIntent('run-capture:1')).resolves.toBeNull();
+  });
 });

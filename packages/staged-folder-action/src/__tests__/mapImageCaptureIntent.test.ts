@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it } from 'vitest';
-import { createMapImageCaptureIntent } from '../index.js';
+import { createMapImageCaptureIntent, createMapImageCaptureIntentRecord } from '../index.js';
 
 describe('createMapImageCaptureIntent', () => {
   it('creates a handoff intent for the existing map route', () => {
@@ -63,5 +63,28 @@ describe('createMapImageCaptureIntent', () => {
         },
       })
     ).toThrow(/action\.output\.width must be a positive integer/);
+  });
+
+  it('wraps an intent as a timestamped IndexedDB state-channel record', () => {
+    const intent = createMapImageCaptureIntent({
+      runId: 'run-1' as NodeId,
+      stagingRootNodeId: 'staging-root' as NodeId,
+      actionIndex: 0,
+      browserMode: 'headed',
+      action: {
+        type: 'map-image-capture',
+        mode: 'map-ui',
+        output: { path: 'exports/tokyo.png', width: 1280, height: 720 },
+        viewport: { bbox: [139.5, 35.5, 140, 36] },
+        layers: [{ path: '.', visible: true }],
+      },
+    });
+
+    expect(createMapImageCaptureIntentRecord(intent, 123)).toMatchObject({
+      intentId: 'run-1:0',
+      runId: 'run-1',
+      createdAt: 123,
+      updatedAt: 123,
+    });
   });
 });

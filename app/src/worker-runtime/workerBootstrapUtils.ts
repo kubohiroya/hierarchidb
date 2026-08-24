@@ -1038,6 +1038,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             }
             await buildRuntimeAdapters.deleteSession(nodeType, nodeId);
           },
+          getMapImageCaptureIntent: async (intentId: string) =>
+            sanitizeForComlink(
+              await stagedFolderActionProgressStore.getMapImageCaptureIntent(intentId)
+            ),
           subscribeBuildSessionRecordsByStatus: async (
             nodeType: NodeType,
             statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,

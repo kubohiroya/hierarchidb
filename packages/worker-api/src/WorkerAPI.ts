@@ -22,6 +22,7 @@ import type {
   ShapeMutationAPI,
   ShapeQueryAPI,
 } from '@hierarchidb/shape-api';
+import type { MapImageCaptureIntentRecord } from '@hierarchidb/staged-folder-action';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
 import type {
@@ -137,6 +138,7 @@ export interface WorkerAPI<T> {
     callback: (sessions: BuildSessionRuntimeRecord[]) => void
   ): Promise<() => void>;
   deleteBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  getMapImageCaptureIntent(intentId: string): Promise<MapImageCaptureIntentRecord | null>;
   generateShapeDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,

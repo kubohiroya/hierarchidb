@@ -59,6 +59,7 @@ import type { MapSearch } from './types.js';
 import { useFolderLayers } from './useFolderLayers.js';
 import { useLocationVectorLayers } from './useLocationVectorLayers.js';
 import { useLocationViewportLayers } from './useLocationViewportLayers.js';
+import { useMapImageCaptureIntent } from './useMapImageCaptureIntent.js';
 import { useMapViewState } from './useMapViewState.js';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
@@ -145,6 +146,10 @@ export default function MapPage() {
   const locationMvtEnabled = canonicalBuildFeatureFlags.locationMvt;
   const search = useSearch({ from: '/map/$nodeId' }) as MapSearch;
   const loaderViewState = useLoaderData({ from: '/map/$nodeId' }) as LoaderMapViewState;
+  const captureIntentState = useMapImageCaptureIntent({
+    nodeId,
+    captureIntentId: search?.captureIntentId,
+  });
   const geolocation = useGeolocation();
   const [missingLayerDialogOpen, setMissingLayerDialogOpen] = useState(false);
   const [missingLayerIds, setMissingLayerIds] = useState<string[]>([]);
@@ -754,6 +759,8 @@ export default function MapPage() {
 
   return (
     <Box
+      data-map-image-capture-intent-id={search?.captureIntentId}
+      data-map-image-capture-intent-status={captureIntentState.status}
       sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}
     >
       {!debugFlags.skipModelessDialogs && nodeId ? (

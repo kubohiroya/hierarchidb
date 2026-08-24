@@ -33,6 +33,11 @@ export type MapImageCaptureIntent = {
   };
 };
 
+export type MapImageCaptureIntentRecord = MapImageCaptureIntent & {
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type CreateMapImageCaptureIntentInput = {
   action: StagedFolderMapImageCaptureAction;
   actionIndex: number;
@@ -78,6 +83,18 @@ export const createMapImageCaptureIntent = ({
   };
 };
 
+export const createMapImageCaptureIntentRecord = (
+  intent: MapImageCaptureIntent,
+  now: number
+): MapImageCaptureIntentRecord => {
+  assertFiniteNumber(now, 'now');
+  return {
+    ...intent,
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
 const assertPositiveInteger = (value: number, field: string): void => {
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error(`${field} must be a positive integer`);
@@ -87,5 +104,11 @@ const assertPositiveInteger = (value: number, field: string): void => {
 const assertNonNegativeInteger = (value: number, field: string): void => {
   if (!Number.isInteger(value) || value < 0) {
     throw new Error(`${field} must be a non-negative integer`);
+  }
+};
+
+const assertFiniteNumber = (value: number, field: string): void => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`${field} must be a finite number`);
   }
 };
