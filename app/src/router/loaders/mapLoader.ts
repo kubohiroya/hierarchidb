@@ -10,6 +10,11 @@ export interface MapViewState {
   zoom: number;
 }
 
+export interface MapSearch {
+  zxy?: string;
+  captureIntentId?: string;
+}
+
 // Default initial position (world view)
 export const DEFAULT_VIEW_STATE: MapViewState = {
   longitude: 0,
@@ -72,4 +77,12 @@ export function formatZxyParam(viewState: MapViewState): string {
 export function mapLoader(search: Record<string, unknown>): MapViewState {
   const zxy = typeof search.zxy === 'string' ? search.zxy : null;
   return parseZxyParam(zxy) ?? DEFAULT_VIEW_STATE;
+}
+
+export function normalizeMapSearch(search: Record<string, unknown>): MapSearch {
+  return {
+    zxy: typeof search.zxy === 'string' ? search.zxy : undefined,
+    captureIntentId:
+      typeof search.captureIntentId === 'string' ? search.captureIntentId : undefined,
+  };
 }

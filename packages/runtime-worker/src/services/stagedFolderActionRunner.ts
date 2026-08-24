@@ -1,14 +1,18 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type {
+  MapImageCaptureBrowserMode,
+  MapImageCaptureIntent,
   StagedFolderAction,
   StagedFolderActionConfig,
 } from '@hierarchidb/staged-folder-action';
+import { createMapImageCaptureIntent } from '@hierarchidb/staged-folder-action';
 import type { StagedFolderActionProgressStore } from './stagedFolderActionProgressStore.js';
 
 export interface StagedFolderActionRunnerInput {
   runId: NodeId;
   sourceNodeId: NodeId;
   config: StagedFolderActionConfig;
+  browserMode?: MapImageCaptureBrowserMode;
 }
 
 export interface StagedFolderActionPreparedStaging {
@@ -36,7 +40,7 @@ export interface StagedFolderActionRunnerDependencies {
     runId: NodeId;
   }): Promise<StagedFolderActionBuildResult>;
   runMapImageCaptureAction?(input: {
-    action: Extract<StagedFolderAction, { type: 'map-image-capture' }>;
+    intent: MapImageCaptureIntent;
     config: StagedFolderActionConfig;
     stagingRootNodeId: NodeId;
     runId: NodeId;
@@ -167,8 +171,18 @@ const runAction = async (
     if (!dependencies.runMapImageCaptureAction) {
       throw new Error('map-image-capture action runner is not configured');
     }
-    await dependencies.runMapImageCaptureAction({
+    if (!input.browserMode) {
+      throw new Error('map-image-capture action requires browserMode');
+    }
+    const intent = createMapImageCaptureIntent({
       action,
+      actionIndex,
+      runId: input.runId,
+      stagingRootNodeId,
+      browserMode: input.browserMode,
+    });
+    await dependencies.runMapImageCaptureAction({
+      intent,
       config: input.config,
       stagingRootNodeId,
       runId: input.runId,

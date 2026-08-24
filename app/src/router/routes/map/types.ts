@@ -3,10 +3,9 @@ import type {
   MapLibreStyle,
   MapViewState,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
+import type { MapSearch } from '~/router/loaders/mapLoader';
 
-export type MapSearch = {
-  zxy?: string;
-};
+export type { MapSearch };
 
 export type BasemapStyleEntry = {
   nodeId: string;

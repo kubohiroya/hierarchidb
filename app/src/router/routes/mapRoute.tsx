@@ -5,22 +5,21 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { type MapViewState, mapLoader } from '~/router/loaders/mapLoader';
+import {
+  type MapSearch,
+  type MapViewState,
+  mapLoader,
+  normalizeMapSearch,
+} from '~/router/loaders/mapLoader';
 // Import the existing map page component
 import MapPage from './map.js';
 import { rootRoute } from './rootRoute.js';
-
-interface MapSearch {
-  zxy?: string;
-}
 
 export const mapRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/map/$nodeId',
   validateSearch: (search: Record<string, unknown>): MapSearch => {
-    return {
-      zxy: typeof search.zxy === 'string' ? search.zxy : undefined,
-    };
+    return normalizeMapSearch(search);
   },
   loaderDeps: ({ search }) => ({ zxy: search.zxy }),
   loader: ({ deps }): MapViewState => {

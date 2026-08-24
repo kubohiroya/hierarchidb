@@ -1,49 +1,4 @@
 export type {
-  StagedFolderActionManifestErrorCode,
-  StagedFolderActionManifestErrorDetails,
-} from './StagedFolderActionManifestError.js';
-export { StagedFolderActionManifestError } from './StagedFolderActionManifestError.js';
-export type {
-  CreateStagedFolderActionRunRecordInput,
-  StagedFolderActionCurrentActionProgress,
-  StagedFolderActionProgressCounts,
-  StagedFolderActionRunPhase,
-  StagedFolderActionRunRecord,
-  StagedFolderActionRunRecordPatch,
-  StagedFolderActionRunStatus,
-} from './StagedFolderActionProgressTypes.js';
-export {
-  assertStagedFolderActionRunRecord,
-  createStagedFolderActionRunRecord,
-  STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE,
-  updateStagedFolderActionRunRecord,
-} from './StagedFolderActionProgressTypes.js';
-export type {
-  ParseStagedFolderActionManifestOptions,
-  StagedFolderAction,
-  StagedFolderActionBbox,
-  StagedFolderActionCleanup,
-  StagedFolderActionConfig,
-  StagedFolderActionExecutionOwner,
-  StagedFolderActionManifestFormat,
-  StagedFolderActionOverlayNode,
-  StagedFolderActionRegistryEntry,
-  StagedFolderActionStagingMode,
-  StagedFolderActionType,
-  StagedFolderBuildAction,
-  StagedFolderExportArchiveAction,
-  StagedFolderExportCsvAction,
-  StagedFolderExportXlsxAction,
-  StagedFolderImportMountAction,
-  StagedFolderMapImageCaptureAction,
-  ValidateStagedFolderActionCliOptionsInput,
-} from './StagedFolderActionManifestTypes.js';
-export {
-  parseStagedFolderActionManifest,
-  stagedFolderActionRegistry,
-  validateStagedFolderActionCliOptions,
-} from './parseStagedFolderActionManifest.js';
-export type {
   MapExportBrowserApi,
   MapExportBrowserCommittedNode,
   MapExportBrowserErrorCode,
@@ -85,5 +40,57 @@ export type {
   MapExportProfilePolicy,
   ResolveMapExportProfilePolicyInput,
 } from './MapExportProfilePolicyTypes.js';
+export type {
+  CreateMapImageCaptureIntentInput,
+  MapImageCaptureBrowserMode,
+  MapImageCaptureIntent,
+  MapImageCaptureLayerIntent,
+} from './MapImageCaptureIntentTypes.js';
+export { createMapImageCaptureIntent } from './MapImageCaptureIntentTypes.js';
 export { parseMapExportManifest } from './parseMapExportManifest.js';
+export {
+  parseStagedFolderActionManifest,
+  stagedFolderActionRegistry,
+  validateStagedFolderActionCliOptions,
+} from './parseStagedFolderActionManifest.js';
 export { resolveMapExportProfilePolicy } from './resolveMapExportProfilePolicy.js';
+export type {
+  StagedFolderActionManifestErrorCode,
+  StagedFolderActionManifestErrorDetails,
+} from './StagedFolderActionManifestError.js';
+export { StagedFolderActionManifestError } from './StagedFolderActionManifestError.js';
+export type {
+  ParseStagedFolderActionManifestOptions,
+  StagedFolderAction,
+  StagedFolderActionBbox,
+  StagedFolderActionCleanup,
+  StagedFolderActionConfig,
+  StagedFolderActionExecutionOwner,
+  StagedFolderActionManifestFormat,
+  StagedFolderActionOverlayNode,
+  StagedFolderActionRegistryEntry,
+  StagedFolderActionStagingMode,
+  StagedFolderActionType,
+  StagedFolderBuildAction,
+  StagedFolderExportArchiveAction,
+  StagedFolderExportCsvAction,
+  StagedFolderExportXlsxAction,
+  StagedFolderImportMountAction,
+  StagedFolderMapImageCaptureAction,
+  ValidateStagedFolderActionCliOptionsInput,
+} from './StagedFolderActionManifestTypes.js';
+export type {
+  CreateStagedFolderActionRunRecordInput,
+  StagedFolderActionCurrentActionProgress,
+  StagedFolderActionProgressCounts,
+  StagedFolderActionRunPhase,
+  StagedFolderActionRunRecord,
+  StagedFolderActionRunRecordPatch,
+  StagedFolderActionRunStatus,
+} from './StagedFolderActionProgressTypes.js';
+export {
+  assertStagedFolderActionRunRecord,
+  createStagedFolderActionRunRecord,
+  STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE,
+  updateStagedFolderActionRunRecord,
+} from './StagedFolderActionProgressTypes.js';

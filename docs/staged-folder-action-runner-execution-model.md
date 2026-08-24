@@ -127,6 +127,31 @@ Runner orchestration は staging preparation、overlay application、action exec
 
 `map-image-capture` action は existing Map UI を使う。専用 route や hidden capture-only route を正規経路にしない。headless 実行でも headed 実行でも、新規 tab で通常 Map UI を開く。
 
+### Map UI Handoff Intent
+
+runner は manifest の `map-image-capture` action をそのまま Map UI へ渡してはならない。runner は action 実行時に `MapImageCaptureIntent` を作成し、以下を含める。
+
+- `intentId`
+- `runId`
+- `stagingRootNodeId`
+- `browserMode: headless|headed`
+- existing Map UI route target: `/map/$nodeId` の `nodeId = stagingRootNodeId`
+- existing Map UI route search: `captureIntentId = intentId`
+- `viewport.bbox`
+- `viewport.width` / `viewport.height`
+- requested `layers[]`。各 layer は staging root からの相対 path と visibility を持つ
+- `output.path`
+
+`intentId` は Map UI 側が Worker / IndexedDB state channel から capture intent を取得するための key である。route search に capture 設定本体を詰め込まない。URL search は通常 Map route 上の intent 参照だけを運び、実体は runner progress / capture intent state channel に保持する。
+
+選定する handoff path は、`Worker / IndexedDB progress` と同じ profile 内に保持される capture intent state channel と、通常 Map route `/map/$nodeId?captureIntentId=<intentId>` の組み合わせである。この方式により、CLI から開く headless tab と、実 browser window で開く headed tab のどちらも同じ route/component/readiness contract を使う。
+
+却下する代替案:
+
+- 専用 `/map-export` route: 通常 Map UI と別実装になり、既存 route/component/readiness と乖離するため採用しない。
+- URL search へ bbox/layers/output などの capture 設定全体を埋め込む方式: URL 長、機密性、再試行時の状態同期、profile 境界の扱いが弱くなるため採用しない。
+- CLI 側の独自 renderer: Map UI の表示ロジック、layer 解決、effective data 読み取りと二重化するため採用しない。
+
 `map-image-capture` 成功条件:
 
 - build queue が completed。

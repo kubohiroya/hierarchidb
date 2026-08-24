@@ -95,6 +95,7 @@ describe('runStagedFolderAction', () => {
     await runStagedFolderAction(dependencies, {
       runId: 'run-capture' as NodeId,
       sourceNodeId: 'source-capture' as NodeId,
+      browserMode: 'headed',
       config: createConfig({
         actions: [
           { type: 'build', mode: 'session-manager' },
@@ -110,6 +111,32 @@ describe('runStagedFolderAction', () => {
     });
 
     expect(order).toEqual(['build', 'capture']);
+    expect(dependencies.runMapImageCaptureAction).toHaveBeenCalledWith({
+      intent: {
+        intentId: 'run-capture:1',
+        runId: 'run-capture',
+        stagingRootNodeId: 'staging-root',
+        browserMode: 'headed',
+        mapRoute: {
+          nodeId: 'staging-root',
+          search: {
+            captureIntentId: 'run-capture:1',
+          },
+        },
+        viewport: {
+          bbox: [139, 35, 140, 36],
+          width: 800,
+          height: 600,
+        },
+        layers: [{ path: '.', visible: true }],
+        output: {
+          path: './out.png',
+        },
+      },
+      config: expect.any(Object),
+      stagingRootNodeId: 'staging-root',
+      runId: 'run-capture',
+    });
     await expect(store.getRun('run-capture' as NodeId)).resolves.toMatchObject({
       status: 'completed',
       phase: 'completed',
@@ -121,6 +148,32 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('requires browser mode before handing off map image capture', async () => {
+    const dependencies = createDependencies({
+      runMapImageCaptureAction: vi.fn(async () => {}),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-capture-no-browser' as NodeId,
+        sourceNodeId: 'source-capture-no-browser' as NodeId,
+        config: createConfig({
+          actions: [
+            { type: 'build', mode: 'session-manager' },
+            {
+              type: 'map-image-capture',
+              mode: 'map-ui',
+              output: { path: './out.png', width: 800, height: 600 },
+              viewport: { bbox: [139, 35, 140, 36] },
+              layers: [{ path: '.', visible: true }],
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow(/map-image-capture action requires browserMode/);
+    expect(dependencies.runMapImageCaptureAction).not.toHaveBeenCalled();
+  });
+
   it('records failure when map image capture has no configured runner', async () => {
     const dependencies = createDependencies();
 
@@ -128,6 +181,7 @@ describe('runStagedFolderAction', () => {
       runStagedFolderAction(dependencies, {
         runId: 'run-missing-capture' as NodeId,
         sourceNodeId: 'source-missing-capture' as NodeId,
+        browserMode: 'headless',
         config: createConfig({
           actions: [
             { type: 'build', mode: 'session-manager' },
