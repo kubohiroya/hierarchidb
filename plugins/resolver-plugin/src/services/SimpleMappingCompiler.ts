@@ -1,4 +1,4 @@
-import type { PropertyMappingRule } from '~/common/types/index';
+import type { PropertyMappingRule } from '~/common/entities/ResolverEntity';
 
 type JsonRecord = Record<string, unknown>;
 type TransformFunction = (value: unknown) => unknown;

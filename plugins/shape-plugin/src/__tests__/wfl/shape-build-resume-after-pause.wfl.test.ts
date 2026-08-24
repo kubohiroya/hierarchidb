@@ -8,12 +8,9 @@ import type {
 } from '@hierarchidb/shape-api';
 import * as Comlink from 'comlink';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
-import type {
-  SelectedArrayByCountries,
-  ShapeBuildConfig,
-  ShapeProcessingConfig,
-  SourceTaskPayload,
-} from '../../common/types/index';
+import type { SelectedArrayByCountries } from '../../common/types/ShapeEntity.js';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from '../../common/types/BuildTaskResult.js';
+import type { SourceTaskPayload } from '../../common/types/data-source.js';
 
 vi.mock('comlink', async () => await vi.importActual('comlink'));
 

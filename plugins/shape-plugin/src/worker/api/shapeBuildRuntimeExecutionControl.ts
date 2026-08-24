@@ -7,25 +7,12 @@ import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type {
-  CountryMetadata,
-  DataSourceName,
-  SelectedArrayByCountries,
-  ShapeBuildConfig,
-  ShapeProcessingConfig,
-  ShapeRuntimeBuildConfig,
-  SourceTaskPayload,
-} from '~/common/types/index';
-import {
-  applyBuildConfigPatch,
-  assertShapeBuildConfigTileEmitContract,
-  composeRuntimeBuildConfig,
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
-  requireDataSourceName,
-  validateBuildConfig,
-} from '~/common/types/index';
+import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
+import type { ShapeBuildConfig, ShapeProcessingConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
+import { applyBuildConfigPatch, assertShapeBuildConfigTileEmitContract, composeRuntimeBuildConfig, mergeProcessingConfig, validateBuildConfig } from '~/services/utils/shapeBuildUtils';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import { requireDataSourceName } from '~/common/types/data-source';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import { cacheValidator } from '~/services/CacheValidator';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';

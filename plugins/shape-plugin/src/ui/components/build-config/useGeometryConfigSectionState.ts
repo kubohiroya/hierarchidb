@@ -5,7 +5,7 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { SxProps, Theme } from '@mui/material';
 import type { TFunction } from 'i18next';
 import { useMemo } from 'react';
-import type { ShapeBuildConfig, ShapeBuildGeometryConfig } from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeBuildGeometryConfig } from '~/common/types/BuildTaskResult';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import { useGeometryConfigSectionView } from './useGeometryConfigSectionView.js';
 

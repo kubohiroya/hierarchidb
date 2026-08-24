@@ -4,7 +4,8 @@ import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { listTasksByStageAndStatus, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import type { CountryMetadata, ShapeFeaturePayload } from '../../common/types/index';
+import type { CountryMetadata } from '../../common/types/data-source.js';
+import type { ShapeFeaturePayload } from '../../common/types/ShapeFeaturePayload.js';
 
 const { mockFetchData, mockProcessData, mockPutFeatureMetadata } = vi.hoisted(() => ({
   mockFetchData: vi.fn(),

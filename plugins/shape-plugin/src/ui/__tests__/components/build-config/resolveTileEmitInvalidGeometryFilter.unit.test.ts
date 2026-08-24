@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ShapeBuildConfig } from '../../../../common/types/index';
+import type { ShapeBuildConfig } from '../../../../common/types/BuildTaskResult.js';
 import { resolveTileEmitInvalidGeometryFilter } from '../../../components/build-config/TileEmitInvalidGeometryFilterCard/useTileEmitInvalidGeometryFilterCardState';
 
 describe('resolveTileEmitInvalidGeometryFilter', () => {

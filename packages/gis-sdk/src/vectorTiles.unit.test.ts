@@ -3,7 +3,7 @@ import { VectorTile } from '@mapbox/vector-tile';
 import type { Feature, FeatureCollection, Polygon } from 'geojson';
 import Pbf from 'pbf';
 import { describe, expect, it } from 'vitest';
-import { generateVectorTilesFromFeatureCollection } from './vectorTiles/index';
+import { generateVectorTilesFromFeatureCollection } from './vectorTiles/generateVectorTilesFromFeatureCollection.js';
 
 const toNodeId = (value: string): NodeId => value as NodeId;
 

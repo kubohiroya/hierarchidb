@@ -9,22 +9,12 @@ import type {
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import {
-  type BuildSession,
-  type CountryMetadata,
-  type DataSourceConfig,
-  type DataSourceName,
-  getPreferredCountryCodeFormat,
-  isDataSourceName,
-  type ProgressInfo,
-  requireDataSourceName,
-  type SelectedArrayByCountries,
-  SHAPE_DATA_SOURCES,
-  type ShapeBuildConfig,
-  type ShapeProcessingConfig,
-  type ShapeStepValidationResult,
-  type SourceTaskPayload,
-} from '~/common/types/index';
+import { BuildSession, ProgressInfo, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
+import { CountryMetadata, DataSourceConfig, DataSourceName, isDataSourceName, requireDataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import { getPreferredCountryCodeFormat } from '~/services/utils/shapeBuildUtils';
+import { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
+import { SHAPE_DATA_SOURCES } from '~/common/types/constants';
+import { ShapeStepValidationResult } from '~/common/types/validationTypes';
 import type {
   HeartbeatEvent,
   SessionStatusUpdatedEvent,

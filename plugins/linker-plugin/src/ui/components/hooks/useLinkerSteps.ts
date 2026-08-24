@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { StepData } from '@hierarchidb/plugin-base';
 import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
-import type { LinkerDraft } from '~/common/types/index';
+import type { LinkerDraft } from '~/common/entities/LinkerEntity';
 import type { ResourceSummary } from '~/ui/steps/ResourcePicker';
 
 type LinkerStepData = StepData & LinkerDraft;

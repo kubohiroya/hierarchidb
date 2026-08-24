@@ -28,7 +28,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import type { TabularProcessingConfig } from '../types/index';
+import type { TabularProcessingConfig } from '../types/index.js';
 import { useTabularDataImport } from './useTabularDataImport.js';
 
 export interface TabularDataImportProps {

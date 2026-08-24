@@ -5,7 +5,8 @@ import { GeoJsonLayer } from '@deck.gl/layers';
 import type { Meta, StoryObj } from '@storybook/react';
 import type { Feature, Polygon } from 'geojson';
 import { lazy, Suspense, useMemo } from 'react';
-import { DEFAULT_MAP_CONFIG, loadMapWithDeckGL } from '~/index';
+import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
+import { loadMapWithDeckGL } from '~/index';
 
 const LazyMapWithDeckGL = lazy(async () => {
   const mod = await loadMapWithDeckGL();

@@ -4,7 +4,7 @@
  */
 
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeFeaturePayload } from '~/common/types/index';
+import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
 import { buildRawDataDataSourceCacheKey, type RetryConfig } from '~/services/utils/chunkStore';
 import {
   bufferToStream,

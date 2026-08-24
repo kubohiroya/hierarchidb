@@ -1,4 +1,4 @@
-import { decodeCanonicalYamlZip } from '../canonical-yaml-zip-codec/index.js';
+import { decodeCanonicalYamlZip } from '../canonical-yaml-zip-codec/decodeCanonicalYamlZip.js';
 import { canonicalYamlZipImportPlanProvenance } from './canonicalYamlZipImportPlanProvenance.internalConstants.js';
 import { canonicalYamlZipPlanGuards } from './canonicalYamlZipPlanGuards.internal.js';
 import type {

@@ -1,4 +1,4 @@
-import { createYamlStoragePostActivationReady } from '../yaml-storage-activation/index.js';
+import { createYamlStoragePostActivationReady } from '../yaml-storage-activation/createYamlStoragePostActivationReady.js';
 import { validateCanonicalYamlStorageCoreDb } from './validateCanonicalYamlStorageCoreDb.js';
 import { openExistingCoreDb } from './yamlStorageCoreDbSchemaUtils.js';
 import type {

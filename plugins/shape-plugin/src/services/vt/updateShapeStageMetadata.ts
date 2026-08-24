@@ -5,7 +5,7 @@ import type { ShapeDB } from '@hierarchidb/shape-store';
 import { VectorTile } from '@mapbox/vector-tile';
 import type { Feature, Geometry } from 'geojson';
 import Pbf from 'pbf';
-import type { CountryMetadata, DataSourceName } from '~/common/types/index';
+import type { CountryMetadata, DataSourceName } from '~/common/types/data-source';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';

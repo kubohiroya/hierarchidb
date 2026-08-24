@@ -33,7 +33,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import type { TabularColumnMapping, TabularDataResult } from '../types/index';
+import type { TabularColumnMapping, TabularDataResult } from '../types/index.js';
 import { useTabularColumnSelect } from './useTabularColumnSelect.js';
 
 export interface TabularColumnSelectProps {

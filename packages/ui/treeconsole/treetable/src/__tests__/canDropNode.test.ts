@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT_PARENT_ID = toNodeId('__root__');
 
-import { canDropNode } from '../utils/index';
+import { canDropNode } from '../utils/index.js';
 
 const N = (id: string, parentId?: string): TreeNode => ({
   id: toNodeId(id),

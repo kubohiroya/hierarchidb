@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { CountryMetadata } from '~/common/types/index';
+import type { CountryMetadata } from '~/common/types/data-source';
 import {
   buildShapeCacheKey,
   createShapeChunkStoreWithNetworkPort,

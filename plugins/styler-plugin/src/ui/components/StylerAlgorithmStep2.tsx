@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { type StylerConfig, type StylerStepData } from '~/common/types/StylerEntity';
-import { generateColorGradient } from '~/common/utils/colorUtils';
+import { generateColorGradient } from '~/common/utils/colorUtils/colorCalculation';
 import { GradientSwatch } from './GradientSwatch.tsx';
 import { useStylerAlgorithmStep2 } from './useStylerAlgorithmStep2.ts';
 

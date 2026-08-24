@@ -4,12 +4,9 @@ import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { type BuildWorkerBridge, getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
-import type { ShapeEntity } from '~/common/types/index';
-import {
-  type DataSourceName,
-  isDataSourceName,
-  SHAPE_DATA_SOURCE_BY_NAME,
-} from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { DataSourceName, isDataSourceName } from '~/common/types/data-source';
+import { SHAPE_DATA_SOURCE_BY_NAME } from '~/common/types/constants';
 import { ShapeArtifactCascadeCleanupError } from '~/services/vt/runShapeArtifactCascadeCleanup';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';

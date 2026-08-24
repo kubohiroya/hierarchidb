@@ -11,7 +11,7 @@ import {
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { Tile } from 'geojson-vt';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { resolveToleranceByBand } from '~/services/utils/toleranceByBand';
 import type { ShapeTileEmitTaskInput } from './shapePipelineShared.ts';

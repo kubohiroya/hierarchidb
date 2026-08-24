@@ -1,4 +1,4 @@
-import { type AccordionTheme, defaultAccordionTheme } from '~/types/index';
+import { AccordionTheme, defaultAccordionTheme } from '~/types/index';
 
 /**
  * Get phase color based on theme mode

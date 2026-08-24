@@ -10,12 +10,10 @@ import type {
   YamlCanonicalZipImportTransactionRequest,
   YamlCanonicalZipServiceEnvironment,
 } from '@hierarchidb/worker-api';
-import { decodeCanonicalYamlZip } from '../canonical-yaml-zip-codec/index.js';
-import {
-  commitCanonicalYamlZipImportPlan,
-  planCanonicalYamlZipExport,
-  planCanonicalYamlZipImport,
-} from '../canonical-yaml-zip-plan/index.js';
+import { decodeCanonicalYamlZip } from '../canonical-yaml-zip-codec/decodeCanonicalYamlZip.js';
+import { commitCanonicalYamlZipImportPlan } from '../canonical-yaml-zip-plan/commitCanonicalYamlZipImportPlan.js';
+import { planCanonicalYamlZipExport } from '../canonical-yaml-zip-plan/planCanonicalYamlZipExport.js';
+import { planCanonicalYamlZipImport } from '../canonical-yaml-zip-plan/planCanonicalYamlZipImport.js';
 
 type ParsedExportInput = Readonly<{
   readonly parentId: NodeId;

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { createYamlStoragePostActivationReady } from '../createYamlStoragePostActivationReady.js';
 import {
-  createYamlStoragePostActivationReady,
   getYamlStorageAccessDecision,
   isYamlStorageActualFenceEstablished,
-} from '../index.js';
+} from '../getYamlStorageAccessDecision.js';
 
 function validInput(): Record<string, unknown> {
   return {

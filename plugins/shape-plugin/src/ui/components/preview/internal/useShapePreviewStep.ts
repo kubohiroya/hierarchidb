@@ -35,7 +35,8 @@ import { useTheme } from '@mui/material/styles';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
-import type { DataSourceName, ShapeEntity, SourceTaskPayload } from '~/common/types/index';
+import type { DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
   shapePreviewHoveredIdAtom,

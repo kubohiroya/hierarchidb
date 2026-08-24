@@ -1,8 +1,8 @@
 import { AuthRequiredError } from '@hierarchidb/auth';
 import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SourceTaskPayload } from '../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/index.js';
+import type { SourceTaskPayload } from '../../common/types/data-source.js';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
 const getEntityMock = vi.hoisted(() => vi.fn());
 const getBuildSessionRecordMock = vi.hoisted(() => vi.fn());

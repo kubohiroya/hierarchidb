@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
-  createYamlStorageActivation,
-  createYamlStorageFreshActivation,
   getYamlStorageAccessDecision,
   isYamlStorageActualFenceEstablished,
+} from '../getYamlStorageAccessDecision.js';
+import {
+  createYamlStorageActivation,
+  createYamlStorageFreshActivation,
   reduceYamlStorageActivation,
-  type YamlStorageAccessRequest,
-  type YamlStorageActivationErrorCode,
-  type YamlStorageActivationEvent,
-  type YamlStorageActivationPhase,
-  type YamlStorageActivationState,
-} from '../index.js';
+} from '../reduceYamlStorageActivation.js';
+import {
+  YamlStorageAccessRequest,
+  YamlStorageActivationErrorCode,
+  YamlStorageActivationEvent,
+  YamlStorageActivationPhase,
+  YamlStorageActivationState,
+} from '../yamlStorageActivationTypes.js';
 
 const ACTIVATION_ID = 'activation-1';
 const OPEN_REQUEST_ID = 'open-1';

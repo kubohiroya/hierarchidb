@@ -1,8 +1,4 @@
-import type {
-  DuplicateResolutionStrategy,
-  PropertyMappingRule,
-  ValidationRule,
-} from '~/common/types/index';
+import type { DuplicateResolutionStrategy, PropertyMappingRule, ValidationRule } from '~/common/entities/ResolverEntity';
 
 /**
  * Optimization levels for compilation

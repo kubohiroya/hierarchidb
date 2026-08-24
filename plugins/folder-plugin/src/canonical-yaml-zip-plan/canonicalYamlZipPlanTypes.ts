@@ -1,8 +1,5 @@
 import type { ValidatedYamlCanonicalPayload } from '@hierarchidb/yaml-api/validation';
-import type {
-  CanonicalYamlZipCodecErrorCode,
-  EncodedCanonicalYamlZip,
-} from '../canonical-yaml-zip-codec/index.js';
+import type { CanonicalYamlZipCodecErrorCode, EncodedCanonicalYamlZip } from '../canonical-yaml-zip-codec/canonicalYamlZipCodecTypes.js';
 
 export type CanonicalYamlZipExportSlot = 'committed' | 'draft';
 

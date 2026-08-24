@@ -32,10 +32,8 @@ export { StyledAccordion } from './components/StyledAccordion.js';
 export type { AccordionState, UseAccordionStateOptions } from './hooks/useAccordionState.js';
 // Hooks
 export { useAccordionState } from './hooks/useAccordionState.js';
-export type {
-  SettingsAccordionProps,
-  WorkflowAccordionProps,
-  WorkflowStep,
-} from './presets/index.js';
+export type { SettingsAccordionProps } from './presets/SettingsAccordion.js';
+export type { WorkflowAccordionProps, WorkflowStep } from './presets/WorkflowAccordion.js';
 // Preset components
-export { SettingsAccordion, WorkflowAccordion } from './presets/index.js';
+export { SettingsAccordion } from './presets/SettingsAccordion.js';
+export { WorkflowAccordion } from './presets/WorkflowAccordion.js';

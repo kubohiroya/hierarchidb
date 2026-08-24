@@ -1,2 +1,2 @@
 export * from './entities/TimelineEntity.js';
-export * from './types/index.js';
+export * from './entities/TimelineEntity.js';

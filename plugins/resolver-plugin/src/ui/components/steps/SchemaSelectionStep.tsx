@@ -17,7 +17,7 @@ import {
 import Grid from '@mui/material/Grid';
 import type React from 'react';
 import { useId } from 'react';
-import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '~/common/types/index';
+import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '~/common/entities/ResolverEntity';
 import { useSchemaSelectionStep } from './hooks/useSchemaSelectionStep.js';
 
 interface SchemaSelectionStepProps {

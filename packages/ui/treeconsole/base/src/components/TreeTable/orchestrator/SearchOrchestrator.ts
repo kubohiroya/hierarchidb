@@ -7,11 +7,7 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import {
-  filteredDataAtom,
-  searchTermAtom,
-  tableDataAtom,
-} from '~/components/TreeTable/state/index';
+import { filteredDataAtom, searchTermAtom, tableDataAtom } from '~/components/TreeTable/state/core/data.atoms';
 import type { TreeViewController } from '~/types/index';
 
 export interface SearchOrchestratorResult {

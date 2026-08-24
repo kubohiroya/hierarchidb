@@ -2,12 +2,12 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CoreDB } from '../../CoreDB';
-import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData';
 import {
   applyStagedFolderActionOverlays,
   StagedFolderActionOverlayApplicationError,
 } from '../../applyStagedFolderActionOverlays';
+import { CoreDB } from '../../CoreDB';
+import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData';
 import { ensureTemporaryFolderHolder } from '../../temporaryFolderHolderLifecycleUtils';
 
 type TestTreeNodeOverrides = Omit<Partial<TreeNode<NodePayload | null>>, 'metadata'> & {
@@ -424,9 +424,7 @@ describe('applyStagedFolderActionOverlays', () => {
         name: metadata?.name ?? 'Root Patch',
         description: metadata?.description ?? '',
         tags: metadata?.tags ?? [],
-        ...(metadata?.buildMetadata === undefined
-          ? {}
-          : { buildMetadata: metadata.buildMetadata }),
+        ...(metadata?.buildMetadata === undefined ? {} : { buildMetadata: metadata.buildMetadata }),
       },
       draftMetadata: null,
       data,

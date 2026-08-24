@@ -2,7 +2,7 @@ import { toNodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useCallback, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LocationEntity } from '../../../../common/types/index';
+import type { LocationEntity } from '../../../../common/types/index.js';
 import { useIdeGsmImportOnEntry } from '../../useIdeGsmImportOnEntry';
 
 type ImportProgressCallback = (progress: {

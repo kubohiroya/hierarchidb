@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CountryMetadata } from '~/common/types/index';
+import type { CountryMetadata } from '~/common/types/data-source';
 import { useShapeCountrySelectionStepSelectionState } from '../../../components/country-selection/internal/useShapeCountrySelectionStepSelectionState.js';
 
 const enqueueSnackbar = vi.fn();

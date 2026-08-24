@@ -36,7 +36,7 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import type { LocationType } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
 import { LocationMapPreviewMarkers } from './LocationMapPreviewMarkers.js';
 import type { LocationMapPreviewProps, PreviewLocationPoint } from './locationMapPreviewTypes.js';
 import { useLocationMapPreview } from './useLocationMapPreview.js';

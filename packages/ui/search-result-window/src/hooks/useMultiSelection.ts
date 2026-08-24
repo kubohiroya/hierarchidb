@@ -1,16 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
-import {
-  clearSelectionAtom,
-  searchResultsAtom,
-  selectAllAtom,
-  selectedNodeIdsAtom,
-  selectedResultItemsAtom,
-  selectNodeAtom,
-  selectRangeAtom,
-  toggleNodeSelectionAtom,
-} from '~/state/index';
+import { clearSelectionAtom, searchResultsAtom, selectAllAtom, selectedNodeIdsAtom, selectedResultItemsAtom, selectNodeAtom, selectRangeAtom, toggleNodeSelectionAtom } from '~/state/searchResult.atoms';
 import type { SearchResult } from '~/types/index';
 
 interface UseMultiSelectionProps {

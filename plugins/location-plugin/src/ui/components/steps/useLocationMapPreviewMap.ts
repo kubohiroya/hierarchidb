@@ -43,7 +43,8 @@ import type {
   LocationPreviewHoverSnackbarProps,
 } from './LocationMapPreviewMapElements.js';
 import { LocationMapPreviewIcon } from './LocationMapPreviewMapElements.js';
-import { buildLocationMvtStyleExpressions, buildLocationVectorLayers } from '~/common/index.js';
+import { buildLocationMvtStyleExpressions } from '~/common/locationMvtStyleExpressions';
+import { buildLocationVectorLayers } from '~/common/buildLocationVectorLayers';
 import {
   CIRCLE_RADIUS_AT_MAX,
   CIRCLE_RADIUS_MAX_ZOOM,

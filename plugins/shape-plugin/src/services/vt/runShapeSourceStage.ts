@@ -25,14 +25,10 @@ import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from
 import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
 import { topology as topojsonTopology } from 'topojson-server';
 import type { Topology } from 'topojson-specification';
-import type {
-  CountryMetadata,
-  DataSourceName,
-  SelectedArrayByCountries,
-  ShapeFeaturePayload,
-  ShapeRuntimeBuildConfig,
-  SourceTaskPayload,
-} from '~/common/types/index';
+import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
+import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { RetryConfig } from '~/services/datasources/DataSourceStrategy';
 import { DataSourceStrategyFactory } from '~/services/datasources/DataSourceStrategyFactory';

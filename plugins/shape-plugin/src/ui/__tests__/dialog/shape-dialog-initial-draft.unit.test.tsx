@@ -2,13 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { describe, expect, it, vi } from 'vitest';
-import type { ShapeEntity } from '../../../common/types/index';
-import {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  summarizeCheckboxState,
-  validateBuildConfig,
-} from '../../../common/types/index';
+import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../../common/types/constants.js';
+import { summarizeCheckboxState, validateBuildConfig } from '../../../services/utils/shapeBuildUtils.js';
 import '../../components/steps-provider';
 
 vi.mock('../../i18n.js', () => ({

@@ -9,7 +9,8 @@ import { LocationCity } from '@mui/icons-material';
 import { useTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
-import type { LocationEntity, LocationType } from '~/common/types/index';
+import type { LocationEntity } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
 import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
 import { subscribeIdeGsmProgress } from '~/ui/state/ideGsmProgressUtils';
 import type {

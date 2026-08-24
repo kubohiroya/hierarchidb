@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createYamlStorageLegacyFence } from '../createYamlStorageLegacyFence.js';
+import { getYamlStorageLegacyFenceDecision } from '../getYamlStorageLegacyFenceDecision.js';
+import { reduceYamlStorageLegacyFence } from '../reduceYamlStorageLegacyFence.js';
 import {
-  createYamlStorageLegacyFence,
-  getYamlStorageLegacyFenceDecision,
-  reduceYamlStorageLegacyFence,
-  type YamlStorageLegacyFenceEvent,
-  type YamlStorageLegacyFenceState,
-} from '../index.js';
+  YamlStorageLegacyFenceEvent,
+  YamlStorageLegacyFenceState,
+} from '../yamlStorageLegacyFenceTypes.js';
 
 const ACTIVATION_ID = 'activation-1';
 const QUIESCENCE_REQUEST_ID = 'quiescence-1';

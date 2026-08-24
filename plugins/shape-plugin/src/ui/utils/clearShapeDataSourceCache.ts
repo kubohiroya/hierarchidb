@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { deleteRawDataDataSourceBuffersForDataSource } from '~/services/utils/chunkStore';
 import { invalidateCountrySelectionCaches } from '~/ui/hooks/invalidateCountrySelectionCaches';

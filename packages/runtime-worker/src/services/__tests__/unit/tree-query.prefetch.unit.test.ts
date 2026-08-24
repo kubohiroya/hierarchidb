@@ -74,8 +74,9 @@ describe('TreeQueryService listChildren prefetch', () => {
       ['staged', staged],
     ]);
     tree.root = [staged];
-    (stubCoreDB as { getNode: (nodeId: NodeId) => Promise<TreeNode | undefined> }).getNode =
-      vi.fn(async (nodeId: NodeId) => nodes.get(String(nodeId)));
+    (stubCoreDB as { getNode: (nodeId: NodeId) => Promise<TreeNode | undefined> }).getNode = vi.fn(
+      async (nodeId: NodeId) => nodes.get(String(nodeId))
+    );
 
     const result = await service.listChildren('root' as NodeId);
 

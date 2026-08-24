@@ -4,14 +4,8 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
 import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
-import {
-  lastUpdateTimestampAtom,
-  pendingUpdatesAtom,
-  subscribedRootNodeIdAtom,
-  subscriptionDepthAtom,
-  subscriptionIdAtom,
-  tableDataAtom,
-} from '~/components/TreeTable/state/index';
+import { lastUpdateTimestampAtom, pendingUpdatesAtom, subscribedRootNodeIdAtom, subscriptionDepthAtom, subscriptionIdAtom } from '~/components/TreeTable/state/features/subscription.atoms';
+import { tableDataAtom } from '~/components/TreeTable/state/core/data.atoms';
 import { sanitizeForComlink } from '../../../adapters/subscriptions/comlinkSanitizer.js';
 import { coalesceBatches } from './mergeUtils.js';
 

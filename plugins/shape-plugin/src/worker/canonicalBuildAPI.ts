@@ -9,7 +9,7 @@ import type {
 } from '@hierarchidb/build-api';
 import { isLegacyCanonicalPluginBuildStartRequest } from '@hierarchidb/build-api';
 import { requireCanonicalStageBuildConfig } from '@hierarchidb/build-runtime-services';
-import type { BuildSession, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
+import type { BuildSession, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import { setShapeCorsProxyBaseURL } from '~/services/utils/setShapeCorsProxyBaseURL';
 import { shapeBuildAPI } from './api.js';
 

@@ -1,4 +1,4 @@
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 
 export const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);

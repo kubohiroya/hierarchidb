@@ -1,8 +1,9 @@
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ShapeEntity } from '~/common/types/index';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import { mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '~/ui/utils/buildWarnings';
 import { getStageConcurrencyWarning } from '~/ui/utils/buildWarnings';
 export type StartWarning = {

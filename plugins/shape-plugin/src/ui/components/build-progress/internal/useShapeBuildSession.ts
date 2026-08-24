@@ -4,12 +4,9 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import {
-  DEFAULT_PROCESSING_CONFIG,
-  type ShapeEntity,
-  summarizeCheckboxState,
-  validateBuildConfig,
-} from '~/common/types/index';
+import { DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import { ShapeEntity } from '~/common/types/ShapeEntity';
+import { summarizeCheckboxState, validateBuildConfig } from '~/services/utils/shapeBuildUtils';
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';

@@ -5,7 +5,8 @@ import {
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
+import { DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import { mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { resolveShapeTaskTitle } from '~/common/utils/taskTitleUtils';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';

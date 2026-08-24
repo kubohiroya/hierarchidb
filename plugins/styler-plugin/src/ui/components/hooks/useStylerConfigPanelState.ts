@@ -6,7 +6,7 @@ import type {
   StylerTableRow,
 } from '~/common/types/StylerEntity';
 import { StylerConfigDefault } from '~/common/types/StylerEntity';
-import { generateColorGradient } from '~/common/utils/colorUtils';
+import { generateColorGradient } from '~/common/utils/colorUtils/colorCalculation';
 import {
   analyzeData,
   type DataAnalysisResult,

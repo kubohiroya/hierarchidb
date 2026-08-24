@@ -5,7 +5,7 @@ import type {
 } from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTabularFilter } from '../hooks/useTabularFilter';
-import type { TabularDataResult, TabularFilterOperator, TabularFilterRule } from '../types/index';
+import type { TabularDataResult, TabularFilterOperator, TabularFilterRule } from '../types/index.js';
 import type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 
 const MAX_PREVIEW_ROWS = 500;

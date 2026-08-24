@@ -6,11 +6,7 @@ import {
   type StepData,
 } from '@hierarchidb/plugin-base';
 import { i18n } from '@hierarchidb/ui-i18n';
-import type {
-  MappingValidationResult,
-  ResolverUpdaterPayload,
-  SchemaInfo,
-} from '~/common/types/index';
+import type { MappingValidationResult, ResolverUpdaterPayload, SchemaInfo } from '~/common/entities/ResolverEntity';
 import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 import { PreviewTestStep } from './steps/PreviewTestStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';

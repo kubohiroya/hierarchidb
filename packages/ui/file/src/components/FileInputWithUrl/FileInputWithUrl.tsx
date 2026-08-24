@@ -1,8 +1,10 @@
 import { Login } from '@mui/icons-material';
 import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import type React from 'react';
+import { useUrlDownload } from '../../hooks/useUrlDownload.js';
 import { DragDropSection } from './DragDropSection.js';
-import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
+import { useDragDrop } from './hooks/useDragDrop.js';
+import { useFileInput } from './hooks/useFileInput.js';
 import { LoadingOverlay } from './LoadingOverlay.js';
 import { UrlDownloadSection } from './UrlDownloadSection.js';
 import { useFileInputWithUrlView } from './useFileInputWithUrlView.js';

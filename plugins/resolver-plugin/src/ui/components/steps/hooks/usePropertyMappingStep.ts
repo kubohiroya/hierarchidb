@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type {
-  MappingPreviewResult,
-  PropertyInfo,
-  PropertyMappingRule,
-  ResolverUpdaterPayload,
-  SchemaInfo,
-} from '~/common/types/index';
+import type { MappingPreviewResult, PropertyInfo, PropertyMappingRule, ResolverUpdaterPayload, SchemaInfo } from '~/common/entities/ResolverEntity';
 
 interface UsePropertyMappingStepArgs {
   data: Partial<ResolverUpdaterPayload>;

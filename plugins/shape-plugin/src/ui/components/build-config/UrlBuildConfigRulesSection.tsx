@@ -2,7 +2,7 @@ import { BuildConfigSectionTitle } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Link as LinkIcon } from '@mui/icons-material';
 import { Alert, Grid, Stack, TextField, Typography } from '@mui/material';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { useUrlBuildConfigRulesSection } from './useUrlBuildConfigRulesSection.js';
 
 type Props = {

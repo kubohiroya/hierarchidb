@@ -1,7 +1,7 @@
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import type { ReactElement } from 'react';
-import type { LocationIconConfig, LocationType } from '~/common/types/index';
+import type { LocationIconConfig, LocationType } from '~/common/entities/LocationEntity';
 import {
   DEFAULT_ICON_IDS,
   DEFAULT_TYPE_COLORS,

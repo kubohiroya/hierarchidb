@@ -1,6 +1,6 @@
 import { YAML_CANONICAL_FILENAMES, type YamlCanonicalFilename } from '@hierarchidb/yaml-api';
 import { validateYamlCanonicalPayload } from '@hierarchidb/yaml-api/validation';
-import { encodeCanonicalYamlZip } from '../canonical-yaml-zip-codec/index.js';
+import { encodeCanonicalYamlZip } from '../canonical-yaml-zip-codec/encodeCanonicalYamlZip.js';
 import { canonicalYamlZipPlanGuards } from './canonicalYamlZipPlanGuards.internal.js';
 import type {
   CanonicalYamlZipNodeGuard,

@@ -18,7 +18,8 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import type { LocationEntity, LocationIconId, LocationType } from '~/common/types/index';
+import type { LocationEntity } from '~/common/types/index';
+import type { LocationIconId, LocationType } from '~/common/entities/LocationEntity';
 import { useLocationStyleConfigPanel } from './useLocationStyleConfigPanel.ts';
 
 interface LocationStyleConfigPanelProps {

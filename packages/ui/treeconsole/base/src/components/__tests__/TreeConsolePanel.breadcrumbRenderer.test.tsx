@@ -11,8 +11,8 @@ import React = require('react');
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
-import type { HierarchicalTreeNode } from '../../types/index';
-import type { TreeTableColumn } from '../TreeTable/index';
+import type { HierarchicalTreeNode } from '../../types/index.js';
+import type { TreeTableColumn } from '../TreeTable/core/TreeTableView.js';
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,

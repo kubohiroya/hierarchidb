@@ -11,7 +11,8 @@ import {
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
-import type { LocationEntity, LocationType } from '~/common/types/index';
+import type { LocationEntity } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
 import {
   buildAvailabilityMapFromIdeGsmPoints,
   buildSelectionMapFromAvailability,

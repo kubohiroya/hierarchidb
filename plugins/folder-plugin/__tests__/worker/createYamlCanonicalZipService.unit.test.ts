@@ -4,7 +4,7 @@ import type {
   YamlCanonicalZipServiceEnvironment,
 } from '@hierarchidb/worker-api';
 import { describe, expect, it, vi } from 'vitest';
-import { encodeCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/index.js';
+import { encodeCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/encodeCanonicalYamlZip.js';
 import { createYamlCanonicalZipService } from '../../src/worker/createYamlCanonicalZipService.js';
 
 const parent = Object.freeze({

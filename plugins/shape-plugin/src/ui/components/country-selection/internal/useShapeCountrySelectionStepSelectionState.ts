@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { Country, MatrixConfig, MatrixSelection } from '@hierarchidb/ui-country-select';
 import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { CountryMetadata } from '~/common/types/index';
+import type { CountryMetadata } from '~/common/types/data-source';
 import {
   calculateEstimatedFeatures,
   calculateEstimatedSize,

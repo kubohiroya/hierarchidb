@@ -35,13 +35,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import React from 'react';
-import type {
-  MappingValidationResult,
-  PropertyInfo,
-  ResolverUpdaterPayload,
-  SchemaInfo,
-  ValidationWarning,
-} from '~/common/types/index';
+import type { MappingValidationResult, PropertyInfo, ResolverUpdaterPayload, SchemaInfo, ValidationWarning } from '~/common/entities/ResolverEntity';
 import { usePreviewTestStep } from './usePreviewTestStep.js';
 
 interface PreviewTestStepProps {

@@ -1,7 +1,7 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildStableJsonSignature } from '@hierarchidb/gis-sdk';
-import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
 
 export type ShapeStage = 'source' | 'geometry' | 'tileEmit';
 export type ShapeCacheNamespaceMode = 'node' | 'global';

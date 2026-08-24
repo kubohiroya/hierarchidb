@@ -9,14 +9,10 @@ import {
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
 import { useCallback, useEffect, useMemo } from 'react';
-import type { ShapeBuildConfig, ShapeEntity } from '~/common/types/index';
-import {
-  applyBuildConfigPatch,
-  assertShapeBuildConfigTileEmitContract,
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
-} from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { applyBuildConfigPatch, assertShapeBuildConfigTileEmitContract, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
 
 type Args = {
   data: Partial<ShapeEntity>;

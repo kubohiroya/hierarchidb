@@ -9,13 +9,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
-import {
-  clearSelectionAtom,
-  rowSelectionAtom,
-  selectAllAtom,
-  selectedNodeIdsAtom,
-  selectionModeAtom,
-} from '~/components/TreeTable/state/index';
+import { clearSelectionAtom, rowSelectionAtom, selectAllAtom, selectedNodeIdsAtom, selectionModeAtom } from '~/components/TreeTable/state/features/selection.atoms';
 import type { TreeViewController } from '~/types/index';
 
 export interface SelectionOrchestratorResult {

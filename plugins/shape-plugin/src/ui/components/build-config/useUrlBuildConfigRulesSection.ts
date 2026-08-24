@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ShapeBuildConfig, ShapeBuildUrlRule, ShapeUrlMatchType } from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeBuildUrlRule, ShapeUrlMatchType } from '~/common/types/BuildTaskResult';
 
 const VALID_MATCH_TYPES = new Set<ShapeUrlMatchType>(['default', 'regexp', 'prefix']);
 

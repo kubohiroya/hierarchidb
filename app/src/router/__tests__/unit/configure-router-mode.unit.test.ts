@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHierarchiRouter, getBasePath, getRouterMode } from '../../index.js';
+import { getBasePath, getRouterMode } from '../../config.js';
+import { createHierarchiRouter } from '../../index.js';
 
 function createMockRoute() {
   return {

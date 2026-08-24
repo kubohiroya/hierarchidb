@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getLegacyYamlDbReadOnlyInventory } from '../src/readonly-inventory/index.js';
+import { getLegacyYamlDbReadOnlyInventory } from '../src/readonly-inventory/getLegacyYamlDbReadOnlyInventory.js';
 
 let databaseSerial = 0;
 

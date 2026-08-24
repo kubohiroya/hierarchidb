@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import type { ReactElement } from 'react';
-import type { ValidationRule } from '~/common/types/index';
+import type { ValidationRule } from '~/common/entities/ResolverEntity';
 
 export type ValidationRuleTypeOption = {
   value: ValidationRule['ruleType'];

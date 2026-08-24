@@ -20,4 +20,5 @@ export {
   LOCATION_MVT_PROMOTE_ID,
   LOCATION_MVT_SOURCE_LAYER,
 } from './locationMvtStyleExpressions.js';
-export * from './types/index.js';
+export * from './entities/LocationEntity.js';
+export * from './entities/LocationPoint.js';

@@ -28,12 +28,9 @@ import type {
   Polygon,
 } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type {
-  CountryMetadata,
-  SelectedArrayByCountries,
-  ShapeRuntimeBuildConfig,
-  SourceTaskPayload,
-} from '~/common/types/index';
+import type { CountryMetadata, SourceTaskPayload } from '~/common/types/data-source';
+import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 import {

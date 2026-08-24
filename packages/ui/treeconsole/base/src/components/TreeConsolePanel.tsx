@@ -22,7 +22,7 @@ import { ColumnView } from './ColumnView.js';
 import { IconView } from './IconView.js';
 import { TagsLinkButton } from './TagsLinkButton.js';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
-import type { TreeTableColumn } from './TreeTable/index.js';
+import type { TreeTableColumn } from './TreeTable/core/TreeTableView.js';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 

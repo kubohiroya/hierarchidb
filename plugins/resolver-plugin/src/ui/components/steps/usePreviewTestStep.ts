@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type {
-  MappingPreviewResult,
-  MappingValidationResult,
-  PropertyInfo,
-  PropertyMappingRule,
-  ResolverUpdaterPayload,
-  SchemaInfo,
-} from '~/common/types/index';
+import type { MappingPreviewResult, MappingValidationResult, PropertyInfo, PropertyMappingRule, ResolverUpdaterPayload, SchemaInfo } from '~/common/entities/ResolverEntity';
 
 interface UsePreviewTestStepProps {
   data: Partial<ResolverUpdaterPayload>;

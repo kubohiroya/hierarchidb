@@ -1,4 +1,4 @@
-import type { LayerInfo } from './index.js';
+import type { LayerInfo } from './BuildTaskResult.js';
 
 export interface VectorTileEntity {
   tileId: string;

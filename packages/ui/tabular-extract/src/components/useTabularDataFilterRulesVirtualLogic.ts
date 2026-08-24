@@ -1,7 +1,7 @@
 import type { TabularColumnInfo, TabularColumnType } from '@hierarchidb/tabular-store';
 import type { MouseEvent as ReactMouseEvent, UIEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { TabularFilterOperator, TabularFilterRule } from '../types/index';
+import type { TabularFilterOperator, TabularFilterRule } from '../types/index.js';
 
 export type FilterOperatorOption = {
   value: TabularFilterOperator;

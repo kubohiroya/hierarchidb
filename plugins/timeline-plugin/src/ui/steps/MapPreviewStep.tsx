@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useId, useMemo, useState } from 'react';
-import type { TimelineFrame } from '~/common/types/index';
+import type { TimelineFrame } from '~/common/entities/TimelineEntity';
 
 export interface MapPreviewStepProps {
   frames: TimelineFrame[];

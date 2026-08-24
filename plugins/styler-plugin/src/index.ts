@@ -41,22 +41,24 @@ export { PLUGIN_MANIFEST as StylerPluginManifest } from './plugin-manifest.js';
 
 // Entity handler
 export { StylerEntityHandler } from './common/handlers/StylerEntityHandler.js';
-export type { ColorVariationOptions, ColorVariations } from './common/utils/colorUtils/index.js';
+export {
+  calculateLinearColor,
+  calculateQuantileColor,
+  generateColorGradient,
+  valueToColor,
+} from './common/utils/colorUtils/colorCalculation.js';
 
 // Utilities
 export {
   adjustBrightness,
-  calculateLinearColor,
-  calculateQuantileColor,
   createColorVariations,
-  generateColorGradient,
   getContrastRatio,
   hexToRgb,
   hsvToRgb,
   rgbToHex,
   rgbToHsv,
-  valueToColor,
-} from './common/utils/colorUtils/index.js';
+} from './common/utils/colorUtils/colorConversion.js';
+export type { ColorVariationOptions, ColorVariations } from './common/utils/colorUtils/types.js';
 // Services
 export { StylerDataService } from './services/StylerDataService.js';
 

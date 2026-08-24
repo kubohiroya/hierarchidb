@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
-import type { ShapeBuildConfig } from '../../common/types/index';
+import type { ShapeBuildConfig } from '../../common/types/BuildTaskResult.js';
 import {
   applyBuildConfigPatch,
   assertShapeBuildConfigTileEmitContract,

@@ -26,7 +26,7 @@ import type {
   StylerTableRow,
 } from '~/common/types/StylerEntity';
 import { MAPLIBRE_PROPERTY_METADATA } from '~/common/types/StylerEntity';
-import { valueToColor } from '~/common/utils/colorUtils';
+import { valueToColor } from '~/common/utils/colorUtils/colorCalculation';
 
 type StyledCellStyle = {
   backgroundColor: string;

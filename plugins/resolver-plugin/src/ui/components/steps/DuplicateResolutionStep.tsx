@@ -24,11 +24,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import type {
-  DuplicateResolutionStrategy,
-  PropertyMappingRule,
-  ResolverUpdaterPayload,
-} from '~/common/types/index';
+import type { DuplicateResolutionStrategy, PropertyMappingRule, ResolverUpdaterPayload } from '~/common/entities/ResolverEntity';
 import { useDuplicateResolutionStep } from './useDuplicateResolutionStep.js';
 
 interface DuplicateResolutionStepProps {

@@ -23,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { type ReactElement } from 'react';
-import type { TabularFilterOperator, TabularFilterRule } from '../types/index';
+import type { TabularFilterOperator, TabularFilterRule } from '../types/index.js';
 import {
   type FilterOperatorOption,
   normalizeType,

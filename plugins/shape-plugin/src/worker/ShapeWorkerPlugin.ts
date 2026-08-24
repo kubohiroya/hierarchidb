@@ -4,10 +4,10 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { ShapeMetadata } from '~/common/types/ShapeMetadata';
 import { shapeBuildAPI } from './api.js';
-import { ShapeEntityHandler } from './handlers/index.js';
+import { ShapeEntityService as ShapeEntityHandler } from './handlers/ShapeEntityService.js';
 
 type ShapeWorkerPluginValidationResult = {
   isValid: boolean;

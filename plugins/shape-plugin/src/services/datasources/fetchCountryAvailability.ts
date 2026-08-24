@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { SHAPE_DATA_SOURCE_BY_NAME } from '~/common/types/constants';
-import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './resolveStrategyIdFromDataSource.js';

@@ -21,7 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import {
   buildToleranceByBandFromToneCurveAnchors,
   buildToneCurveAnchorsFromToleranceByBand,

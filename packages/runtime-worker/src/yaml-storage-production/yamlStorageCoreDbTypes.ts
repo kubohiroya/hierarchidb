@@ -3,7 +3,7 @@ import type {
   YamlStorageActivationState,
   YamlStorageCanonicalReadyState,
   YamlStoragePreflightState,
-} from '../yaml-storage-activation/index.js';
+} from '../yaml-storage-activation/yamlStorageActivationTypes.js';
 
 export type YamlStorageCoreDbErrorCode =
   | 'INVALID_ACTIVATION_INPUT'

@@ -7,7 +7,7 @@ import {
   Public,
   Subway,
 } from '@mui/icons-material';
-import type { LocationIconId, LocationType } from '~/common/types/index';
+import type { LocationIconId, LocationType } from '~/common/entities/LocationEntity';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export const DEBUG_PREFIX = '[LocationPreview]';

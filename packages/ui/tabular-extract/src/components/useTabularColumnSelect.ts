@@ -4,7 +4,7 @@ import {
   TabularTableMetadata,
 } from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import type { TabularColumnMapping } from '../types/index';
+import type { TabularColumnMapping } from '../types/index.js';
 
 interface TargetColumn {
   name: string;

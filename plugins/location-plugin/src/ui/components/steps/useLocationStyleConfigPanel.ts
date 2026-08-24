@@ -2,14 +2,8 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Subway } from '@mui/icons-material';
 import { useEffect, useMemo } from 'react';
-import type {
-  LocationEntity,
-  LocationIconConfig,
-  LocationIconId,
-  LocationLabelConfig,
-  LocationRepresentationByZoomLevelConfig,
-  LocationType,
-} from '~/common/types/index';
+import type { LocationEntity } from '~/common/types/index';
+import type { LocationIconConfig, LocationIconId, LocationLabelConfig, LocationRepresentationByZoomLevelConfig, LocationType } from '~/common/entities/LocationEntity';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export const MIN_ZOOM_LEVEL = 0;

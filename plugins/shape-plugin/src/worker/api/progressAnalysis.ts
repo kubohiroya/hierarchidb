@@ -7,7 +7,7 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildProgressSummary } from '@hierarchidb/shape-api';
-import type { BuildTask } from '~/common/types/index';
+import type { BuildTask } from '~/common/types/BuildTaskResult';
 import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
 import { getStagePlan } from '~/services/vt/shapeProgressPlanUtils';
 import { resolveQueueRecordMetadataMessage } from './taskMetadataProcessingConstants.js';

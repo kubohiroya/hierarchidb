@@ -15,7 +15,7 @@ export { PLUGIN_MANIFEST as BaseMapPluginManifest } from './plugin-manifest.js';
 // UI components moved under subpath to keep root worker-safe
 
 // Type exports (root)
-export * from './common/types/index.js';
+export * from './common/types/BaseMapEntity.js';
 
 // === Extension Exports (Legacy Compatibility)
 // Removed: legacy extension layer is not present in this package.

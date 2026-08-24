@@ -2,7 +2,7 @@ import type { TabularColumnInfo } from '@hierarchidb/tabular-store';
 import { Box } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import type { TabularFilterRule } from '../types/index';
+import type { TabularFilterRule } from '../types/index.js';
 import {
   type FilterOperatorOption,
   TabularDataFilterRulesTable,

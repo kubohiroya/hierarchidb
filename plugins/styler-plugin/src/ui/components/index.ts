@@ -21,19 +21,21 @@ export {
   MAPLIBRE_PROPERTY_METADATA,
   StylerConfigDefault,
 } from '~/common/types/StylerEntity';
-// Re-export utilities
 export {
-  adjustBrightness,
   calculateLinearColor,
   calculateQuantileColor,
   generateColorGradient,
+  valueToColor,
+} from '~/common/utils/colorUtils/colorCalculation';
+// Re-export utilities
+export {
+  adjustBrightness,
   getContrastRatio,
   hexToRgb,
   hsvToRgb,
   rgbToHex,
   rgbToHsv,
-  valueToColor,
-} from '~/common/utils/colorUtils';
+} from '~/common/utils/colorUtils/colorConversion';
 export type { StylerMappingProps } from './StylerAlgorithmPanel.tsx';
 
 // Re-export components for direct use

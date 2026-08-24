@@ -1,4 +1,4 @@
-export type { TimelineFrame, TimelineFrameViewState } from '~/common/types/index';
+export type { TimelineFrame, TimelineFrameViewState } from '~/common/entities/TimelineEntity';
 export { AnimationViewerStep } from './steps/AnimationViewerStep.js';
 export { FramesPreviewStep } from './steps/FramesPreviewStep.js';
 export { MapPreviewStep } from './steps/MapPreviewStep.js';

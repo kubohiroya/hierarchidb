@@ -7,7 +7,7 @@ import type {
 } from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 
 export type ShapeBuildPauseReason = ShapeBuildStopReason;
 

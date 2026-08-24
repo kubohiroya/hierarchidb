@@ -1,4 +1,5 @@
-import type { LocationType, NodeId } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
+import type { NodeId } from '~/common/types/index';
 
 export interface PreviewLocationPoint {
   id: string;

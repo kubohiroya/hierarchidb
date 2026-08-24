@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { runShapeArtifactCascadeCleanup } from './runShapeArtifactCascadeCleanup.ts';
 
 export type ShapeCleanupStageParams = {

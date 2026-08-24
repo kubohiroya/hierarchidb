@@ -74,18 +74,18 @@ export {
   type VectorTileFormat,
   vectorTileContentType,
 } from './vectorTileFormats';
-export {
-  encodeFlatGeobufFromFeatureCollection,
-  type FeatureCollectionLike,
-  generateVectorTilesFromFeatureCollection,
-  generateVectorTilesFromFgbBuffer,
-  generateVectorTilesFromJsonBuffer,
-  type VectorTileProgress,
-  type VectorTileRow,
-  type VTGenerateConfig,
-  type VTGenerateResult,
-  type VTMetadataContext,
-} from './vectorTiles/index';
+export { encodeFlatGeobufFromFeatureCollection } from './vectorTiles/encodeFlatGeobufFromFeatureCollection.js';
+export type {
+  FeatureCollectionLike,
+  VectorTileProgress,
+  VectorTileRow,
+  VTGenerateConfig,
+  VTGenerateResult,
+  VTMetadataContext,
+} from './vectorTiles/types.js';
+export { generateVectorTilesFromFeatureCollection } from './vectorTiles/generateVectorTilesFromFeatureCollection.js';
+export { generateVectorTilesFromFgbBuffer } from './vectorTiles/generateVectorTilesFromFgbBuffer.js';
+export { generateVectorTilesFromJsonBuffer } from './vectorTiles/generateVectorTilesFromJsonBuffer.js';
 export {
   type BoundingBox,
   getTilesInBounds,

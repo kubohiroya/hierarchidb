@@ -11,7 +11,7 @@ import {
   type StylerMapping,
   type StylerStepData,
 } from '~/common/types/StylerEntity';
-import { valueToColor } from '~/common/utils/colorUtils';
+import { valueToColor } from '~/common/utils/colorUtils/colorCalculation';
 import { calculateStatistics } from '~/common/utils/dataAnalysis';
 import { useStylerMappingState } from './useStylerMappingState.ts';
 

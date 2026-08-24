@@ -29,7 +29,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import type React from 'react';
-import type { PropertyMappingRule, ResolverEntity } from '~/common/types/index';
+import type { PropertyMappingRule, ResolverEntity } from '~/common/entities/ResolverEntity';
 import { useResolverPanel } from './useResolverPanel.js';
 
 interface ResolverPanelProps {

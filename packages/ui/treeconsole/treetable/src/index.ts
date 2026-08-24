@@ -8,13 +8,27 @@
 export { TreeTableCore } from './components/TreeTableCore.js';
 export type { TreeTableCorePropsWithPlugins } from './components/TreeTableCoreWithPlugins.js';
 export { TreeTableCoreWithPlugins } from './components/TreeTableCoreWithPlugins.js';
-export type { TreeTableOrchestratorResult } from './orchestrator/index.js';
+export type { TreeTableOrchestratorResult } from './types.js';
 // Orchestrator
 export { useTreeTableOrchestrator } from './orchestrator/index.js';
 // Built-in Plugins
-export * from './plugin/builtins/index.js';
+export * from './plugin/builtins/InlineEditPlugin.js';
+export * from './plugin/builtins/KeyboardNavigationPlugin.js';
+export * from './plugin/builtins/defaultPlugins.js';
 // Plugin System
-export * from './plugin/index.js';
+export * from './plugin/PluginProvider.js';
+export * from './plugin/PluginRegistry.js';
+export type {
+  PluginConfig,
+  PluginContext,
+  PluginEvent,
+  PluginLifecycleState,
+  PluginPriority,
+  PluginRegistry,
+  TreeTablePlugin,
+  TreeTablePluginConfig,
+} from './plugin/types.js';
+export * from './plugin/useOptionalPluginContext.js';
 export {
   getColumnWidths,
   removeColumnWidths,
@@ -38,4 +52,4 @@ export type {
   TreeTableCoreProps,
 } from './types.js';
 // Utilities
-export * from './utils/index.js';
+export * from './utils/descendants.js';

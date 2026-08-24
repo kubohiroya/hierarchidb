@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { HierarchicalTreeNode } from '../../../types/index';
+import type { HierarchicalTreeNode } from '../../../types/index.js';
 import type { TreeTableColumn } from '../core/TreeTableView';
 import { TreeTableView } from '../core/TreeTableView';
 
