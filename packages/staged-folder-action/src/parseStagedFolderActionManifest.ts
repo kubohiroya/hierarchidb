@@ -641,6 +641,7 @@ export const validateStagedFolderActionCliOptions = ({
   config,
   sourceNodeId,
   outputParentNodeId,
+  browserMode,
 }: ValidateStagedFolderActionCliOptionsInput): void => {
   requireString(
     sourceNodeId,
@@ -653,13 +654,34 @@ export const validateStagedFolderActionCliOptions = ({
       '--output-parent-node-id',
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
     );
-    return;
-  }
-  if (outputParentNodeId !== undefined) {
+  } else if (outputParentNodeId !== undefined) {
     fail(
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS',
       '--output-parent-node-id',
       `${config.staging.mode} does not accept output parent node id`
     );
   }
+  const hasMapImageCapture = config.actions.some((action) => action.type === 'map-image-capture');
+  if (hasMapImageCapture) {
+    validateCliBrowserMode(browserMode);
+    return;
+  }
+  if (browserMode !== undefined) {
+    fail(
+      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS',
+      '--browser',
+      '--browser is only valid when actions include map-image-capture'
+    );
+  }
+};
+
+const validateCliBrowserMode = (value: string | undefined): void => {
+  if (value === 'headless' || value === 'headed') {
+    return;
+  }
+  fail(
+    'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS',
+    '--browser',
+    'map-image-capture requires --browser headless or --browser headed'
+  );
 };

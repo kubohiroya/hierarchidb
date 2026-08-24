@@ -353,6 +353,7 @@ describe('parseStagedFolderActionManifest', () => {
       validateStagedFolderActionCliOptions({
         config: temporaryConfig,
         sourceNodeId: 'source-folder',
+        browserMode: 'headless',
       })
     ).not.toThrow();
     expectManifestError(
@@ -361,6 +362,7 @@ describe('parseStagedFolderActionManifest', () => {
           config: temporaryConfig,
           sourceNodeId: 'source-folder',
           outputParentNodeId: 'parent-folder',
+          browserMode: 'headless',
         }),
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
     );
@@ -374,6 +376,7 @@ describe('parseStagedFolderActionManifest', () => {
         validateStagedFolderActionCliOptions({
           config: permanentConfig,
           sourceNodeId: 'source-folder',
+          browserMode: 'headed',
         }),
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
     );
@@ -382,6 +385,7 @@ describe('parseStagedFolderActionManifest', () => {
         config: permanentConfig,
         sourceNodeId: 'source-folder',
         outputParentNodeId: 'parent-folder',
+        browserMode: 'headed',
       })
     ).not.toThrow();
 
@@ -393,6 +397,7 @@ describe('parseStagedFolderActionManifest', () => {
       validateStagedFolderActionCliOptions({
         config: patchSourceConfig,
         sourceNodeId: 'source-folder',
+        browserMode: 'headless',
       })
     ).not.toThrow();
     expectManifestError(
@@ -401,6 +406,48 @@ describe('parseStagedFolderActionManifest', () => {
           config: patchSourceConfig,
           sourceNodeId: 'source-folder',
           outputParentNodeId: 'parent-folder',
+          browserMode: 'headless',
+        }),
+      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
+    );
+  });
+
+  it('requires --browser headless or headed only when map image capture is present', () => {
+    const captureConfig = parseJson(validManifest);
+    expectManifestError(
+      () =>
+        validateStagedFolderActionCliOptions({
+          config: captureConfig,
+          sourceNodeId: 'source-folder',
+        }),
+      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
+    );
+    expectManifestError(
+      () =>
+        validateStagedFolderActionCliOptions({
+          config: captureConfig,
+          sourceNodeId: 'source-folder',
+          browserMode: 'browser' as 'headless',
+        }),
+      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
+    );
+
+    const buildOnlyConfig = parseJson({
+      ...validManifest,
+      actions: [{ type: 'build', mode: 'session-manager' }],
+    });
+    expect(() =>
+      validateStagedFolderActionCliOptions({
+        config: buildOnlyConfig,
+        sourceNodeId: 'source-folder',
+      })
+    ).not.toThrow();
+    expectManifestError(
+      () =>
+        validateStagedFolderActionCliOptions({
+          config: buildOnlyConfig,
+          sourceNodeId: 'source-folder',
+          browserMode: 'headless',
         }),
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_CLI_ARGUMENTS'
     );

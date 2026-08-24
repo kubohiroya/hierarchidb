@@ -794,6 +794,8 @@ CSV / XLSX export 実行時は modal blocking を必須としない。短時間�
 
 headless で実行するか、実際のブラウザ画面を表示して実行するかは manifest ではなく CLI の `--browser headless|headed` で指定する。どちらの場合も専用 route は使わない。既存 Map UI / route / component を利用する。
 
+manifest に `map-image-capture` action が含まれる場合、CLI は `--browser headless` または `--browser headed` を必須とする。`map-image-capture` action が含まれない場合、`--browser` は意味を持たないため指定してはならない。
+
 `map-image-capture` action は build 完了後にだけ開始する。build が失敗、paused、auth-required、cancelled の場合は capture しない。
 
 `map-image-capture.layers[*].path` は staging root 相対の display-name path として解釈する。`.` は staging root 全体を指す。`My Folder` と `./My Folder` はどちらも staging root 直下の `My Folder` を指す。`/My Folder`、空 segment、`.` segment、`..` segment は invalid path とする。`\` は path separator として扱わない。

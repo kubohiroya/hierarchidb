@@ -1,5 +1,7 @@
 export type StagedFolderActionManifestFormat = 'json' | 'yaml';
 
+export type StagedFolderActionCliBrowserMode = 'headless' | 'headed';
+
 export type StagedFolderActionStagingMode = 'temporary-copy' | 'permanent-copy' | 'patch-source';
 
 export type StagedFolderActionCleanup = 'retain' | 'delete-on-success' | 'delete-always';
@@ -122,6 +124,7 @@ export type ValidateStagedFolderActionCliOptionsInput = {
   config: StagedFolderActionConfig;
   sourceNodeId?: string;
   outputParentNodeId?: string;
+  browserMode?: StagedFolderActionCliBrowserMode;
 };
 
 export type StagedFolderActionExecutionOwner =

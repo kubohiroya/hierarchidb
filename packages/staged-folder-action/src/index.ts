@@ -88,6 +88,7 @@ export type {
   StagedFolderAction,
   StagedFolderActionBbox,
   StagedFolderActionCleanup,
+  StagedFolderActionCliBrowserMode,
   StagedFolderActionConfig,
   StagedFolderActionExecutionOwner,
   StagedFolderActionManifestFormat,

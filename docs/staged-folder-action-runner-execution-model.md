@@ -146,6 +146,8 @@ runner は manifest の `map-image-capture` action をそのまま Map UI へ渡
 
 選定する handoff path は、`Worker / IndexedDB progress` と同じ profile 内に保持される capture intent state channel と、通常 Map route `/map/$nodeId?captureIntentId=<intentId>` の組み合わせである。この方式により、CLI から開く headless tab と、実 browser window で開く headed tab のどちらも同じ route/component/readiness contract を使う。
 
+`map-image-capture` を含む CLI run は `--browser headless|headed` を必須とする。この値は manifest ではなく CLI 実行時 option であり、`MapImageCaptureIntent.browserMode` に保存される。`headless` と `headed` は browser window の表示有無だけを変え、通常 Map route、capture intent state channel、readiness contract は共有する。
+
 Phase 0 の state channel は runtime-worker の `StagedFolderActionProgressStore` に `captureIntents` table として保持する。runner は `map-image-capture` action の実行直前に `MapImageCaptureIntentRecord` を保存し、その後に browser handoff を行う。Map UI は通常 route `/map/$nodeId` の search に含まれる `captureIntentId` を使い、WorkerAPI の `getMapImageCaptureIntent(intentId)` から intent 実体を取得する。取得した intent の `stagingRootNodeId` が route の `$nodeId` と一致しない場合は contract violation として capture 実行へ進まない。
 
 Map UI は `captureIntentId` が指定された場合だけ MapLibre の `preserveDrawingBuffer` を有効にする。intent 取得後、Map UI は `viewport.bbox` を `fitBounds` で適用し、MapLibre `idle` 後に DOM readiness marker として `data-map-image-capture-render-status="ready"` を出す。`viewport.bbox`、`viewport.width`、`viewport.height` が有限数でない場合、または bbox が `[minLng, minLat, maxLng, maxLat]` として順序を満たさない場合は contract violation として `error` を出し、capture を進めない。
