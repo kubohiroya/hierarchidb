@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CountryMetadata, DataSourceName } from '~/common/types/index';
+import type { CountryMetadata, DataSourceName } from '~/common/types/data-source';
 import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
 import {
   type AvailabilityWorkerHandle,

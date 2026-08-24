@@ -2,10 +2,10 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { applyStagedFolderActionOverlays } from '../../applyStagedFolderActionOverlays';
 import { CoreDB } from '../../CoreDB';
 import { initTreeNode } from '../../draft/initTreeNode';
 import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData';
-import { applyStagedFolderActionOverlays } from '../../applyStagedFolderActionOverlays';
 import { TreeNodeUpdaterService } from '../../TreeNodeUpdaterService';
 import {
   cleanupTemporaryStagingRoot,

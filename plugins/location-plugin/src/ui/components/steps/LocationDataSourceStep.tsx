@@ -21,7 +21,8 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useCallback } from 'react';
-import type { LocationDataSource, LocationEntity } from '~/common/types/index';
+import type { LocationDataSource } from '~/common/entities/LocationEntity';
+import type { LocationEntity } from '~/common/types/index';
 import { useLocationDataSourceStep } from './useLocationDataSourceStep.js';
 
 interface LocationDataSourceStepProps {

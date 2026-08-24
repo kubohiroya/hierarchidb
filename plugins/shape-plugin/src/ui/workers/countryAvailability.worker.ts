@@ -8,7 +8,7 @@ import {
 } from '@hierarchidb/origin-coordinator';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { expose } from 'comlink';
-import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
 import { fetchCountryAvailability } from '~/services/datasources/fetchCountryAvailability';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { initializeShapeChunkStore } from '~/services/utils/initializeShapeChunkStore';

@@ -2,12 +2,8 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { i18n } from '@hierarchidb/ui-i18n';
 import type { ReactElement } from 'react';
-import {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  summarizeCheckboxState,
-  validateBuildConfig,
-} from '~/common/types/index';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import { summarizeCheckboxState, validateBuildConfig } from '~/services/utils/shapeBuildUtils';
 import type { SelectedArrayByCountries, ShapeEntity } from '~/common/types/ShapeEntity';
 import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
 import { ShapeBuildStep } from './build-progress/ShapeBuildStep/ShapeBuildStep.tsx';

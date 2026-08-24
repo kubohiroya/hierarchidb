@@ -12,7 +12,7 @@ import {
   Switch,
 } from '@mui/material';
 import React from 'react';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import {
   isShapeLayerParentToggle,
   useShapePreviewStepSceneView,

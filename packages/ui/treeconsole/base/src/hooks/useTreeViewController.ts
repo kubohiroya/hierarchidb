@@ -3,14 +3,8 @@ import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { WorkerAPIAdapter } from '~/adapters/index';
-import type {
-  CRUDResult,
-  SelectionMode,
-  TreeViewController,
-  UndoRedoCommand,
-  UndoRedoResult,
-} from '~/types/index';
+import { WorkerAPIAdapter } from '~/adapters/WorkerAPIAdapter';
+import type { CRUDResult, SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '~/types/index';
 import {
   type ClipboardData,
   type CopyResult,

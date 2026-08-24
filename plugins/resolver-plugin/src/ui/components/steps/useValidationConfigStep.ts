@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '~/common/types/index';
+import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '~/common/entities/ResolverEntity';
 
 interface ValidationRuleFormData {
   property: string;

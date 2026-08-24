@@ -6,7 +6,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import JSZip, { type JSZipObject } from 'jszip';
-import type { ShapeFeaturePayload } from '~/common/types/index';
+import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
 import {
   bufferDeserializer,
   bufferSerializer,

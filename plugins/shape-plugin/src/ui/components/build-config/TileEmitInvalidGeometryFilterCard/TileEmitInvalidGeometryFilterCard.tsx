@@ -1,5 +1,5 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { TileEmitInvalidGeometryFilterCardView } from './TileEmitInvalidGeometryFilterCardView.js';
 import { useTileEmitInvalidGeometryFilterCardState } from './useTileEmitInvalidGeometryFilterCardState.js';
 

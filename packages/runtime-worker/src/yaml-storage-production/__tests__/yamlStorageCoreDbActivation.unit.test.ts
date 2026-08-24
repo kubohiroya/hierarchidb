@@ -5,8 +5,8 @@ import { CoreDB } from '../../services/CoreDB.js';
 import {
   createYamlStorageActivation,
   reduceYamlStorageActivation,
-  type YamlStoragePreflightState,
-} from '../../yaml-storage-activation/index.js';
+} from '../../yaml-storage-activation/reduceYamlStorageActivation.js';
+import { YamlStoragePreflightState } from '../../yaml-storage-activation/yamlStorageActivationTypes.js';
 import { activateYamlStorageCoreDb } from '../activateYamlStorageCoreDb.js';
 import { inspectCanonicalYamlStorageCoreDb } from '../inspectCanonicalYamlStorageCoreDb.js';
 import {

@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type ReactNode } from 'react';
-import type { TabularDataResult, TabularFilterRule } from '../types/index';
+import type { TabularDataResult, TabularFilterRule } from '../types/index.js';
 import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.js';
 import { TabularPreviewGrid } from './TabularPreviewGrid.js';
 import { FILTER_OPERATORS, useTabularDataFilter } from './useTabularDataFilter.js';

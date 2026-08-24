@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import type { SourceTaskPayload } from '../../common/types/index';
+import type { SourceTaskPayload } from '../../common/types/data-source.js';
 
 const nodeId = 'shape-full-flow-test-node' as NodeId;
 

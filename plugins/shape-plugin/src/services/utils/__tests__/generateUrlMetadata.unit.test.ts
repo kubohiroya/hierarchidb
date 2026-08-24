@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CountryMetadata, DataSourceName } from '../../../common/types/index';
+import type { CountryMetadata, DataSourceName } from '../../../common/types/data-source.js';
 import { generateDownloadTaskPayloads } from '../shapeBuildUtils';
 
 const COUNTRY_METADATA: CountryMetadata[] = [

@@ -14,21 +14,11 @@ import {
   DEFAULT_PROCESSING_CONFIG,
   SHAPE_DATA_SOURCES,
 } from '~/common/types/constants';
-import type {
-  CountryMetadata,
-  DataSourceName,
-  SelectedArrayByCountries,
-  ShapeBuildConfig,
-  ShapeBuildConfigPatch,
-  ShapeEntity,
-  ShapeProcessingConfig,
-  ShapeRuntimeBuildConfig,
-  ShapeStepValidationResult,
-  SourceTaskPayload,
-} from '~/common/types/index';
+import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { SelectedArrayByCountries, ShapeEntity } from '~/common/types/ShapeEntity';
+import type { ShapeBuildConfig, ShapeBuildConfigPatch, ShapeProcessingConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
+import type { ShapeStepValidationResult } from '~/common/types/validationTypes';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
-
-export { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 
 export function getDataSourceConfig(dataSource?: DataSourceName | null) {
   if (!dataSource) return undefined;

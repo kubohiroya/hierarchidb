@@ -4,7 +4,8 @@ import { formatAdminLevelLabel, type MapWithVectorTilesProps } from '@hierarchid
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
-import type { DataSourceName, ShapeEntity, ShapePreviewMapView } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
+import type { ShapeEntity, ShapePreviewMapView } from '~/common/types/ShapeEntity';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { parseAdminLevelValue } from './parseAdminLevelValue';
 

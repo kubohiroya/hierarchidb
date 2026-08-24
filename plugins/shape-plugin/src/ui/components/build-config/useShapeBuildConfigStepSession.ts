@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { useAtomValue } from 'jotai';
 import { useCallback } from 'react';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { buildSessionLifecycleAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { useShapeBuildSessionStateAtomBridge } from '~/ui/hooks/useShapeBuildSessionStateAtomBridge';
 

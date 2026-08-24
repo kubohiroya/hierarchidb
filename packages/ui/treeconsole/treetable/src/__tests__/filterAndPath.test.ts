@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { toNodeId, toNodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { filterNodesBySearch, getNodePath } from '../utils/index';
+import { filterNodesBySearch, getNodePath } from '../utils/index.js';
 
 const ROOT_PARENT_ID = null as NodeId;
 const TIMESTAMP = 0;

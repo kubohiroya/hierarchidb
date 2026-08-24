@@ -1,11 +1,9 @@
 import { YAML_SUBTYPE_REGISTRY } from '@hierarchidb/yaml-api';
 import { describe, expect, it, vi } from 'vitest';
-import { encodeCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/index.js';
-import {
-  commitCanonicalYamlZipImportPlan,
-  planCanonicalYamlZipExport,
-  planCanonicalYamlZipImport,
-} from '../../src/canonical-yaml-zip-plan/index.js';
+import { encodeCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/encodeCanonicalYamlZip.js';
+import { commitCanonicalYamlZipImportPlan } from '../../src/canonical-yaml-zip-plan/commitCanonicalYamlZipImportPlan.js';
+import { planCanonicalYamlZipExport } from '../../src/canonical-yaml-zip-plan/planCanonicalYamlZipExport.js';
+import { planCanonicalYamlZipImport } from '../../src/canonical-yaml-zip-plan/planCanonicalYamlZipImport.js';
 
 const scenario = YAML_SUBTYPE_REGISTRY.scenario;
 const git = YAML_SUBTYPE_REGISTRY.git;

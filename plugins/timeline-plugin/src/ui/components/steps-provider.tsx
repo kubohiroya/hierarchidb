@@ -1,6 +1,6 @@
 import { type PluginStepProps, PluginStepRegistry, type StepData } from '@hierarchidb/plugin-base';
 import { i18n } from '@hierarchidb/ui-i18n';
-import type { TimelineDraft, TimelineFrame } from '~/common/types/index';
+import type { TimelineDraft, TimelineFrame } from '~/common/entities/TimelineEntity';
 import { AnimationViewerStep } from '~/ui/steps/AnimationViewerStep';
 import { FramesPreviewStep } from '~/ui/steps/FramesPreviewStep';
 import { MapPreviewStep } from '~/ui/steps/MapPreviewStep';

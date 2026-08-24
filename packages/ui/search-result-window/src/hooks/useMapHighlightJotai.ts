@@ -6,22 +6,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
-import {
-  addHighlightedNodeAtom,
-  addSearchMatchedNodeAtom,
-  clearAllHighlightsAtom,
-  clearHighlightedAtom,
-  clearSearchMatchedAtom,
-  highlightStylesAtom,
-  mapHighlightStateAtom,
-  mapInstanceAtom,
-  removeHighlightedNodeAtom,
-  removeSearchMatchedNodeAtom,
-  setFocusedNodeAtom,
-  setHighlightedNodesAtom,
-  setSearchMatchedNodesAtom,
-  updateHighlightStylesAtom,
-} from '~/state/index';
+import { addHighlightedNodeAtom, addSearchMatchedNodeAtom, clearAllHighlightsAtom, clearHighlightedAtom, clearSearchMatchedAtom, highlightStylesAtom, mapHighlightStateAtom, mapInstanceAtom, removeHighlightedNodeAtom, removeSearchMatchedNodeAtom, setFocusedNodeAtom, setHighlightedNodesAtom, setSearchMatchedNodesAtom, updateHighlightStylesAtom } from '~/state/mapHighlight.atoms';
 import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
 
 interface UseMapHighlightProps {

@@ -109,4 +109,6 @@ export const PluginHelpers = {
 
 // Built-in plugins (to avoid confusion with the plugin system folder itself)
 export * as BuiltinPlugins from './builtins/index.js';
-export * from './builtins/index.js';
+export * from './builtins/InlineEditPlugin.js';
+export * from './builtins/KeyboardNavigationPlugin.js';
+export * from './builtins/defaultPlugins.js';

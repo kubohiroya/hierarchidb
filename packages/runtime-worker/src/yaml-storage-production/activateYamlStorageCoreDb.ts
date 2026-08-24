@@ -6,7 +6,7 @@ import { YAML_MIGRATION_JOURNAL_STORE_NAME } from '../services/CoreDB.js';
 import {
   createYamlStorageFreshActivation,
   reduceYamlStorageActivation,
-} from '../yaml-storage-activation/index.js';
+} from '../yaml-storage-activation/reduceYamlStorageActivation.js';
 import { isIssuedYamlStorageActivationState } from '../yaml-storage-activation/yamlStorageActivationProvenanceUtils.js';
 import type { YamlStorageActivationState } from '../yaml-storage-activation/yamlStorageActivationTypes.js';
 import { validateCanonicalYamlStorageCoreDb } from './validateCanonicalYamlStorageCoreDb.js';

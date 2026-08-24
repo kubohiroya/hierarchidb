@@ -3,7 +3,7 @@ import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { type GeometryEngine, pickAdminCode } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import type { shapeDB } from '@hierarchidb/shape-store';
-import type { CountryMetadata, DataSourceName } from '~/common/types/index';
+import type { CountryMetadata, DataSourceName } from '~/common/types/data-source';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {

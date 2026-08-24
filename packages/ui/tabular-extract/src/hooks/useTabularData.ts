@@ -6,7 +6,7 @@
 import { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useState } from 'react';
 import { useTabularApi } from '../context/TabularContext';
-import type { TabularProcessingConfig } from '../types/index';
+import type { TabularProcessingConfig } from '../types/index.js';
 
 /**
  * Options for useTabularData hook

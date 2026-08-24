@@ -2,11 +2,11 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { StagedFolderActionConfig } from '@hierarchidb/staged-folder-action';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StagedFolderActionProgressStore } from '../../stagedFolderActionProgressStore.js';
 import {
   runStagedFolderAction,
   type StagedFolderActionRunnerDependencies,
 } from '../../runStagedFolderAction.js';
+import { StagedFolderActionProgressStore } from '../../stagedFolderActionProgressStore.js';
 
 describe('runStagedFolderAction', () => {
   let store: StagedFolderActionProgressStore;

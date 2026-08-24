@@ -9,7 +9,7 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtomValue } from 'jotai';
 import { useMemo } from 'react';
-import { tableDataAtom } from '~/components/TreeTable/state/index';
+import { tableDataAtom } from '~/components/TreeTable/state/core/data.atoms';
 import type { TreeViewController } from '~/types/index';
 import {
   type DragDropOrchestratorResult,

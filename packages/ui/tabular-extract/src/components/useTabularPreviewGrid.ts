@@ -1,5 +1,5 @@
 import { type MouseEvent as ReactMouseEvent, useCallback, useMemo, useRef, useState } from 'react';
-import type { TabularFilterOperator } from '../types/index';
+import type { TabularFilterOperator } from '../types/index.js';
 
 interface UseTabularPreviewGridArgs {
   rows: Array<Record<string, unknown>>;

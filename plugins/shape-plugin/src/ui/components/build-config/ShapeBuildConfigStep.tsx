@@ -7,7 +7,7 @@ import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import type React from 'react';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { GeometryConfigSection } from './GeometryConfigSection.js';

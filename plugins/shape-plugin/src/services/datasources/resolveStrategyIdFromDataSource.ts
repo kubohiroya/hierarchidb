@@ -1,4 +1,4 @@
-import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
 import type { DataSourceStrategyId } from './DataSourceStrategyFactory.js';
 
 export const resolveStrategyIdFromDataSource = (

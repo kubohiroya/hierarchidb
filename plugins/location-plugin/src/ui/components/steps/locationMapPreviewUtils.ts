@@ -1,4 +1,4 @@
-import type { LocationType } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
 import { KNOWN_LOCATION_TYPES } from './locationMapPreviewConstants.js';
 
 export const resolveLocationType = (value: string): LocationType =>

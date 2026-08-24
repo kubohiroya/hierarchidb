@@ -9,17 +9,19 @@
 import { describe, expect, it } from 'vitest';
 import { StylerConfigDefault } from '../../types/StylerEntity';
 import {
-  adjustBrightness,
   calculateLinearColor,
-  createColorVariations,
   generateColorGradient,
+  valueToColor,
+} from '../../utils/colorUtils/colorCalculation.js';
+import {
+  adjustBrightness,
+  createColorVariations,
   getContrastRatio,
   hexToRgb,
   hsvToRgb,
   rgbToHex,
   rgbToHsv,
-  valueToColor,
-} from '../../utils/colorUtils';
+} from '../../utils/colorUtils/colorConversion.js';
 
 describe('Color Utils', () => {
   describe('HSV/RGB Conversion', () => {

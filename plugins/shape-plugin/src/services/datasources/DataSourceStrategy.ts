@@ -4,7 +4,7 @@
 
 import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeStepValidationResult } from '~/common/types/index';
+import type { ShapeStepValidationResult } from '~/common/types/validationTypes';
 import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
 
 export interface DataSourceConfig {

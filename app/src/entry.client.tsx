@@ -26,7 +26,8 @@ import { runYamlStorageActivationContender } from './origin-coordinator/runYamlS
 import type { OriginCoordinatorClientHandle } from './origin-coordinator/types.js';
 import { clearAppIndexedDBsViaPlugins } from './plugin-runtime/clearIndexedDbUtils.ts';
 import AppRoot from './root.js';
-import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
+import { getBasePath, getRouterMode } from './router/config.js';
+import { createHierarchiRouter } from './router/index.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 import {
   configureCanonicalRuntimeWorkerBoot,

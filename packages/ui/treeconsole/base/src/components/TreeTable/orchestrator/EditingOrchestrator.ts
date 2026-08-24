@@ -8,7 +8,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import { editingNodeIdAtom, editingValueAtom } from '~/components/TreeTable/state/index';
+import { editingNodeIdAtom, editingValueAtom } from '~/components/TreeTable/state/features/editing.atoms';
 import type { TreeViewController } from '~/types/index';
 
 export interface EditingOrchestratorResult {

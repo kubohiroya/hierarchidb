@@ -1,7 +1,7 @@
 import type { TileEmitInvalidGeometryFilterConfig } from '@hierarchidb/gis-sdk';
 import { type ChangeEvent, useCallback, useMemo } from 'react';
-import type { ShapeBuildConfig } from '~/common/types/index';
-import { applyBuildConfigPatch } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
+import { applyBuildConfigPatch } from '~/services/utils/shapeBuildUtils';
 
 type UpdateFn = (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
 

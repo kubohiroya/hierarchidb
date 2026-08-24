@@ -1,6 +1,6 @@
 // Container component for GeometryConfigSection.
 
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { GeometryConfigSectionView } from './GeometryConfigSectionView.tsx';
 import { useGeometryConfigSectionState } from './useGeometryConfigSectionState.js';
 

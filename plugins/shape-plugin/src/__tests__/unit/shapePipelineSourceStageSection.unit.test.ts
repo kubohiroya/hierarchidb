@@ -10,7 +10,7 @@ import {
 } from '@hierarchidb/vt-orchestrator';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import type { DataSourceName } from '../../common/types/index';
+import type { DataSourceName } from '../../common/types/data-source.js';
 import * as shapeSourceStageModule from '../../services/vt/runShapeSourceStage';
 import {
   runShapeSourceStageSection,

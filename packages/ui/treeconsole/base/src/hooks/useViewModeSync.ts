@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
-import type { WorkerAPIAdapter } from '~/adapters/index';
+import type { WorkerAPIAdapter } from '~/adapters/WorkerAPIAdapter';
 import {
   sortModeAtomFamily,
   viewModeAtomFamily,

@@ -1,7 +1,7 @@
 // Container component for CacheManagementSection.
 // Calls the state hook and passes props to the View.
 
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { SourceConfigSectionState } from '~/ui/hooks/useSourceConfigSection';
 import { CacheManagementSectionView } from './CacheManagementSectionView.tsx';
 import { useCacheManagementSectionState } from './useCacheManagementSectionState.js';

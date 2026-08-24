@@ -8,7 +8,8 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type React from 'react';
 import { Suspense } from 'react';
-import type { LocationEntity, LocationType } from '~/common/types/index';
+import type { LocationEntity } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
 import { useLocationSelectionStep } from './useLocationSelectionStep.ts';
 
 interface LocationSelectionStepProps {

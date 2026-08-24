@@ -13,7 +13,8 @@ import {
   runStageTasks,
   type VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import type { CountryMetadata, ShapeRuntimeBuildConfig } from '~/common/types/index';
+import type { CountryMetadata } from '~/common/types/data-source';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeGeometryByBandTaskInput } from './shapePipelineShared.ts';
 import { resolveGeometryConfig } from './shapePipelineShared.ts';

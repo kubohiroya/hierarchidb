@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ResolverEntity } from '~/common/types/index';
+import type { ResolverEntity } from '~/common/entities/ResolverEntity';
 
 interface MappingStatistics {
   totalSourceProperties: number;

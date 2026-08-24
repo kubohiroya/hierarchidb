@@ -1,5 +1,5 @@
 import type { TabularColumnInfo, TabularColumnType } from '@hierarchidb/tabular-store';
-import type { TabularFilterOperator, TabularFilterRule } from '../types/index';
+import type { TabularFilterOperator, TabularFilterRule } from '../types/index.js';
 export type FilterOperatorOption = {
   value: TabularFilterOperator;
   label: string;

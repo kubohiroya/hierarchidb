@@ -1,1 +1,1 @@
-export * from './factory/index.js';
+export * from './factory/registerLinkerWorkerStores.js';

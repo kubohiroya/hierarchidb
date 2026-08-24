@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { useCallback, useMemo, useState } from 'react';
-import type { WorkerAPIAdapter } from '~/adapters/index';
+import type { WorkerAPIAdapter } from '~/adapters/WorkerAPIAdapter';
 
 //  : Copy/Paste
 export interface CopyResult {

@@ -3,10 +3,10 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoreDB } from '../../CoreDB.js';
-import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData.js';
 import { createStagedFolderActionCoreRunnerDependencies } from '../../createStagedFolderActionCoreRunnerDependencies.js';
-import { StagedFolderActionProgressStore } from '../../stagedFolderActionProgressStore.js';
+import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData.js';
 import { runStagedFolderAction } from '../../runStagedFolderAction.js';
+import { StagedFolderActionProgressStore } from '../../stagedFolderActionProgressStore.js';
 
 describe('createStagedFolderActionCoreRunnerDependencies', () => {
   let coreDB: CoreDB;
@@ -18,7 +18,9 @@ describe('createStagedFolderActionCoreRunnerDependencies', () => {
     coreDB = CoreDB.createForTest(`staged-action-core-runner-${crypto.randomUUID()}`);
     await coreDB.open();
     await coreDB.initialize();
-    store = new StagedFolderActionProgressStore(`staged-action-core-progress-${crypto.randomUUID()}`);
+    store = new StagedFolderActionProgressStore(
+      `staged-action-core-progress-${crypto.randomUUID()}`
+    );
     await store.open();
     nowValue = 100;
   });

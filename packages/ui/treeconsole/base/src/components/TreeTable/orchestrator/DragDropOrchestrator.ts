@@ -11,11 +11,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { computeDescendants } from '@hierarchidb/ui-treeconsole-treetable';
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import {
-  draggingNodeIdAtom,
-  dropTargetNodeIdAtom,
-  forbiddenDropTargetsAtom,
-} from '~/components/TreeTable/state/index';
+import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '~/components/TreeTable/state/features/dragDrop.atoms';
 import type { TreeViewController } from '~/types/index';
 
 export interface DragDropOrchestratorResult {

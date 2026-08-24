@@ -1,8 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useCallback, useId, useMemo } from 'react';
-import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
-import { applyBuildConfigPatch, DEFAULT_BUILD_CONFIG } from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/BuildTaskResult';
+import { applyBuildConfigPatch } from '~/services/utils/shapeBuildUtils';
+import { DEFAULT_BUILD_CONFIG } from '~/common/types/constants';
 import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 
 type Args = {

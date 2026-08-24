@@ -3,14 +3,10 @@ import fc from 'fast-check';
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
 import { calculateCanonicalYamlZipCrc32 } from '../../src/canonical-yaml-zip-codec/calculateCanonicalYamlZipCrc32.internalUtils.js';
-import {
-  CANONICAL_YAML_ZIP_LIMITS,
-  type CanonicalYamlZipCodecErrorCode,
-  type CanonicalYamlZipInputEntry,
-  decodeCanonicalYamlZip,
-  type EncodedCanonicalYamlZip,
-  encodeCanonicalYamlZip,
-} from '../../src/canonical-yaml-zip-codec/index.js';
+import { CANONICAL_YAML_ZIP_LIMITS } from '../../src/canonical-yaml-zip-codec/constants.js';
+import { CanonicalYamlZipCodecErrorCode, CanonicalYamlZipInputEntry, EncodedCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/canonicalYamlZipCodecTypes.js';
+import { decodeCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/decodeCanonicalYamlZip.js';
+import { encodeCanonicalYamlZip } from '../../src/canonical-yaml-zip-codec/encodeCanonicalYamlZip.js';
 
 const EOCD_BYTES = 22;
 const CENTRAL_HEADER_BYTES = 46;

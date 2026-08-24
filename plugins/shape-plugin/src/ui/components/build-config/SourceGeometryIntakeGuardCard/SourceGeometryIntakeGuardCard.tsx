@@ -1,5 +1,5 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { SourceGeometryIntakeGuardCardView } from './SourceGeometryIntakeGuardCardView.js';
 import { useSourceGeometryIntakeGuardCardState } from './useSourceGeometryIntakeGuardCardState.js';
 

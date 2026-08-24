@@ -1,4 +1,4 @@
-import type { ValidationRule } from '~/common/types/index';
+import type { ValidationRule } from '~/common/entities/ResolverEntity';
 import type {
   ValidationRuleParameterFieldsProps,
   ValidationRuleTypeMenuProps,

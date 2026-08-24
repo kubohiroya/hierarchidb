@@ -1,7 +1,7 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import type { TimelineFrame } from '~/common/types/index';
+import type { TimelineFrame } from '~/common/entities/TimelineEntity';
 
 export function FramesPreviewStep({ frames, title }: { frames: TimelineFrame[]; title?: string }) {
   const { t } = useTranslation('timeline-plugin');

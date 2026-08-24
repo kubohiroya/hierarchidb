@@ -7,7 +7,7 @@ import {
   loadBuildMonitor,
 } from '@hierarchidb/ui-monitoring';
 import { useMemo } from 'react';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '~/ui/utils/buildWarnings';
 
 type Args = {

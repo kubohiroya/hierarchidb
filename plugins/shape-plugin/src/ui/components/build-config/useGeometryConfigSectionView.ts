@@ -1,6 +1,6 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { type ChangeEvent, useCallback } from 'react';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 
 type Args = {
   simplifyAlgorithm: 'geojson' | 'topojson';

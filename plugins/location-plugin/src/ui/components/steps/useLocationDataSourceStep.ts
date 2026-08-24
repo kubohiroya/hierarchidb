@@ -9,7 +9,8 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
-import type { LocationDataSource, LocationEntity, LocationType } from '~/common/types/index';
+import type { LocationDataSource, LocationType } from '~/common/entities/LocationEntity';
+import type { LocationEntity } from '~/common/types/index';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openstreetmap',

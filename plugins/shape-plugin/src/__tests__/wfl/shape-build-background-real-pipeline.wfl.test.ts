@@ -9,7 +9,8 @@ import type {
 } from '@hierarchidb/shape-api';
 import * as Comlink from 'comlink';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import type { ShapeBuildConfig, SourceTaskPayload } from '../../common/types/index';
+import type { ShapeBuildConfig } from '../../common/types/BuildTaskResult.js';
+import type { SourceTaskPayload } from '../../common/types/data-source.js';
 
 vi.mock('comlink', async () => await vi.importActual('comlink'));
 

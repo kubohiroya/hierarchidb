@@ -31,7 +31,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '~/common/types/index';
+import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '~/common/entities/ResolverEntity';
 import { useValidationConfigStep } from './useValidationConfigStep.js';
 import { useValidationConfigStepView } from './useValidationConfigStepView.js';
 import {

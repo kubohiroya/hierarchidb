@@ -17,13 +17,9 @@ import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
-import type {
-  CountryMetadata,
-  SelectedArrayByCountries,
-  ShapeBuildConfig,
-  ShapeProcessingConfig,
-  SourceTaskPayload,
-} from '../common/types/index';
+import type { CountryMetadata, SourceTaskPayload } from '../common/types/data-source.js';
+import type { SelectedArrayByCountries } from '../common/types/ShapeEntity.js';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/BuildTaskResult.js';
 import { shapeMutationAPIImpl } from '../services/build/ShapeBuildAPIClient';
 import { metadataLoader } from '../services/metadata/MetadataLoader';
 import { initializeShapeChunkStore } from '../services/utils/initializeShapeChunkStore.js';

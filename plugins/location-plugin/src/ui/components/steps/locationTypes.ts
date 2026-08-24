@@ -1,6 +1,6 @@
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Subway } from '@mui/icons-material';
-import type { LocationType } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
 
 type LocationTypeStyle = {
   color: string;

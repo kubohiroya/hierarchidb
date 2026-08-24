@@ -1,6 +1,6 @@
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { ShapeEntity } from '~/common/types/index';
-import { summarizeCheckboxState } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { summarizeCheckboxState } from '~/services/utils/shapeBuildUtils';
 
 export type BuildStartupTransitionWarnStep = 0 | 1 | 2 | 3;
 

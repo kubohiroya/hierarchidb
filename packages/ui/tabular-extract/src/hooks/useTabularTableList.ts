@@ -1,7 +1,7 @@
 import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useState } from 'react';
 import { useTabularApi } from '../context/TabularContext';
-import type { PaginationOptions, TabularTableListResult } from '../types/index';
+import type { PaginationOptions, TabularTableListResult } from '../types/index.js';
 
 /**
  * Options for useTabularTableList hook

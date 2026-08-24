@@ -4,13 +4,9 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { type EphemeralDB, ephemeralDB } from '@hierarchidb/gis-sdk';
 import { shapeDB } from '@hierarchidb/shape-store';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import type {
-  CountryMetadata,
-  DataSourceName,
-  SelectedArrayByCountries,
-  ShapeRuntimeBuildConfig,
-  SourceTaskPayload,
-} from '~/common/types/index';
+import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {

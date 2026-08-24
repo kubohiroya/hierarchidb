@@ -30,4 +30,4 @@ export interface CountryAvailabilityWorkerAPI {
   clearMetadataCache(dataSource?: DataSourceName): Promise<void>;
 }
 
-import type { CountryMetadata, DataSourceName } from '~/common/types/index';
+import type { CountryMetadata, DataSourceName } from '~/common/types/data-source';

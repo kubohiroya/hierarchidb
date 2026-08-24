@@ -6,7 +6,7 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { SxProps, Theme } from '@mui/material';
 import type { TFunction } from 'i18next';
 import { useCallback, useMemo } from 'react';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { SourceConfigSectionState } from '~/ui/hooks/useSourceConfigSection';
 

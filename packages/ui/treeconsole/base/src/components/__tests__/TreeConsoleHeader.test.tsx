@@ -6,7 +6,7 @@
 import { type NodeId, type NodeType, toNodeId } from '@hierarchidb/core-types';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { TreeConsoleHeaderProps, TreeNodeWithChildren, TreeViewController } from '../../types';
+import type { TreeConsoleHeaderProps, TreeNodeWithChildren, TreeViewController } from '../../types/index.js';
 import { TreeConsoleHeader } from '../TreeConsoleHeader';
 
 const mockController: TreeViewController = {

@@ -11,7 +11,7 @@ import {
   StylerMappingDefault,
   type StylerTableRow,
 } from '~/common/types/StylerEntity';
-import { normalizeStylerConfig } from '~/common/utils/colorUtils';
+import { normalizeStylerConfig } from '~/common/utils/colorUtils/colorCalculation';
 import type { StylerStepProps } from '~/ui/components/StylerStepProps';
 import { useTabularFilterWorker } from '~/ui/hooks/useTabularFilterWorker';
 

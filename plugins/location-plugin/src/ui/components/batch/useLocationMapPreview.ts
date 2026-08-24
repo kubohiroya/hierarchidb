@@ -4,7 +4,8 @@ import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Place } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LocationType, NodeId } from '~/common/types/index';
+import type { LocationType } from '~/common/entities/LocationEntity';
+import type { NodeId } from '~/common/types/index';
 import { LOCATION_TYPE_STYLES } from '~/ui/components/steps/locationTypes';
 import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewMarkers.js';
 import type {

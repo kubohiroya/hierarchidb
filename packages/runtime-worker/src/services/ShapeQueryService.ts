@@ -148,9 +148,11 @@ const isNumber = (value: unknown): value is number =>
 const isDefined = <T>(value: T | null | undefined): value is T =>
   value !== null && value !== undefined;
 
-const isShapeGeometryCache = (
-  record: { nodeId: NodeId; timestamp: number; domainType: 'shape' | 'route' | 'location' }
-): record is ShapeGeometryCache =>
+const isShapeGeometryCache = (record: {
+  nodeId: NodeId;
+  timestamp: number;
+  domainType: 'shape' | 'route' | 'location';
+}): record is ShapeGeometryCache =>
   record.timestamp > 0 && (record.domainType === 'shape' || record.domainType === 'route');
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>

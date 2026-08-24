@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import type { TimelineFrame } from '~/common/types/index';
+import type { TimelineFrame } from '~/common/entities/TimelineEntity';
 import { useFramePlayer } from '~/ui/utils/useFramePlayer';
 
 export interface AnimationViewerStepProps {

@@ -9,13 +9,8 @@ import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
-import type {
-  DataSourceName,
-  SelectedArrayByCountries,
-  ShapeEntity,
-  ShapePreviewMapView,
-  ShapeStageTimingSnapshot,
-} from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
+import type { SelectedArrayByCountries, ShapeEntity, ShapePreviewMapView, ShapeStageTimingSnapshot } from '~/common/types/ShapeEntity';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

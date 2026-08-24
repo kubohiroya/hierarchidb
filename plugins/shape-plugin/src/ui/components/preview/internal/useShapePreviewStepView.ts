@@ -19,7 +19,7 @@ import {
   TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { getDataSourceConfig } from '~/services/utils/shapeBuildUtils';
 import { useShapePreviewStep } from '~/ui/components/preview/useShapePreviewStep';
 

@@ -2,7 +2,7 @@ import { notify } from '@hierarchidb/components/notify';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useCallback } from 'react';
-import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { createBuildStartDraftData } from '~/ui/components/build-progress/createBuildStartDraftData';
 
 type Args = {

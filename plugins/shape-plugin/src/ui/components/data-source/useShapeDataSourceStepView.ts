@@ -1,7 +1,7 @@
 import { notify } from '@hierarchidb/components';
 import { toNodeId } from '@hierarchidb/core-types';
 import { useCallback, useState } from 'react';
-import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/data-source';
 import { clearShapeDataSourceCache } from '~/ui/utils/clearShapeDataSourceCache';
 
 type Args = {

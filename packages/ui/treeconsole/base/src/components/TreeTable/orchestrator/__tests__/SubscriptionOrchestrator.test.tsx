@@ -4,7 +4,7 @@ import { act, renderHook } from '@testing-library/react';
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import { type FC, type PropsWithChildren, type ReactElement, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tableDataAtom } from '../../state/index';
+import { tableDataAtom } from '../../state/core/data.atoms.js';
 import { useSubscriptionOrchestrator } from '../SubscriptionOrchestrator';
 
 vi.mock('comlink', () => ({

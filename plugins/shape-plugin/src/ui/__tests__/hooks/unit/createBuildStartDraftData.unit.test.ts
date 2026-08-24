@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ShapeBuildUrlRule, ShapeEntity } from '../../../../common/types';
+import type { ShapeBuildUrlRule } from '../../../../common/types/BuildTaskResult.js';
+import type { ShapeEntity } from '../../../../common/types/ShapeEntity.js';
 import { createBuildStartDraftData } from '../../../components/build-progress/createBuildStartDraftData';
 
 describe('createBuildStartDraftData', () => {

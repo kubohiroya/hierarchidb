@@ -1,16 +1,4 @@
-export type {
-  DataTransformation,
-  DuplicateResolutionStrategy,
-  MappingPreviewResult,
-  MappingValidationResult,
-  PropertyInfo,
-  PropertyMappingRule,
-  ResolverEntity,
-  ResolverUpdaterPayload,
-  SchemaInfo,
-  StylerIntegration,
-  ValidationRule,
-} from './common/types/index.js';
+export type { DataTransformation, DuplicateResolutionStrategy, MappingPreviewResult, MappingValidationResult, PropertyInfo, PropertyMappingRule, ResolverEntity, ResolverUpdaterPayload, SchemaInfo, StylerIntegration, ValidationRule } from './common/entities/ResolverEntity.js';
 
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');

@@ -7,12 +7,9 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
-import type {
-  DataSourceName,
-  SelectedArrayByCountries,
-  ShapeRuntimeBuildConfig,
-  SourceTaskPayload,
-} from '~/common/types/index';
+import type { DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { runShapeSourceStage } from './runShapeSourceStage.js';
 import {

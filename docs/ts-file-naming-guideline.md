@@ -109,8 +109,10 @@ pnpm tsx scripts/naming-audit.ts --ci --changed-since <base-sha> --baseline scri
 
 ### 4. `index.ts` の例外
 
-- `index.ts` は再エクスポート専用入口としてのみ許可する。
-- 実ロジックを `index.ts` に書かない。
+- `index.ts` は package / plugin / app の公開 entrypoint、または `package.json` の `exports` / build entry に対応する入口に限って許可する。
+- 内部ディレクトリのバレル再エクスポート用途では `index.ts` を新設しない。
+- 内部モジュール間の参照は、バレルを経由せず実ファイルへ直接 import する。
+- 実ロジックを `index.ts` に書かない。ただし、既存の framework 規約や公開 entrypoint としてファイル名が固定される場合は、責務が分かる実ファイルへの移動を優先し、移行前の一時状態としてだけ許容する。
 
 ### 5. 実装詳細ファイルの扱い
 

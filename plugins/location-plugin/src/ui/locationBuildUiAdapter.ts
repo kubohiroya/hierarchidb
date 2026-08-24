@@ -6,7 +6,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStage, BuildStatus as UiBuildStatus } from '@hierarchidb/ui-build-progress';
 import { CloudDownload } from '@mui/icons-material';
 import { createElement } from 'react';
-import type { LocationEntity } from '~/common/types/index.js';
+import type { LocationEntity } from '~/common/types/index';
 import { PLUGIN_MANIFEST } from '~/plugin-manifest.js';
 import { canonicalBuildAPI } from '~/worker/canonicalBuildAPI.js';
 

@@ -5,7 +5,7 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeFeaturePayload } from '~/common/types/index';
+import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobufUtils';
 import {
   buildRawDataDataSourceCacheKey,

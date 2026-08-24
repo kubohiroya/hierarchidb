@@ -1,10 +1,6 @@
 import { useMemo } from 'react';
-import type {
-  LocationEntity,
-  LocationIconConfig,
-  LocationLabelConfig,
-  LocationRepresentationByZoomLevelConfig,
-} from '~/common/types/index';
+import type { LocationEntity } from '~/common/types/index';
+import type { LocationIconConfig, LocationLabelConfig, LocationRepresentationByZoomLevelConfig } from '~/common/entities/LocationEntity';
 import {
   DEFAULT_ICON_IDS,
   DEFAULT_ICON_SIZE_RANGE,

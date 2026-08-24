@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTabularApi } from '../context/TabularContext';
-import type { TabularDataResult, TabularFilterRule, TabularSelectionConfig } from '../types/index';
+import type { TabularDataResult, TabularFilterRule, TabularSelectionConfig } from '../types/index.js';
 
 /**
  * Options for useCSVSelection hook

@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import { useTabularData } from '../hooks/useTabularData';
-import type { TabularProcessingConfig } from '../types/index';
+import type { TabularProcessingConfig } from '../types/index.js';
 
 interface UseTabularDataImportArgs {
   onFileImported: (metadata: TabularTableMetadata) => void;

@@ -1,7 +1,7 @@
 import { DragIndicator } from '@mui/icons-material';
 import { Box, Tooltip } from '@mui/material';
-import { MemoryUsageChart } from '~/components/MemoryUsageBar/index';
 import { MemoryUsageBar } from '~/components/MemoryUsageBar/MemoryUsageBar';
+import { MemoryUsageChart } from '~/components/MemoryUsageBar/MemoryUsageChart';
 import { isProdEnv } from '~/utils/env';
 import { useMemoryUsageMonitor } from './useMemoryUsageMonitor';
 

@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { useCallback } from 'react';
-import type { WorkerAPIAdapter } from '~/adapters/index';
+import type { WorkerAPIAdapter } from '~/adapters/WorkerAPIAdapter';
 import type { CRUDResult } from '~/types/index';
 
 type StateManagerLike = Partial<{

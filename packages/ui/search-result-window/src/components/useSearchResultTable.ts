@@ -1,16 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { type ChangeEvent, type MouseEvent, useCallback, useEffect } from 'react';
-import {
-  clearSelectionAtom,
-  isAllSelectedAtom,
-  isSomeSelectedAtom,
-  searchResultsAtom,
-  selectAllAtom,
-  selectNodeAtom,
-  selectRangeAtom,
-  toggleNodeSelectionAtom,
-} from '~/state/index';
+import { clearSelectionAtom, isAllSelectedAtom, isSomeSelectedAtom, searchResultsAtom, selectAllAtom, selectNodeAtom, selectRangeAtom, toggleNodeSelectionAtom } from '~/state/searchResult.atoms';
 import type { SearchResult } from '~/types/index';
 
 export interface SearchResultChipData {

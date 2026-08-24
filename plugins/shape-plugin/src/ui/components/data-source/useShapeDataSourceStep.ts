@@ -1,13 +1,9 @@
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useCallback, useEffect, useMemo } from 'react';
-import type { DataSourceConfig, DataSourceName, ShapeEntity } from '~/common/types/index';
-import {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  SHAPE_DATA_SOURCE_BY_NAME,
-  SHAPE_DATA_SOURCES,
-} from '~/common/types/index';
+import type { DataSourceConfig, DataSourceName } from '~/common/types/data-source';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG, SHAPE_DATA_SOURCE_BY_NAME, SHAPE_DATA_SOURCES } from '~/common/types/constants';
 import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 
 type Args = {

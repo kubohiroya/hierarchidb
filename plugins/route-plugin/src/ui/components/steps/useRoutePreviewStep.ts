@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
-import { formatDistance, getTransportModeName, type SupportedLocale } from '~/common/i18n/index';
+import { formatDistance, getTransportModeName, SupportedLocale } from '~/common/i18n/index';
 import {
   ROUTE_MVT_PROMOTE_ID,
   ROUTE_MVT_SOURCE_LAYER,

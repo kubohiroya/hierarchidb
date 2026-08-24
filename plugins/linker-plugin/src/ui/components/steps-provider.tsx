@@ -6,7 +6,7 @@ import {
   type StepData,
 } from '@hierarchidb/plugin-base';
 import { i18n, useTranslation } from '@hierarchidb/ui-i18n';
-import type { LinkerDraft } from '~/common/types/index';
+import type { LinkerDraft } from '~/common/entities/LinkerEntity';
 import { AggregatedList } from '~/ui/steps/AggregatedList';
 import { MapPreview } from '~/ui/steps/MapPreview';
 import { ResourcePicker } from '~/ui/steps/ResourcePicker';

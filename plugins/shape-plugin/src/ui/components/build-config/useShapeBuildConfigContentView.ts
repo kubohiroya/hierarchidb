@@ -2,15 +2,10 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import type { AlertColor } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  applyBuildConfigPatch,
-  composeRuntimeBuildConfig,
-  DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
-  type ShapeBuildConfig,
-  type ShapeEntity,
-  type ShapeRuntimeBuildConfig,
-} from '~/common/types/index';
+import { applyBuildConfigPatch, composeRuntimeBuildConfig, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
+import { DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import { ShapeBuildConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
+import { ShapeEntity } from '~/common/types/ShapeEntity';
 import {
   filteringHighUrl,
   filteringLowUrl,

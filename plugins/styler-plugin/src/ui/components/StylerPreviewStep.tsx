@@ -28,7 +28,7 @@ import {
   type ScalarStyleKeyValue,
   type StylerStepData,
 } from '~/common/types/StylerEntity';
-import { valueToColor } from '~/common/utils/colorUtils';
+import { valueToColor } from '~/common/utils/colorUtils/colorCalculation';
 import { useStylerPreview } from './hooks/useStylerPreview.js';
 import type { StylerStepProps } from './StylerStepProps.tsx';
 

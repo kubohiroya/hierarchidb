@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
-import { applyBuildConfigPatch } from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/BuildTaskResult';
+import { applyBuildConfigPatch } from '~/services/utils/shapeBuildUtils';
 
 //import { TileEmitConfig } from '@hierarchidb/shape-store/ShapeDB.js';
 
