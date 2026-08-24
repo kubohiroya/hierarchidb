@@ -150,6 +150,8 @@ Phase 0 の state channel は runtime-worker の `StagedFolderActionProgressStor
 
 Map UI は `captureIntentId` が指定された場合だけ MapLibre の `preserveDrawingBuffer` を有効にする。intent 取得後、Map UI は `viewport.bbox` を `fitBounds` で適用し、MapLibre `idle` 後に DOM readiness marker として `data-map-image-capture-render-status="ready"` を出す。`viewport.bbox`、`viewport.width`、`viewport.height` が有限数でない場合、または bbox が `[minLng, minLat, maxLng, maxLat]` として順序を満たさない場合は contract violation として `error` を出し、capture を進めない。
 
+runtime-worker runner は `MapImageCaptureIntentRecord` 保存後、`currentAction.phase = "handoff-created"` を記録してから browser handoff 実装を呼ぶ。browser handoff 実装は runner から渡される progress callback だけを使って `currentAction.phase` を更新する。Phase 0 で固定する `map-image-capture` action-specific phase は `opening-map-ui`、`waiting-render-ready`、`capturing-canvas`、`writing-output`、`completed` である。これらは top-level `phase` を増やさず、常に `phase: "running-action"` と `currentAction.actionType: "map-image-capture"` の下に記録する。
+
 terminal run を削除する場合、同じ run に属する capture intent record も削除する。active run の削除は従来どおり拒否し、実行中 capture intent を orphan にしてはならない。
 
 却下する代替案:

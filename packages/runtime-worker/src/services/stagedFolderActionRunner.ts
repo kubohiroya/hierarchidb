@@ -25,6 +25,11 @@ export interface StagedFolderActionBuildResult {
   status: string;
 }
 
+export interface StagedFolderActionProgressUpdate {
+  phase: string;
+  percentage: number;
+}
+
 export interface StagedFolderActionRunnerDependencies {
   progressStore: StagedFolderActionProgressStore;
   now: () => number;
@@ -44,6 +49,7 @@ export interface StagedFolderActionRunnerDependencies {
     config: StagedFolderActionConfig;
     stagingRootNodeId: NodeId;
     runId: NodeId;
+    reportProgress(update: StagedFolderActionProgressUpdate): Promise<void>;
   }): Promise<void>;
   cleanup?(input: {
     config: StagedFolderActionConfig;
@@ -182,11 +188,17 @@ const runAction = async (
       browserMode: input.browserMode,
     });
     await progressStore.putMapImageCaptureIntent(intent, dependencies.now());
+    await updateCurrentActionProgress(dependencies, input, action, actionIndex, {
+      phase: 'handoff-created',
+      percentage: 10,
+    });
     await dependencies.runMapImageCaptureAction({
       intent,
       config: input.config,
       stagingRootNodeId,
       runId: input.runId,
+      reportProgress: (update) =>
+        updateCurrentActionProgress(dependencies, input, action, actionIndex, update),
     });
     await progressStore.updateRun(input.runId, {
       status: 'running',
@@ -204,6 +216,27 @@ const runAction = async (
   }
 
   throw new Error(`staged-folder-action runner for ${action.type} is not configured`);
+};
+
+const updateCurrentActionProgress = async (
+  dependencies: StagedFolderActionRunnerDependencies,
+  input: StagedFolderActionRunnerInput,
+  action: StagedFolderAction,
+  actionIndex: number,
+  update: StagedFolderActionProgressUpdate
+): Promise<void> => {
+  await dependencies.progressStore.updateRun(input.runId, {
+    status: 'running',
+    phase: 'running-action',
+    currentAction: {
+      actionIndex,
+      actionType: action.type,
+      phase: update.phase,
+      percentage: update.percentage,
+    },
+    progress: progressFor(input.config.actions.length, actionIndex),
+    updatedAt: dependencies.now(),
+  });
 };
 
 const progressFor = (total: number, completed: number) => ({

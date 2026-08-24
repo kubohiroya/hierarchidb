@@ -136,6 +136,7 @@ describe('runStagedFolderAction', () => {
       config: expect.any(Object),
       stagingRootNodeId: 'staging-root',
       runId: 'run-capture',
+      reportProgress: expect.any(Function),
     });
     await expect(store.getMapImageCaptureIntent('run-capture:1')).resolves.toMatchObject({
       intentId: 'run-capture:1',
@@ -151,6 +152,51 @@ describe('runStagedFolderAction', () => {
         completed: 2,
         percentage: 100,
       },
+    });
+  });
+
+  it('lets the map image capture runner report action-specific phases to the run progress store', async () => {
+    const observedPhases: string[] = [];
+    const dependencies = createDependencies({
+      runMapImageCaptureAction: vi.fn(async ({ reportProgress }) => {
+        await reportProgress({ phase: 'opening-map-ui', percentage: 25 });
+        observedPhases.push(
+          (await store.getRun('run-capture-progress' as NodeId))?.currentAction?.phase ?? ''
+        );
+        await reportProgress({ phase: 'waiting-render-ready', percentage: 50 });
+        observedPhases.push(
+          (await store.getRun('run-capture-progress' as NodeId))?.currentAction?.phase ?? ''
+        );
+        await reportProgress({ phase: 'writing-output', percentage: 90 });
+        observedPhases.push(
+          (await store.getRun('run-capture-progress' as NodeId))?.currentAction?.phase ?? ''
+        );
+      }),
+    });
+
+    await runStagedFolderAction(dependencies, {
+      runId: 'run-capture-progress' as NodeId,
+      sourceNodeId: 'source-capture-progress' as NodeId,
+      browserMode: 'headless',
+      config: createConfig({
+        actions: [
+          { type: 'build', mode: 'session-manager' },
+          {
+            type: 'map-image-capture',
+            mode: 'map-ui',
+            output: { path: './out.png', width: 800, height: 600 },
+            viewport: { bbox: [139, 35, 140, 36] },
+            layers: [{ path: '.', visible: true }],
+          },
+        ],
+      }),
+    });
+
+    expect(observedPhases).toEqual(['opening-map-ui', 'waiting-render-ready', 'writing-output']);
+    await expect(store.getRun('run-capture-progress' as NodeId)).resolves.toMatchObject({
+      status: 'completed',
+      phase: 'completed',
+      currentAction: undefined,
     });
   });
 
