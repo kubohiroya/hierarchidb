@@ -46,6 +46,19 @@ export const isBuildSessionRuntimeStatus = (value: unknown): value is BuildSessi
   typeof value === 'string' &&
   canonicalBuildSessionRuntimeStatuses.includes(value as BuildSessionRuntimeStatus);
 
+export const activeBuildSessionRuntimeStatuses = [
+  'starting',
+  'running',
+  'pausing',
+  'resuming',
+  'finalizing',
+] as const satisfies readonly BuildSessionRuntimeStatus[];
+
+export const isActiveBuildSessionRuntimeStatus = (status: BuildSessionRuntimeStatus): boolean =>
+  activeBuildSessionRuntimeStatuses.includes(
+    status as (typeof activeBuildSessionRuntimeStatuses)[number]
+  );
+
 export const assertCanonicalBuildRuntimeRecord = (
   record: BuildSessionRuntimeRecord,
   expectedNodeType?: NodeType
@@ -56,7 +69,7 @@ export const assertCanonicalBuildRuntimeRecord = (
   if (!Number.isInteger(record.revision) || record.revision < 0) {
     throwRuntimeRecordError('CANONICAL_BUILD_RUNTIME_RECORD_INVALID_REVISION', record, 'revision');
   }
-  const expectedActive = isActiveRuntimeStatus(record.status);
+  const expectedActive = isActiveBuildSessionRuntimeStatus(record.status);
   if (record.isActive !== expectedActive) {
     throwRuntimeRecordError(
       'CANONICAL_BUILD_RUNTIME_RECORD_INVALID_ACTIVE_STATE',
@@ -79,13 +92,6 @@ export const assertCanonicalBuildRuntimeRecords = (
   expectedNodeType?: NodeType
 ): BuildSessionRuntimeRecord[] =>
   records.map((record) => assertCanonicalBuildRuntimeRecord(record, expectedNodeType));
-
-const isActiveRuntimeStatus = (status: BuildSessionRuntimeStatus): boolean =>
-  status === 'starting' ||
-  status === 'running' ||
-  status === 'pausing' ||
-  status === 'resuming' ||
-  status === 'finalizing';
 
 const throwRuntimeRecordError = (
   code: CanonicalBuildRuntimeErrorCode,

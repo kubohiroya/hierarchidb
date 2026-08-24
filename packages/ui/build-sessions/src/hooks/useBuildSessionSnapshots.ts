@@ -3,7 +3,10 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
 import { proxy } from 'comlink';
 import { useEffect, useMemo, useState } from 'react';
-import type { BuildSessionRuntimeRecord } from '../../../../build-api';
+import {
+  activeBuildSessionRuntimeStatuses,
+  type BuildSessionRuntimeRecord,
+} from '../../../../build-api';
 import { sanitizeForComlink } from '../utils/comlinkSanitizer.js';
 import { useWorkerQueryAPI } from './useWorkerQueryAPI.js';
 
@@ -23,11 +26,7 @@ export type BuildSessionSnapshotsResult = {
 };
 
 const IN_PROGRESS_STATUSES: BuildSessionRuntimeRecord['status'][] = [
-  'starting',
-  'running',
-  'pausing',
-  'resuming',
-  'finalizing',
+  ...activeBuildSessionRuntimeStatuses,
 ];
 
 const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {

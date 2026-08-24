@@ -1,10 +1,12 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { describe, expect, it } from 'vitest';
 import {
+  activeBuildSessionRuntimeStatuses,
   assertCanonicalBuildRuntimeRecord,
   type BuildSessionRuntimeRecord,
   CanonicalBuildRuntimeError,
   canonicalBuildSessionRuntimeStatuses,
+  isActiveBuildSessionRuntimeStatus,
   isBuildSessionRuntimeStatus,
 } from '../index.js';
 
@@ -37,6 +39,18 @@ describe('CanonicalBuildRuntimeAdapter contract', () => {
     ]);
     expect(isBuildSessionRuntimeStatus('running')).toBe(true);
     expect(isBuildSessionRuntimeStatus('unknown')).toBe(false);
+  });
+
+  it('defines the canonical active runtime status set', () => {
+    expect(activeBuildSessionRuntimeStatuses).toEqual([
+      'starting',
+      'running',
+      'pausing',
+      'resuming',
+      'finalizing',
+    ]);
+    expect(isActiveBuildSessionRuntimeStatus('starting')).toBe(true);
+    expect(isActiveBuildSessionRuntimeStatus('paused')).toBe(false);
   });
 
   it('accepts a valid runtime record', () => {

@@ -131,6 +131,8 @@ Phase 2 child #1588 では、artifact dependency lifecycle manager の保存境�
 
 Phase 2 child #1590 の UI 表示は runner behavior を変更しない。TreeTable / Breadcrumb / node info panel は `@hierarchidb/build-api` resolver の `status` / `reason` / `details[]` を表示用 helper に渡し、disabled Build entry の理由と diagnostics entry を表示する。runner は引き続き resolver の contract violation を fail-fast として扱い、UI 表示の有無で build target collection や action failure 判定を変えてはならない。
 
+Phase 2 child #1592 の edit lock は runner behavior を変更しない。Plugin dialog などの編集 surface は canonical build session runtime context の active session を SSOT とし、field id と lock 対象 field id の明示リストで個別 field の disabled state と理由を解決する。modal blocking は追加せず、対象外 field の編集は継続できる。field id が空、または lock 対象 field id が空の場合は contract violation として fail-fast する。
+
 Phase 1 初期 WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へそのまま渡す。標準 Worker bootstrap / CLI bridge はまだ browser handoff implementation を注入しない。したがって標準 host で `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary

@@ -27,10 +27,12 @@ export type {
   CanonicalBuildRuntimeUnsubscribe,
 } from './CanonicalBuildRuntimeAdapter.js';
 export {
+  activeBuildSessionRuntimeStatuses,
   assertCanonicalBuildRuntimeRecord,
   assertCanonicalBuildRuntimeRecords,
   canonicalBuildRuntimeAdapterMethodNames,
   canonicalBuildSessionRuntimeStatuses,
+  isActiveBuildSessionRuntimeStatus,
   isBuildSessionRuntimeStatus,
 } from './CanonicalBuildRuntimeAdapter.js';
 export type {
