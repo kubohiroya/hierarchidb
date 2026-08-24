@@ -122,8 +122,9 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
               variant="outlined"
               color="primary"
               size="small"
-              onClick={() => addTag(s)}
-              sx={{ cursor: 'pointer' }}
+              disabled={disabled}
+              onClick={disabled ? undefined : () => addTag(s)}
+              sx={{ cursor: disabled ? 'default' : 'pointer' }}
             />
           ))}
         </Stack>

@@ -1299,6 +1299,9 @@ importers:
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../tree-api
+      '@hierarchidb/ui-build-sessions':
+        specifier: workspace:*
+        version: link:../ui/build-sessions
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog

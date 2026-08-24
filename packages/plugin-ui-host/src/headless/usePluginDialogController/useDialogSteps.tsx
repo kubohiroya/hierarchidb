@@ -6,13 +6,14 @@ import type {
   StepData,
 } from '@hierarchidb/plugin-base';
 import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import { useTargetNodeFieldEditLock } from '@hierarchidb/ui-build-sessions';
 import type {
   DialogStep,
   PluginStepProps as HeadlessPluginStepProps,
   StepComponentDescriptor,
   StepValidationFn,
 } from '@hierarchidb/ui-dialog';
-import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
+import { type BasicInfoFieldEditLocks, BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
 import type { PrimitiveAtom } from 'jotai';
 import { atom, useAtom } from 'jotai';
 import type React from 'react';
@@ -26,6 +27,21 @@ import {
 import type { BasicInfoMeta, DialogUiState, StepCompositionResult } from './data-types.js';
 
 type PluginDefinedEntity = PeerEntity<TreeNodeData> & Record<string, unknown>;
+
+const basicInfoBuildSessionLockedFieldIds = [
+  'metadata.name',
+  'metadata.description',
+  'metadata.tags',
+] as const;
+
+type ResolvedFieldLock = ReturnType<typeof useTargetNodeFieldEditLock>;
+
+const toBasicInfoFieldLock = (
+  lock: ResolvedFieldLock
+): { readonly locked: boolean; readonly reason?: string } => ({
+  locked: lock.locked,
+  ...(lock.reason === undefined ? {} : { reason: lock.reason }),
+});
 
 const toMetadataRecord = (value: unknown): Record<string, unknown> =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -189,6 +205,26 @@ const BasicInfoAdapter: React.FC<BasicInfoAdapterProps> = ({
   validate,
   onTagClick,
 }) => {
+  const nameLock = useTargetNodeFieldEditLock({
+    fieldId: 'metadata.name',
+    lockedFieldIds: basicInfoBuildSessionLockedFieldIds,
+  });
+  const descriptionLock = useTargetNodeFieldEditLock({
+    fieldId: 'metadata.description',
+    lockedFieldIds: basicInfoBuildSessionLockedFieldIds,
+  });
+  const tagsLock = useTargetNodeFieldEditLock({
+    fieldId: 'metadata.tags',
+    lockedFieldIds: basicInfoBuildSessionLockedFieldIds,
+  });
+  const fieldEditLocks = useMemo<BasicInfoFieldEditLocks>(
+    () => ({
+      name: toBasicInfoFieldLock(nameLock),
+      description: toBasicInfoFieldLock(descriptionLock),
+      tags: toBasicInfoFieldLock(tagsLock),
+    }),
+    [descriptionLock, nameLock, tagsLock]
+  );
   const handleChange = useCallback(
     (data: { name: string; description: string; tags?: string[] }) => {
       onChange({
@@ -208,6 +244,7 @@ const BasicInfoAdapter: React.FC<BasicInfoAdapterProps> = ({
       onChange={handleChange}
       mode={mode}
       validate={validate}
+      fieldEditLocks={fieldEditLocks}
       onTagClick={onTagClick}
     />
   );

@@ -495,6 +495,8 @@ Phase 2 child #1584 では、同じ resolver 境界に dependency-aware な avai
 
 Phase 2 child #1590 では、TreeTable context menu、Breadcrumb context menu、node info panel の Build 表示は shared resolver output を `formatBuildAvailabilityView()` で表示用 summary / tooltip / diagnostics entry label に変換する。`not-buildable`、`build-not-required`、`build-blocked-by-active-session` はいずれも disabled Build entry になり得るが、UI は `reason` / `details[]` 由来の summary と tooltip で区別する。diagnostics entry は `details[]` に error severity または dependency/schema/plugin prerequisite 系 detail が含まれる場合だけ表示し、UI component は原因を metadata や node type から再推測してはならない。
 
+Phase 2 child #1592 では、field-level edit lock は canonical build session runtime context を SSOT とする。UI は presentation flag や local component state から active build を推測せず、active runtime session と明示的な locked field id list から field ごとの disabled state と理由を解決する。metadata field を含む build input field は active session 中だけ lock し、対象外 field は同じ dialog 内でも編集可能なままにする。field id または locked field id が空の場合は contract violation として fail-fast し、黙って unlock してはならない。
+
 build session は modal dialog として UI 全体をブロックしてはならない。build button 押下後、session manager が閉じていても新しい session は登録され、AppBar 上の icon / badge / indicator により running session の存在を確認できなければならない。詳細進捗、pause/resume/cancel、error detail は AppBar から session manager を開いて確認する。
 
 一方で、build 対象 node/folder とその配下で build input となる data / draftData field は、build が terminal state になるまで編集不可にする。たとえば shape dialog の data / draftData 設定 step では、build input に該当する form control をすべて disabled にする。これは modal blocking ではなく、artifact 作成中の入力整合性を守るための field-level / surface-level edit lock である。

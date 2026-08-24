@@ -22,6 +22,15 @@ export interface BasicInfoData {
   tags?: string[];
 }
 
+export type BasicInfoFieldId = 'name' | 'description' | 'tags';
+
+export type BasicInfoFieldEditLock = {
+  readonly locked: boolean;
+  readonly reason?: string;
+};
+
+export type BasicInfoFieldEditLocks = Partial<Record<BasicInfoFieldId, BasicInfoFieldEditLock>>;
+
 export interface BasicInfoStepProps {
   /** Current name value */
   name: string;
@@ -39,6 +48,8 @@ export interface BasicInfoStepProps {
   tagSuggestions?: string[];
   /** Disable editing */
   disabled?: boolean;
+  /** Field-level edit locks resolved from the canonical build session state. */
+  fieldEditLocks?: BasicInfoFieldEditLocks;
   /** Called when a tag chip is clicked */
   onTagClick?: (tag: string) => void;
   /** Show confirmation dialog before removing a tag */
@@ -58,6 +69,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   validate,
   tagSuggestions = [],
   disabled = false,
+  fieldEditLocks,
   onTagClick,
   confirmTagDelete = true,
 }) => {
@@ -90,6 +102,12 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
     confirmTagDelete,
     requiredNameMessage: String(t('name.required', 'Name is required')),
   });
+  const nameLock = fieldEditLocks?.name;
+  const descriptionLock = fieldEditLocks?.description;
+  const tagsLock = fieldEditLocks?.tags;
+  const isNameDisabled = disabled || Boolean(nameLock?.locked);
+  const isDescriptionDisabled = disabled || Boolean(descriptionLock?.locked);
+  const isTagsDisabled = disabled || Boolean(tagsLock?.locked);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -108,7 +126,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           onChange={(event) => handleNameChange(event.target.value)}
           required
           error={!!mergedNameError}
-          helperText={mergedNameError}
+          helperText={nameLock?.locked ? nameLock.reason : mergedNameError}
           placeholder={String(t('fields.name.placeholder', 'Enter a descriptive name'))}
           variant="outlined"
           inputRef={nameInputRef}
@@ -126,7 +144,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
               autoComplete: 'organization',
             },
           }}
-          disabled={disabled}
+          disabled={isNameDisabled}
         />
       </FormControl>
 
@@ -141,11 +159,15 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           rows={4}
           placeholder={String(t('fields.description.placeholder', 'Enter an optional description'))}
           variant="outlined"
-          helperText={String(
-            t('fields.description.counter', '{{count}}/1000 characters', {
-              count: normalizedDescription.length,
-            })
-          )}
+          helperText={
+            descriptionLock?.locked
+              ? descriptionLock.reason
+              : String(
+                  t('fields.description.counter', '{{count}}/1000 characters', {
+                    count: normalizedDescription.length,
+                  })
+                )
+          }
           autoComplete="off"
           inputProps={{
             maxLength: 1000,
@@ -160,7 +182,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
               autoComplete: 'off',
             },
           }}
-          disabled={disabled}
+          disabled={isDescriptionDisabled}
         />
       </FormControl>
 
@@ -178,7 +200,8 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           onTagDeleteRequest={handleTagDeleteRequest}
           suggestions={tagSuggestions}
           placeholder={String(t('fields.tags.placeholder', 'Enter tag and press Enter'))}
-          disabled={disabled}
+          disabled={isTagsDisabled}
+          helperText={tagsLock?.locked ? tagsLock.reason : undefined}
         />
       </FormControl>
 
