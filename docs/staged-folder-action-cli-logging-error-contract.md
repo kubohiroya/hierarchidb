@@ -37,6 +37,12 @@ Phase 1 初期 CLI contract では、`@hierarchidb/staged-folder-action` の `ru
 
 Phase 0 では CLI bridge とは別に、WorkerAPI の `runStagedFolderAction(input)` が同一 application profile 内の Worker execution host として実装されている。この host は staging/overlay/build/cleanup を実行し progress SSOT に記録するが、CLI process から profile/Worker/browser を起動して接続する責務はまだ持たない。
 
+Phase 2 child #1598 では、CLI core と WorkerAPI execution host の間に `createStagedFolderActionCliExecutionHost()` adapter を追加する。adapter は CLI normalized input から `runId` を生成し、`sourceNodeId`、`outputParentNodeId`、`browserMode`、`config` を WorkerAPI-compatible runner input へ渡す。runner が返す `StagedFolderActionRunRecord` は CLI success JSON へ写像し、`warnings`、`pendingReferences`、`dependencyChanges` を保持する。runner が failure を throw した場合は、progress record の `phase`、`currentAction`、`buildSession` context に基づいて typed CLI failure result に変換し、`getRun(runId)` が利用できる場合は `stagingRootNodeId`、`buildQueueId`、`currentAction` context を保持する。app 側は `createStagedFolderActionCliWorkerExecutionHost()` で WorkerAPI `runStagedFolderAction(input)` をこの adapter に接続する。
+
+child #1598 の bundled bin は host loader entrypoint を使う。`HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE` が指定された場合、その module が export する execution host factory を使って non-dry-run を実行する。値が `./` / `../` で始まる相対パス、または絶対パスの場合は、実行時の `process.cwd()` 基準で `file://` URL に正規化して import する。package specifier と `file://` URL は Node ESM specifier としてそのまま import する。未指定、import 失敗、または invalid module の場合は `profile` category の typed failure とし、CLI core の host 未注入エラーへ落とさない。
+
+child #1598 は Node process から既存 browser profile IndexedDB を共有する方式、および `map-image-capture` の headed/headless browser host 起動を実装しない。`map-image-capture` action が browser host 未注入で失敗した場合、adapter は成功扱いせず `map-image-capture` category の typed failure とする。browser host の標準注入は後続 child issue の範囲である。
+
 ## 成功 JSON
 
 ```typescript
@@ -141,6 +147,8 @@ type StagedFolderActionCliSuccessResult = {
 遅延解決される reference の未解決は `pendingReferences` に記録し、ユーザー向け表示として `warnings` にも反映できる。後続 import/mount/overlay で解決されたものは `status: 'resolved'` とし、解決先が node の場合は `resolvedTargetNodeId` を記録する。dependency 未解決、artifact dependency lifecycle violation、contract violation は warning にしてはならない。
 
 Phase 2 child #1596 では、CLI は injected execution host が返した `warnings`、`pendingReferences`、`dependencyChanges` を成功 JSON にそのまま保持する。空配列でない pending/resolved reference entry を CLI 側で落としたり、`warnings` だけに畳み込んだりしてはならない。typed failure result の `dependency` / `reference` category には dependent node、reference path、expected/actual target、mount/plugin context を含められる。
+
+Phase 2 child #1598 の WorkerAPI adapter は runner record が保持する `warnings`、`pendingReferences`、`dependencyChanges` を CLI success JSON に引き継ぐ。adapter は dependency change を推測生成してはならない。
 
 artifact dependency edge の状態変化は `dependencyChanges` に記録する。元データ変更により artifact を `stale` にした場合、または incremental rebuild を `rebuilding` として予約した場合、CLI result から追跡できなければならない。
 

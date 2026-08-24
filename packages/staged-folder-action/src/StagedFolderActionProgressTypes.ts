@@ -71,6 +71,18 @@ export type StagedFolderActionPendingReference = {
   pluginId?: string;
 };
 
+export type StagedFolderActionDependencyChange = {
+  edgeId: string;
+  previousStatus: 'active' | 'stale' | 'rebuilding' | 'resolved' | 'orphaned';
+  nextStatus: 'active' | 'stale' | 'rebuilding' | 'resolved' | 'orphaned';
+  artifactId?: string;
+  buildTargetId?: NodeId;
+  sourceNodeId?: NodeId;
+  targetNodeId?: NodeId;
+  targetFieldPath?: string;
+  rebuildPlanId?: string;
+};
+
 export interface StagedFolderActionRunRecord {
   runId: NodeId;
   sourceNodeId: NodeId;
@@ -91,6 +103,7 @@ export interface StagedFolderActionRunRecord {
   };
   warnings?: readonly StagedFolderActionReferenceWarning[];
   pendingReferences?: readonly StagedFolderActionPendingReference[];
+  dependencyChanges?: readonly StagedFolderActionDependencyChange[];
   error?: string;
   startedAt: number;
   completedAt?: number;
@@ -113,6 +126,7 @@ export type StagedFolderActionRunRecordPatch = {
   buildSession?: StagedFolderActionRunRecord['buildSession'];
   warnings?: readonly StagedFolderActionReferenceWarning[];
   pendingReferences?: readonly StagedFolderActionPendingReference[];
+  dependencyChanges?: readonly StagedFolderActionDependencyChange[];
   stagingRootNodeId?: NodeId;
   error?: string;
   completedAt?: number;
@@ -139,6 +153,7 @@ export const createStagedFolderActionRunRecord = ({
   },
   warnings: [],
   pendingReferences: [],
+  dependencyChanges: [],
   startedAt: now,
   updatedAt: now,
   revision: 0,
@@ -173,6 +188,7 @@ export const assertStagedFolderActionRunRecord = (
   }
   record.warnings?.forEach(assertReferenceWarning);
   record.pendingReferences?.forEach(assertPendingReference);
+  record.dependencyChanges?.forEach(assertDependencyChange);
   return record;
 };
 
@@ -213,6 +229,36 @@ const assertPendingReference = (
     reference.resolvedTargetNodeId,
     `pendingReferences[${index}].resolvedTargetNodeId`
   );
+};
+
+const assertDependencyChange = (
+  change: StagedFolderActionDependencyChange,
+  index: number
+): void => {
+  assertNonEmptyString(change.edgeId, `dependencyChanges[${index}].edgeId`);
+  assertDependencyStatus(change.previousStatus, `dependencyChanges[${index}].previousStatus`);
+  assertDependencyStatus(change.nextStatus, `dependencyChanges[${index}].nextStatus`);
+  assertOptionalNonEmptyString(change.artifactId, `dependencyChanges[${index}].artifactId`);
+  assertOptionalNonEmptyString(change.buildTargetId, `dependencyChanges[${index}].buildTargetId`);
+  assertOptionalNonEmptyString(change.sourceNodeId, `dependencyChanges[${index}].sourceNodeId`);
+  assertOptionalNonEmptyString(change.targetNodeId, `dependencyChanges[${index}].targetNodeId`);
+  assertOptionalNonEmptyString(
+    change.targetFieldPath,
+    `dependencyChanges[${index}].targetFieldPath`
+  );
+  assertOptionalNonEmptyString(change.rebuildPlanId, `dependencyChanges[${index}].rebuildPlanId`);
+};
+
+const assertDependencyStatus = (value: string, field: string): void => {
+  if (
+    value !== 'active' &&
+    value !== 'stale' &&
+    value !== 'rebuilding' &&
+    value !== 'resolved' &&
+    value !== 'orphaned'
+  ) {
+    throw new Error(`staged-folder-action progress ${field} is invalid`);
+  }
 };
 
 const assertOptionalNonEmptyString = (value: string | undefined, field: string): void => {
