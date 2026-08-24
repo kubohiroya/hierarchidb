@@ -2,7 +2,10 @@ import { CanonicalBuildInputError } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { resolveCanonicalBuildStartInput } from '../../resolveCanonicalBuildStartInput.js';
+import {
+  resolveCanonicalBuildStartInput,
+  resolveCanonicalBuildTreeNodeForStart,
+} from '../../resolveCanonicalBuildStartInput.js';
 
 const NODE_ID = 'node-1' as NodeId;
 const NODE_TYPE = 'shape' as NodeType;
@@ -76,6 +79,74 @@ describe('resolveCanonicalBuildStartInput', () => {
         source: 'working-copy',
         treeNode: createNode({
           draftData: undefined,
+        }),
+      })
+    ).toThrow(CanonicalBuildInputError);
+  });
+
+  it('uses effective committed data for copy-on-write build input', () => {
+    const effectiveData = { buildConfig: { dataSourceName: 'gadm' } };
+    const treeNode = resolveCanonicalBuildTreeNodeForStart({
+      nodeType: NODE_TYPE,
+      nodeId: NODE_ID,
+      source: 'committed',
+      updaterTreeNode: createNode({
+        copyOnWriteOf: 'source' as NodeId,
+        patchData: { buildConfig: { dataSourceName: 'gadm' } },
+        data: null,
+      }),
+      queryTreeNode: createNode({
+        data: effectiveData,
+      }),
+    });
+
+    const input = resolveCanonicalBuildStartInput({
+      nodeType: NODE_TYPE,
+      nodeId: NODE_ID,
+      source: 'committed',
+      treeNode,
+    });
+
+    expect(input).toEqual({ source: 'committed', payload: effectiveData });
+  });
+
+  it('does not use effective committed data for working-copy input', () => {
+    const treeNode = resolveCanonicalBuildTreeNodeForStart({
+      nodeType: NODE_TYPE,
+      nodeId: NODE_ID,
+      source: 'working-copy',
+      updaterTreeNode: createNode({
+        copyOnWriteOf: 'source' as NodeId,
+        data: null,
+        draftData: { buildConfig: { dataSourceName: 'naturalearth' } },
+      }),
+      queryTreeNode: createNode({
+        data: { buildConfig: { dataSourceName: 'gadm' } },
+      }),
+    });
+
+    const input = resolveCanonicalBuildStartInput({
+      nodeType: NODE_TYPE,
+      nodeId: NODE_ID,
+      source: 'working-copy',
+      treeNode,
+    });
+
+    expect(input).toEqual({
+      source: 'working-copy',
+      payload: { buildConfig: { dataSourceName: 'naturalearth' } },
+    });
+  });
+
+  it('rejects committed copy-on-write input when effective data is unavailable', () => {
+    expect(() =>
+      resolveCanonicalBuildTreeNodeForStart({
+        nodeType: NODE_TYPE,
+        nodeId: NODE_ID,
+        source: 'committed',
+        updaterTreeNode: createNode({
+          copyOnWriteOf: 'source' as NodeId,
+          data: null,
         }),
       })
     ).toThrow(CanonicalBuildInputError);

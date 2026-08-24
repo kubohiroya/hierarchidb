@@ -47,6 +47,16 @@ interface NormalizedOverlayEntry {
   normalizedPath: string;
 }
 
+function markBuildRequired(metadata: TreeNode<NodePayload | null>['metadata']) {
+  return {
+    ...metadata,
+    buildMetadata: {
+      ...(metadata.buildMetadata ?? {}),
+      buildRequired: true,
+    },
+  };
+}
+
 export class StagedFolderActionOverlayApplicationError extends Error {
   readonly code: StagedFolderActionOverlayApplicationErrorCode;
   readonly path: string;
@@ -163,10 +173,12 @@ async function applyCopyOnWriteOverlay(
 ): Promise<void> {
   const { entry, normalizedPath, target } = resolvedEntry;
   const basePatch = normalizePayload(target.patchData, normalizedPath);
+  const now = Date.now() as Timestamp;
   await coreDB.updateNode({
     id: target.id,
     patchData: strictMergeNodePayload(basePatch, entry.data),
-    updatedAt: Date.now() as Timestamp,
+    metadata: markBuildRequired(target.metadata),
+    updatedAt: now,
     version: target.version + 1,
   });
 }
@@ -194,10 +206,12 @@ async function applyPatchSourceOverlay(
 ): Promise<void> {
   const { entry, normalizedPath, target } = resolvedEntry;
   const baseData = normalizePayload(target.data, normalizedPath);
+  const now = Date.now() as Timestamp;
   await coreDB.updateNode({
     id: target.id,
     data: strictMergeNodePayload(baseData, entry.data),
-    updatedAt: Date.now() as Timestamp,
+    metadata: markBuildRequired(target.metadata),
+    updatedAt: now,
     version: target.version + 1,
   });
 }

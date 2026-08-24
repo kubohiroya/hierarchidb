@@ -67,7 +67,10 @@ import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { createStagedFolderActionWorkerExecutionHost } from './createStagedFolderActionWorkerExecutionHost.js';
 import { resolveCanonicalBuildRuntimeModule } from './resolveCanonicalBuildRuntimeModule.js';
-import { resolveCanonicalBuildStartInput } from './resolveCanonicalBuildStartInput.js';
+import {
+  resolveCanonicalBuildStartInput,
+  resolveCanonicalBuildTreeNodeForStart,
+} from './resolveCanonicalBuildStartInput.js';
 import {
   resolveShapeBuildExtensions,
   type ShapeDownloadTaskPayload,
@@ -549,7 +552,21 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
           setRuntimeTransientStatus(nodeType, nodeId, 'starting');
           try {
-            const treeNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
+            const updaterTreeNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
+            const queryTreeNode =
+              inputSource === 'committed' &&
+              updaterTreeNode !== undefined &&
+              (updaterTreeNode.copyOnWriteOf !== undefined ||
+                updaterTreeNode.patchData !== undefined)
+                ? await services.getQueryAPI().getNode(nodeId)
+                : undefined;
+            const treeNode = resolveCanonicalBuildTreeNodeForStart({
+              nodeType,
+              nodeId,
+              source: inputSource,
+              updaterTreeNode,
+              queryTreeNode,
+            });
             const input = resolveCanonicalBuildStartInput({
               nodeType,
               nodeId,

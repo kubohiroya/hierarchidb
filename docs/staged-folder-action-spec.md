@@ -360,6 +360,7 @@ overlay は対象 node の JSON 構造に対して committed data を差分更�
 - path grammar は POSIX-style `/` 区切りだけを定義する。`\` は path separator として解釈しない。
 - sibling に同名 node が存在しないことは tree invariant であるため、display name path は一意に解決できる。もし duplicate sibling name を検出した場合は data integrity error として fail-fast する。
 - `overlay.nodes[*].data` は対象 node の effective committed data に merge する object。copy-on-write node では merge 結果を `patchData` として保持する。
+- overlay により変更された対象 node は、既存の `metadata.buildMetadata` を保持したうえで `metadata.buildMetadata.buildRequired: true` に更新する。これにより後続の `build` action は変更済み node を build target として収集できる。
 - object field は再帰 merge する。
 - scalar は replace する。
 - array は replace する。
@@ -763,6 +764,7 @@ CSV / XLSX export 実行時は modal blocking を必須としない。短時間�
 
 - staging root に対して既存 folder build target collection を実行する。
 - canonical build API を持つ node を build candidate とし、そのうち `metadata.buildMetadata.buildRequired` または `draftMetadata.buildMetadata.buildRequired` が true の node だけを build target とする。
+- copy-on-write build target を `committed` source で開始する場合、canonical build input は TreeQueryService/effective data resolver が返す effective committed data を使う。raw updater node の `data: null` を canonical build input として使ってはならない。
 - build candidate が 1 件も存在しない場合は `not-buildable` として fail-fast する。
 - build candidate は存在するが build target が 0 件の場合は、build 不要として build session を作成せず no-op completed とする。
 - build-ready target を既存 `BuildJobQueue` と canonical build session に登録する。
@@ -936,7 +938,7 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 - `BuildJobQueue.mode = 'export'` は今後も利用候補だが、専用 route のためではなく staging folder build を表す mode として再定義する。
 - Phase 0 実装では `StagedFolderActionProgressStore` を canonical build runtime adapter として登録し、TreeConsole AppBar に staged-folder-action runtime 用の badge button を追加する。これにより staged-folder-action run は既存 session manager surface から確認できる。ただし shape build session と staged-folder-action run を1つの統合 queue として並べる UI、action-specific detail、capture/output/cleanup の詳細表示は後続 phase で拡張する。
 - TreeNode hierarchy の複製は `CoreDB.duplicateSubtreeWithMap()` 相当を基礎にできるが、copy-on-write node として `copyOnWriteOf` / `patchData` を持たせ、effective data 解決を build / Map UI / capture の読み取り経路に接続する必要がある。
-- Phase 0 実装では temporary-copy / permanent-copy について CoW subtree 作成と Map UI/capture の TreeQueryService 経由 effective data 読み取りを接続済みである。既存 build queue の build input collection、Preview feature table、TreeTable、CSV/XLSX export、diagnostics への resolver 接続は後続 phase で行う。
+- Phase 0 実装では temporary-copy / permanent-copy について CoW subtree 作成、Map UI/capture の TreeQueryService 経由 effective data 読み取り、canonical build session 開始時の CoW effective committed data 読み取りを接続済みである。Preview feature table、TreeTable、CSV/XLSX export、diagnostics への resolver 接続は後続 phase で行う。
 - Phase 0 実装では runtime-worker が staged-folder-action runner 用の core dependency adapter を提供する。この adapter は `temporary-copy` の CoW staging、`permanent-copy` の output parent 配下 CoW staging、`patch-source` の source node staging、overlay 適用、temporary-copy cleanup policy を CoreDB 上で実行する。
 - Phase 0 実装では WorkerAPI に `runStagedFolderAction(input)` を追加し、WebUI または後続 CLI bridge から同一 application profile の Worker 内 runner を起動できる。WebUI 側の標準入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` も同じ WorkerAPI method に転送する。WorkerAPI execution host は staging/overlay/action/cleanup の状態を `StagedFolderActionProgressStore` に記録する。`build` action では、staging root 自身が canonical build API を持つ場合は root を build candidate とし、folder など直接 build できない場合は配下 descendants から canonical build API を持つ node を candidate として収集する。candidate のうち `buildRequired` な node だけを build target とし、candidate がない場合は fail-fast、candidate はあるが target がない場合は no-op completed とする。各 build target は既存 canonical build session を開始し、terminal state まで待つ。`completed` 以外の terminal state は action failure として扱う。
 - Phase 0 の WorkerAPI execution host は browser handoff をまだ接続しない。`map-image-capture` intent、Map UI readiness、capture page port helper、canvas nonblank 判定は実装済みだが、WorkerAPI から `map-image-capture` を end-to-end 実行するには後続 phase で headed/headless browser host を注入する必要がある。

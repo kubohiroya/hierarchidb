@@ -14,8 +14,69 @@ type ResolveCanonicalBuildStartInputArgs = {
   treeNode: TreeNode | undefined;
 };
 
+type ResolveCanonicalBuildTreeNodeForStartArgs = {
+  nodeType: NodeType;
+  nodeId: NodeId;
+  source: CanonicalBuildInputSource;
+  updaterTreeNode: TreeNode | undefined;
+  queryTreeNode?: TreeNode | null;
+};
+
 const fieldForSource = (source: CanonicalBuildInputSource): 'data' | 'draftData' =>
   source === 'committed' ? 'data' : 'draftData';
+
+const isCopyOnWriteTreeNode = (treeNode: TreeNode): boolean =>
+  treeNode.copyOnWriteOf !== undefined || treeNode.patchData !== undefined;
+
+export const resolveCanonicalBuildTreeNodeForStart = ({
+  nodeType,
+  nodeId,
+  source,
+  updaterTreeNode,
+  queryTreeNode,
+}: ResolveCanonicalBuildTreeNodeForStartArgs): TreeNode | undefined => {
+  if (source !== 'committed' || !updaterTreeNode || !isCopyOnWriteTreeNode(updaterTreeNode)) {
+    return updaterTreeNode;
+  }
+  if (!queryTreeNode) {
+    throw new CanonicalBuildInputError(
+      `[worker bootstrap] effective copy-on-write tree node is required to start committed build for nodeType=${String(nodeType)}, nodeId=${String(nodeId)}`,
+      {
+        code: 'CANONICAL_BUILD_INPUT_INCOMPLETE_PAYLOAD',
+        field: 'data',
+        nodeId: String(nodeId),
+        nodeType: String(nodeType),
+        source,
+      }
+    );
+  }
+  if (queryTreeNode.id !== updaterTreeNode.id) {
+    throw new CanonicalBuildInputError(
+      `[worker bootstrap] effective copy-on-write nodeId mismatch: expected=${String(updaterTreeNode.id)}, actual=${String(queryTreeNode.id)}`,
+      {
+        code: 'CANONICAL_BUILD_INPUT_NODE_ID_MISMATCH',
+        nodeId: String(nodeId),
+        nodeType: String(nodeType),
+        source,
+      }
+    );
+  }
+  if (queryTreeNode.nodeType !== updaterTreeNode.nodeType) {
+    throw new CanonicalBuildInputError(
+      `[worker bootstrap] effective copy-on-write nodeType mismatch: expected=${String(updaterTreeNode.nodeType)}, actual=${String(queryTreeNode.nodeType)}`,
+      {
+        code: 'CANONICAL_BUILD_INPUT_NODE_TYPE_MISMATCH',
+        nodeId: String(nodeId),
+        nodeType: String(nodeType),
+        source,
+      }
+    );
+  }
+  return {
+    ...updaterTreeNode,
+    data: queryTreeNode.data,
+  };
+};
 
 const assertPlainPayload = (
   value: unknown,

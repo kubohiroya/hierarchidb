@@ -275,6 +275,9 @@ describe('applyStagedFolderActionOverlays', () => {
       nested: { value: 'staged', added: true },
       list: [3],
     });
+    expect((await coreDB.getNode(stagingRoot.id as NodeId))?.metadata.buildMetadata).toEqual({
+      buildRequired: true,
+    });
   });
 
   it('updates committed data directly for patch-source mode', async () => {
@@ -292,6 +295,38 @@ describe('applyStagedFolderActionOverlays', () => {
     expect((await coreDB.getNode(source.id as NodeId))?.data).toEqual({
       nested: { keep: true, value: 'new' },
       list: [3],
+    });
+    expect((await coreDB.getNode(source.id as NodeId))?.metadata.buildMetadata).toEqual({
+      buildRequired: true,
+    });
+  });
+
+  it('preserves existing build metadata when marking an overlaid node as build-required', async () => {
+    const source = await createNode(
+      'source',
+      'r:root' as NodeId,
+      {
+        nested: { value: 'old' },
+      },
+      {
+        metadata: {
+          buildMetadata: {
+            buildMode: 'incremental',
+            buildRequired: false,
+          },
+        },
+      }
+    );
+
+    await applyStagedFolderActionOverlays(coreDB, {
+      stagingMode: 'patch-source',
+      stagingRootNodeId: source.id as NodeId,
+      nodes: [{ match: { path: '.' }, data: { nested: { value: 'new' } } }],
+    });
+
+    expect((await coreDB.getNode(source.id as NodeId))?.metadata.buildMetadata).toEqual({
+      buildMode: 'incremental',
+      buildRequired: true,
     });
   });
 
@@ -389,6 +424,9 @@ describe('applyStagedFolderActionOverlays', () => {
         name: metadata?.name ?? 'Root Patch',
         description: metadata?.description ?? '',
         tags: metadata?.tags ?? [],
+        ...(metadata?.buildMetadata === undefined
+          ? {}
+          : { buildMetadata: metadata.buildMetadata }),
       },
       draftMetadata: null,
       data,
