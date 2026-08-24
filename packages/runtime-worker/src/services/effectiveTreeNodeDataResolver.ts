@@ -182,6 +182,10 @@ function assertPayloadObject(
   return value;
 }
 
+export function strictMergeNodePayload(base: NodePayload | null, patch: NodePayload): NodePayload {
+  return mergePayload(base, patch);
+}
+
 function mergePayload(base: NodePayload | null, patch: NodePayload): NodePayload {
   if (base === null) {
     return clonePayload(patch);

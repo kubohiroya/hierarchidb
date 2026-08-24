@@ -149,7 +149,8 @@ type StagedFolderAction =
 - `map-image-capture.viewport.bbox` は `[west, south, east, north]`。
 - bbox は `-180 <= west < east <= 180`、`-90 <= south < north <= 90` を満たす。
 - `overlay.nodes[*].match.path` と `map-image-capture.layers[*].path` は staging root からの相対 node path。
-- path は空文字、`..`、空 segment を禁止する。
+- `overlay.nodes[*].match.path: "."` は staging root 自身を表す。
+- path は空文字、`..`、空 segment、途中 segment の `.` を禁止する。
 - path grammar は POSIX-style `/` 区切りだけを定義する。`\` は path separator として解釈しない。
 - `overlay.nodes[*].data` は object でなければならない。
 

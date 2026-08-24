@@ -351,7 +351,8 @@ overlay は対象 node の JSON 構造に対して committed data を差分更�
 初期仕様:
 
 - `overlay.nodes[*].match.path` は staging root からの相対 node path。
-- path は `/` 区切りの表示/論理 path とし、空 path、`..`、空 segment を禁止する。
+- `overlay.nodes[*].match.path: "."` は staging root 自身を表す。
+- path は `/` 区切りの表示/論理 path とし、空 path、`..`、空 segment、途中 segment の `.` を禁止する。
 - path grammar は POSIX-style `/` 区切りだけを定義する。`\` は path separator として解釈しない。
 - sibling に同名 node が存在しないことは tree invariant であるため、display name path は一意に解決できる。もし duplicate sibling name を検出した場合は data integrity error として fail-fast する。
 - `overlay.nodes[*].data` は対象 node の effective committed data に merge する object。copy-on-write node では merge 結果を `patchData` として保持する。

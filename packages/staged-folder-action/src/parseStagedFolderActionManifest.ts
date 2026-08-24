@@ -95,11 +95,7 @@ export const stagedFolderActionRegistry: Record<
   },
 };
 
-const fail = (
-  code: StagedFolderActionManifestErrorCode,
-  path: string,
-  reason: string
-): never => {
+const fail = (code: StagedFolderActionManifestErrorCode, path: string, reason: string): never => {
   throw new StagedFolderActionManifestError({ code, path, reason });
 };
 
@@ -161,7 +157,10 @@ const requireFiniteNumber = (
   return value as number;
 };
 
-const parseDocument = (source: string, options: ParseStagedFolderActionManifestOptions): unknown => {
+const parseDocument = (
+  source: string,
+  options: ParseStagedFolderActionManifestOptions
+): unknown => {
   try {
     if (options.format === 'json') {
       return JSON.parse(source) as unknown;
@@ -192,10 +191,10 @@ const assertSafeRelativePath = (
     return;
   }
   if (
-    value === '.' ||
+    (!options.allowDot && value === '.') ||
     value.startsWith('/') ||
     value.includes('\0') ||
-    value.split('/').some((segment) => segment === '..' || segment.length === 0)
+    value.split('/').some((segment) => segment === '..' || segment === '.' || segment.length === 0)
   ) {
     fail(
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_PATH',
@@ -212,7 +211,11 @@ const requireSafePath = (value: unknown, path: string, options = { allowDot: fal
 };
 
 const requireStaging = (value: unknown, path: string): StagedFolderActionConfig['staging'] => {
-  const staging = requireRecord(value, path, 'STAGED_FOLDER_ACTION_MANIFEST_REQUIRED_FIELD_MISSING');
+  const staging = requireRecord(
+    value,
+    path,
+    'STAGED_FOLDER_ACTION_MANIFEST_REQUIRED_FIELD_MISSING'
+  );
   const mode = requireString(
     staging.mode,
     `${path}.mode`,
@@ -260,7 +263,11 @@ const requireStaging = (value: unknown, path: string): StagedFolderActionConfig[
 };
 
 const requireOverlay = (value: unknown, path: string): StagedFolderActionConfig['overlay'] => {
-  const overlay = requireRecord(value, path, 'STAGED_FOLDER_ACTION_MANIFEST_REQUIRED_FIELD_MISSING');
+  const overlay = requireRecord(
+    value,
+    path,
+    'STAGED_FOLDER_ACTION_MANIFEST_REQUIRED_FIELD_MISSING'
+  );
   if (!Array.isArray(overlay.nodes)) {
     fail(
       'STAGED_FOLDER_ACTION_MANIFEST_REQUIRED_FIELD_MISSING',
@@ -277,7 +284,7 @@ const requireOverlay = (value: unknown, path: string): StagedFolderActionConfig[
       `${nodePath}.match`,
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_OVERLAY'
     );
-    const targetPath = requireSafePath(match.path, `${nodePath}.match.path`);
+    const targetPath = requireSafePath(match.path, `${nodePath}.match.path`, { allowDot: true });
     if (seenPaths.has(targetPath)) {
       fail(
         'STAGED_FOLDER_ACTION_MANIFEST_INVALID_OVERLAY',
@@ -304,13 +311,21 @@ const requireBbox = (value: unknown, path: string): StagedFolderActionBbox => {
     fail('STAGED_FOLDER_ACTION_MANIFEST_INVALID_BBOX', path, 'expected [west, south, east, north]');
   }
   const bbox = value as readonly unknown[];
-  const west = requireFiniteNumber(bbox[0], `${path}[0]`, 'STAGED_FOLDER_ACTION_MANIFEST_INVALID_BBOX');
+  const west = requireFiniteNumber(
+    bbox[0],
+    `${path}[0]`,
+    'STAGED_FOLDER_ACTION_MANIFEST_INVALID_BBOX'
+  );
   const south = requireFiniteNumber(
     bbox[1],
     `${path}[1]`,
     'STAGED_FOLDER_ACTION_MANIFEST_INVALID_BBOX'
   );
-  const east = requireFiniteNumber(bbox[2], `${path}[2]`, 'STAGED_FOLDER_ACTION_MANIFEST_INVALID_BBOX');
+  const east = requireFiniteNumber(
+    bbox[2],
+    `${path}[2]`,
+    'STAGED_FOLDER_ACTION_MANIFEST_INVALID_BBOX'
+  );
   const north = requireFiniteNumber(
     bbox[3],
     `${path}[3]`,
@@ -341,22 +356,18 @@ const requireColumns = (value: unknown, path: string): string[] | undefined => {
     fail('STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION', path, 'expected an array');
   }
   return (value as readonly unknown[]).map((entry, index) =>
-    requireString(entry, `${path}[${String(index)}]`, 'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION')
+    requireString(
+      entry,
+      `${path}[${String(index)}]`,
+      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION'
+    )
   );
 };
 
 const requireEntityType = (value: unknown, path: string): 'location' | 'route' => {
-  const entityType = requireString(
-    value,
-    path,
-    'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION'
-  );
+  const entityType = requireString(value, path, 'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION');
   if (entityType !== 'location' && entityType !== 'route') {
-    fail(
-      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION',
-      path,
-      'expected location or route'
-    );
+    fail('STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION', path, 'expected location or route');
   }
   return entityType as 'location' | 'route';
 };
@@ -382,7 +393,11 @@ const requireAction = (value: unknown, path: string): StagedFolderAction => {
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION'
     );
     if (mode !== 'session-manager') {
-      fail('STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION', `${path}.mode`, 'expected session-manager');
+      fail(
+        'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION',
+        `${path}.mode`,
+        'expected session-manager'
+      );
     }
     return { type: 'build', mode: 'session-manager' };
   }
@@ -554,11 +569,7 @@ const requireAction = (value: unknown, path: string): StagedFolderAction => {
     },
     layers: (action.layers as readonly unknown[]).map((entry, index) => {
       const layerPath = `${path}.layers[${String(index)}]`;
-      const layer = requireRecord(
-        entry,
-        layerPath,
-        'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION'
-      );
+      const layer = requireRecord(entry, layerPath, 'STAGED_FOLDER_ACTION_MANIFEST_INVALID_ACTION');
       return {
         path: requireSafePath(layer.path, `${layerPath}.path`, { allowDot: true }),
         visible: requireBoolean(

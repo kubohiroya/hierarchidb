@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseStagedFolderActionManifest,
-  stagedFolderActionRegistry,
   StagedFolderActionManifestError,
+  stagedFolderActionRegistry,
   validateStagedFolderActionCliOptions,
 } from '../index.js';
 
@@ -180,23 +180,25 @@ describe('parseStagedFolderActionManifest', () => {
   });
 
   it('validates export and import action path contracts', () => {
-    expect(parseJson({
-      ...validManifest,
-      actions: [
-        {
-          type: 'export-archive',
-          format: 'canonical-yaml-zip',
-          source: { path: '.' },
-          output: { path: 'exports/archive.zip' },
-        },
-        {
-          type: 'import-mount',
-          format: 'canonical-yaml-zip',
-          input: { path: 'imports/archive.zip' },
-          mount: { parentPath: '.', name: 'mounted', lifetime: 'run' },
-        },
-      ],
-    }).actions).toHaveLength(2);
+    expect(
+      parseJson({
+        ...validManifest,
+        actions: [
+          {
+            type: 'export-archive',
+            format: 'canonical-yaml-zip',
+            source: { path: '.' },
+            output: { path: 'exports/archive.zip' },
+          },
+          {
+            type: 'import-mount',
+            format: 'canonical-yaml-zip',
+            input: { path: 'imports/archive.zip' },
+            mount: { parentPath: '.', name: 'mounted', lifetime: 'run' },
+          },
+        ],
+      }).actions
+    ).toHaveLength(2);
 
     expectManifestError(
       () =>
@@ -246,25 +248,27 @@ describe('parseStagedFolderActionManifest', () => {
   });
 
   it('validates location and route CSV/XLSX export actions', () => {
-    expect(parseJson({
-      ...validManifest,
-      actions: [
-        {
-          type: 'export-csv',
-          entityType: 'location',
-          source: { path: 'locations' },
-          output: { path: 'exports/locations.csv' },
-          includeDependencyStatus: true,
-        },
-        {
-          type: 'export-xlsx',
-          entityType: 'route',
-          source: { path: 'routes' },
-          output: { path: 'exports/routes.xlsx', sheetName: 'routes' },
-          columns: ['name', 'start', 'end'],
-        },
-      ],
-    }).actions).toHaveLength(2);
+    expect(
+      parseJson({
+        ...validManifest,
+        actions: [
+          {
+            type: 'export-csv',
+            entityType: 'location',
+            source: { path: 'locations' },
+            output: { path: 'exports/locations.csv' },
+            includeDependencyStatus: true,
+          },
+          {
+            type: 'export-xlsx',
+            entityType: 'route',
+            source: { path: 'routes' },
+            output: { path: 'exports/routes.xlsx', sheetName: 'routes' },
+            columns: ['name', 'start', 'end'],
+          },
+        ],
+      }).actions
+    ).toHaveLength(2);
 
     expectManifestError(
       () =>
@@ -304,6 +308,14 @@ describe('parseStagedFolderActionManifest', () => {
         parseJson({
           ...validManifest,
           overlay: { nodes: [{ match: { path: '../bad' }, data: {} }] },
+        }),
+      'STAGED_FOLDER_ACTION_MANIFEST_INVALID_PATH'
+    );
+    expectManifestError(
+      () =>
+        parseJson({
+          ...validManifest,
+          overlay: { nodes: [{ match: { path: 'routes/./main' }, data: {} }] },
         }),
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_PATH'
     );

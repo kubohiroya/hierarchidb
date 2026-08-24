@@ -37,12 +37,13 @@ export {
 } from './services/draft/lookupOperationUtils.js';
 export {
   EffectiveTreeNodeDataResolverError,
-  resolveEffectiveTreeNodeData,
   type EffectiveTreeNodeDataResolverErrorCode,
   type EffectiveTreeNodeDataResolverInput,
   type EffectiveTreeNodeDataResolverMetadata,
   type EffectiveTreeNodeDataResolverResult,
   type EffectiveTreeNodeDataSlot,
+  resolveEffectiveTreeNodeData,
+  strictMergeNodePayload,
   type TreeNodeReader,
 } from './services/effectiveTreeNodeDataResolver.js';
 export {
@@ -65,6 +66,15 @@ export {
   getStageWorkerProxy,
 } from './services/StageProcessingService.js';
 export {
+  type ApplyStagedFolderActionOverlaysInput,
+  applyStagedFolderActionOverlays,
+  StagedFolderActionOverlayApplicationError,
+  type StagedFolderActionOverlayApplicationErrorCode,
+  type StagedFolderActionOverlayEntry,
+  type StagedFolderActionOverlayStagingMode,
+} from './services/stagedFolderActionOverlayService.js';
+export { TreeQueryService } from './services/TreeQueryService.js';
+export {
   assertNodeIsNotTemporaryStagingNode,
   cleanupTemporaryStagingRoot,
   createTemporaryCopyStagingRoot,
@@ -77,7 +87,6 @@ export {
   TEMPORARY_FOLDER_NODE_TYPE,
   TEMPORARY_STAGING_NODE_ERROR,
 } from './services/temporaryFolderHolderLifecycle.js';
-export { TreeQueryService } from './services/TreeQueryService.js';
 export {
   runVectorTileStage,
   type VectorTileStageInput,
