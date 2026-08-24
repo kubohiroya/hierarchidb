@@ -19,6 +19,7 @@ export type MapImageCaptureReadinessState = {
 export type UseMapImageCaptureReadinessParams = {
   intentState: MapImageCaptureIntentLoadState;
   mapInstance: MapLibreMapInstance | null;
+  layerLoadError?: string | null;
 };
 
 const idleState: MapImageCaptureReadinessState = {
@@ -57,6 +58,7 @@ const assertValidIntentViewport = (intent: MapImageCaptureIntentRecord): void =>
 export const useMapImageCaptureReadiness = ({
   intentState,
   mapInstance,
+  layerLoadError,
 }: UseMapImageCaptureReadinessParams): MapImageCaptureReadinessState => {
   const [state, setState] = useState<MapImageCaptureReadinessState>(idleState);
   const intentStatus = intentState.status;
@@ -70,6 +72,10 @@ export const useMapImageCaptureReadiness = ({
     }
     if (intentStatus !== 'ready' || !intent) {
       setState({ status: 'waiting-intent', error: intentError });
+      return;
+    }
+    if (layerLoadError) {
+      setState({ status: 'error', error: layerLoadError });
       return;
     }
     if (!mapInstance) {
@@ -105,7 +111,7 @@ export const useMapImageCaptureReadiness = ({
       });
       return;
     }
-  }, [intent, intentError, intentStatus, mapInstance]);
+  }, [intent, intentError, intentStatus, layerLoadError, mapInstance]);
 
   return state;
 };

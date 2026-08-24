@@ -178,6 +178,8 @@ export default function MapPage() {
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const captureLayers =
+    captureIntentState.status === 'ready' ? captureIntentState.intent.layers : undefined;
 
   const { initialViewState, formattedZxy, handleViewStateChange, applyPersistedZxy } =
     useMapViewState({
@@ -197,11 +199,13 @@ export default function MapPage() {
     styleOverridesByType,
     mapInfo,
     stylerSummaries,
+    loadError: layerLoadError,
   } = useFolderLayers({
     nodeId,
     searchZxy: search?.zxy,
     onPersistedZxy: applyPersistedZxy,
     stylerToggles,
+    captureLayers,
   });
 
   const setMapLayerInfo = useSetAtom(mapLayerInfoAtom);
@@ -711,6 +715,7 @@ export default function MapPage() {
   const captureReadinessState = useMapImageCaptureReadiness({
     intentState: captureIntentState,
     mapInstance,
+    layerLoadError,
   });
 
   const combinedGeoJsonLayers = useMemo(

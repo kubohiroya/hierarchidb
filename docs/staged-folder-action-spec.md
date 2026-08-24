@@ -796,6 +796,10 @@ headless で実行するか、実際のブラウザ画面を表示して実行�
 
 `map-image-capture` action は build 完了後にだけ開始する。build が失敗、paused、auth-required、cancelled の場合は capture しない。
 
+`map-image-capture.layers[*].path` は staging root 相対の display-name path として解釈する。`.` は staging root 全体を指す。`My Folder` と `./My Folder` はどちらも staging root 直下の `My Folder` を指す。`/My Folder`、空 segment、`.` segment、`..` segment は invalid path とする。`\` は path separator として扱わない。
+
+`layers` は記載順に適用する。`visible: true` は指定 path の subtree を表示対象に追加し、`visible: false` は指定 path の subtree を表示対象から除外する。指定 path が解決できない場合、Map UI は capture readiness を `error` とし、browser handoff は画像ファイルを書き出してはならない。
+
 render ready 条件:
 
 - staging root 配下の requested layers が解決できる。

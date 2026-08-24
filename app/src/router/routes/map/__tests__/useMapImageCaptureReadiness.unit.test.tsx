@@ -95,4 +95,21 @@ describe('useMapImageCaptureReadiness', () => {
     expect(result.current.error).toMatch(/viewport\.bbox must be ordered/);
     expect(map.fitBounds).not.toHaveBeenCalled();
   });
+
+  it('reports an error before fitting the map when requested layers failed to load', async () => {
+    const { map } = createMap();
+    const intent = createIntent();
+
+    const { result } = renderHook(() =>
+      useMapImageCaptureReadiness({
+        intentState: { status: 'ready', intent, error: null },
+        mapInstance: map,
+        layerLoadError: 'map-image-capture layer path was not found: Missing',
+      })
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current.error).toBe('map-image-capture layer path was not found: Missing');
+    expect(map.fitBounds).not.toHaveBeenCalled();
+  });
 });
