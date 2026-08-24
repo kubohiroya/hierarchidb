@@ -41,6 +41,21 @@ export type {
   ResolveMapExportProfilePolicyInput,
 } from './MapExportProfilePolicyTypes.js';
 export type {
+  CreateMapImageCaptureRouteUrlInput,
+  MapImageCaptureBrowserPagePort,
+  MapImageCaptureBrowserProgress,
+  MapImageCaptureBrowserProgressPhase,
+  MapImageCaptureRouteMode,
+  RunMapImageCaptureBrowserHandoffInput,
+} from './MapImageCaptureBrowserHandoff.js';
+export {
+  createMapImageCaptureRouteUrl,
+  MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
+  MAP_IMAGE_CAPTURE_READY_SELECTOR,
+  MAP_IMAGE_CAPTURE_RENDER_STATUS_ATTRIBUTE,
+  runMapImageCaptureBrowserHandoff,
+} from './MapImageCaptureBrowserHandoff.js';
+export type {
   CreateMapImageCaptureIntentInput,
   MapImageCaptureBrowserMode,
   MapImageCaptureIntent,
