@@ -2,11 +2,13 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createMapImageCaptureRouteUrl,
+  createPlaywrightMapImageCapturePagePort,
   MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
   MAP_IMAGE_CAPTURE_READY_SELECTOR,
   type MapImageCaptureBrowserPagePort,
   type MapImageCaptureBrowserProgress,
   type MapImageCaptureIntent,
+  type PlaywrightLikeMapImageCapturePage,
   runMapImageCaptureBrowserHandoff,
 } from '../index.js';
 
@@ -102,9 +104,51 @@ describe('runMapImageCaptureBrowserHandoff', () => {
   });
 });
 
+describe('createPlaywrightMapImageCapturePagePort', () => {
+  it('adapts a Playwright-like page to the map image capture page port', async () => {
+    const page = createPlaywrightLikePage('ready');
+    const port = createPlaywrightMapImageCapturePagePort(page);
+
+    await port.setViewportSize({ width: 320, height: 240 });
+    await port.goto('http://localhost:3000/map/node');
+    await expect(
+      port.waitForRenderStatus({
+        readySelector: MAP_IMAGE_CAPTURE_READY_SELECTOR,
+        errorSelector: MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
+        timeoutMs: 5000,
+      })
+    ).resolves.toBe('ready');
+    await port.screenshot({ path: 'exports/out.png', fullPage: false });
+
+    expect(page.setViewportSize).toHaveBeenCalledWith({ width: 320, height: 240 });
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:3000/map/node');
+    expect(page.waitForSelector).toHaveBeenCalledWith(MAP_IMAGE_CAPTURE_READY_SELECTOR, {
+      timeout: 5000,
+    });
+    expect(page.screenshot).toHaveBeenCalledWith({ path: 'exports/out.png', fullPage: false });
+  });
+});
+
 const createPagePort = (renderStatus: 'ready' | 'error'): MapImageCaptureBrowserPagePort => ({
   setViewportSize: vi.fn(async () => {}),
   goto: vi.fn(async () => {}),
   waitForRenderStatus: vi.fn(async () => renderStatus),
+  screenshot: vi.fn(async () => {}),
+});
+
+const createPlaywrightLikePage = (
+  renderStatus: 'ready' | 'error'
+): PlaywrightLikeMapImageCapturePage => ({
+  setViewportSize: vi.fn(async () => {}),
+  goto: vi.fn(async () => {}),
+  waitForSelector: vi.fn(async (selector: string) => {
+    if (
+      (renderStatus === 'ready' && selector === MAP_IMAGE_CAPTURE_READY_SELECTOR) ||
+      (renderStatus === 'error' && selector === MAP_IMAGE_CAPTURE_ERROR_SELECTOR)
+    ) {
+      return {};
+    }
+    return new Promise(() => {});
+  }),
   screenshot: vi.fn(async () => {}),
 });

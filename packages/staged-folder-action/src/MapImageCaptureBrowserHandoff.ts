@@ -28,6 +28,13 @@ export interface MapImageCaptureBrowserPagePort {
   screenshot(input: { path: string; fullPage: false }): Promise<void>;
 }
 
+export interface PlaywrightLikeMapImageCapturePage {
+  setViewportSize(size: { width: number; height: number }): Promise<void>;
+  goto(url: string): Promise<unknown>;
+  waitForSelector(selector: string, options: { timeout: number }): Promise<unknown>;
+  screenshot(options: { path: string; fullPage: false }): Promise<unknown>;
+}
+
 export interface CreateMapImageCaptureRouteUrlInput {
   baseUrl: string;
   intent: MapImageCaptureIntent;
@@ -91,6 +98,25 @@ export const runMapImageCaptureBrowserHandoff = async ({
   await reportProgress({ phase: 'writing-output', percentage: 90 });
   await page.screenshot({ path: intent.output.path, fullPage: false });
 };
+
+export const createPlaywrightMapImageCapturePagePort = (
+  page: PlaywrightLikeMapImageCapturePage
+): MapImageCaptureBrowserPagePort => ({
+  setViewportSize: (size) => page.setViewportSize(size),
+  goto: async (url) => {
+    await page.goto(url);
+  },
+  waitForRenderStatus: async ({ readySelector, errorSelector, timeoutMs }) => {
+    const status = await Promise.race([
+      page.waitForSelector(readySelector, { timeout: timeoutMs }).then(() => 'ready' as const),
+      page.waitForSelector(errorSelector, { timeout: timeoutMs }).then(() => 'error' as const),
+    ]);
+    return status;
+  },
+  screenshot: async (input) => {
+    await page.screenshot(input);
+  },
+});
 
 const joinUrlPath = (basePath: string, routePath: string): string => {
   const normalizedBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
