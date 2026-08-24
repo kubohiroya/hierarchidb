@@ -1551,6 +1551,9 @@ importers:
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../shape-store
+      '@hierarchidb/staged-folder-action':
+        specifier: workspace:*
+        version: link:../staged-folder-action
       '@hierarchidb/style-api':
         specifier: workspace:*
         version: link:../style-api
@@ -1759,6 +1762,9 @@ importers:
 
   packages/staged-folder-action:
     dependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
       yaml:
         specifier: ^2.0.0
         version: 2.8.2

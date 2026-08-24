@@ -30,8 +30,10 @@ import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/plugin-
 import {
   CoreDB,
   configureWorkerContainer,
+  createStagedFolderActionBuildRuntimeAdapter,
   getWorkerContainer,
   type PluginWorkerModuleLoaderContract,
+  StagedFolderActionProgressStore,
   subscribeToBuildSessionBroadcast,
   WorkerDiTokens,
   WorkerService,
@@ -510,9 +512,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           queryAPI: services.getShapeQueryAPI(),
           mutationAPI: services.getShapeMutationAPI(),
         });
-        const buildRuntimeAdapters = new CanonicalBuildRuntimeAdapterRegistry(
-          canonicalBuildRuntimeAdapters
+        const stagedFolderActionProgressStore = new StagedFolderActionProgressStore(
+          getDBName(databasePrefix, 'staged-folder-action-progress')
         );
+        const buildRuntimeAdapters = new CanonicalBuildRuntimeAdapterRegistry([
+          ...canonicalBuildRuntimeAdapters,
+          createStagedFolderActionBuildRuntimeAdapter(stagedFolderActionProgressStore),
+        ]);
         buildRuntimeAdapters.require(SHAPE_NODE_TYPE);
         const runtimeInputSources = new Map<string, CanonicalBuildInputSource>();
         const runtimeInputSourceKey = (nodeType: NodeType, nodeId: NodeId): string =>

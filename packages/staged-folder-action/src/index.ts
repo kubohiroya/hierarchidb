@@ -4,6 +4,21 @@ export type {
 } from './StagedFolderActionManifestError.js';
 export { StagedFolderActionManifestError } from './StagedFolderActionManifestError.js';
 export type {
+  CreateStagedFolderActionRunRecordInput,
+  StagedFolderActionCurrentActionProgress,
+  StagedFolderActionProgressCounts,
+  StagedFolderActionRunPhase,
+  StagedFolderActionRunRecord,
+  StagedFolderActionRunRecordPatch,
+  StagedFolderActionRunStatus,
+} from './StagedFolderActionProgressTypes.js';
+export {
+  assertStagedFolderActionRunRecord,
+  createStagedFolderActionRunRecord,
+  STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE,
+  updateStagedFolderActionRunRecord,
+} from './StagedFolderActionProgressTypes.js';
+export type {
   ParseStagedFolderActionManifestOptions,
   StagedFolderAction,
   StagedFolderActionBbox,

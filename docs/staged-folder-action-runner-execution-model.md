@@ -111,6 +111,18 @@ AppBar session manager は build queue/session の正規 WebUI 表示面であ�
 
 通常 WebUI と CLI 実行 browser profile をまたいだ progress 共有は初期仕様の保証範囲外とする。共有表示を行う場合は Worker/IndexedDB state の共有方式を別 Issue で定義する。
 
+### Runner Progress Record
+
+Phase 0 の runner progress は `@hierarchidb/staged-folder-action` の `StagedFolderActionRunRecord` を共有 contract とし、`@hierarchidb/runtime-worker` の IndexedDB-backed store が SSOT として保持する。
+
+top-level run status は generic に保つ。action ごとの状態を `build-running`、`capture-running`、`diagnostics-running` のような top-level status として増やしてはならない。run が action 実行中であることは `phase: "running-action"` で表し、action-specific な詳細は `currentAction.actionType`、`currentAction.phase`、`currentAction.percentage` に格納する。
+
+`paused`、`auth-required`、`failed`、`cancelled` は runner record に保存する。CLI stderr/stdout のみを状態の根拠にしてはならない。既存 AppBar session manager に表示するため、runtime-worker は runner record を `BuildSessionRuntimeRecord` へ投影する adapter を提供する。この投影では既存 top-level status に収まらない詳細を増やさず、`auth-required` は `paused`、`cancelled` は `failed` として表示用に写像し、詳細は runner record 側に保持する。
+
+Phase 0 では service-level tests で IndexedDB persistence、generic `running-action`、`auth-required` の保持、BuildSessionRuntimeRecord 投影、subscribe 初期 snapshot、active run deletion guard を固定する。runtime-worker bootstrap は staged-folder-action adapter を既存 `CanonicalBuildRuntimeAdapterRegistry` に登録する。AppBar への実際の複数 nodeType 表示統合は、既存 `BuildSessionQueuePanel` が現在 `shape` nodeType を既定としているため、UI-specific follow-up として扱う。UI 統合時も専用 route や別 progress SSOT を追加してはならない。
+
+Runner orchestration は staging preparation、overlay application、action execution、cleanup を順に行う。Phase 0 の runtime-worker runner はこれらの処理本体を注入依存として受け取り、progress store への状態遷移記録を SSOT として固定する。`actions: []` は staging/overlay 後に `completed` となり、build session を作らない。`build` action は注入された existing build session handoff だけを呼び、map capture を行わない。`build` の後に `map-image-capture` がある場合、build handoff が完了してから capture handoff に進む。
+
 ## Map Image Capture Action Boundary
 
 `map-image-capture` action は existing Map UI を使う。専用 route や hidden capture-only route を正規経路にしない。headless 実行でも headed 実行でも、新規 tab で通常 Map UI を開く。

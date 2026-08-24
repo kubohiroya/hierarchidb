@@ -73,6 +73,20 @@ export {
   type StagedFolderActionOverlayEntry,
   type StagedFolderActionOverlayStagingMode,
 } from './services/stagedFolderActionOverlayService.js';
+export {
+  createStagedFolderActionBuildRuntimeAdapter,
+  isStagedFolderActionRunActive,
+  type StagedFolderActionProgressFilter,
+  StagedFolderActionProgressStore,
+  toBuildSessionRuntimeRecord,
+} from './services/stagedFolderActionProgressStore.js';
+export {
+  runStagedFolderAction,
+  type StagedFolderActionBuildResult,
+  type StagedFolderActionPreparedStaging,
+  type StagedFolderActionRunnerDependencies,
+  type StagedFolderActionRunnerInput,
+} from './services/stagedFolderActionRunner.js';
 export { TreeQueryService } from './services/TreeQueryService.js';
 export {
   assertNodeIsNotTemporaryStagingNode,
