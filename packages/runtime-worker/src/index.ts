@@ -54,6 +54,19 @@ export {
   getStageProcessingClient,
   getStageWorkerProxy,
 } from './services/StageProcessingService.js';
+export {
+  assertNodeIsNotTemporaryStagingNode,
+  cleanupTemporaryStagingRoot,
+  createTemporaryCopyStagingRoot,
+  ensureTemporaryFolderHolder,
+  getTemporaryFolderNodeId,
+  isNodeInTemporaryFolderSubtree,
+  isTemporaryFolderHolderNode,
+  refreshTemporaryFolderVisibility,
+  TEMPORARY_FOLDER_NAME,
+  TEMPORARY_FOLDER_NODE_TYPE,
+  TEMPORARY_STAGING_NODE_ERROR,
+} from './services/temporaryFolderHolderLifecycle.js';
 export { TreeQueryService } from './services/TreeQueryService.js';
 export {
   runVectorTileStage,

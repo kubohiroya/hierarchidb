@@ -248,6 +248,8 @@ actions:
 - `listDrafts()` のような draft enumeration は temporary-copy node を返してはならない。
 - temporary cleanup は draft holder や draft state を削除してはならない。
 
+Phase 0 の `temporary-folder` 実装は、system holder の作成、表示 lifecycle、draft API からの隔離、cleanup 境界を先に固定する。この段階では staging root shell の作成を holder lifecycle test の対象として扱い、完全な copy-on-write subtree materialization、`copyOnWriteOf` / `patchData` の付与、overlay 適用は recursive copy / effective data / runner integration の後続 issue で接続する。ただし production runner が action input として扱う temporary-copy staging は、最終的に本仕様の copy-on-write semantics を満たさなければならない。
+
 `staging.cleanup` は実行後の staging root の扱いを定義する。
 
 | Cleanup | 説明 |
