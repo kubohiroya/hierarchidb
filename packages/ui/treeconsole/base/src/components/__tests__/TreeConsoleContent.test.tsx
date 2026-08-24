@@ -13,6 +13,7 @@ vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   NodeTypeIcon: () => null,
   NodeContextMenu: () => null,
   buildTreeConsoleLinkHref: () => '#',
+  formatBuildAvailabilityView: () => undefined,
   getPluginIconColor: () => undefined,
   isFolderNodeType: () => true,
 }));

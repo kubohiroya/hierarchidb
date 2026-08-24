@@ -209,6 +209,62 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it('includes completed map image capture action results in CLI success JSON', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(mapCaptureConfig) });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async (input) =>
+        createCompletedRecord({
+          runId: input.runId,
+          sourceNodeId: input.sourceNodeId,
+          buildSession: {
+            nodeType: 'shape' as NodeType,
+            nodeId: 'build-node' as NodeId,
+            status: 'completed',
+          },
+        }),
+      createRunId: () => 'run-map-success',
+      now: () => 130,
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      [
+        '--json',
+        '--config',
+        'config.json',
+        '--source-node-id',
+        'source-1',
+        '--browser',
+        'headless',
+      ],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      actionResults: Array<{
+        type: string;
+        outputPath?: string;
+        width?: number;
+        height?: number;
+      }>;
+    };
+
+    expect(exitCode).toBe(0);
+    expect(result).toMatchObject({
+      ok: true,
+      actionResults: [
+        { type: 'build', buildQueueId: 'build-node' },
+        {
+          type: 'map-image-capture',
+          status: 'completed',
+          outputPath: 'out.png',
+          width: 800,
+          height: 600,
+        },
+      ],
+    });
+  });
+
   it('maps missing map image capture host failures to the map-image-capture category', async () => {
     const io = createIo({ 'config.json': JSON.stringify(mapCaptureConfig) });
     const failedRecord = createFailedRecord({

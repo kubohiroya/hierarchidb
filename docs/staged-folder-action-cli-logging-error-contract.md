@@ -43,6 +43,8 @@ child #1598 の bundled bin は host loader entrypoint を使う。`HDB_STAGED_F
 
 child #1598 は Node process から既存 browser profile IndexedDB を共有する方式、および `map-image-capture` の headed/headless browser host 起動を実装しない。`map-image-capture` action が browser host 未注入で失敗した場合、adapter は成功扱いせず `map-image-capture` category の typed failure とする。browser host の標準注入は後続 child issue の範囲である。
 
+Phase 2 child #1600 の browser host factory は Node 専用 subpath `@hierarchidb/staged-folder-action/map-image-capture-browser-host` から import し、`baseUrl`、`routeMode`、`timeoutMs`、`outputBasePath`、browser launcher を明示的に受け取る。相対 `map-image-capture.output.path` は `outputBasePath` 基準で絶対 path に解決して screenshot write に使う。`headless` / `headed` は launcher の visibility option にだけ反映し、どちらも通常 Map route と同一 readiness contract を使う。render readiness error、blank canvas、page error、unhandled rejection、WebGL context loss、invalid browser host configuration は成功扱いせず、`map-image-capture` または host setup failure の typed failure として CLI result に反映する。capture failure 後の browser close failure は本来の capture failure を上書きせず、追加 context として扱う。CLI success JSON は completed run の `map-image-capture` action から `outputPath`、`width`、`height` を含む action result を出す。
+
 ## 成功 JSON
 
 ```typescript

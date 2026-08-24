@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./map-image-capture-browser-host": {
+      "types": "./dist/createMapImageCaptureBrowserActionRunner.d.ts",
+      "import": "./dist/createMapImageCaptureBrowserActionRunner.js"
+    },
     "./cli": {
       "types": "./dist/runStagedFolderActionCli.d.ts",
       "import": "./dist/runStagedFolderActionCli.js"
@@ -20,7 +24,7 @@
     "hdb-staged-folder-action": "./dist/runStagedFolderActionCliEntry.js"
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/runStagedFolderActionCli.ts src/runStagedFolderActionCliEntry.ts --config ../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
+    "build": "tsdown src/index.ts src/createMapImageCaptureBrowserActionRunner.ts src/runStagedFolderActionCli.ts src/runStagedFolderActionCliEntry.ts --config ../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "vitest run --passWithNoTests",
@@ -28,6 +32,7 @@
   },
   "dependencies": {
     "@hierarchidb/core-types": "workspace:*",
+    "@playwright/test": "^1.58.2",
     "yaml": "^2.0.0"
   },
   "devDependencies": {
