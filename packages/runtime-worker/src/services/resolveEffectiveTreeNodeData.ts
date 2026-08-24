@@ -1,6 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNode } from '@hierarchidb/tree-api';
 
+export { resolveEffectiveTreeNodeData };
+
 export type EffectiveTreeNodeDataSlot = 'committed' | 'draft' | 'effective-staged';
 
 export interface TreeNodeReader {
@@ -58,7 +60,7 @@ interface ResolvedCommittedData {
   versions: Array<{ nodeId: NodeId; version: number }>;
 }
 
-export async function resolveEffectiveTreeNodeData(
+async function resolveEffectiveTreeNodeData(
   input: EffectiveTreeNodeDataResolverInput
 ): Promise<EffectiveTreeNodeDataResolverResult> {
   const node = await readNode(input.reader, input.nodeId);

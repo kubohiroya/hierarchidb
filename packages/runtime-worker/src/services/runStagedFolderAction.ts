@@ -8,9 +8,12 @@ import type {
 import { createMapImageCaptureIntent } from '@hierarchidb/staged-folder-action';
 import type { StagedFolderActionProgressStore } from './stagedFolderActionProgressStore.js';
 
+export { runStagedFolderAction };
+
 export interface StagedFolderActionRunnerInput {
   runId: NodeId;
   sourceNodeId: NodeId;
+  outputParentNodeId?: NodeId;
   config: StagedFolderActionConfig;
   browserMode?: MapImageCaptureBrowserMode;
 }
@@ -23,6 +26,11 @@ export interface StagedFolderActionBuildResult {
   nodeType: NodeType;
   nodeId: NodeId;
   status: string;
+  targets?: Array<{
+    nodeType: NodeType;
+    nodeId: NodeId;
+    status: string;
+  }>;
 }
 
 export interface StagedFolderActionProgressUpdate {
@@ -58,7 +66,7 @@ export interface StagedFolderActionRunnerDependencies {
   }): Promise<void>;
 }
 
-export const runStagedFolderAction = async (
+const runStagedFolderAction = async (
   dependencies: StagedFolderActionRunnerDependencies,
   input: StagedFolderActionRunnerInput
 ) => {
@@ -70,6 +78,7 @@ export const runStagedFolderAction = async (
     now: startedAt,
   });
 
+  let stagingRootNodeId: NodeId | undefined;
   try {
     await progressStore.updateRun(input.runId, {
       status: 'running',
@@ -78,24 +87,25 @@ export const runStagedFolderAction = async (
       updatedAt: dependencies.now(),
     });
     const staging = await dependencies.prepareStaging(input);
+    stagingRootNodeId = staging.stagingRootNodeId;
 
     await progressStore.updateRun(input.runId, {
       status: 'running',
       phase: 'applying-overlay',
-      stagingRootNodeId: staging.stagingRootNodeId,
+      stagingRootNodeId,
       progress: progressFor(input.config.actions.length, 0),
       updatedAt: dependencies.now(),
     });
     await dependencies.applyOverlays({
       config: input.config,
-      stagingRootNodeId: staging.stagingRootNodeId,
+      stagingRootNodeId,
     });
 
     for (const [actionIndex, action] of input.config.actions.entries()) {
-      await runAction(dependencies, input, staging.stagingRootNodeId, action, actionIndex);
+      await runAction(dependencies, input, stagingRootNodeId, action, actionIndex);
     }
 
-    if (dependencies.cleanup) {
+    if (dependencies.cleanup && shouldCleanupAfterSuccess(input.config.staging.cleanup)) {
       await progressStore.updateRun(input.runId, {
         status: 'running',
         phase: 'cleanup',
@@ -104,7 +114,7 @@ export const runStagedFolderAction = async (
       });
       await dependencies.cleanup({
         config: input.config,
-        stagingRootNodeId: staging.stagingRootNodeId,
+        stagingRootNodeId,
         runId: input.runId,
       });
     }
@@ -118,16 +128,49 @@ export const runStagedFolderAction = async (
       updatedAt: dependencies.now(),
     });
   } catch (error) {
+    const failureError = error instanceof Error ? error : new Error(String(error));
+    let failureMessage = failureError.message;
+    if (
+      stagingRootNodeId !== undefined &&
+      dependencies.cleanup &&
+      shouldCleanupAfterFailure(input.config.staging.cleanup)
+    ) {
+      try {
+        await progressStore.updateRun(input.runId, {
+          status: 'running',
+          phase: 'cleanup',
+          updatedAt: dependencies.now(),
+        });
+        await dependencies.cleanup({
+          config: input.config,
+          stagingRootNodeId,
+          runId: input.runId,
+        });
+      } catch (cleanupError) {
+        const cleanupMessage =
+          cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+        failureMessage = `${failureMessage}; cleanup failed: ${cleanupMessage}`;
+      }
+    }
     await progressStore.updateRun(input.runId, {
       status: 'failed',
       phase: 'failed',
-      error: error instanceof Error ? error.message : String(error),
+      error: failureMessage,
       completedAt: dependencies.now(),
       updatedAt: dependencies.now(),
     });
-    throw error;
+    if (failureMessage !== failureError.message) {
+      throw new Error(failureMessage);
+    }
+    throw failureError;
   }
 };
+
+const shouldCleanupAfterSuccess = (cleanup: StagedFolderActionConfig['staging']['cleanup']) =>
+  cleanup === 'delete-on-success' || cleanup === 'delete-always';
+
+const shouldCleanupAfterFailure = (cleanup: StagedFolderActionConfig['staging']['cleanup']) =>
+  cleanup === 'delete-always';
 
 const runAction = async (
   dependencies: StagedFolderActionRunnerDependencies,

@@ -1,5 +1,7 @@
 import type { MapImageCaptureIntent } from './MapImageCaptureIntentTypes.js';
 
+export { runMapImageCaptureBrowserHandoff };
+
 export const MAP_IMAGE_CAPTURE_RENDER_STATUS_ATTRIBUTE = 'data-map-image-capture-render-status';
 export const MAP_IMAGE_CAPTURE_READY_SELECTOR = `[${MAP_IMAGE_CAPTURE_RENDER_STATUS_ATTRIBUTE}="ready"]`;
 export const MAP_IMAGE_CAPTURE_ERROR_SELECTOR = `[${MAP_IMAGE_CAPTURE_RENDER_STATUS_ATTRIBUTE}="error"]`;
@@ -85,7 +87,7 @@ export const createMapImageCaptureRouteUrl = ({
   return url.toString();
 };
 
-export const runMapImageCaptureBrowserHandoff = async ({
+const runMapImageCaptureBrowserHandoff = async ({
   page,
   intent,
   baseUrl,
@@ -194,7 +196,7 @@ const isCanvasNonBlank = (canvasSelector: string): boolean => {
     return false;
   }
   const pixels = context2d.getImageData(0, 0, canvas.width, canvas.height).data;
-  return hasNonBlankPixel(pixels);
+  return isMapImageCapturePixelBufferNonBlank(pixels);
 };
 
 const isWebGlCanvasNonBlank = (gl: WebGLRenderingContext | WebGL2RenderingContext): boolean => {
@@ -215,20 +217,22 @@ const isWebGlCanvasNonBlank = (gl: WebGLRenderingContext | WebGL2RenderingContex
   const pixel = new Uint8Array(4);
   for (const [x, y] of samplePoints) {
     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-    if (hasNonBlankPixel(pixel)) {
+    if (isMapImageCapturePixelBufferNonBlank(pixel)) {
       return true;
     }
   }
   return false;
 };
 
-const hasNonBlankPixel = (pixels: Uint8Array | Uint8ClampedArray): boolean => {
+export const isMapImageCapturePixelBufferNonBlank = (
+  pixels: Uint8Array | Uint8ClampedArray
+): boolean => {
   for (let index = 0; index < pixels.length; index += 4) {
     const red = pixels[index] ?? 0;
     const green = pixels[index + 1] ?? 0;
     const blue = pixels[index + 2] ?? 0;
     const alpha = pixels[index + 3] ?? 0;
-    if (alpha > 0 && (red > 0 || green > 0 || blue > 0)) {
+    if (red > 0 || green > 0 || blue > 0 || alpha > 0) {
       return true;
     }
   }

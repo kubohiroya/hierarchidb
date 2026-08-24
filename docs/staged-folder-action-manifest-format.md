@@ -153,6 +153,7 @@ type StagedFolderAction =
 - `overlay.nodes[*].match.path: "./<name>"` は staging root 直下の child path を明示する表記であり、`<name>` と同じ target に正規化する。
 - staging root の display name は root path alias ではない。`"<name>"` は常に `"./<name>"` と同義であり、root 直下の child path として解釈する。root 自身を対象にする場合は必ず `.` を使う。
 - path は空文字、`..`、空 segment、途中 segment の `.` を禁止する。
+- `map-image-capture.layers` は通常 UI の visible 状態に対する単なる絞り込みではない。指定された場合、staging hierarchy 全体から path を解決し、`visible: true` / `visible: false` の順序付き指定により capture 対象を決める。
 - path grammar は POSIX-style `/` 区切りだけを定義する。`\` は path separator として解釈しない。
 - `overlay.nodes[*].data` は object でなければならない。
 - `overlay.nodes[*].data` 内の `$schema` など `$` で始まる key は通常の JSON property として扱い、operation として解釈しない。

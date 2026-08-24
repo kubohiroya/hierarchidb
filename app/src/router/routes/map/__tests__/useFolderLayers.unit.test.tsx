@@ -178,6 +178,23 @@ describe('filterNodesByCaptureLayers', () => {
     expect(filtered.map((node) => String(node.id))).toEqual(['shape-a']);
   });
 
+  it('allows capture intent to include nodes that are normally invisible', () => {
+    const root = createNode('root-node', '', 'Root');
+    const hiddenShape = {
+      ...createNode('shape-a', 'root-node', 'Shape A', 'shape'),
+      visible: false,
+    };
+
+    const filtered = filterNodesByCaptureLayers({
+      rootNode: root,
+      descendants: [hiddenShape],
+      nodesForLayers: [hiddenShape],
+      captureLayers: [{ path: 'Shape A', visible: true }],
+    });
+
+    expect(filtered.map((node) => String(node.id))).toEqual(['shape-a']);
+  });
+
   it('fails when a requested layer path does not resolve', () => {
     const root = createNode('root-node', '', 'Root');
     const shape = createNode('shape-a', 'root-node', 'Shape A', 'shape');

@@ -51,7 +51,11 @@ import {
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
 import { digestSha256Hex, getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
-import type { UiStorageBridge, YamlCanonicalZipServiceFactory } from '@hierarchidb/worker-api';
+import type {
+  RunStagedFolderActionInput,
+  UiStorageBridge,
+  YamlCanonicalZipServiceFactory,
+} from '@hierarchidb/worker-api';
 import { liveQuery } from 'dexie';
 import { canonicalBuildFeatureFlags } from '~/config/canonicalBuildFeatureFlags';
 import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsProxyBaseURL';
@@ -61,6 +65,7 @@ import {
 } from '~/plugin-loaders/index';
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { createStagedFolderActionWorkerExecutionHost } from './createStagedFolderActionWorkerExecutionHost.js';
 import { resolveCanonicalBuildRuntimeModule } from './resolveCanonicalBuildRuntimeModule.js';
 import { resolveCanonicalBuildStartInput } from './resolveCanonicalBuildStartInput.js';
 import {
@@ -761,6 +766,20 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return buildApi.getBuildSessionStatus(nodeId);
         };
 
+        const runStagedFolderAction = async (input: RunStagedFolderActionInput) =>
+          sanitizeForComlink(
+            await createStagedFolderActionWorkerExecutionHost({
+              coreDB: services.getCoreDB(),
+              progressStore: stagedFolderActionProgressStore,
+              getNode: (nodeId) => services.getQueryAPI().getNode(nodeId),
+              listDescendants: (nodeId) => services.getQueryAPI().listDescendants(nodeId),
+              canBuildNodeType: (nodeType) => canonicalBuildAPIs.has(nodeType),
+              startBuildSession: runStartBuildSession,
+              getBuildSessionStatus,
+              now: Date.now,
+            })(input)
+          );
+
         const pauseBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
@@ -1038,6 +1057,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             }
             await buildRuntimeAdapters.deleteSession(nodeType, nodeId);
           },
+          runStagedFolderAction,
           getMapImageCaptureIntent: async (intentId: string) =>
             sanitizeForComlink(
               await stagedFolderActionProgressStore.getMapImageCaptureIntent(intentId)

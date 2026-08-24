@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createMapImageCaptureRouteUrl,
   createPlaywrightMapImageCapturePagePort,
+  isMapImageCapturePixelBufferNonBlank,
   MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
   MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
   MAP_IMAGE_CAPTURE_READY_SELECTOR,
@@ -142,6 +143,16 @@ describe('runMapImageCaptureBrowserHandoff', () => {
       })
     ).rejects.toThrow(/unhandled-rejection: failed to load layer/);
     expect(page.screenshot).not.toHaveBeenCalled();
+  });
+});
+
+describe('isMapImageCapturePixelBufferNonBlank', () => {
+  it('treats opaque black pixels as nonblank rendered content', () => {
+    expect(isMapImageCapturePixelBufferNonBlank(new Uint8Array([0, 0, 0, 255]))).toBe(true);
+  });
+
+  it('treats fully transparent zero pixels as blank', () => {
+    expect(isMapImageCapturePixelBufferNonBlank(new Uint8Array([0, 0, 0, 0]))).toBe(false);
   });
 });
 

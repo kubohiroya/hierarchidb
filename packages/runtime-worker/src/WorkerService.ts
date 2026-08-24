@@ -351,6 +351,10 @@ export class WorkerService {
     return this.guardServiceApi(this.yamlCanonicalZipService);
   }
 
+  getCoreDB(): CoreDB {
+    return this.coreDB;
+  }
+
   getQueryAPI(): TreeQueryAPI {
     return this.guardServiceApi(this.queryService);
   }

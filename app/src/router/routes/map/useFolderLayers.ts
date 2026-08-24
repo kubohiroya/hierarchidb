@@ -217,14 +217,19 @@ export const useFolderLayers = ({
               }
               return true;
             });
-        const nodesForLayers = isFolderNodeType(rootNode.nodeType)
-          ? visibleDescendants
-          : isNodeVisible(rootNode)
-            ? [rootNode, ...visibleDescendants]
-            : visibleDescendants;
+        const nodesForLayers =
+          captureLayers !== undefined
+            ? isFolderNodeType(rootNode.nodeType)
+              ? descendants
+              : [rootNode, ...descendants]
+            : isFolderNodeType(rootNode.nodeType)
+              ? visibleDescendants
+              : isNodeVisible(rootNode)
+                ? [rootNode, ...visibleDescendants]
+                : visibleDescendants;
         const captureFilteredNodes = filterNodesByCaptureLayers({
           rootNode,
-          descendants: visibleDescendants,
+          descendants: captureLayers !== undefined ? descendants : visibleDescendants,
           nodesForLayers,
           captureLayers,
         });

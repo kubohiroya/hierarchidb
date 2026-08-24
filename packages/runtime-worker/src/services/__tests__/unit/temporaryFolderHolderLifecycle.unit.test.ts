@@ -4,13 +4,15 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CoreDB } from '../../CoreDB';
 import { initTreeNode } from '../../draft/initTreeNode';
+import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData';
+import { applyStagedFolderActionOverlays } from '../../applyStagedFolderActionOverlays';
 import { TreeNodeUpdaterService } from '../../TreeNodeUpdaterService';
 import {
   cleanupTemporaryStagingRoot,
   createTemporaryCopyStagingRoot,
   ensureTemporaryFolderHolder,
   getTemporaryFolderNodeId,
-} from '../../temporaryFolderHolderLifecycle';
+} from '../../temporaryFolderHolderLifecycleUtils';
 
 describe('temporary-folder system holder lifecycle', () => {
   const treeId = 'r' as TreeId;
@@ -54,7 +56,116 @@ describe('temporary-folder system holder lifecycle', () => {
     const visibleHolder = await coreDB.getNode(holder.id as NodeId);
     expect(stagingRoot.parentId).toBe(holder.id);
     expect(stagingRoot.draftData).toBeUndefined();
+    expect(stagingRoot.data).toBeNull();
+    expect(stagingRoot.copyOnWriteOf).toBe(source.id);
     expect(visibleHolder?.visible).toBe(true);
+  });
+
+  it('creates an implicit temporary-copy holder in the same tree as the source node', async () => {
+    const source = await createSourceNode({
+      parentId: 'p:root' as NodeId,
+      name: 'Project Source',
+    });
+
+    const stagingRoot = await createTemporaryCopyStagingRoot(coreDB, {
+      sourceNodeId: source.id as NodeId,
+    });
+
+    expect(stagingRoot.parentId).toBe('p:temporary-folder' as NodeId);
+    expect(await coreDB.getNode('r:temporary-folder' as NodeId)).toBeUndefined();
+    await expect(coreDB.getNode('p:temporary-folder' as NodeId)).resolves.toMatchObject({
+      nodeType: 'temporary-folder',
+      parentId: 'p:superRoot',
+      visible: true,
+    });
+  });
+
+  it('fails implicit temporary-copy staging when the source node is not attached to a known tree', async () => {
+    const source = await createSourceNode({
+      parentId: 'detached-parent' as NodeId,
+      name: 'Detached Source',
+    });
+
+    await expect(
+      createTemporaryCopyStagingRoot(coreDB, {
+        sourceNodeId: source.id as NodeId,
+      })
+    ).rejects.toThrow('temporary-folder-source-tree-not-found');
+  });
+
+  it('fails implicit temporary-copy staging with a source-not-found error when the source is missing', async () => {
+    await expect(
+      createTemporaryCopyStagingRoot(coreDB, {
+        sourceNodeId: 'missing-source' as NodeId,
+      })
+    ).rejects.toThrow('temporary-copy-source-node-not-found');
+  });
+
+  it('creates a recursive copy-on-write staging hierarchy without copying committed data', async () => {
+    const source = await createSourceNode({
+      buildRequired: true,
+    });
+    const child = await createSourceNode({
+      parentId: source.id as NodeId,
+      name: 'Child',
+      data: { nested: { value: 'source' } },
+      buildRequired: true,
+    });
+
+    const stagingRoot = await createTemporaryCopyStagingRoot(coreDB, {
+      treeId,
+      sourceNodeId: source.id as NodeId,
+      name: 'Staged Source',
+    });
+    const stagingChildren = await coreDB.listChildren(stagingRoot.id as NodeId);
+    const stagingChild = stagingChildren[0];
+
+    expect(stagingRoot.metadata.name).toBe('Staged Source');
+    expect(stagingRoot.data).toBeNull();
+    expect(stagingRoot.copyOnWriteOf).toBe(source.id);
+    expect(stagingRoot.metadata.buildMetadata?.buildRequired).toBe(true);
+    expect(stagingChild).toBeDefined();
+    expect(stagingChild?.metadata.name).toBe('Child');
+    expect(stagingChild?.data).toBeNull();
+    expect(stagingChild?.copyOnWriteOf).toBe(child.id);
+    expect(stagingChild?.metadata.buildMetadata?.buildRequired).toBe(true);
+    expect(stagingChild?.depth).toBe(stagingRoot.depth + 1);
+  });
+
+  it('applies overlays to temporary-copy descendants and resolves effective data', async () => {
+    const source = await createSourceNode({ data: { label: 'source' } });
+    await createSourceNode({
+      parentId: source.id as NodeId,
+      name: 'Layer A',
+      data: { nested: { keep: true, value: 'old' } },
+    });
+    const stagingRoot = await createTemporaryCopyStagingRoot(coreDB, {
+      treeId,
+      sourceNodeId: source.id as NodeId,
+    });
+    const stagingChild = (await coreDB.listChildren(stagingRoot.id as NodeId))[0];
+    if (stagingChild === undefined) {
+      throw new Error('test-staging-child-missing');
+    }
+
+    await applyStagedFolderActionOverlays(coreDB, {
+      stagingMode: 'temporary-copy',
+      stagingRootNodeId: stagingRoot.id as NodeId,
+      nodes: [{ match: { path: 'Layer A' }, data: { nested: { value: 'new' } } }],
+    });
+
+    expect((await coreDB.getNode(stagingChild.id as NodeId))?.patchData).toEqual({
+      nested: { value: 'new' },
+    });
+    await expect(
+      resolveEffectiveTreeNodeData({
+        reader: coreDB,
+        nodeId: stagingChild.id as NodeId,
+        slot: 'effective-staged',
+      })
+    ).resolves.toMatchObject({
+      data: { nested: { keep: true, value: 'new' } },
+    });
   });
 
   it('does not expose temporary-copy staging roots through draft enumeration', async () => {
@@ -117,23 +228,33 @@ describe('temporary-folder system holder lifecycle', () => {
     expect((await coreDB.getNode(holderId))?.visible).toBe(false);
   });
 
-  async function createSourceNode(): Promise<TreeNode> {
+  async function createSourceNode(
+    overrides: {
+      parentId?: NodeId;
+      name?: string;
+      data?: Record<string, unknown>;
+      buildRequired?: boolean;
+    } = {}
+  ): Promise<TreeNode> {
     const now = Date.now();
     const node: TreeNode = {
       id: `source-${crypto.randomUUID()}` as NodeId,
-      parentId: 'r:root' as NodeId,
+      parentId: overrides.parentId ?? ('r:root' as NodeId),
       nodeType: 'folder' as NodeType,
-      depth: 1,
+      depth: overrides.parentId === undefined ? 1 : 2,
       createdAt: now,
       updatedAt: now,
       version: 1,
       metadata: {
-        name: `Source ${crypto.randomUUID()}`,
+        name: overrides.name ?? `Source ${crypto.randomUUID()}`,
         description: '',
         tags: [],
+        ...(overrides.buildRequired === undefined
+          ? {}
+          : { buildMetadata: { buildRequired: overrides.buildRequired } }),
       },
       draftMetadata: null,
-      data: { value: 1 },
+      data: overrides.data ?? { value: 1 },
       draftData: undefined,
       visible: true,
     };

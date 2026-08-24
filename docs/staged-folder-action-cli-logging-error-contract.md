@@ -25,11 +25,17 @@ CLI は existing TreeConsole / Worker / IndexedDB / session manager / Map UI を
 | `--output-parent-node-id <id>` | conditional | `staging.mode: permanent-copy` のときだけ必須 |
 | `--browser <mode>` | no | `headless | headed`。`map-image-capture` action でだけ使う |
 | `--profile <profileName>` | no | 省略時は default profile。指定時は named profile |
+| `--format <format>` | no | `json | yaml`。省略時は config path extension から推定する |
 | `--json` | no | stdout に single JSON result object を出す |
+| `--dry-run` | no | Phase 0 CLI では必須。manifest と CLI options を検証し、実行計画を返す |
 | `--log-level <level>` | no | `silent | error | warn | info | debug` |
 | `--log-file <path>` | no | 詳細ログ保存先 |
 
 `staging.mode: patch-source` のような破壊的操作では、実装は追加 CLI option 例 `--allow-in-place` を要求してよい。要求する場合、省略時は `cli` category の typed error として失敗する。
+
+Phase 0 の CLI entrypoint `hdb-staged-folder-action` は `--dry-run` validation host として実装する。`--dry-run` なしで実行を要求した場合は、`cli` category / `STAGED_FOLDER_ACTION_CLI_EXECUTION_HOST_NOT_CONFIGURED` として fail-fast する。実 profile の Worker / IndexedDB / browser host に接続し、runner を起動する CLI 実行モードは後続 phase で実装する。
+
+Phase 0 では CLI bridge とは別に、WorkerAPI の `runStagedFolderAction(input)` が同一 application profile 内の Worker execution host として実装されている。この host は staging/overlay/build/cleanup を実行し progress SSOT に記録するが、CLI process から profile/Worker/browser を起動して接続する責務はまだ持たない。
 
 ## 成功 JSON
 

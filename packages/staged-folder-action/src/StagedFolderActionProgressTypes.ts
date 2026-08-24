@@ -54,6 +54,11 @@ export interface StagedFolderActionRunRecord {
     nodeType: NodeType;
     nodeId: NodeId;
     status: string;
+    targets?: Array<{
+      nodeType: NodeType;
+      nodeId: NodeId;
+      status: string;
+    }>;
   };
   error?: string;
   startedAt: number;

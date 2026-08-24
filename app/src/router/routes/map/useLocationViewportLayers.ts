@@ -499,7 +499,7 @@ export const useLocationViewportLayers = (
         const control = new MaplibreExportControl({
           Format: 'pdf',
           Local: 'ja',
-          Filename: nodeId ? `map-${nodeId}` : 'map-export',
+          Filename: nodeId ? `map-${nodeId}` : 'map-image',
         });
         map.addControl(control, 'bottom-left');
         exportControlRef.current = control;

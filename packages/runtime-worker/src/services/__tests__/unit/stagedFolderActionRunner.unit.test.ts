@@ -6,7 +6,7 @@ import { StagedFolderActionProgressStore } from '../../stagedFolderActionProgres
 import {
   runStagedFolderAction,
   type StagedFolderActionRunnerDependencies,
-} from '../../stagedFolderActionRunner.js';
+} from '../../runStagedFolderAction.js';
 
 describe('runStagedFolderAction', () => {
   let store: StagedFolderActionProgressStore;
@@ -252,6 +252,87 @@ describe('runStagedFolderAction', () => {
       status: 'failed',
       phase: 'failed',
       error: 'map-image-capture action runner is not configured',
+    });
+  });
+
+  it('runs cleanup on successful delete-on-success runs', async () => {
+    const cleanup = vi.fn(async () => {});
+    const dependencies = createDependencies({ cleanup });
+
+    await runStagedFolderAction(dependencies, {
+      runId: 'run-cleanup-success' as NodeId,
+      sourceNodeId: 'source-cleanup-success' as NodeId,
+      config: createConfig({ actions: [] }),
+    });
+
+    expect(cleanup).toHaveBeenCalledWith({
+      config: expect.any(Object),
+      stagingRootNodeId: 'staging-root',
+      runId: 'run-cleanup-success',
+    });
+  });
+
+  it('runs cleanup after a failed action when cleanup is delete-always', async () => {
+    const cleanup = vi.fn(async () => {});
+    const dependencies = createDependencies({
+      cleanup,
+      runBuildAction: vi.fn(async () => {
+        throw new Error('build failed');
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-cleanup-failure' as NodeId,
+        sourceNodeId: 'source-cleanup-failure' as NodeId,
+        config: {
+          ...createConfig({ actions: [{ type: 'build', mode: 'session-manager' }] }),
+          staging: {
+            mode: 'temporary-copy',
+            cleanup: 'delete-always',
+          },
+        },
+      })
+    ).rejects.toThrow(/build failed/);
+
+    expect(cleanup).toHaveBeenCalledWith({
+      config: expect.any(Object),
+      stagingRootNodeId: 'staging-root',
+      runId: 'run-cleanup-failure',
+    });
+    await expect(store.getRun('run-cleanup-failure' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      error: 'build failed',
+    });
+  });
+
+  it('surfaces cleanup failure in both the rejected error and the run record', async () => {
+    const dependencies = createDependencies({
+      cleanup: vi.fn(async () => {
+        throw new Error('cleanup failed');
+      }),
+      runBuildAction: vi.fn(async () => {
+        throw new Error('build failed');
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-cleanup-rejection' as NodeId,
+        sourceNodeId: 'source-cleanup-rejection' as NodeId,
+        config: {
+          ...createConfig({ actions: [{ type: 'build', mode: 'session-manager' }] }),
+          staging: {
+            mode: 'temporary-copy',
+            cleanup: 'delete-always',
+          },
+        },
+      })
+    ).rejects.toThrow(/build failed; cleanup failed: cleanup failed/);
+
+    await expect(store.getRun('run-cleanup-rejection' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      error: 'build failed; cleanup failed: cleanup failed',
     });
   });
 

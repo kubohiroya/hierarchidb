@@ -1,8 +1,10 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from './CoreDB.js';
-import { strictMergeNodePayload } from './effectiveTreeNodeDataResolver.js';
-import { isTemporaryFolderHolderNode } from './temporaryFolderHolderLifecycle.js';
+import { strictMergeNodePayload } from './resolveEffectiveTreeNodeData.js';
+import { isTemporaryFolderHolderNode } from './temporaryFolderHolderLifecycleUtils.js';
+
+export { applyStagedFolderActionOverlays };
 
 export type StagedFolderActionOverlayStagingMode =
   | 'temporary-copy'
@@ -63,21 +65,11 @@ export class StagedFolderActionOverlayApplicationError extends Error {
   }
 }
 
-export async function applyStagedFolderActionOverlays(
+async function applyStagedFolderActionOverlays(
   coreDB: CoreDB,
   input: ApplyStagedFolderActionOverlaysInput
 ): Promise<void> {
   assertValidStagingMode(input.stagingMode);
-  const stagingRoot = await coreDB.getNode(input.stagingRootNodeId);
-  if (!stagingRoot) {
-    throw overlayError(
-      'STAGED_FOLDER_ACTION_OVERLAY_STAGING_ROOT_NOT_FOUND',
-      '<staging-root>',
-      `Staging root ${input.stagingRootNodeId} was not found`,
-      input.stagingRootNodeId
-    );
-  }
-  assertNotTemporaryHolder(stagingRoot, '<staging-root>');
 
   const seenPaths = new Set<string>();
   const normalizedEntries: NormalizedOverlayEntry[] = [];
@@ -95,15 +87,30 @@ export async function applyStagedFolderActionOverlays(
     normalizedEntries.push({ entry, normalizedPath });
   }
 
-  const resolvedEntries: ResolvedOverlayEntry[] = [];
-  for (const normalizedEntry of normalizedEntries) {
-    const target = await resolveOverlayTarget(coreDB, stagingRoot, normalizedEntry.normalizedPath);
-    assertNotTemporaryHolder(target, normalizedEntry.normalizedPath);
-    validateOverlayTargetForMode(input.stagingMode, target, normalizedEntry.normalizedPath);
-    resolvedEntries.push({ ...normalizedEntry, target });
-  }
-
   await coreDB.runInTx('rw', ['nodes'], async () => {
+    const stagingRoot = await coreDB.getNode(input.stagingRootNodeId);
+    if (!stagingRoot) {
+      throw overlayError(
+        'STAGED_FOLDER_ACTION_OVERLAY_STAGING_ROOT_NOT_FOUND',
+        '<staging-root>',
+        `Staging root ${input.stagingRootNodeId} was not found`,
+        input.stagingRootNodeId
+      );
+    }
+    assertNotTemporaryHolder(stagingRoot, '<staging-root>');
+
+    const resolvedEntries: ResolvedOverlayEntry[] = [];
+    for (const normalizedEntry of normalizedEntries) {
+      const target = await resolveOverlayTarget(
+        coreDB,
+        stagingRoot,
+        normalizedEntry.normalizedPath
+      );
+      assertNotTemporaryHolder(target, normalizedEntry.normalizedPath);
+      validateOverlayTargetForMode(input.stagingMode, target, normalizedEntry.normalizedPath);
+      resolvedEntries.push({ ...normalizedEntry, target });
+    }
+
     for (const resolvedEntry of resolvedEntries) {
       if (input.stagingMode === 'patch-source') {
         await applyPatchSourceOverlay(coreDB, resolvedEntry);

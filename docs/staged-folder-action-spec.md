@@ -237,7 +237,7 @@ actions:
 
 `staging.name` は temporary/permanent copy の staging root 表示名であり、空文字は禁止する。`patch-source` では staging root を新規作成しないため `name` を使わない。名前衝突時は fail-fast する。自動 suffix 付与で継続してはならない。
 
-`temporary-folder` は system-managed な特殊 holder folder node である。位置付けは既存の draft holder と同じ system holder 系列だが、draft holder そのものではない。通常の TreeConsole では不可視だが、temporary-copy の staging root が存在している間だけ、デバッグと session manager 連動のため可視化される。temporary-copy の親 folder はこの `temporary-folder` であり、ユーザーが `--output-parent-node-id` で指定しない。
+`temporary-folder` は system-managed な特殊 holder folder node である。位置付けは既存の draft holder と同じ system holder 系列だが、draft holder そのものではない。通常の TreeConsole では不可視だが、temporary-copy の staging root が存在している間だけ、デバッグと session manager 連動のため可視化される。temporary-copy の親 folder はこの `temporary-folder` であり、ユーザーが `--output-parent-node-id` で指定しない。`temporary-folder` は tree ごとに存在し、temporary-copy は source node の ancestor chain から所属 tree を解決して同じ tree の holder 配下に staging root を作る。source node が既知 tree に接続されていない場合、default tree へ fallback せず contract violation とする。
 
 `temporary-folder` と draft holder は lifecycle と data semantics を共有しない。
 
@@ -248,7 +248,7 @@ actions:
 - `listDrafts()` のような draft enumeration は temporary-copy node を返してはならない。
 - temporary cleanup は draft holder や draft state を削除してはならない。
 
-Phase 0 の `temporary-folder` 実装は、system holder の作成、表示 lifecycle、draft API からの隔離、cleanup 境界を先に固定する。この段階では staging root shell の作成を holder lifecycle test の対象として扱い、完全な copy-on-write subtree materialization、`copyOnWriteOf` / `patchData` の付与、overlay 適用は recursive copy / effective data / runner integration の後続 issue で接続する。ただし production runner が action input として扱う temporary-copy staging は、最終的に本仕様の copy-on-write semantics を満たさなければならない。
+Phase 0 の `temporary-folder` 実装は、system holder の作成、表示 lifecycle、draft API からの隔離、cleanup 境界、temporary-copy の copy-on-write subtree 作成を固定する。temporary-copy staging root とその子孫は、source subtree と同じ display hierarchy を持ち、各 copied node の `copyOnWriteOf` に参照元 node ID を保持する。copied node 自身の `data` に source の committed data を物理複製してはならない。overlay は copied node の `patchData` に蓄積され、effective data resolver により `copyOnWriteOf.data + patchData` として読まれる。
 
 `staging.cleanup` は実行後の staging root の扱いを定義する。
 
@@ -258,7 +258,7 @@ Phase 0 の `temporary-folder` 実装は、system holder の作成、表示 life
 | `delete-on-success` | 成功時だけ staging root を削除し、失敗時は残す |
 | `delete-always` | 成功/失敗に関係なく staging root 削除を試みる |
 
-`cleanup` は staging root の寿命だけを制御する。progress record、build queue/session record、CLI result の保持可否を `cleanup: retain` に依存させてはならない。`delete-always` でも削除失敗は output/result に記録し、成功画像がある場合も cleanup failure を無視してはならない。
+`cleanup` は staging root の寿命だけを制御する。progress record、build queue/session record、CLI result の保持可否を `cleanup: retain` に依存させてはならない。`delete-always` でも削除失敗は output/result と caller-visible error の両方に記録し、成功画像がある場合も cleanup failure を無視してはならない。
 
 `patch-source` では新規 staging root を作らないため、cleanup 対象は存在しない。`patch-source` で `delete-on-success` または `delete-always` を指定した場合は contract violation とする。source node/folder を cleanup として削除してはならない。
 
@@ -268,7 +268,7 @@ Phase 0 の `temporary-folder` 実装は、system holder の作成、表示 life
 
 現在の実装前提:
 
-- `CoreDB.duplicateSubtreeWithMap()` は source subtree の `TreeNode` hierarchy を複製し、old/new `idMap` を返す。copy-on-write tree 作成では、複製先 node の `copyOnWriteOf` に元 node ID を保持する。
+- `CoreDB.duplicateSubtreeWithMap()` は source subtree の物理複製用であり、copy-on-write temporary-copy には使わない。temporary-copy は `temporary-folder` lifecycle service が CoW 専用 subtree を作成し、各 copied node の `data` を `null`、`copyOnWriteOf` を source node ID とする。
 - 2025-11 以降、plugin payload は PeerStore ではなく `TreeNode.data/draftData` が SSOT である。
 - folder-plugin の canonical YAML ZIP plan は `metadata.name + data` または `draftMetadata.name + draftData` を明示 slot で扱い、cross-slot fallback をしない。
 
@@ -328,6 +328,8 @@ slot の意味:
 resolver は strict merge rules を `Overlay Contract` と共有する。object は再帰 merge、scalar と array は replace、未知の patch 操作は contract violation とする。resolver の利用者が独自 merge、fallback、default 補完、近似 node 探索、slot 間 fallback を実装してはならない。
 
 Phase 0 の resolver 実装では、`effective-staged` は copy-on-write と `patchData` を反映する。`import-mount`、`patch-source` の action 実行結果、staging context の mount record 適用は後続 phase で resolver input に接続する。それまでは `mountedContentApplied: false` を返し、呼び出し側で独自に mount record を混ぜてはならない。
+
+Phase 0 では `TreeQueryService` が `copyOnWriteOf` または `patchData` を持つ node を返す場合、共通 resolver を通して `data` を effective staged data に差し替える。これにより、既存 Map UI / capture が通常の `getNode` / `listChildren` / `listDescendants` 経路を使っても CoW overlay 後の値を読む。通常 node は resolver を通さず従来通り返す。`patchData` が `copyOnWriteOf` なしに存在する場合は contract violation として失敗させ、空 object や raw `data` への fallback は行わない。
 
 resolver は `copyOnWriteOf` の参照先欠落、循環、`patchData` の不正 shape、`copyOnWriteOf` を持たない node への `patchData` 設定、draftData の不正 shape、mount record 不整合を typed error として返す。呼び出し側はこれらを握りつぶして空 object や元 node data に fallback してはならない。
 
@@ -760,6 +762,9 @@ CSV / XLSX export 実行時は modal blocking を必須としない。短時間�
 `session-manager` は以下を意味する。
 
 - staging root に対して既存 folder build target collection を実行する。
+- canonical build API を持つ node を build candidate とし、そのうち `metadata.buildMetadata.buildRequired` または `draftMetadata.buildMetadata.buildRequired` が true の node だけを build target とする。
+- build candidate が 1 件も存在しない場合は `not-buildable` として fail-fast する。
+- build candidate は存在するが build target が 0 件の場合は、build 不要として build session を作成せず no-op completed とする。
 - build-ready target を既存 `BuildJobQueue` と canonical build session に登録する。
 - AppBar の session manager で queue/session progress を表示する。
 - plugin ごとの build logic、Worker、IndexedDB、cache identity、auth-required semantics は既存経路を使う。
@@ -786,7 +791,7 @@ CSV / XLSX export 実行時は modal blocking を必須としない。短時間�
 | AppBar session manager / build queue UI integration | `app/src/router/pages/tree/console/*` and `app/src/components/BuildSessionQueuePanel.tsx` |
 | Existing Map UI capture execution | `app/src/router/routes/map/*` |
 
-`@hierarchidb/staged-folder-action` は staged folder action 固有 contract package である。既存 `@hierarchidb/map-export` はこの package へ rename / replacement する。TreeNode の汎用 shape は `@hierarchidb/tree-api` に置き、staged folder action 固有の manifest/action/progress contract は `@hierarchidb/staged-folder-action` に置く。runtime-worker はそれらの contract を使って storage / Worker / CoreDB に接続する。
+`@hierarchidb/staged-folder-action` は staged folder action 固有 contract package である。TreeNode の汎用 shape は `@hierarchidb/tree-api` に置き、staged folder action 固有の manifest/action/progress contract は `@hierarchidb/staged-folder-action` に置く。runtime-worker はそれらの contract を使って storage / Worker / CoreDB に接続する。旧 map image export 用の専用 route / parser / browser API contract は staged-folder-action の public API として残してはならない。
 
 ## Map Image Capture Action Contract
 
@@ -812,7 +817,9 @@ render ready 条件:
 - canvas/WebGL が nonblank である。
 - page error、unhandled rejection、WebGL context loss が発生していない。
 
-Map UI は `data-map-image-capture-render-status="ready"` により bbox / viewport / layer visibility / MapLibre idle までを通知する。browser handoff は ready 通知後に `.maplibregl-canvas` の存在、描画サイズ、sampled pixel の nonblank を検査し、blank の場合は画像ファイルを書き出さず失敗として progress に記録する。browser handoff は page error、unhandled rejection、WebGL context loss も収集し、1件でも存在する場合は画像ファイルを書き出さず失敗として progress に記録する。
+Map UI は `data-map-image-capture-render-status="ready"` により bbox / viewport / layer visibility / MapLibre idle までを通知する。`map-image-capture.layers` が指定された場合、layer path は通常の visible filter 適用前の staging hierarchy から解決し、`visible: true` / `visible: false` の sequence によって capture 対象を決める。これにより、通常 UI では invisible な node も capture intent で明示的に含められる。
+
+browser handoff は ready 通知後に `.maplibregl-canvas` の存在、描画サイズ、sampled pixel の nonblank を検査し、blank の場合は画像ファイルを書き出さず失敗として progress に記録する。nonblank 判定では、RGBA の全 channel が 0 の pixel のみを blank と扱う。不透明な黒 pixel は有効な描画として扱い、blank と誤判定してはならない。browser handoff は page error、unhandled rejection、WebGL context loss も収集し、1件でも存在する場合は画像ファイルを書き出さず失敗として progress に記録する。
 
 ## Progress SSOT
 
@@ -927,16 +934,20 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 
 - 専用 route を正規 route とする案は撤回する。
 - `BuildJobQueue.mode = 'export'` は今後も利用候補だが、専用 route のためではなく staging folder build を表す mode として再定義する。
-- 現状の `BuildSessionQueuePanel` は build queue/session 表示に使えるが、CLI 主導 phase と capture/output/cleanup progress を表示するには拡張が必要である。
+- Phase 0 実装では `StagedFolderActionProgressStore` を canonical build runtime adapter として登録し、TreeConsole AppBar に staged-folder-action runtime 用の badge button を追加する。これにより staged-folder-action run は既存 session manager surface から確認できる。ただし shape build session と staged-folder-action run を1つの統合 queue として並べる UI、action-specific detail、capture/output/cleanup の詳細表示は後続 phase で拡張する。
 - TreeNode hierarchy の複製は `CoreDB.duplicateSubtreeWithMap()` 相当を基礎にできるが、copy-on-write node として `copyOnWriteOf` / `patchData` を持たせ、effective data 解決を build / Map UI / capture の読み取り経路に接続する必要がある。
+- Phase 0 実装では temporary-copy / permanent-copy について CoW subtree 作成と Map UI/capture の TreeQueryService 経由 effective data 読み取りを接続済みである。既存 build queue の build input collection、Preview feature table、TreeTable、CSV/XLSX export、diagnostics への resolver 接続は後続 phase で行う。
+- Phase 0 実装では runtime-worker が staged-folder-action runner 用の core dependency adapter を提供する。この adapter は `temporary-copy` の CoW staging、`permanent-copy` の output parent 配下 CoW staging、`patch-source` の source node staging、overlay 適用、temporary-copy cleanup policy を CoreDB 上で実行する。
+- Phase 0 実装では WorkerAPI に `runStagedFolderAction(input)` を追加し、WebUI または後続 CLI bridge から同一 application profile の Worker 内 runner を起動できる。WebUI 側の標準入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` も同じ WorkerAPI method に転送する。WorkerAPI execution host は staging/overlay/action/cleanup の状態を `StagedFolderActionProgressStore` に記録する。`build` action では、staging root 自身が canonical build API を持つ場合は root を build candidate とし、folder など直接 build できない場合は配下 descendants から canonical build API を持つ node を candidate として収集する。candidate のうち `buildRequired` な node だけを build target とし、candidate がない場合は fail-fast、candidate はあるが target がない場合は no-op completed とする。各 build target は既存 canonical build session を開始し、terminal state まで待つ。`completed` 以外の terminal state は action failure として扱う。
+- Phase 0 の WorkerAPI execution host は browser handoff をまだ接続しない。`map-image-capture` intent、Map UI readiness、capture page port helper、canvas nonblank 判定は実装済みだが、WorkerAPI から `map-image-capture` を end-to-end 実行するには後続 phase で headed/headless browser host を注入する必要がある。
 - 追加定義が必要なのは、build 入力が TreeNode.data 以外の Group/Relation store に存在する plugin の copy-on-write 参照または materialize participant 境界である。
 - 現状の Preview / Map UI feature table は read-only 一覧としては使えるが、DependencyEdgeStatus 表示、field-level status、dependency-aware cell editing、map feature popover 連動、stale 化と incremental rebuild plan 作成の入口としては不足している。この不足分は本仕様で追加仕様として定義し、ただちに Issue 化せず次 phase で詳細設計から分解する。
 
 ## 後続 Issue 分割
 
 1. staging/overlay manifest parser を実装する。
-2. source node から temporary folder または output parent 配下へ staging copy を作る。
-3. effective data resolver を実装し、build / Map UI / Preview / TreeTable / CSV/XLSX export / reference resolver / diagnostics から独自解決コードを排除する。
+2. source node から temporary folder または output parent 配下へ staging copy を作る。temporary-copy / permanent-copy は Phase 0 で実装済み。
+3. effective data resolver を実装し、build / Map UI / Preview / TreeTable / CSV/XLSX export / reference resolver / diagnostics から独自解決コードを排除する。Phase 0 では resolver 本体と Map UI/capture の TreeQueryService 接続を実装済み。build input collection など残りの接続は後続 phase で行う。
 4. overlay を copy-on-write node の `patchData` または patch-source の committed `data` に strict merge する。
 5. pending reference resolver と warning/result persistence を実装する。
 6. artifact dependency index と `active/stale/rebuilding/resolved/orphaned` lifecycle を実装する。
@@ -947,9 +958,9 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 11. build 完了後の対象 field 編集で stale edge を発生させ、個別 UI、node dialog、TreeTable / 上位 folder の aggregate warning、build availability に伝播させる。
 12. TreeTable / node 詳細 Dialog に集合 node の dependency status 集約 badge と診断導線を実装する。
 13. Preview / Map UI の feature table row、cell editing、feature click toast/popover、編集 menu に個別 feature の dependency status と修正導線を実装する。これは即時実装 Issue ではなく、まず read-only 現状との差分と editable table substrate を固める design phase を先行する。
-14. staging root を既存 folder build queue / session manager に接続する。
-15. CLI 主導 phase を Worker / IndexedDB progress state に報告する。
-16. `map-image-capture` action intent を実装する。
+14. staging root を既存 folder build queue / session manager に接続する。Phase 0 では WorkerAPI execution host が build action を canonical build session に接続済みであり、root が直接 build できない場合の descendants build target collection も実装済みである。plugin 固有 prerequisite、build availability resolver、session manager 詳細 UI は後続 phase で行う。
+15. CLI 主導 phase を Worker / IndexedDB progress state に報告する。Phase 0 CLI は dry-run validation host までであり、WorkerAPI execution host への CLI bridge は後続 phase で行う。
+16. `map-image-capture` action intent を実装する。Phase 0 では intent store、WorkerAPI の intent read、Map UI readiness、browser page port helper を実装済みである。
 17. `export-csv` / `export-xlsx` action intent、location/route Step2 local-file import/export adapter、TreeTable context menu `Export` submenu item を実装する。
 18. CLI の `--browser headless|headed` に応じて新規 tab の Map UI capture を実行する。
 19. cleanup policy を実装する。

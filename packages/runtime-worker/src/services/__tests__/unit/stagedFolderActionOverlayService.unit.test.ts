@@ -3,12 +3,12 @@ import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-type
 import type { NodePayload, TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CoreDB } from '../../CoreDB';
-import { resolveEffectiveTreeNodeData } from '../../effectiveTreeNodeDataResolver';
+import { resolveEffectiveTreeNodeData } from '../../resolveEffectiveTreeNodeData';
 import {
   applyStagedFolderActionOverlays,
   StagedFolderActionOverlayApplicationError,
-} from '../../stagedFolderActionOverlayService';
-import { ensureTemporaryFolderHolder } from '../../temporaryFolderHolderLifecycle';
+} from '../../applyStagedFolderActionOverlays';
+import { ensureTemporaryFolderHolder } from '../../temporaryFolderHolderLifecycleUtils';
 
 type TestTreeNodeOverrides = Omit<Partial<TreeNode<NodePayload | null>>, 'metadata'> & {
   metadata?: Partial<TreeNode<NodePayload | null>['metadata']>;
@@ -165,6 +165,9 @@ describe('applyStagedFolderActionOverlays', () => {
       async updateNode() {
         throw new Error('unexpected-update');
       },
+      async runInTx<T>(_mode: 'rw', _tables: string[], fn: () => Promise<T>) {
+        return await fn();
+      },
     } as unknown as CoreDB;
 
     await expect(
@@ -290,6 +293,33 @@ describe('applyStagedFolderActionOverlays', () => {
       nested: { keep: true, value: 'new' },
       list: [3],
     });
+  });
+
+  it('does not partially apply patch-source overlays when a later target has invalid existing data', async () => {
+    const source = await createNode('source', 'r:root' as NodeId, {
+      nested: { keep: true },
+    });
+    const invalidChild = await createNode('invalid-child', source.id as NodeId, [] as never, {
+      metadata: { name: 'Invalid Child' },
+    });
+
+    await expect(
+      applyStagedFolderActionOverlays(coreDB, {
+        stagingMode: 'patch-source',
+        stagingRootNodeId: source.id as NodeId,
+        nodes: [
+          { match: { path: '.' }, data: { nested: { value: 'new' } } },
+          { match: { path: 'Invalid Child' }, data: { invalid: true } },
+        ],
+      })
+    ).rejects.toMatchObject({
+      code: 'STAGED_FOLDER_ACTION_OVERLAY_DATA_NOT_OBJECT',
+    });
+
+    expect((await coreDB.getNode(source.id as NodeId))?.data).toEqual({
+      nested: { keep: true },
+    });
+    expect((await coreDB.getNode(invalidChild.id as NodeId))?.data).toEqual([]);
   });
 
   it('rejects holder-level overlay and accepts $-prefixed JSON data keys', async () => {

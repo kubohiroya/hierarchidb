@@ -1,7 +1,7 @@
 import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from './CoreDB.js';
-import { generateNodeId } from './generateNodeId.js';
+import { createCopyOnWriteSubtree } from './createCopyOnWriteSubtree.js';
 
 export const TEMPORARY_FOLDER_NODE_TYPE = 'temporary-folder' as NodeType;
 export const TEMPORARY_FOLDER_NAME = 'Temporary';
@@ -17,7 +17,7 @@ export function isTemporaryFolderHolderNode(node: TreeNode | undefined): boolean
 
 export async function ensureTemporaryFolderHolder(
   coreDB: CoreDB,
-  treeId: TreeId = 'r' as TreeId
+  treeId: TreeId
 ): Promise<TreeNode> {
   const holderId = getTemporaryFolderNodeId(treeId);
   const existing = await coreDB.getNode(holderId);
@@ -63,42 +63,60 @@ export async function createTemporaryCopyStagingRoot(
     name?: string;
   }
 ): Promise<TreeNode> {
-  const treeId = input.treeId ?? ('r' as TreeId);
+  const treeId = input.treeId ?? (await resolveTreeIdForNode(coreDB, input.sourceNodeId));
   const holder = await ensureTemporaryFolderHolder(coreDB, treeId);
-  const source = await coreDB.getNode(input.sourceNodeId);
-  if (!source) {
+  try {
+    const root = await createCopyOnWriteSubtree(coreDB, {
+      sourceNodeId: input.sourceNodeId,
+      targetParentNodeId: holder.id as NodeId,
+      stagingRootNodeId: input.stagingRootNodeId,
+      rootNameOverride: input.name,
+      isTemporary: true,
+    });
+    await refreshTemporaryFolderVisibility(coreDB, holder.id as NodeId);
+    return root;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'copy-on-write-source-node-not-found') {
+      throw new Error('temporary-copy-source-node-not-found');
+    }
+    throw error;
+  }
+}
+
+async function resolveTreeIdForNode(coreDB: CoreDB, nodeId: NodeId): Promise<TreeId> {
+  const trees = await coreDB.trees.toArray();
+  const rootTreeIds = new Map<NodeId, TreeId>();
+  for (const tree of trees) {
+    rootTreeIds.set(tree.rootId, tree.id);
+    rootTreeIds.set(tree.archiveRootId, tree.id);
+    rootTreeIds.set(tree.superRootId, tree.id);
+  }
+
+  let current = await coreDB.getNode(nodeId);
+  if (!current) {
     throw new Error('temporary-copy-source-node-not-found');
   }
-
-  const now = Date.now() as Timestamp;
-  const stagingRoot: TreeNode = {
-    id: input.stagingRootNodeId ?? generateNodeId(),
-    parentId: holder.id as NodeId,
-    nodeType: source.nodeType,
-    depth: holder.depth + 1,
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-    metadata: {
-      name: input.name ?? source.metadata.name,
-      description: source.metadata.description ?? '',
-      tags: [...(source.metadata.tags ?? [])],
-    },
-    draftMetadata: null,
-    data: null,
-    draftData: undefined,
-    isTemporary: true,
-    visible: true,
-    references: [source.id as NodeId],
-  };
-
-  await coreDB.createNode(stagingRoot);
-  await refreshTemporaryFolderVisibility(coreDB, holder.id as NodeId);
-  const stored = await coreDB.getNode(stagingRoot.id as NodeId);
-  if (!stored) {
-    throw new Error('temporary-staging-root-create-failed');
+  const visited = new Set<NodeId>();
+  while (current) {
+    const treeId = rootTreeIds.get(current.id as NodeId);
+    if (treeId !== undefined) {
+      return treeId;
+    }
+    if (visited.has(current.id as NodeId)) {
+      throw new Error('temporary-folder-source-parent-cycle');
+    }
+    visited.add(current.id as NodeId);
+    if (!current.parentId || current.parentId === current.id) {
+      break;
+    }
+    const parentTreeId = rootTreeIds.get(current.parentId);
+    if (parentTreeId !== undefined) {
+      return parentTreeId;
+    }
+    current = await coreDB.getNode(current.parentId);
   }
-  return stored;
+
+  throw new Error('temporary-folder-source-tree-not-found');
 }
 
 export async function cleanupTemporaryStagingRoot(

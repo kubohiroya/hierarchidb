@@ -1,8 +1,4 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  buildLocationMvtStyleExpressions,
-  buildLocationVectorLayers,
-} from '@hierarchidb/location-plugin/common';
 import type {
   LocationIconConfig,
   LocationLabelConfig,
@@ -10,10 +6,11 @@ import type {
   LocationRepresentationByZoomLevelConfig,
   LocationType,
 } from '@hierarchidb/location-api';
-import type {
-  LayerSetVisibility,
-  ResourceVectorLayer,
-} from '@hierarchidb/ui-plugin-shell/ui-map';
+import {
+  buildLocationMvtStyleExpressions,
+  buildLocationVectorLayers,
+} from '@hierarchidb/location-plugin/common';
+import type { LayerSetVisibility, ResourceVectorLayer } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { useMemo } from 'react';

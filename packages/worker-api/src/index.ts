@@ -1,5 +1,6 @@
 export type {
   BuildWorkerAPI,
+  RunStagedFolderActionInput,
   UiStorageBridge,
   WorkerAPI,
 } from './WorkerAPI.js';

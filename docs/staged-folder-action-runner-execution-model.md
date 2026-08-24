@@ -65,17 +65,19 @@ flowchart LR
 
 1. CLI runner は `--source-node-id`、`--config`、`--browser`、`--profile` を検証する。
 2. CLI runner は config を parse/validate し、Worker / IndexedDB progress に `validating-config` を報告する。
+   - Phase 0 CLI は `--dry-run` validation host として提供し、manifest / CLI option validation と normalized execution plan の JSON 出力を行う。実 Worker / IndexedDB / browser profile に接続して runner を起動する execution host は後続 phase とする。
+   - Phase 0 WorkerAPI は `runStagedFolderAction(input)` を提供し、同一 application profile 内の Worker / CoreDB / IndexedDB progress store を使って runner を起動できる。この入口は CLI 実行 host ではなく、WebUI または後続 CLI bridge が呼ぶ Worker 内 execution host である。WebUI 側の通常入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` から同じ WorkerAPI method に転送する。
 3. `staging.mode: permanent-copy` の場合だけ `--output-parent-node-id` を必須検証する。
 4. CLI runner は指定 profile または default profile の Worker / IndexedDB progress runtime を利用可能にする。browser prerequisite を持つ action がある場合だけ browser runtime も利用可能にする。
 5. `staging.mode: temporary-copy` の場合、source node/folder を system-managed `temporary-folder` 配下へ copy-on-write node tree として作成し、staging root を作る。`temporary-folder` は draft holder と同じ system holder 系列だが、draft holder ではない。通常不可視だが、temporary-copy の staging root が存在する間だけ可視化される。
 6. `staging.mode: permanent-copy` の場合、source node/folder を output parent 配下へ copy-on-write node tree として作成し、staging root を作る。
 7. `staging.mode: patch-source` の場合、source node/folder を staging target として扱う。
-8. overlay engine は staging root から相対 path を解決し、copy-on-write node では `patchData` に strict merge を適用する。`patch-source` では各 node の committed `data` に strict merge を適用する。
+8. overlay engine は staging root から相対 path を解決し、copy-on-write node では `patchData` に strict merge を適用する。`patch-source` では各 node の committed `data` に strict merge を適用する。複数 overlay の path 解決、対象検証、更新は同一 transaction 内で行い、部分成功を許してはならない。
 9. `actions: []` の場合、CLI runner は staging root を result に出して terminal とする。
 10. runner は registry で `actions[]` の各 action type と schema を検証する。unknown action は contract violation。
 11. runner は `actions[]` を manifest の順序どおりに dispatch する。各 action の prerequisite と reference/dependency は実行直前にも検証する。
 12. `build` action の場合、staging root に対して既存 folder build target collection を実行する。
-13. `build` action は既存 `BuildJobQueue` / canonical build session を作成し、AppBar session manager から進捗を確認できる状態にする。
+13. `build` action は既存 `BuildJobQueue` / canonical build session を作成し、AppBar session manager から進捗を確認できる状態にする。staged-folder-action run 自体も canonical build runtime adapter として AppBar の staged-folder-action badge から確認できる。
 14. `build` action は build queue terminal state まで待つ。
 15. `import-mount` action の場合、runner は archive を検証し、mount record を作成し、staging hierarchy の指定位置に mounted root を接続する。
 16. `export-archive` action の場合、runner は staging hierarchy の指定 subtree を既存 export service へ渡し、artifact を書き出す。
@@ -85,7 +87,7 @@ flowchart LR
 20. `map-image-capture` action は画像を `output.path` へ書き込む。
 21. action sequence が完了したら terminal result を作る。
 22. runner は `lifetime: run` の import mount を safe unmount する。
-23. `staging.cleanup` に従って staging root を保持または削除する。
+23. `staging.cleanup` に従って staging root を保持または削除する。`delete-on-success` は action sequence 成功時だけ cleanup を実行し、失敗時は staging root を保持する。`delete-always` は action sequence 失敗時にも cleanup を試みる。cleanup 自体が失敗した場合は run result/error に記録し、黙って成功扱いにしてはならない。
 24. CLI runner は success/error result を stdout/stderr/JSON contract に従って出す。
 
 ## Progress SSOT
@@ -121,7 +123,9 @@ top-level run status は generic に保つ。action ごとの状態を `build-ru
 
 Phase 0 では service-level tests で IndexedDB persistence、generic `running-action`、`auth-required` の保持、BuildSessionRuntimeRecord 投影、subscribe 初期 snapshot、active run deletion guard を固定する。runtime-worker bootstrap は staged-folder-action adapter を既存 `CanonicalBuildRuntimeAdapterRegistry` に登録する。AppBar への実際の複数 nodeType 表示統合は、既存 `BuildSessionQueuePanel` が現在 `shape` nodeType を既定としているため、UI-specific follow-up として扱う。UI 統合時も専用 route や別 progress SSOT を追加してはならない。
 
-Runner orchestration は staging preparation、overlay application、action execution、cleanup を順に行う。Phase 0 の runtime-worker runner はこれらの処理本体を注入依存として受け取り、progress store への状態遷移記録を SSOT として固定する。`actions: []` は staging/overlay 後に `completed` となり、build session を作らない。`build` action は注入された existing build session handoff だけを呼び、map capture を行わない。`build` の後に `map-image-capture` がある場合、build handoff が完了してから capture handoff に進む。
+Runner orchestration は staging preparation、overlay application、action execution、cleanup を順に行う。Phase 0 の runtime-worker runner はこれらの処理本体を注入依存として受け取り、progress store への状態遷移記録を SSOT として固定する。`actions: []` は staging/overlay 後に `completed` となり、build session を作らない。WorkerAPI execution host は runtime-worker core dependency adapter を使い、staging preparation、overlay application、temporary-copy cleanup、`build` action の existing canonical build session handoff を実行する。`build` action は staging root の nodeType に canonical build API がある場合は staging root 自身を build candidate とする。staging root が folder など直接 build できない nodeType の場合は、staging root 配下の descendants から canonical build API を持つ node を build candidate として収集する。candidate が 1 件も存在しない場合は `not-buildable` として fail-fast する。candidate のうち `metadata.buildMetadata.buildRequired` または `draftMetadata.buildMetadata.buildRequired` が true の node だけを build target とする。candidate は存在するが build target が 0 件の場合、artifact は最新で build 不要とみなし、build action は build session を開始せず no-op completed とする。各 target では既存 `startBuildSession` を `committed` input source で呼び、`completed/failed/paused/recycled` の terminal state まで待つ。terminal state が `completed` 以外の場合、runner は action failure として fail-fast する。`build` の後に `map-image-capture` がある場合、必要な build target がすべて completed になった後、または build target が 0 件の no-op completed 後に capture handoff に進む。
+
+Phase 0 WorkerAPI execution host は browser handoff implementation をまだ注入しない。したがって `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、WorkerAPI からの end-to-end capture 実行は後続 phase の browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary
 

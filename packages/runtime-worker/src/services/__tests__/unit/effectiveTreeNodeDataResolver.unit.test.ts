@@ -5,7 +5,7 @@ import {
   EffectiveTreeNodeDataResolverError,
   resolveEffectiveTreeNodeData,
   type TreeNodeReader,
-} from '../../effectiveTreeNodeDataResolver.js';
+} from '../../resolveEffectiveTreeNodeData.js';
 
 const nodeId = (value: string): NodeId => value as NodeId;
 const timestamp = (value: number): Timestamp => value as Timestamp;

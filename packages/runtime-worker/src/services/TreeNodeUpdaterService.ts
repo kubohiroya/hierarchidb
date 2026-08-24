@@ -34,7 +34,7 @@ import {
 import {
   assertNodeIsNotTemporaryStagingNode,
   isNodeInTemporaryFolderSubtree,
-} from './temporaryFolderHolderLifecycle.js';
+} from './temporaryFolderHolderLifecycleUtils.js';
 
 interface YamlCanonicalDialogWriteRequest {
   readonly nodeId: NodeId;

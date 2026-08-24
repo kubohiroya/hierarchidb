@@ -13,6 +13,7 @@ import type {
 } from '@hierarchidb/tree-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
+import { resolveEffectiveTreeNodeData } from './resolveEffectiveTreeNodeData.js';
 
 type TreeQueryCoreDB = Pick<CoreDB, 'getNode' | 'listChildren' | 'listTrees' | 'getTree'>;
 
@@ -48,30 +49,32 @@ export class TreeQueryService implements TreeQueryAPI {
       return undefined;
     }
 
-    return await this.coreDB.getNode(nodeId);
+    const node = await this.coreDB.getNode(nodeId);
+    return await this.resolveCopyOnWriteNode(node);
   }
 
   async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
     const initial = await this.coreDB.listChildren(parentId, options);
+    const effectiveInitial = await this.resolveCopyOnWriteNodes(initial);
 
     const requestedDepth = options?.prefetch?.depth ?? 1;
     if (requestedDepth <= 1) {
-      return initial;
+      return effectiveInitial;
     }
 
-    const hasPrefetchedDescendants = initial.some(
+    const hasPrefetchedDescendants = effectiveInitial.some(
       (node) => node.parentId && node.parentId !== parentId
     );
     if (hasPrefetchedDescendants) {
-      return initial;
+      return effectiveInitial;
     }
 
-    const result = [...initial];
-    const queue: Array<{ node: TreeNode; depth: number }> = initial.map((node) => ({
+    const result = [...effectiveInitial];
+    const queue: Array<{ node: TreeNode; depth: number }> = effectiveInitial.map((node) => ({
       node,
       depth: 1,
     }));
-    const visited = new Set<string>(initial.map((node) => String(node.id)));
+    const visited = new Set<string>(effectiveInitial.map((node) => String(node.id)));
 
     while (queue.length > 0) {
       const next = queue.shift();
@@ -83,7 +86,9 @@ export class TreeQueryService implements TreeQueryAPI {
         continue;
       }
 
-      const children = await this.coreDB.listChildren(node.id as NodeId);
+      const children = await this.resolveCopyOnWriteNodes(
+        await this.coreDB.listChildren(node.id as NodeId)
+      );
       if (!children || children.length === 0) {
         continue;
       }
@@ -127,6 +132,23 @@ export class TreeQueryService implements TreeQueryAPI {
       }
     }
     return out;
+  }
+
+  private async resolveCopyOnWriteNodes(nodes: TreeNode[]): Promise<TreeNode[]> {
+    return await Promise.all(nodes.map((node) => this.resolveCopyOnWriteNode(node)));
+  }
+
+  private async resolveCopyOnWriteNode(node: TreeNode | undefined): Promise<TreeNode | undefined> {
+    if (!node || (node.copyOnWriteOf === undefined && node.patchData === undefined)) {
+      return node;
+    }
+
+    const result = await resolveEffectiveTreeNodeData({
+      reader: this.coreDB,
+      nodeId: node.id as NodeId,
+      slot: 'effective-staged',
+    });
+    return { ...node, data: result.data };
   }
 
   async listAncestors(nodeId: NodeId): Promise<TreeNode[]> {

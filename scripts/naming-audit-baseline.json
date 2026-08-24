@@ -624,14 +624,6 @@
     "suggestedRename": "constantsView.tsx"
   },
   {
-    "file": "router/routes/map-export/MapExportPage.tsx",
-    "subPackage": "app",
-    "pattern": 5,
-    "severity": "warning",
-    "message": "Component \"MapExportPage.tsx\" exceeds separation threshold (hook calls: 28 (threshold: 2)). Consider splitting into MapExportPage.tsx + MapExportPageView.tsx + useMapExportPageState.ts.",
-    "suggestedRename": "MapExportPage.tsx + MapExportPageView.tsx + useMapExportPageState.ts"
-  },
-  {
     "file": "router/routes/map.tsx",
     "subPackage": "app",
     "pattern": 5,
