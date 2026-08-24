@@ -141,6 +141,8 @@ Phase 2 child #1598 では、CLI core から WorkerAPI execution host へ接続�
 
 child #1598 は CLI process が任意の既存 browser profile IndexedDB を直接共有する方式を定義しない。通常 WebUI と CLI 実行 browser profile をまたいだ progress 共有は引き続き保証範囲外であり、共有表示を行う場合は Worker/IndexedDB state の共有方式を別 Issue で定義する。`map-image-capture` browser handoff も child #1598 では注入しないため、browser host 未設定の capture は typed failure として停止する。
 
+Phase 2 child #1600 では、`map-image-capture` の browser action runner factory を `@hierarchidb/staged-folder-action/map-image-capture-browser-host` に追加する。Node 専用 host は browser app が import する root entrypoint から再 export しない。factory は `baseUrl`、`routeMode`、`timeoutMs`、`outputBasePath`、browser launcher を明示 input とし、相対 output path は `outputBasePath` 基準の絶対 path に解決してから shared page-port handoff に渡す。`headless` / `headed` は launcher option の browser visibility だけを変え、通常 Map route、capture intent、render readiness、canvas nonblank、page failure monitoring は共有する。Playwright は launcher loader 境界に閉じ込め、manifest、runner dependency contract、Map UI readiness contract へ型や API を漏らさない。`baseUrl`、`timeoutMs`、`outputBasePath`、launcher module が不正な場合は fallback せず fail-fast する。browser close failure が capture failure と同時に発生した場合も、元の capture failure を主原因として保持する。
+
 Phase 1 初期 WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へそのまま渡す。標準 Worker bootstrap / CLI bridge はまだ browser handoff implementation を注入しない。したがって標準 host で `map-image-capture` action を含む run は、intent 保存 contract と Map UI readiness/capture helper のテストは存在するが、browser host 接続まで失敗する。この失敗は fallback せず、`map-image-capture action runner is not configured` として明示される。
 
 ## Map Image Capture Action Boundary

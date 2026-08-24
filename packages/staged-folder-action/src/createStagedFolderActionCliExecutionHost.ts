@@ -104,7 +104,18 @@ function toActionResults(
   config: StagedFolderActionConfig,
   record: StagedFolderActionRunRecord
 ): StagedFolderActionCliActionResult[] {
-  return config.actions.flatMap((action) => {
+  return config.actions.flatMap((action): StagedFolderActionCliActionResult[] => {
+    if (action.type === 'map-image-capture') {
+      return [
+        {
+          type: 'map-image-capture',
+          status: 'completed',
+          outputPath: action.output.path,
+          width: action.output.width,
+          height: action.output.height,
+        },
+      ];
+    }
     if (action.type !== 'build') {
       return [];
     }
