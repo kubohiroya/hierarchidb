@@ -1,4 +1,15 @@
 export {
+  type BuildAvailability,
+  type BuildAvailabilityNode,
+  type BuildAvailabilityReason,
+  type BuildAvailabilityStatus,
+  isNodeBuildRequired,
+  type ResolveBuildAvailabilityInput,
+  type ResolveSubtreeBuildAvailabilityInput,
+  resolveBuildAvailability,
+  resolveSubtreeBuildAvailability,
+} from './BuildAvailabilityResolver.js';
+export {
   CanonicalBuildInputError,
   type CanonicalBuildInputErrorCode,
   type CanonicalBuildInputErrorDetails,

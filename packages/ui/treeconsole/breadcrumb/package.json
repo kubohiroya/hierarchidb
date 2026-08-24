@@ -14,6 +14,8 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts --outDir dist",
+    "test": "vitest --passWithNoTests",
+    "test:run": "vitest run --passWithNoTests",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
@@ -23,6 +25,7 @@
     "@hierarchidb/components": "workspace:*"
   },
   "devDependencies": {
+    "@hierarchidb/build-api": "workspace:*",
     "comlink": "^4.4.2",
     "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
@@ -38,6 +41,7 @@
     "react-dom": "^19.0.0"
   },
   "peerDependencies": {
+    "@hierarchidb/build-api": "workspace:*",
     "comlink": "^4.4.2",
     "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",

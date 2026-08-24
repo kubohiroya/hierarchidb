@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { runStagedFolderActionCli, type StagedFolderActionCliIo } from '../runStagedFolderActionCli.js';
+import {
+  runStagedFolderActionCli,
+  type StagedFolderActionCliExecutionHost,
+  StagedFolderActionCliHostError,
+  type StagedFolderActionCliIo,
+} from '../runStagedFolderActionCli.js';
 
 const jsonManifest = JSON.stringify({
   version: 1,
@@ -133,6 +138,223 @@ describe('runStagedFolderActionCli', () => {
       error: {
         category: 'cli',
         code: 'STAGED_FOLDER_ACTION_CLI_EXECUTION_HOST_NOT_CONFIGURED',
+      },
+    });
+  });
+
+  it('runs non-dry execution through an injected host', async () => {
+    const io = createIo({ 'config.json': jsonManifest });
+    const receivedInputs: Array<{
+      sourceNodeId: string;
+      profileName: string;
+      dryRun?: boolean;
+      actionTypes: string[];
+    }> = [];
+    const host: StagedFolderActionCliExecutionHost = {
+      run: async (input) => {
+        receivedInputs.push({
+          sourceNodeId: input.sourceNodeId,
+          profileName: input.profileName,
+          actionTypes: input.config.actions.map((action) => action.type),
+        });
+        return {
+          ok: true,
+          version: 1,
+          dryRun: false,
+          runId: 'run-1',
+          sourceNodeId: input.sourceNodeId,
+          profileName: input.profileName,
+          configPath: input.configPath,
+          format: input.format,
+          stagingMode: input.config.staging.mode,
+          actions: input.config.actions.map((action) => action.type),
+          stagingRootNodeId: 'stage-1',
+          actionResults: [],
+          cleanup: {
+            policy: input.config.staging.cleanup,
+            status: 'retained',
+          },
+          warnings: [],
+          pendingReferences: [],
+          dependencyChanges: [],
+          elapsedMs: 12,
+        };
+      },
+    };
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source', '--profile', 'debug'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      dryRun: boolean;
+      runId: string;
+      profileName: string;
+      cleanup: { status: string };
+    };
+
+    expect(exitCode).toBe(0);
+    expect(receivedInputs).toEqual([
+      {
+        sourceNodeId: 'source',
+        profileName: 'debug',
+        actionTypes: [],
+      },
+    ]);
+    expect(result).toMatchObject({
+      ok: true,
+      dryRun: false,
+      runId: 'run-1',
+      profileName: 'debug',
+      cleanup: {
+        status: 'retained',
+      },
+    });
+  });
+
+  it('returns cleanup exit code when the injected host reports cleanup failure', async () => {
+    const io = createIo({ 'config.json': jsonManifest });
+    const host: StagedFolderActionCliExecutionHost = {
+      run: async (input) => ({
+        ok: true,
+        version: 1,
+        dryRun: false,
+        runId: 'run-cleanup-failed',
+        sourceNodeId: input.sourceNodeId,
+        profileName: input.profileName,
+        configPath: input.configPath,
+        format: input.format,
+        stagingMode: input.config.staging.mode,
+        actions: input.config.actions.map((action) => action.type),
+        actionResults: [],
+        cleanup: {
+          policy: input.config.staging.cleanup,
+          status: 'failed',
+          error: 'cleanup denied',
+        },
+        warnings: [],
+        pendingReferences: [],
+        dependencyChanges: [],
+        elapsedMs: 12,
+      }),
+    };
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      cleanup: { status: string; error: string };
+    };
+
+    expect(exitCode).toBe(7);
+    expect(result).toMatchObject({
+      ok: true,
+      cleanup: {
+        status: 'failed',
+        error: 'cleanup denied',
+      },
+    });
+  });
+
+  it('preserves a typed failure result returned by the injected host', async () => {
+    const io = createIo({ 'config.json': jsonManifest });
+    const host: StagedFolderActionCliExecutionHost = {
+      run: async (input) => ({
+        ok: false,
+        version: 1,
+        dryRun: false,
+        runId: 'run-build-failed',
+        sourceNodeId: input.sourceNodeId,
+        stagingRootNodeId: 'stage-1',
+        buildQueueId: 'build-1',
+        error: {
+          category: 'build',
+          code: 'STAGED_FOLDER_ACTION_BUILD_FAILED',
+          message: 'build failed',
+          runId: 'run-build-failed',
+          sourceNodeId: input.sourceNodeId,
+          stagingRootNodeId: 'stage-1',
+          buildQueueId: 'build-1',
+        },
+      }),
+    };
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      runId: string;
+      error: { category: string; code: string; buildQueueId: string };
+    };
+
+    expect(exitCode).toBe(4);
+    expect(result).toMatchObject({
+      ok: false,
+      runId: 'run-build-failed',
+      error: {
+        category: 'build',
+        code: 'STAGED_FOLDER_ACTION_BUILD_FAILED',
+        buildQueueId: 'build-1',
+      },
+    });
+  });
+
+  it('preserves a typed host error thrown by the injected host', async () => {
+    const io = createIo({ 'config.json': jsonManifest });
+    const host: StagedFolderActionCliExecutionHost = {
+      run: async (input) => {
+        throw new StagedFolderActionCliHostError({
+          ok: false,
+          version: 1,
+          dryRun: false,
+          runId: 'run-action-failed',
+          sourceNodeId: input.sourceNodeId,
+          actionIndex: 0,
+          actionType: 'map-image-capture',
+          error: {
+            category: 'map-image-capture',
+            code: 'STAGED_FOLDER_ACTION_MAP_CAPTURE_FAILED',
+            message: 'map capture failed',
+            runId: 'run-action-failed',
+            sourceNodeId: input.sourceNodeId,
+            actionIndex: 0,
+            actionType: 'map-image-capture',
+          },
+        });
+      },
+    };
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      runId: string;
+      actionIndex: number;
+      actionType: string;
+      error: { category: string; code: string; actionType: string };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      runId: 'run-action-failed',
+      actionIndex: 0,
+      actionType: 'map-image-capture',
+      error: {
+        category: 'map-image-capture',
+        code: 'STAGED_FOLDER_ACTION_MAP_CAPTURE_FAILED',
+        actionType: 'map-image-capture',
       },
     });
   });

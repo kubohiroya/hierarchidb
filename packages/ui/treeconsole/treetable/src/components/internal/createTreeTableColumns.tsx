@@ -1,3 +1,4 @@
+import { isNodeBuildRequired } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { rainbowColors } from '@hierarchidb/ui-theme';
@@ -298,21 +299,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const isBuildRunning = Boolean(buildSessionIndicator?.runningNodeIds.has(node.id as NodeId));
       const isBuildActive =
         isBuildRunning && Boolean(buildSessionIndicator?.activeNodeIds.has(node.id as NodeId));
-      const isBuildRequiredForNode = Boolean(
-        node.metadata?.buildMetadata?.buildRequired ||
-          (node as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } })
-            .draftMetadata?.buildMetadata?.buildRequired
-      );
+      const isBuildRequiredForNode = isNodeBuildRequired(node);
       const descendantIds = collectDescendantIds(node.id as NodeId).filter(
         (descendantId) => descendantId !== node.id
       );
       const hasBuildRequiredDescendant = descendantIds.some((descendantId) => {
         const descendant = controller?.nodeIndex?.get(descendantId as NodeId);
-        return Boolean(
-          descendant?.metadata?.buildMetadata?.buildRequired ||
-            (descendant as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } })
-              ?.draftMetadata?.buildMetadata?.buildRequired
-        );
+        return descendant ? isNodeBuildRequired(descendant) : false;
       });
       const isBuildRequired = isBuildRequiredForNode || hasBuildRequiredDescendant;
 

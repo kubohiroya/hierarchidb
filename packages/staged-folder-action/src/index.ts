@@ -37,8 +37,20 @@ export {
 } from './runMapImageCaptureBrowserHandoff.js';
 export {
   runStagedFolderActionCli,
+  type StagedFolderActionCliActionResult,
+  type StagedFolderActionCliDependencyChange,
   type StagedFolderActionCliErrorCategory,
+  type StagedFolderActionCliExecutionFailureResult,
+  type StagedFolderActionCliExecutionHost,
+  type StagedFolderActionCliExecutionInput,
+  type StagedFolderActionCliExecutionResult,
+  type StagedFolderActionCliExecutionSuccessResult,
+  type StagedFolderActionCliFailureError,
+  StagedFolderActionCliHostError,
   type StagedFolderActionCliIo,
+  type StagedFolderActionCliOptions,
+  type StagedFolderActionCliPendingReference,
+  type StagedFolderActionCliReferenceWarning,
   type StagedFolderActionCliResult,
 } from './runStagedFolderActionCli.js';
 export type {
