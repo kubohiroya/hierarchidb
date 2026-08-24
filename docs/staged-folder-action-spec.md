@@ -497,6 +497,8 @@ Phase 2 child #1590 では、TreeTable context menu、Breadcrumb context menu、
 
 Phase 2 child #1592 では、field-level edit lock は canonical build session runtime context を SSOT とする。UI は presentation flag や local component state から active build を推測せず、active runtime session と明示的な locked field id list から field ごとの disabled state と理由を解決する。metadata field を含む build input field は active session 中だけ lock し、対象外 field は同じ dialog 内でも編集可能なままにする。field id または locked field id が空の場合は contract violation として fail-fast し、黙って unlock してはならない。
 
+Phase 2 child #1594 では、build 完了後の committed target field 編集を runtime-worker の dependency lifecycle service/API に接続する。final save が成功した場合のみ、旧 committed node と新 committed node の `metadata` / `data` を比較し、変更された target field path に紐づく `active` edge を `stale` に遷移させる。`save-draft` は committed data を変更しないため stale 化も rebuild plan 作成も行わない。service は stale edge から deterministic incremental rebuild plan と `BuildDependencyAvailabilitySummary` を返し、空 field path、空 target id、rebuild target ID を持たない stale edge は contract violation として fail-fast する。UI/app は dependency Dexie store へ直接書き込まず、build availability や warning 表示は runtime-worker が返す summary 境界を SSOT とする。
+
 build session は modal dialog として UI 全体をブロックしてはならない。build button 押下後、session manager が閉じていても新しい session は登録され、AppBar 上の icon / badge / indicator により running session の存在を確認できなければならない。詳細進捗、pause/resume/cancel、error detail は AppBar から session manager を開いて確認する。
 
 一方で、build 対象 node/folder とその配下で build input となる data / draftData field は、build が terminal state になるまで編集不可にする。たとえば shape dialog の data / draftData 設定 step では、build input に該当する form control をすべて disabled にする。これは modal blocking ではなく、artifact 作成中の入力整合性を守るための field-level / surface-level edit lock である。

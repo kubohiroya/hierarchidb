@@ -21,6 +21,10 @@ import type {
   ViewProperties,
 } from '@hierarchidb/tree-api';
 import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
+import type {
+  MarkPostEditStaleForCommittedNodeInput,
+  PostEditStalePropagationResult,
+} from './artifactDependencyRebuildPlanner.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import {
@@ -35,6 +39,12 @@ import {
   assertNodeIsNotTemporaryStagingNode,
   isNodeInTemporaryFolderSubtree,
 } from './temporaryFolderHolderLifecycleUtils.js';
+
+export interface PostEditDependencyStalePropagator {
+  markStaleForCommittedNodeEdit(
+    input: MarkPostEditStaleForCommittedNodeInput
+  ): Promise<PostEditStalePropagationResult>;
+}
 
 interface YamlCanonicalDialogWriteRequest {
   readonly nodeId: NodeId;
@@ -154,7 +164,8 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     private coreDB: CoreDB,
     _commandProcessor?: CommandProcessor,
     private tagService?: TagAPI,
-    private yamlCanonicalDialogWriter?: YamlCanonicalDialogWriter
+    private yamlCanonicalDialogWriter?: YamlCanonicalDialogWriter,
+    private postEditDependencyStalePropagator?: PostEditDependencyStalePropagator
   ) {}
 
   private readonly defaultDialogUIState: DialogUIState = {
@@ -572,6 +583,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     await assertNodeIsNotTemporaryStagingNode(this.coreDB, draftId);
     const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'error';
     const mode: CommitDraftMode = request?.mode ?? 'save';
+    const preCommitNode =
+      mode === 'save' && this.postEditDependencyStalePropagator !== undefined
+        ? ((await this.coreDB.getNode(draftId)) as TreeNode | undefined)
+        : undefined;
 
     const updates: Partial<TreeNode> = {};
     if (mode === 'save' || mode === 'save-draft') {
@@ -708,6 +723,18 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       if (this.tagService) {
         await this.syncTagsForNode(result.nodeId, metadataTags, 'published');
         await this.clearTagScope(result.nodeId, 'draft');
+      }
+      if (this.postEditDependencyStalePropagator !== undefined) {
+        if (preCommitNode === undefined) {
+          throw new Error('post-edit stale propagation requires previous committed node.');
+        }
+        if (forUpdater === undefined) {
+          throw new Error('post-edit stale propagation requires current committed node.');
+        }
+        await this.postEditDependencyStalePropagator.markStaleForCommittedNodeEdit({
+          previousNode: preCommitNode,
+          currentNode: forUpdater,
+        });
       }
       return {
         status: 'ok',

@@ -41,6 +41,15 @@ export {
   type ResolveArtifactDependenciesInput,
 } from './services/artifactDependencyLifecycleStore.js';
 export {
+  type ArtifactDependencyChange,
+  ArtifactDependencyRebuildPlanner,
+  collectCommittedNodeChangedFieldPaths,
+  type IncrementalRebuildPlan,
+  type MarkPostEditStaleByTargetInput,
+  type MarkPostEditStaleForCommittedNodeInput,
+  type PostEditStalePropagationResult,
+} from './services/artifactDependencyRebuildPlanner.js';
+export {
   publishBuildSessionUpdate,
   subscribeToBuildSessionBroadcast,
 } from './services/buildSessionBroadcastUtils.js';
