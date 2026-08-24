@@ -303,6 +303,12 @@ describe('parseStagedFolderActionManifest', () => {
   });
 
   it('rejects unsafe overlay paths and duplicate overlay paths', () => {
+    expect(
+      parseJson({
+        ...validManifest,
+        overlay: { nodes: [{ match: { path: './routes/main' }, data: {} }] },
+      }).overlay.nodes[0]?.match.path
+    ).toBe('routes/main');
     expectManifestError(
       () =>
         parseJson({
@@ -326,7 +332,7 @@ describe('parseStagedFolderActionManifest', () => {
           overlay: {
             nodes: [
               { match: { path: 'routes/main' }, data: {} },
-              { match: { path: 'routes/main' }, data: {} },
+              { match: { path: './routes/main' }, data: {} },
             ],
           },
         }),

@@ -182,19 +182,23 @@ const parseDocument = (
   );
 };
 
-const assertSafeRelativePath = (
+const normalizeSafeRelativePath = (
   value: string,
   path: string,
   options: { allowDot: boolean }
-): void => {
+): string => {
   if (options.allowDot && value === '.') {
-    return;
+    return value;
   }
+  const pathWithoutExplicitRoot =
+    options.allowDot && value.startsWith('./') ? value.slice(2) : value;
   if (
     (!options.allowDot && value === '.') ||
     value.startsWith('/') ||
     value.includes('\0') ||
-    value.split('/').some((segment) => segment === '..' || segment === '.' || segment.length === 0)
+    pathWithoutExplicitRoot
+      .split('/')
+      .some((segment) => segment === '..' || segment === '.' || segment.length === 0)
   ) {
     fail(
       'STAGED_FOLDER_ACTION_MANIFEST_INVALID_PATH',
@@ -202,12 +206,12 @@ const assertSafeRelativePath = (
       'expected a relative path without empty or parent-directory segments'
     );
   }
+  return pathWithoutExplicitRoot;
 };
 
 const requireSafePath = (value: unknown, path: string, options = { allowDot: false }): string => {
   const safePath = requireString(value, path, 'STAGED_FOLDER_ACTION_MANIFEST_INVALID_PATH');
-  assertSafeRelativePath(safePath, path, options);
-  return safePath;
+  return normalizeSafeRelativePath(safePath, path, options);
 };
 
 const requireStaging = (value: unknown, path: string): StagedFolderActionConfig['staging'] => {

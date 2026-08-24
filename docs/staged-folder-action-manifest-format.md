@@ -150,9 +150,13 @@ type StagedFolderAction =
 - bbox は `-180 <= west < east <= 180`、`-90 <= south < north <= 90` を満たす。
 - `overlay.nodes[*].match.path` と `map-image-capture.layers[*].path` は staging root からの相対 node path。
 - `overlay.nodes[*].match.path: "."` は staging root 自身を表す。
+- `overlay.nodes[*].match.path: "./<name>"` は staging root 直下の child path を明示する表記であり、`<name>` と同じ target に正規化する。
+- staging root の display name は root path alias ではない。`"<name>"` は常に `"./<name>"` と同義であり、root 直下の child path として解釈する。root 自身を対象にする場合は必ず `.` を使う。
 - path は空文字、`..`、空 segment、途中 segment の `.` を禁止する。
 - path grammar は POSIX-style `/` 区切りだけを定義する。`\` は path separator として解釈しない。
 - `overlay.nodes[*].data` は object でなければならない。
+- `overlay.nodes[*].data` 内の `$schema` など `$` で始まる key は通常の JSON property として扱い、operation として解釈しない。
+- 複数 overlay は atomic に適用する。validation または target 解決が失敗した場合、先行 overlay の変更を保存してはならない。
 
 欠落値を plugin default、UI default、過去 session、既存 source node からの推測で補完してはならない。
 

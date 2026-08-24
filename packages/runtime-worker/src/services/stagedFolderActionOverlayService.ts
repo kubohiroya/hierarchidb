@@ -23,6 +23,7 @@ export interface ApplyStagedFolderActionOverlaysInput {
 }
 
 export type StagedFolderActionOverlayApplicationErrorCode =
+  | 'STAGED_FOLDER_ACTION_OVERLAY_INVALID_STAGING_MODE'
   | 'STAGED_FOLDER_ACTION_OVERLAY_STAGING_ROOT_NOT_FOUND'
   | 'STAGED_FOLDER_ACTION_OVERLAY_INVALID_PATH'
   | 'STAGED_FOLDER_ACTION_OVERLAY_DUPLICATE_PATH'
@@ -31,8 +32,18 @@ export type StagedFolderActionOverlayApplicationErrorCode =
   | 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_IS_TEMPORARY_HOLDER'
   | 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_NOT_COPY_ON_WRITE'
   | 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_HAS_PATCH_WITHOUT_COW'
-  | 'STAGED_FOLDER_ACTION_OVERLAY_UNSUPPORTED_OPERATION'
   | 'STAGED_FOLDER_ACTION_OVERLAY_DATA_NOT_OBJECT';
+
+interface ResolvedOverlayEntry {
+  entry: StagedFolderActionOverlayEntry;
+  normalizedPath: string;
+  target: TreeNode<NodePayload | null>;
+}
+
+interface NormalizedOverlayEntry {
+  entry: StagedFolderActionOverlayEntry;
+  normalizedPath: string;
+}
 
 export class StagedFolderActionOverlayApplicationError extends Error {
   readonly code: StagedFolderActionOverlayApplicationErrorCode;
@@ -56,6 +67,7 @@ export async function applyStagedFolderActionOverlays(
   coreDB: CoreDB,
   input: ApplyStagedFolderActionOverlaysInput
 ): Promise<void> {
+  assertValidStagingMode(input.stagingMode);
   const stagingRoot = await coreDB.getNode(input.stagingRootNodeId);
   if (!stagingRoot) {
     throw overlayError(
@@ -68,28 +80,38 @@ export async function applyStagedFolderActionOverlays(
   assertNotTemporaryHolder(stagingRoot, '<staging-root>');
 
   const seenPaths = new Set<string>();
+  const normalizedEntries: NormalizedOverlayEntry[] = [];
   for (const entry of input.nodes) {
-    assertSafeOverlayPath(entry.match.path);
-    assertSupportedPatchData(entry.data, entry.match.path);
-    if (seenPaths.has(entry.match.path)) {
+    const normalizedPath = normalizeOverlayPath(entry.match.path);
+    assertOverlayData(entry.data, normalizedPath);
+    if (seenPaths.has(normalizedPath)) {
       throw overlayError(
         'STAGED_FOLDER_ACTION_OVERLAY_DUPLICATE_PATH',
         entry.match.path,
         `Duplicate overlay path ${entry.match.path}`
       );
     }
-    seenPaths.add(entry.match.path);
+    seenPaths.add(normalizedPath);
+    normalizedEntries.push({ entry, normalizedPath });
   }
 
-  for (const entry of input.nodes) {
-    const target = await resolveOverlayTarget(coreDB, stagingRoot, entry.match.path);
-    assertNotTemporaryHolder(target, entry.match.path);
-    if (input.stagingMode === 'patch-source') {
-      await applyPatchSourceOverlay(coreDB, target, entry);
-    } else {
-      await applyCopyOnWriteOverlay(coreDB, target, entry);
-    }
+  const resolvedEntries: ResolvedOverlayEntry[] = [];
+  for (const normalizedEntry of normalizedEntries) {
+    const target = await resolveOverlayTarget(coreDB, stagingRoot, normalizedEntry.normalizedPath);
+    assertNotTemporaryHolder(target, normalizedEntry.normalizedPath);
+    validateOverlayTargetForMode(input.stagingMode, target, normalizedEntry.normalizedPath);
+    resolvedEntries.push({ ...normalizedEntry, target });
   }
+
+  await coreDB.runInTx('rw', ['nodes'], async () => {
+    for (const resolvedEntry of resolvedEntries) {
+      if (input.stagingMode === 'patch-source') {
+        await applyPatchSourceOverlay(coreDB, resolvedEntry);
+      } else {
+        await applyCopyOnWriteOverlay(coreDB, resolvedEntry);
+      }
+    }
+  });
 }
 
 async function resolveOverlayTarget(
@@ -107,9 +129,6 @@ async function resolveOverlayTarget(
     const children = await coreDB.listChildren(current.id as NodeId);
     const matches = children.filter((child) => child.metadata.name === segment);
     if (matches.length === 0) {
-      if (segments.length === 1 && current.metadata.name === segment) {
-        return current;
-      }
       throw overlayError(
         'STAGED_FOLDER_ACTION_OVERLAY_PATH_NOT_FOUND',
         path,
@@ -133,21 +152,10 @@ async function resolveOverlayTarget(
 
 async function applyCopyOnWriteOverlay(
   coreDB: CoreDB,
-  target: TreeNode<NodePayload | null>,
-  entry: StagedFolderActionOverlayEntry
+  resolvedEntry: ResolvedOverlayEntry
 ): Promise<void> {
-  if (target.copyOnWriteOf === undefined) {
-    throw overlayError(
-      target.patchData === undefined
-        ? 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_NOT_COPY_ON_WRITE'
-        : 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_HAS_PATCH_WITHOUT_COW',
-      entry.match.path,
-      `Overlay target ${target.id} is not a valid copy-on-write node`,
-      target.id
-    );
-  }
-
-  const basePatch = normalizePayload(target.patchData, entry.match.path);
+  const { entry, normalizedPath, target } = resolvedEntry;
+  const basePatch = normalizePayload(target.patchData, normalizedPath);
   await coreDB.updateNode({
     id: target.id,
     patchData: strictMergeNodePayload(basePatch, entry.data),
@@ -156,12 +164,29 @@ async function applyCopyOnWriteOverlay(
   });
 }
 
+function validateOverlayTargetForMode(
+  stagingMode: StagedFolderActionOverlayStagingMode,
+  target: TreeNode<NodePayload | null>,
+  path: string
+): void {
+  if (stagingMode !== 'patch-source' && target.copyOnWriteOf === undefined) {
+    throw overlayError(
+      target.patchData === undefined
+        ? 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_NOT_COPY_ON_WRITE'
+        : 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_HAS_PATCH_WITHOUT_COW',
+      path,
+      `Overlay target ${target.id} is not a valid copy-on-write node`,
+      target.id
+    );
+  }
+}
+
 async function applyPatchSourceOverlay(
   coreDB: CoreDB,
-  target: TreeNode<NodePayload | null>,
-  entry: StagedFolderActionOverlayEntry
+  resolvedEntry: ResolvedOverlayEntry
 ): Promise<void> {
-  const baseData = normalizePayload(target.data, entry.match.path);
+  const { entry, normalizedPath, target } = resolvedEntry;
+  const baseData = normalizePayload(target.data, normalizedPath);
   await coreDB.updateNode({
     id: target.id,
     data: strictMergeNodePayload(baseData, entry.data),
@@ -170,15 +195,18 @@ async function applyPatchSourceOverlay(
   });
 }
 
-function assertSafeOverlayPath(path: string): void {
+function normalizeOverlayPath(path: string): string {
   if (path === '.') {
-    return;
+    return path;
   }
+  const pathWithoutExplicitRoot = path.startsWith('./') ? path.slice(2) : path;
   if (
-    path.length === 0 ||
+    pathWithoutExplicitRoot.length === 0 ||
     path.startsWith('/') ||
     path.includes('\0') ||
-    path.split('/').some((segment) => segment.length === 0 || segment === '..' || segment === '.')
+    pathWithoutExplicitRoot
+      .split('/')
+      .some((segment) => segment.length === 0 || segment === '..' || segment === '.')
   ) {
     throw overlayError(
       'STAGED_FOLDER_ACTION_OVERLAY_INVALID_PATH',
@@ -186,24 +214,16 @@ function assertSafeOverlayPath(path: string): void {
       'Expected a staging-root-relative path without empty, current-directory, or parent-directory segments'
     );
   }
+  return pathWithoutExplicitRoot;
 }
 
-function assertSupportedPatchData(data: Record<string, unknown>, path: string): void {
+function assertOverlayData(data: Record<string, unknown>, path: string): void {
   if (!isPlainRecord(data)) {
     throw overlayError(
       'STAGED_FOLDER_ACTION_OVERLAY_DATA_NOT_OBJECT',
       path,
       'Overlay data must be an object payload'
     );
-  }
-  for (const key of Object.keys(data)) {
-    if (key.startsWith('$')) {
-      throw overlayError(
-        'STAGED_FOLDER_ACTION_OVERLAY_UNSUPPORTED_OPERATION',
-        path,
-        `Unsupported overlay operation key ${key}`
-      );
-    }
   }
 }
 
@@ -239,6 +259,19 @@ function overlayError(
   nodeId?: NodeId
 ): StagedFolderActionOverlayApplicationError {
   return new StagedFolderActionOverlayApplicationError(code, message, { path, nodeId });
+}
+
+function assertValidStagingMode(
+  value: string
+): asserts value is StagedFolderActionOverlayStagingMode {
+  if (value === 'temporary-copy' || value === 'permanent-copy' || value === 'patch-source') {
+    return;
+  }
+  throw overlayError(
+    'STAGED_FOLDER_ACTION_OVERLAY_INVALID_STAGING_MODE',
+    '<staging-mode>',
+    `Unsupported staging mode ${value}`
+  );
 }
 
 function isPlainRecord(value: unknown): value is NodePayload {

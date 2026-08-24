@@ -352,6 +352,8 @@ overlay は対象 node の JSON 構造に対して committed data を差分更�
 
 - `overlay.nodes[*].match.path` は staging root からの相対 node path。
 - `overlay.nodes[*].match.path: "."` は staging root 自身を表す。
+- `overlay.nodes[*].match.path: "./<name>"` は staging root 直下の child path を明示する表記であり、`<name>` と同じ target に正規化する。
+- staging root の display name は root path alias ではない。`"<name>"` は常に `"./<name>"` と同義であり、root 直下の child path として解釈する。root 自身を対象にする場合は必ず `.` を使う。
 - path は `/` 区切りの表示/論理 path とし、空 path、`..`、空 segment、途中 segment の `.` を禁止する。
 - path grammar は POSIX-style `/` 区切りだけを定義する。`\` は path separator として解釈しない。
 - sibling に同名 node が存在しないことは tree invariant であるため、display name path は一意に解決できる。もし duplicate sibling name を検出した場合は data integrity error として fail-fast する。
@@ -359,7 +361,8 @@ overlay は対象 node の JSON 構造に対して committed data を差分更�
 - object field は再帰 merge する。
 - scalar は replace する。
 - array は replace する。
-- field deletion、array item patch、move、conditional patch は初期仕様に含めない。
+- field deletion、array item patch、move、conditional patch は初期仕様に含めない。`$schema` など `$` で始まる key は通常の JSON property として扱い、operation として解釈しない。
+- 複数 overlay は atomic に適用する。path 解決、duplicate path 検出、target mode 検証、payload object 検証のいずれかが失敗した場合、先行 overlay の変更を保存してはならない。
 
 単純 merge で表現できない操作は後続仕様で定義する。初期実装で独自拡張や曖昧な patch 記法を追加してはならない。
 

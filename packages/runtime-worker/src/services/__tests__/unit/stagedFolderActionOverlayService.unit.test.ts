@@ -88,6 +88,69 @@ describe('applyStagedFolderActionOverlays', () => {
     });
   });
 
+  it('treats bare paths as ./ child paths, not as root display-name aliases', async () => {
+    const source = await createNode('source', 'r:root' as NodeId, {});
+    const stagingRoot = await createNode('staging', 'r:root' as NodeId, null, {
+      copyOnWriteOf: source.id as NodeId,
+      metadata: { name: 'My Folder' },
+    });
+    const childSource = await createNode('child-source', source.id as NodeId, {});
+    const child = await createNode('child', stagingRoot.id as NodeId, null, {
+      copyOnWriteOf: childSource.id as NodeId,
+      metadata: { name: 'My Folder' },
+    });
+
+    await applyStagedFolderActionOverlays(coreDB, {
+      stagingMode: 'temporary-copy',
+      stagingRootNodeId: stagingRoot.id as NodeId,
+      nodes: [{ match: { path: 'My Folder' }, data: { label: 'child' } }],
+    });
+
+    expect((await coreDB.getNode(child.id as NodeId))?.patchData).toEqual({ label: 'child' });
+    expect((await coreDB.getNode(stagingRoot.id as NodeId))?.patchData).toBeUndefined();
+  });
+
+  it('returns a missing-path error when the root display name has no matching child', async () => {
+    const source = await createNode('source', 'r:root' as NodeId, {});
+    const stagingRoot = await createNode('staging', 'r:root' as NodeId, null, {
+      copyOnWriteOf: source.id as NodeId,
+      metadata: { name: 'My Folder' },
+    });
+
+    await expect(
+      applyStagedFolderActionOverlays(coreDB, {
+        stagingMode: 'temporary-copy',
+        stagingRootNodeId: stagingRoot.id as NodeId,
+        nodes: [{ match: { path: 'My Folder' }, data: { label: 'wrong-root-alias' } }],
+      })
+    ).rejects.toMatchObject({
+      code: 'STAGED_FOLDER_ACTION_OVERLAY_PATH_NOT_FOUND',
+    });
+    expect((await coreDB.getNode(stagingRoot.id as NodeId))?.patchData).toBeUndefined();
+  });
+
+  it('accepts explicit ./ paths as staging-root-relative child paths', async () => {
+    const source = await createNode('source', 'r:root' as NodeId, {});
+    const stagingRoot = await createNode('staging', 'r:root' as NodeId, null, {
+      copyOnWriteOf: source.id as NodeId,
+      metadata: { name: 'Staging' },
+    });
+    const childSource = await createNode('child-source', source.id as NodeId, {});
+    const child = await createNode('child', stagingRoot.id as NodeId, null, {
+      copyOnWriteOf: childSource.id as NodeId,
+      metadata: { name: 'My Folder' },
+    });
+
+    await applyStagedFolderActionOverlays(coreDB, {
+      stagingMode: 'temporary-copy',
+      stagingRootNodeId: stagingRoot.id as NodeId,
+      nodes: [{ match: { path: './My Folder' }, data: { label: 'child' } }],
+    });
+
+    expect((await coreDB.getNode(child.id as NodeId))?.patchData).toEqual({ label: 'child' });
+    expect((await coreDB.getNode(stagingRoot.id as NodeId))?.patchData).toBeUndefined();
+  });
+
   it('detects duplicate sibling names when resolving a corrupted hierarchy', async () => {
     const stagingRoot = makeNode('staging-root' as NodeId, 'r:root' as NodeId, {});
     const duplicatedFirst = makeNode('first' as NodeId, stagingRoot.id as NodeId, {});
@@ -115,7 +178,7 @@ describe('applyStagedFolderActionOverlays', () => {
     });
   });
 
-  it('rejects duplicate overlay paths during application', async () => {
+  it('rejects duplicate overlay paths after explicit-root normalization', async () => {
     const stagingRoot = await createNode('staging', 'r:root' as NodeId, {});
 
     await expect(
@@ -124,12 +187,49 @@ describe('applyStagedFolderActionOverlays', () => {
         stagingRootNodeId: stagingRoot.id as NodeId,
         nodes: [
           { match: { path: 'Layer' }, data: {} },
-          { match: { path: 'Layer' }, data: {} },
+          { match: { path: './Layer' }, data: {} },
         ],
       })
     ).rejects.toMatchObject({
       code: 'STAGED_FOLDER_ACTION_OVERLAY_DUPLICATE_PATH',
     });
+  });
+
+  it('does not partially apply overlays when a later target is invalid', async () => {
+    const source = await createNode('source', 'r:root' as NodeId, {});
+    const stagingRoot = await createNode('staging', 'r:root' as NodeId, null, {
+      copyOnWriteOf: source.id as NodeId,
+      metadata: { name: 'Staging' },
+    });
+    const cowSource = await createNode('cow-source', source.id as NodeId, {});
+    const cowChild = await createNode('cow-child', stagingRoot.id as NodeId, null, {
+      copyOnWriteOf: cowSource.id as NodeId,
+      metadata: { name: 'Cow Child' },
+    });
+    const plainChild = await createNode(
+      'plain-child',
+      stagingRoot.id as NodeId,
+      {},
+      {
+        metadata: { name: 'Plain Child' },
+      }
+    );
+
+    await expect(
+      applyStagedFolderActionOverlays(coreDB, {
+        stagingMode: 'temporary-copy',
+        stagingRootNodeId: stagingRoot.id as NodeId,
+        nodes: [
+          { match: { path: 'Cow Child' }, data: { updated: true } },
+          { match: { path: 'Plain Child' }, data: { invalid: true } },
+        ],
+      })
+    ).rejects.toMatchObject({
+      code: 'STAGED_FOLDER_ACTION_OVERLAY_TARGET_NOT_COPY_ON_WRITE',
+    });
+
+    expect((await coreDB.getNode(cowChild.id as NodeId))?.patchData).toBeUndefined();
+    expect((await coreDB.getNode(plainChild.id as NodeId))?.data).toEqual({});
   });
 
   it('updates patchData for copy-on-write nodes without mutating source data', async () => {
@@ -192,7 +292,7 @@ describe('applyStagedFolderActionOverlays', () => {
     });
   });
 
-  it('rejects holder-level overlay and unsupported patch operations', async () => {
+  it('rejects holder-level overlay and accepts $-prefixed JSON data keys', async () => {
     const holder = await ensureTemporaryFolderHolder(coreDB, treeId);
 
     await expect(
@@ -206,21 +306,35 @@ describe('applyStagedFolderActionOverlays', () => {
     });
 
     const source = await createNode('source', 'r:root' as NodeId, {});
+    await applyStagedFolderActionOverlays(coreDB, {
+      stagingMode: 'patch-source',
+      stagingRootNodeId: source.id as NodeId,
+      nodes: [{ match: { path: '.' }, data: { $schema: 'https://example.test/schema.json' } }],
+    });
+
+    expect((await coreDB.getNode(source.id as NodeId))?.data).toEqual({
+      $schema: 'https://example.test/schema.json',
+    });
+  });
+
+  it('rejects invalid staging modes at the service boundary', async () => {
+    const source = await createNode('source', 'r:root' as NodeId, {});
+
     await expect(
       applyStagedFolderActionOverlays(coreDB, {
-        stagingMode: 'patch-source',
+        stagingMode: 'unknown-mode' as never,
         stagingRootNodeId: source.id as NodeId,
-        nodes: [{ match: { path: '.' }, data: { $delete: ['name'] } }],
+        nodes: [{ match: { path: '.' }, data: {} }],
       })
     ).rejects.toBeInstanceOf(StagedFolderActionOverlayApplicationError);
     await expect(
       applyStagedFolderActionOverlays(coreDB, {
-        stagingMode: 'patch-source',
+        stagingMode: 'unknown-mode' as never,
         stagingRootNodeId: source.id as NodeId,
-        nodes: [{ match: { path: '.' }, data: { $delete: ['name'] } }],
+        nodes: [{ match: { path: '.' }, data: {} }],
       })
     ).rejects.toMatchObject({
-      code: 'STAGED_FOLDER_ACTION_OVERLAY_UNSUPPORTED_OPERATION',
+      code: 'STAGED_FOLDER_ACTION_OVERLAY_INVALID_STAGING_MODE',
     });
   });
 
