@@ -212,6 +212,7 @@ export class TreeMutationService implements TreeMutationAPI {
         undefined,
         initial
       );
+      await this.ensureAncestorsHaveChildrenFromParent(params.parentId);
       return { success: true, nodeId: wcNodeId as NodeId };
     } catch (error) {
       return { success: false, error: sanitizeMessageText(error) };
@@ -931,6 +932,14 @@ export class TreeMutationService implements TreeMutationAPI {
   }
 
   // Undo/Redo Operations
+
+  canUndo(): boolean {
+    return this.commandProcessor.canUndo();
+  }
+
+  canRedo(): boolean {
+    return this.commandProcessor.canRedo();
+  }
 
   async undo(_cmd: CommandEnvelope<'undo', UndoPayload>): Promise<CoreCommandResult> {
     const result = await this.commandProcessor.undo();

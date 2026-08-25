@@ -17,14 +17,26 @@ export const createHistoryActions = (deps: TreeConsoleActionDeps) => {
 
   const runHistoryAction = async (method: 'undo' | 'redo') => {
     if (!client) return;
-    const getCP = (client as MaybeCP).getCommandProcessor;
-    if (typeof getCP !== 'function') return;
 
     let historyInvoked = false;
     try {
-      const cp = await getCP();
+      const mutationAPI = await (
+        client as {
+          getMutationAPI?: () => Promise<{
+            undo?: () => Promise<unknown>;
+            redo?: () => Promise<unknown>;
+          }>;
+        }
+      ).getMutationAPI?.();
+      const cp =
+        mutationAPI && typeof mutationAPI[method] === 'function'
+          ? undefined
+          : await (client as MaybeCP).getCommandProcessor?.();
+      const historySource = mutationAPI ?? cp;
       const historyFn =
-        cp && typeof cp[method] === 'function' ? (cp[method] as () => Promise<unknown>) : undefined;
+        historySource && typeof historySource[method] === 'function'
+          ? (historySource[method] as () => Promise<unknown>)
+          : undefined;
       if (!historyFn) return;
 
       historyInvoked = true;

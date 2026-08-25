@@ -99,6 +99,11 @@ export function TreeTableRows({
     return (
       <StyledTableRow
         key={node.id}
+        data-testid="console-node"
+        data-node-id={node.id}
+        data-parent-id={node.parentId ?? ''}
+        data-node-type={node.nodeType}
+        data-has-children={node.hasChildren === true ? 'true' : 'false'}
         selected={visualSelectionSet.has(node.id as NodeId)}
         draggable={false}
         onClick={(e) => handleRowClick(node, e)}
@@ -132,7 +137,13 @@ export function TreeTableRows({
             maxWidth: `${columnWidths.name}px, paddingLeft: '4px'`,
           }}
         >
-          <NameCell>
+          <NameCell
+            data-testid="tree-node"
+            data-node-id={node.id}
+            data-parent-id={node.parentId ?? ''}
+            data-node-type={node.nodeType}
+            data-has-children={node.hasChildren === true ? 'true' : 'false'}
+          >
             <IndentSpace depth={fallbackState.indentDepth} />
             <Box
               component={RouterLink}
@@ -203,6 +214,11 @@ export function TreeTableRows({
         return (
           <StyledTableRow
             key={row.id}
+            data-testid="console-node"
+            data-node-id={node.id}
+            data-parent-id={node.parentId ?? ''}
+            data-node-type={node.nodeType}
+            data-has-children={node.hasChildren === true ? 'true' : 'false'}
             selected={rowRenderState.isSelected}
             draggable={!disableDragAndDrop}
             onDragStart={dragHandlers.onDragStart}

@@ -1,468 +1,241 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import {
   buildAppUrl,
   clearTestData,
-  createTestFolder,
   dismissGuidedTour,
   setupConsoleErrorTracking,
-  waitForDraftUpdate,
   waitForSubTreeUpdate,
   waitForTreeTableLoad,
 } from '../utils/test-helpers';
 
-type PerformanceWithMemory = Performance & {
-  memory?: {
-    usedJSHeapSize?: number;
-  };
+type TreeRecord = {
+  id: string;
+  rootId: string;
 };
 
-type TreeMutationWorker = {
-  createFolder?: (payload: { name: string; parentId: string | null }) => Promise<unknown>;
-  updateFolder?: (payload: { id: string; name: string }) => Promise<unknown>;
-  deleteFolder?: (payload: { id: string }) => Promise<unknown>;
+type MutationResult = {
+  success: boolean;
+  nodeId?: string;
+  error?: string;
+};
+
+type TreeQueryAPI = {
+  listTrees: () => Promise<TreeRecord[]>;
+};
+
+type TreeMutationAPI = {
+  createNode: (params: {
+    nodeType: string;
+    treeId: string;
+    parentId: string;
+    name: string;
+    description?: string;
+  }) => Promise<MutationResult>;
+  updateNode: (params: {
+    nodeId: string;
+    name?: string;
+    description?: string;
+    visible?: boolean;
+  }) => Promise<{ success: boolean; error?: string }>;
+  removeNodes: (nodeIds: string[]) => Promise<{ success: boolean; error?: string }>;
+};
+
+type WorkerAPI = {
+  getQueryAPI?: () => Promise<TreeQueryAPI>;
+  getMutationAPI?: () => Promise<TreeMutationAPI>;
+};
+
+type WorkerClientRef = {
+  client?: WorkerAPI;
+  getAPI?: () => WorkerAPI | undefined;
+  initialize?: () => Promise<void> | void;
 };
 
 type RealtimeSyncWindow = Window & {
-  __hierarchidb_worker__?: Partial<TreeMutationWorker>;
+  __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
 };
 
-/**
- * TreeTable Real-time Synchronization E2E Tests
- *
- * Tests the SubTree subscription system and real-time updates.
- * Based on the specification in docs/12-1-e2e-treetable.md
- */
+type CreatedFolder = {
+  treeId: string;
+  rootId: string;
+  nodeId: string;
+  name: string;
+};
 
-test.describe('TreeTable Real-time Synchronization', () => {
+const getNodeRow = (page: Page, name: string) =>
+  page.locator('[data-testid="console-node"]').filter({ hasText: name }).first();
+
+const createFolderThroughWorker = async (
+  page: Page,
+  baseName: string,
+  parentId?: string
+): Promise<CreatedFolder> =>
+  page.evaluate(
+    async ({ baseName, parentId }) => {
+      const ref = (window as RealtimeSyncWindow).__HDB_WORKER_CLIENT_REF__;
+      const api = ref?.client ?? ref?.getAPI?.();
+      if (!api?.getQueryAPI || !api.getMutationAPI) {
+        throw new Error('Worker tree APIs are not available');
+      }
+      const queryAPI = await api.getQueryAPI();
+      const mutationAPI = await api.getMutationAPI();
+      const trees = await queryAPI.listTrees();
+      const tree = trees.find((candidate) => candidate.id === 'r') ?? trees[0];
+      if (!tree) {
+        throw new Error('Resources tree is not available');
+      }
+
+      const name = `${baseName} ${Date.now()}`;
+      const result = await mutationAPI.createNode({
+        nodeType: 'folder',
+        treeId: tree.id,
+        parentId: parentId ?? tree.rootId,
+        name,
+      });
+      if (!result.success || !result.nodeId) {
+        throw new Error(`createNode failed: ${result.error ?? 'unknown error'}`);
+      }
+      return {
+        treeId: tree.id,
+        rootId: tree.rootId,
+        nodeId: result.nodeId,
+        name,
+      };
+    },
+    { baseName, parentId }
+  );
+
+const updateFolderThroughWorker = async (
+  page: Page,
+  nodeId: string,
+  name: string
+): Promise<void> => {
+  await page.evaluate(
+    async ({ nodeId, name }) => {
+      const ref = (window as RealtimeSyncWindow).__HDB_WORKER_CLIENT_REF__;
+      const api = ref?.client ?? ref?.getAPI?.();
+      if (!api?.getMutationAPI) {
+        throw new Error('Worker mutation API is not available');
+      }
+      const mutationAPI = await api.getMutationAPI();
+      const result = await mutationAPI.updateNode({ nodeId, name });
+      if (!result.success) {
+        throw new Error(`updateNode failed: ${result.error ?? 'unknown error'}`);
+      }
+    },
+    { nodeId, name }
+  );
+};
+
+const removeFolderThroughWorker = async (page: Page, nodeId: string): Promise<void> => {
+  await page.evaluate(async (targetNodeId) => {
+    const ref = (window as RealtimeSyncWindow).__HDB_WORKER_CLIENT_REF__;
+    const api = ref?.client ?? ref?.getAPI?.();
+    if (!api?.getMutationAPI) {
+      throw new Error('Worker mutation API is not available');
+    }
+    const mutationAPI = await api.getMutationAPI();
+    const result = await mutationAPI.removeNodes([targetNodeId]);
+    if (!result.success) {
+      throw new Error(`removeNodes failed: ${result.error ?? 'unknown error'}`);
+    }
+  }, nodeId);
+};
+
+test.describe('TreeTable worker synchronization', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
-    await page.goto(buildAppUrl('d/r'));
+    await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded' });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
-  });
-
-  test('SubTree購読の開始と停止', async ({ page }) => {
-    // SubTree購読インジケーターの確認
-    await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-      'data-status',
-      'active'
-    );
-
-    // 購読停止
-    await page.locator('[data-testid="pause-subscription-button"]').click();
-    await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-      'data-status',
-      'paused'
-    );
-
-    // 購読再開
-    await page.locator('[data-testid="resume-subscription-button"]').click();
-    await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-      'data-status',
-      'active'
+    await page.waitForFunction(
+      () => Boolean((window as RealtimeSyncWindow).__HDB_WORKER_CLIENT_REF__?.client),
+      null,
+      { timeout: 15000 }
     );
   });
 
-  test('リアルタイムでのノード追加検出', async ({ page }) => {
-    // 別のタブ/ウィンドウでの変更をシミュレート
-    await page.evaluate(async () => {
-      // Worker経由でノード追加をシミュレート
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.createFolder?.({
-          name: 'Real-time Test Folder',
-          parentId: null,
-        });
-      }
-    });
+  test('worker-created root folder appears in the current TreeTable', async ({ page }) => {
+    const folder = await createFolderThroughWorker(page, 'Worker Sync Create');
 
-    // リアルタイム更新を待機
-    await waitForSubTreeUpdate(page);
-
-    // 新しいフォルダが表示されることを確認
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Real-time Test Folder")')
-    ).toBeVisible({ timeout: 5000 });
-
-    // 更新通知の表示確認
-    await expect(page.locator('[data-testid="realtime-update-notification"]')).toBeVisible();
-  });
-
-  test('リアルタイムでのノード更新検出', async ({ page }) => {
-    // テストフォルダを作成
-    const folderName = await createTestFolder(page, 'Update Test Folder');
-    const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
-    const nodeId = await folderNode.getAttribute('data-node-id');
-
-    // 別セッションでの更新をシミュレート
-    await page.evaluate(async (id) => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.updateFolder?.({
-          id: id,
-          name: 'Updated Folder Name',
-        });
-      }
-    }, nodeId);
-
-    // リアルタイム更新を待機
-    await waitForSubTreeUpdate(page);
-
-    // 更新されたフォルダ名が表示されることを確認
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Updated Folder Name")')
-    ).toBeVisible({ timeout: 5000 });
-
-    // 古い名前がないことを確認
-    await expect(
-      page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)
-    ).not.toBeVisible();
-  });
-
-  test('リアルタイムでのノード削除検出', async ({ page }) => {
-    // テストフォルダを作成
-    const folderName = await createTestFolder(page, 'Delete Test Folder');
-    const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
-    const nodeId = await folderNode.getAttribute('data-node-id');
-
-    // フォルダが表示されていることを確認
-    await expect(folderNode).toBeVisible();
-
-    // 別セッションでの削除をシミュレート
-    await page.evaluate(async (id) => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.deleteFolder?.({ id: id });
-      }
-    }, nodeId);
-
-    // リアルタイム更新を待機
-    await waitForSubTreeUpdate(page);
-
-    // フォルダが削除されることを確認
-    await expect(folderNode).not.toBeVisible({ timeout: 5000 });
-
-    // 削除通知の表示確認
-    await expect(page.locator('[data-testid="node-deleted-notification"]')).toBeVisible();
-  });
-
-  test('複数ノードの同時更新処理', async ({ page }) => {
-    // 複数ノードの同時更新をシミュレート
-    await page.evaluate(async () => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        // バッチ更新を実行
-        await Promise.all([
-          worker.updateFolder?.({ id: 'node1', name: 'Batch Updated 1' }),
-          worker.updateFolder?.({ id: 'node2', name: 'Batch Updated 2' }),
-          worker.updateFolder?.({ id: 'node3', name: 'Batch Updated 3' }),
-        ]);
-      }
-    });
-
-    // バッチ更新の完了を待機
     await waitForSubTreeUpdate(page, 5000);
 
-    // すべての更新が反映されることを確認
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Batch Updated 1")')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Batch Updated 2")')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Batch Updated 3")')
-    ).toBeVisible();
-
-    // バッチ更新インジケーターの確認
-    await expect(page.locator('[data-testid="build-update-indicator"]')).toHaveText(
-      /3 items updated/
-    );
+    const row = getNodeRow(page, folder.name);
+    await expect(row).toBeVisible({ timeout: 10000 });
+    await expect(row).toHaveAttribute('data-node-id', folder.nodeId);
   });
 
-  test('ネットワーク切断時の再接続処理', async ({ page }) => {
-    // ネットワーク切断をシミュレート
-    page
-      .context()
-      .browser()
-      .newContext()
-      .then(async (c) => {
-        await c.setOffline(true);
+  test('worker-updated folder name replaces the previous row text', async ({ page }) => {
+    const folder = await createFolderThroughWorker(page, 'Worker Sync Rename');
+    await expect(getNodeRow(page, folder.name)).toBeVisible({ timeout: 10000 });
 
-        // オフライン状態の表示確認
-        await expect(page.locator('[data-testid="offline-indicator"]')).toBeVisible({
-          timeout: 5000,
-        });
+    const nextName = `${folder.name} Updated`;
+    await updateFolderThroughWorker(page, folder.nodeId, nextName);
+    await waitForSubTreeUpdate(page, 5000);
 
-        // SubTree購読のステータス確認
-        await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-          'data-status',
-          'disconnected'
-        );
-
-        // ネットワーク復旧
-        await c.setOffline(false);
-
-        // 再接続処理の確認
-        await expect(page.locator('[data-testid="reconnecting-indicator"]')).toBeVisible({
-          timeout: 3000,
-        });
-
-        // 接続復旧の確認
-        await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-          'data-status',
-          'active',
-          { timeout: 10000 }
-        );
-
-        // オフライン中に蓄積された変更の同期確認
-        await waitForSubTreeUpdate(page);
-        await expect(page.locator('[data-testid="sync-completed-notification"]')).toBeVisible();
-      });
+    await expect(getNodeRow(page, nextName)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('link', { name: folder.name, exact: true })).toHaveCount(0);
   });
 
-  test('Working Copy状態でのリアルタイム同期制御', async ({ page }) => {
-    // Working Copyを開始
-    await page.locator('[data-testid="start-draft"]').click();
-    await waitForDraftUpdate(page);
+  test('worker-removed folder leaves the current TreeTable', async ({ page }) => {
+    const folder = await createFolderThroughWorker(page, 'Worker Sync Remove');
+    const row = getNodeRow(page, folder.name);
+    await expect(row).toBeVisible({ timeout: 10000 });
 
-    // Working Copy状態での購読ステータス確認
-    await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-      'data-status',
-      'draft-mode'
-    );
+    await removeFolderThroughWorker(page, folder.nodeId);
+    await waitForSubTreeUpdate(page, 5000);
 
-    // 外部変更をシミュレート
-    await page.evaluate(async () => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.createFolder?.({
-          name: 'External Change During Working Copy',
-          parentId: null,
-        });
-      }
-    });
-
-    // Working Copy中は外部変更が即座に反映されないことを確認
-    await page.waitForTimeout(2000);
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("External Change During Working Copy")')
-    ).not.toBeVisible();
-
-    // 保留中の変更通知の確認
-    await expect(page.locator('[data-testid="pending-changes-indicator"]')).toBeVisible();
-
-    // Working Copyをコミット
-    await page.locator('[data-testid="commit-draft"]').click();
-    await waitForDraftUpdate(page);
-
-    // コミット後に外部変更が反映されることを確認
-    await waitForSubTreeUpdate(page);
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("External Change During Working Copy")')
-    ).toBeVisible({ timeout: 5000 });
+    await expect(getNodeRow(page, folder.name)).toHaveCount(0);
   });
 
-  test('購読フィルタリングの動作確認', async ({ page }) => {
-    // 特定のフォルダにフィルターを設定
-    const parentFolder = await createTestFolder(page, 'Filtered Parent');
-    const parentNode = page.locator(`[data-testid="tree-node"]:has-text("${parentFolder}")`);
-    const parentId = await parentNode.getAttribute('data-node-id');
+  test('multiple worker-created folders are rendered without a manual reload', async ({ page }) => {
+    const folders = await Promise.all([
+      createFolderThroughWorker(page, 'Worker Sync Batch A'),
+      createFolderThroughWorker(page, 'Worker Sync Batch B'),
+      createFolderThroughWorker(page, 'Worker Sync Batch C'),
+    ]);
 
-    // フィルター設定
-    await page.locator('[data-testid="subscription-filter-button"]').click();
-    await expect(page.locator('[data-testid="filter-base-dialog"]')).toBeVisible();
+    await waitForSubTreeUpdate(page, 5000);
 
-    await page.locator('[data-testid="filter-parent-input"]').fill(parentId || '');
-    await page.locator('[data-testid="apply-filter"]').click();
+    for (const folder of folders) {
+      await expect(getNodeRow(page, folder.name)).toBeVisible({ timeout: 10000 });
+    }
+  });
 
-    // フィルター範囲外での変更をシミュレート
-    await page.evaluate(async () => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.createFolder?.({
-          name: 'Outside Filter Range',
-          parentId: null, // ルートレベル
-        });
-      }
-    });
+  test('worker-created child updates parent expansion state', async ({ page }) => {
+    const parent = await createFolderThroughWorker(page, 'Worker Sync Parent');
+    await expect(getNodeRow(page, parent.name)).toBeVisible({ timeout: 10000 });
 
-    // フィルター範囲外の変更は通知されないことを確認
-    await page.waitForTimeout(2000);
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Outside Filter Range")')
-    ).not.toBeVisible();
+    const child = await createFolderThroughWorker(page, 'Worker Sync Child', parent.nodeId);
+    await waitForSubTreeUpdate(page, 5000);
 
-    // フィルター範囲内での変更をシミュレート
-    await page.evaluate(async (id) => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.createFolder?.({
-          name: 'Inside Filter Range',
-          parentId: id,
-        });
-      }
-    }, parentId);
-
-    // フィルター範囲内の変更は通知されることを確認
-    await waitForSubTreeUpdate(page);
-
-    // 親フォルダを展開
-    await parentNode.locator('[data-testid="expand-button"]').click();
-    await waitForSubTreeUpdate(page);
+    const parentRow = getNodeRow(page, parent.name);
+    await expect(parentRow).toHaveAttribute('data-has-children', 'true', { timeout: 10000 });
+    await parentRow.locator('[data-testid="expand-button"]').click();
+    await waitForSubTreeUpdate(page, 5000);
 
     await expect(
-      page.locator(
-        `[data-testid="tree-node"][data-parent-id="${parentId}"]:has-text("Inside Filter Range")`
-      )
-    ).toBeVisible();
+      page
+        .locator(`[data-testid="console-node"][data-parent-id="${parent.nodeId}"]`)
+        .filter({ hasText: child.name })
+        .first()
+    ).toBeVisible({ timeout: 10000 });
   });
 
-  test('高頻度更新時のパフォーマンス制御', async ({ page }) => {
-    // 高頻度更新をシミュレート
-    await page.evaluate(async () => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        // 短時間での大量更新
-        for (let i = 0; i < 50; i++) {
-          await worker.createFolder?.({
-            name: `High Frequency ${i}`,
-            parentId: null,
-          });
-        }
-      }
-    });
+  test('repeated navigation does not duplicate synchronized rows', async ({ page }) => {
+    const folder = await createFolderThroughWorker(page, 'Worker Sync Stable');
+    await expect(getNodeRow(page, folder.name)).toBeVisible({ timeout: 10000 });
 
-    // スロットリングインジケーターの確認
-    await expect(page.locator('[data-testid="update-throttling-indicator"]')).toBeVisible();
-
-    // 最終的にすべての更新が反映されることを確認
-    await waitForSubTreeUpdate(page, 10000);
-
-    const highFrequencyNodes = page.locator(
-      '[data-testid="console-node"]:has-text("High Frequency")'
-    );
-    await expect(highFrequencyNodes).toHaveCount(45); // スロットリングで一部が結合される可能性
-  });
-
-  test('購読エラー時の復旧処理', async ({ page }) => {
-    // SubTree APIエラーをシミュレート
-    await page.route('**/api/subtree/subscribe', (route) => route.abort());
-
-    // 購読エラーの検出
-    await page.reload();
-    await dismissGuidedTour(page);
-
-    // エラー状態の確認
-    await expect(page.locator('[data-testid="subscription-error-indicator"]')).toBeVisible({
-      timeout: 5000,
-    });
-
-    // 手動再接続
-    await expect(page.locator('[data-testid="reconnect-subscription-button"]')).toBeVisible();
-
-    // APIエラーを解除
-    await page.unroute('**/api/subtree/subscribe');
-
-    // 再接続を実行
-    await page.locator('[data-testid="reconnect-subscription-button"]').click();
-
-    // 接続復旧の確認
-    await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-      'data-status',
-      'active',
-      { timeout: 10000 }
-    );
-  });
-
-  test('メモリリーク防止のための購読クリーンアップ', async ({ page }) => {
-    // 初期メモリ使用量
-    const initialMemory = await page.evaluate(() => {
-      const performanceWithMemory = window.performance as PerformanceWithMemory;
-      return performanceWithMemory.memory?.usedJSHeapSize || 0;
-    });
-
-    // 複数のページ遷移をシミュレート
-    for (let i = 0; i < 5; i++) {
-      await page.goto(buildAppUrl('d/r'));
+    for (let index = 0; index < 3; index += 1) {
+      await page.goto(buildAppUrl('about'), { waitUntil: 'domcontentloaded' });
+      await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded' });
       await dismissGuidedTour(page);
       await waitForTreeTableLoad(page);
-
-      // SubTree購読が適切に開始されることを確認
-      await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-        'data-status',
-        'active'
-      );
-
-      // 別のページに移動
-      await page.goto(buildAppUrl('about'));
-      await page.waitForTimeout(1000);
     }
 
-    // 最終メモリ使用量
-    await page.goto(buildAppUrl('d/r'));
-    await dismissGuidedTour(page);
-    await waitForTreeTableLoad(page);
-
-    const finalMemory = await page.evaluate(() => {
-      const performanceWithMemory = window.performance as PerformanceWithMemory;
-      return performanceWithMemory.memory?.usedJSHeapSize || 0;
-    });
-
-    // メモリ使用量の異常な増加がないことを確認
-    if (initialMemory > 0 && finalMemory > 0) {
-      const memoryIncrease = finalMemory - initialMemory;
-      const increaseRatio = memoryIncrease / initialMemory;
-      expect(increaseRatio).toBeLessThan(3.0); // 3倍以下の増加
-    }
-  });
-
-  test('購読の一時停止と再開による状態同期', async ({ page }) => {
-    // 購読を一時停止
-    await page.locator('[data-testid="pause-subscription-button"]').click();
-    await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-      'data-status',
-      'paused'
-    );
-
-    // 停止中に外部変更をシミュレート
-    await page.evaluate(async () => {
-      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
-      if (worker) {
-        await worker.createFolder?.({
-          name: 'Created While Paused',
-          parentId: null,
-        });
-        await worker.createFolder?.({
-          name: 'Another While Paused',
-          parentId: null,
-        });
-      }
-    });
-
-    // 停止中は変更が反映されないことを確認
-    await page.waitForTimeout(2000);
     await expect(
-      page.locator('[data-testid="console-node"]:has-text("Created While Paused")')
-    ).not.toBeVisible();
-
-    // 購読を再開
-    await page.locator('[data-testid="resume-subscription-button"]').click();
-
-    // 再開時の同期処理の確認
-    await expect(page.locator('[data-testid="sync-in-progress-indicator"]')).toBeVisible();
-
-    // 停止中の変更がすべて反映されることを確認
-    await waitForSubTreeUpdate(page, 10000);
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Created While Paused")')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="console-node"]:has-text("Another While Paused")')
-    ).toBeVisible();
-
-    // 同期完了の確認
-    await expect(page.locator('[data-testid="sync-completed-notification"]')).toBeVisible();
+      page.locator('[data-testid="console-node"]').filter({ hasText: folder.name })
+    ).toHaveCount(1);
   });
 });

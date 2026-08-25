@@ -2,8 +2,37 @@ import { expect, Page, test } from '@playwright/test';
 import { buildAppUrl } from './utils/test-helpers';
 
 type WindowWithWorkerImport = Window & {
-  __HDB_WORKER_READY__?: boolean;
+  __HDB_INIT_COMPLETE__?: boolean;
+  __HDB_WORKER_CLIENT_REF__?: {
+    isInitialized?: boolean;
+    client?: unknown;
+  };
 };
+
+async function waitForAppShell(page: Page): Promise<void> {
+  await expect(
+    page
+      .getByRole('heading', { name: /hierarchidb/i })
+      .or(page.getByRole('heading', { name: /Resources|Projects/ }))
+      .or(page.getByRole('button', { name: /Navigate to Resources view|Resources/ }))
+      .first()
+  ).toBeVisible({ timeout: 15000 });
+}
+
+async function waitForWorkerReady(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const win = window as WindowWithWorkerImport;
+      return (
+        win.__HDB_INIT_COMPLETE__ === true ||
+        win.__HDB_WORKER_CLIENT_REF__?.isInitialized === true ||
+        Boolean(win.__HDB_WORKER_CLIENT_REF__?.client)
+      );
+    },
+    undefined,
+    { timeout: 15000 }
+  );
+}
 
 test.describe('Worker Initialization System', () => {
   let page: Page;
@@ -33,7 +62,7 @@ test.describe('Worker Initialization System', () => {
   test('should initialize worker before rendering app content', async () => {
     // Navigate to the app
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
 
@@ -44,9 +73,8 @@ test.describe('Worker Initialization System', () => {
     // Note: This might be too fast to catch, so we'll check the final atoms instead
 
     // Wait for the app to be ready (loading screen disappears)
-    await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible({
-      timeout: 15000,
-    });
+    await waitForWorkerReady(page);
+    await waitForAppShell(page);
 
     // Verify no error screens are shown
     await expect(page.locator('text=/Initialization Error/i')).not.toBeVisible();
@@ -54,30 +82,36 @@ test.describe('Worker Initialization System', () => {
 
     // Verify the main app content is loaded
     // Check for navigation elements that indicate successful initialization
-    const mainContent = page.locator('main, [role="main"], .MuiContainer-root');
-    await expect(mainContent).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Navigate to Resources view|Resources/ })
+    ).toBeVisible();
   });
 
   test('should properly handle Worker-UI communication', async () => {
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Wait for app to be ready
-    await page.waitForLoadState('networkidle');
+    await waitForWorkerReady(page);
 
     // Check that Worker API methods are accessible
     // This verifies the Comlink connection is established after Worker initialization
     const hasWorkerAPI = await page.evaluate(async () => {
       // Check if WorkerAPIClient is available globally or in window
       try {
-        return (window as WindowWithWorkerImport).__HDB_WORKER_READY__ === true;
+        const win = window as WindowWithWorkerImport;
+        return (
+          win.__HDB_INIT_COMPLETE__ === true ||
+          win.__HDB_WORKER_CLIENT_REF__?.isInitialized === true ||
+          Boolean(win.__HDB_WORKER_CLIENT_REF__?.client)
+        );
       } catch (e) {
         console.error('Worker API check failed:', e);
       }
 
       // Alternative: Check if the app rendered successfully (implies Worker is ready)
-      return document.querySelector('main') !== null;
+      return document.querySelector('button') !== null;
     });
 
     expect(hasWorkerAPI).toBeTruthy();
@@ -120,9 +154,8 @@ test.describe('Worker Initialization System', () => {
     await navigationPromise;
 
     // Wait for app to be ready
-    await expect(page.locator('main, [role="main"]')).toBeVisible({
-      timeout: 15000,
-    });
+    await waitForWorkerReady(page);
+    await waitForAppShell(page);
 
     clearInterval(checkInterval);
 
@@ -130,7 +163,9 @@ test.describe('Worker Initialization System', () => {
     console.log('Saw loading atoms:', sawLoadingState);
 
     // The important thing is the app loads successfully
-    expect(page.locator('main')).toBeTruthy();
+    await expect(
+      page.getByRole('button', { name: /Navigate to Resources view|Resources/ })
+    ).toBeVisible();
   });
 
   test('should handle Worker initialization failure gracefully', async () => {
@@ -158,14 +193,12 @@ test.describe('Worker Initialization System', () => {
     });
 
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
 
     // The app should retry and eventually succeed
-    await expect(page.locator('main, [role="main"]')).toBeVisible({
-      timeout: 20000,
-    });
+    await waitForAppShell(page);
 
     // Verify no error screen is permanently shown
     await expect(page.locator('text=/Initialization Error/i')).not.toBeVisible();
@@ -173,11 +206,12 @@ test.describe('Worker Initialization System', () => {
 
   test('should establish Comlink communication after Worker ready', async () => {
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Wait for the app to be ready
-    await expect(page.locator('main')).toBeVisible();
+    await waitForWorkerReady(page);
+    await waitForAppShell(page);
 
     // Test that Comlink RPC works by checking console logs
     const logs: string[] = [];
@@ -188,11 +222,8 @@ test.describe('Worker Initialization System', () => {
     });
 
     // Navigate to trigger some Worker API calls
-    const treeLink = page.locator('a[href*="/d/"]').first();
-    if (await treeLink.isVisible()) {
-      await treeLink.click();
-      await page.waitForLoadState('networkidle');
-    }
+    await page.getByRole('button', { name: /Navigate to Resources view|Resources/ }).click();
+    await expect(page.getByRole('heading', { name: /Resources/ })).toBeVisible();
 
     // Check that no Comlink errors occurred
     const hasComlinkError = logs.some(
@@ -204,22 +235,23 @@ test.describe('Worker Initialization System', () => {
 
   test('should maintain Worker connection during navigation', async () => {
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Wait for initial load
-    await expect(page.locator('main')).toBeVisible();
+    await waitForWorkerReady(page);
+    await waitForAppShell(page);
 
     // Perform multiple navigations to test connection stability
-    const navigationTests = [buildAppUrl('info'), buildAppUrl('plugin-loader'), buildAppUrl()];
+    const navigationTests = [buildAppUrl('d/r'), buildAppUrl(), buildAppUrl('d/r')];
 
     for (const path of navigationTests) {
       await page.goto(path, {
-        waitUntil: 'networkidle',
+        waitUntil: 'domcontentloaded',
       });
 
       // Verify the page loads without Worker errors
-      await expect(page.locator('main, [role="main"]')).toBeVisible();
+      await waitForAppShell(page);
 
       // Check for error messages
       const hasError = await page
@@ -247,11 +279,12 @@ test.describe('Worker Initialization System', () => {
     });
 
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Wait for app to be ready
-    await expect(page.locator('main')).toBeVisible();
+    await waitForWorkerReady(page);
+    await waitForAppShell(page);
 
     // Verify we captured some initialization messages
     console.log(`Captured ${initMessages.length} initialization messages`);
@@ -268,7 +301,9 @@ test.describe('Worker Initialization System', () => {
     }
 
     // The test passes if the app loads successfully
-    expect(page.locator('main')).toBeTruthy();
+    await expect(
+      page.getByRole('button', { name: /Navigate to Resources view|Resources/ })
+    ).toBeVisible();
   });
 });
 
@@ -285,15 +320,13 @@ test.describe('Worker API Facade Usage', () => {
     });
 
     await page.goto(buildAppUrl(), {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Navigate to a console page to trigger API calls
-    const treeLink = page.locator('a[href*="/d/"]').first();
-    if (await treeLink.isVisible()) {
-      await treeLink.click();
-      await page.waitForLoadState('networkidle');
-    }
+    await waitForWorkerReady(page);
+    await page.getByRole('button', { name: /Navigate to Resources view|Resources/ }).click();
+    await expect(page.getByRole('heading', { name: /Resources/ })).toBeVisible();
 
     // Check that no deprecation warnings were logged
     if (deprecationWarnings.length > 0) {

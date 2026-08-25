@@ -85,9 +85,9 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
 }
 
 function resolveCreateMenuButton(page: Page) {
-  return page
-    .getByRole('button', { name: /^作成$/ })
-    .or(page.getByRole('button', { name: /Create new item/i }));
+  return page.locator(
+    '#speed-dial-create-button, button[aria-label="作成"], button[aria-label="Create new item"]'
+  );
 }
 
 async function findActiveMenuItems(page: Page) {
@@ -164,11 +164,15 @@ export async function openCreateMenuNode(
 ): Promise<void> {
   const { label, maxDepth = 3 } = options;
 
-  const createMenuButton = resolveCreateMenuButton(page);
-  await expect(createMenuButton).toBeVisible({ timeout: 5000 });
-  await createMenuButton.first().click();
+  let initialMenuItems = await findActiveMenuItems(page);
+  const alreadyOpenMenuItem = initialMenuItems.filter({ hasText: label }).first();
+  if (!(await alreadyOpenMenuItem.isVisible().catch(() => false))) {
+    const createMenuButton = resolveCreateMenuButton(page).last();
+    await expect(createMenuButton).toBeVisible({ timeout: 5000 });
+    await createMenuButton.click();
+    initialMenuItems = await findActiveMenuItems(page);
+  }
 
-  const initialMenuItems = await findActiveMenuItems(page);
   let currentMenuItem = initialMenuItems.filter({ hasText: label }).first();
   if (!(await currentMenuItem.isVisible().catch(() => false))) {
     const anyMenuItem = initialMenuItems.first();
@@ -203,16 +207,19 @@ export async function openContextCreateMenuNode(
 ): Promise<void> {
   const { label, maxDepth = 3 } = options;
 
-  await parentNode.click({ button: 'right' });
-  const contextMenu = page
-    .locator('[data-testid="context-menu"]')
-    .or(page.locator('[role="menu"]'));
+  await page.keyboard.press('Escape');
+  const rowMenuButton = parentNode.getByLabel(/Open menu|メニューを開く/).first();
+  await expect(rowMenuButton).toBeVisible({ timeout: 5000 });
+  await rowMenuButton.click();
+
+  const contextMenu = page.getByRole('menu').filter({
+    has: page.getByRole('menuitem', { name: /^作成$|^Create$/ }),
+  });
   await expect(contextMenu).toBeVisible({ timeout: 5000 });
 
-  const createTrigger = page
+  const createTrigger = contextMenu
     .locator('[data-testid="context-menu-create"]')
-    .or(page.locator('[role="menuitem"]').filter({ hasText: /^作成|^Create/ }))
-    .or(page.locator('[role="menu"] button').filter({ hasText: /^作成|^Create/ }))
+    .or(contextMenu.getByRole('menuitem', { name: /^作成$|^Create$/ }))
     .first();
   await expect(createTrigger).toBeVisible({ timeout: 5000 });
 
@@ -240,6 +247,17 @@ export async function openContextCreateMenuNode(
   await drillCreateMenu(page, targetMenuItem, { label, maxDepth });
 }
 
+export async function openNodeContextMenu(page: Page, node: Locator): Promise<void> {
+  await page.keyboard.press('Escape');
+  const menuButton = node.getByLabel(/Open menu|メニューを開く/).first();
+  if (await menuButton.isVisible().catch(() => false)) {
+    await menuButton.click();
+  } else {
+    await node.click();
+  }
+  await expect(page.locator('[data-testid="context-menu"]')).toBeVisible({ timeout: 5000 });
+}
+
 /**
  * Creates a test folder-plugin with a unique name
  */
@@ -253,11 +271,15 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
 
   await openFolderCreateDialog(page);
 
-  const dialog = page.locator('dialog').filter({
-    has: page.getByRole('heading', {
-      name: /Folderの作成|Folderの新規作成|Create Folder|Create New Folder/,
-    }),
-  });
+  const dialog = page
+    .getByRole('dialog')
+    .filter({
+      has: page.getByRole('heading', {
+        name: /Folderの作成|Folderの新規作成|Create Folder|Create New Folder/,
+      }),
+    })
+    .or(page.locator('dialog'))
+    .first();
   await expect(dialog).toBeVisible({ timeout: 5000 });
 
   await dialog
@@ -309,20 +331,22 @@ export async function createChildFolder(
   parentNode: Locator,
   baseName: string
 ): Promise<string> {
-  const timestamp = Date.now();
-  const folderName = `${baseName} ${timestamp}`;
+  const parentId = await parentNode.getAttribute('data-node-id');
+  if (!parentId) {
+    throw new Error('Parent node must expose data-node-id before creating a child folder.');
+  }
 
-  await openContextCreateMenuNode(page, parentNode, {
-    label: /^フォルダー|^Folder|^folder/i,
-  });
+  await parentNode.getByRole('link').first().click();
+  await waitForTreeTableLoad(page);
 
-  // Fill base-dialog
-  await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
-  await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
-  await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
+  const folderName = await createTestFolder(page, baseName);
 
-  // Wait for creation
-  await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).not.toBeVisible();
+  await page.goto(buildAppUrl('d/r'));
+  await dismissGuidedTour(page);
+  await waitForTreeTableLoad(page);
+  await expect(
+    page.locator(`[data-testid="console-node"][data-node-id="${parentId}"]`)
+  ).toHaveAttribute('data-has-children', 'true', { timeout: 10000 });
 
   return folderName;
 }
@@ -332,14 +356,21 @@ export async function createChildFolder(
  */
 export async function moveToArchive(page: Page, folderName: string): Promise<void> {
   const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
-  await folderNode.click({ button: 'right' });
-
-  await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+  await openNodeContextMenu(page, folderNode.first());
   await page.locator('[data-testid="context-menu-remove"]').click();
 
-  // Confirm deletion
-  await expect(page.locator('[data-testid="archive-confirmation-base-dialog"]')).toBeVisible();
-  await page.locator('[data-testid="confirm-archive"]').click();
+  const confirmationDialog = page.locator('[data-testid="archive-confirmation-base-dialog"]').or(
+    page
+      .getByRole('dialog')
+      .filter({ has: page.getByText(/アーカイブ|Archive|移動/) })
+      .first()
+  );
+  if (await confirmationDialog.isVisible({ timeout: 1000 }).catch(() => false)) {
+    await page
+      .locator('[data-testid="confirm-archive"]')
+      .or(confirmationDialog.getByRole('button', { name: /アーカイブ|Archive|移動|OK|Confirm/ }))
+      .click();
+  }
 
   // Wait for folder-plugin to disappear from main view
   await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).not.toBeVisible(
@@ -364,17 +395,25 @@ export async function renameFolder(
     .first();
   await expect(folderNode).toBeVisible({ timeout: 5000 });
 
-  await folderNode.click({ button: 'right' });
-  await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+  await openNodeContextMenu(page, folderNode);
   await page.locator('[data-testid="context-menu-edit"]').click();
 
-  const dialog = page.locator('[data-testid="folder-plugin-edit-base-dialog"]');
+  const dialog = page
+    .getByRole('dialog')
+    .filter({ has: page.getByRole('heading', { name: /Folderの編集|Edit Folder/ }) })
+    .first();
   await expect(dialog).toBeVisible({ timeout: 5000 });
 
-  const nameInput = dialog.locator('[data-testid="folder-plugin-name-input"]');
+  const nameInput = dialog
+    .getByLabel(/Folder Name|名称|Name/)
+    .or(dialog.locator('[data-testid="folder-plugin-name-input"]'));
   await nameInput.fill(nextName);
 
-  await dialog.locator('[data-testid="edit-folder-plugin-confirm"]').click();
+  const saveButton = dialog
+    .locator('[data-testid="edit-folder-plugin-confirm"]')
+    .or(dialog.getByRole('button', { name: /保存|Save|Update/ }));
+  await expect(saveButton).toBeEnabled({ timeout: 5000 });
+  await saveButton.click();
   await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
   await waitForDraftUpdate(page);

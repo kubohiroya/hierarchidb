@@ -225,18 +225,21 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           vertical: 'top',
           horizontal: 'left',
         }}
-        slotProps={{
-          paper: {
-            elevation: 8,
-            sx: {
-              zIndex: 9999,
-              minWidth: 120,
-            },
+        PaperProps={{
+          'data-testid': 'context-menu',
+          elevation: 8,
+          sx: {
+            zIndex: 9999,
+            minWidth: 120,
           },
         }}
       >
         {canCreate && (
-          <MenuItem onClick={handleAddMenuClick} aria-label={createLabel}>
+          <MenuItem
+            onClick={handleAddMenuClick}
+            aria-label={createLabel}
+            data-testid="context-menu-create"
+          >
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
@@ -285,6 +288,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           onClick={handleDuplicateClick}
           disabled={!canDuplicate}
           aria-label={duplicateLabel}
+          data-testid="context-menu-duplicate"
         >
           <ListItemIcon>
             <DuplicateIcon />
@@ -296,6 +300,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           onClick={handleArchiveClick}
           disabled={!allowArchive}
           aria-label={moveToArchiveLabel}
+          data-testid="context-menu-remove"
         >
           <ListItemIcon>
             <ClearIcon color="error" />
@@ -378,6 +383,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             onClick={(event) => handleEditClick(event)}
             disabled={!canEdit}
             aria-label={editLabel}
+            data-testid="context-menu-edit"
           >
             <ListItemIcon>
               <EditIcon />

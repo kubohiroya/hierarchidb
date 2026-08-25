@@ -17,6 +17,7 @@ type WorkerTree = {
 
 type WorkerNode = {
   id: string;
+  name: string;
   parentId?: string | null;
   treeId: string;
   pageNodeId?: string;
@@ -148,7 +149,7 @@ const locationPoint = (
   },
 });
 
-const buildRouteDraft = (name: string, locationNodeId: string): Record<string, unknown> => ({
+const buildRouteDraft = (name: string): Record<string, unknown> => ({
   name,
   description: 'Route/location canonical Step2-Step6 E2E build fixture',
   dataSourceName: 'ide-gsm',
@@ -160,20 +161,6 @@ const buildRouteDraft = (name: string, locationNodeId: string): Record<string, u
   selectedArrayByCountries: selectedRoadInJapan,
   routeBuildInput: {
     kind: 'selection-driven',
-    routes: [
-      {
-        startLocationId: locationNodeId,
-        endLocationId: locationNodeId,
-        startCoordinates: [139.6917, 35.6895],
-        endCoordinates: [135.5023, 34.6937],
-        routeMode: 'road',
-        metadata: {
-          source: 'route-location-e2e',
-          country: 'JP',
-          oneway: true,
-        },
-      },
-    ],
   },
   buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
   processingStatus: 'idle',
@@ -797,6 +784,7 @@ async function createNodeWithDraft(
       });
       return {
         id: createResult.nodeId,
+        name: nodeName,
         treeId: tree.id,
         parentId: tree.rootId,
         pageNodeId: tree.rootId,
@@ -843,11 +831,6 @@ async function openRouteEditStep(
   label: RegExp
 ): Promise<void> {
   const pageNodeId = routeNode.pageNodeId ?? routeNode.parentId ?? `${routeNode.treeId}:root`;
-  const closeDialogButton = page.getByRole('button', { name: /ダイアログを閉じる|Close/i }).first();
-  if (await closeDialogButton.isVisible().catch(() => false)) {
-    await closeDialogButton.click();
-    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 10000 });
-  }
   await expect
     .poll(
       async () =>
@@ -867,10 +850,17 @@ async function openRouteEditStep(
   });
   await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 10000 });
   await waitForTreeTableLoad(page);
-  const routeNodeLink = page.locator(`a[href*="/${routeNode.id}/"]`).first();
-  await expect(routeNodeLink).toBeVisible({ timeout: 20000 });
-  await routeNodeLink.click();
-  await expect(page).toHaveURL(new RegExp(`/${routeNode.id}/`), {
+  await expect(page.locator(`a[href*="/${routeNode.id}/"]`).first()).toBeVisible({
+    timeout: 20000,
+  });
+  await page.goto(buildAppUrl(`d/${routeNode.treeId}/${routeNode.id}`), {
+    waitUntil: 'domcontentloaded',
+    timeout: 120000,
+  });
+  await expect(page).toHaveURL(new RegExp(`/${routeNode.id}(?:/|$)`), {
+    timeout: 20000,
+  });
+  await expect(page.getByRole('heading', { name: routeNode.name })).toBeVisible({
     timeout: 20000,
   });
 
@@ -992,7 +982,7 @@ test.describe('Route canonical Step2-Step6 with Location cascade', () => {
       selectionRouteDraft(`Route Selection E2E ${suffix}`)
     );
     const directRouteName = `Route Build E2E ${suffix}`;
-    const directRouteDraft = buildRouteDraft(directRouteName, locationNode.id);
+    const directRouteDraft = buildRouteDraft(directRouteName);
     const directRouteNode = await createNodeWithDraft(
       page,
       'route',

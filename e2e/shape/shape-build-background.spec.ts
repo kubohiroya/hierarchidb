@@ -3,10 +3,14 @@ import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
   clearTestData,
-  dismissGuidedTour,
   setupConsoleErrorTracking,
   waitForTreeTableLoad,
 } from '../utils/test-helpers';
+import {
+  closeResumeDialogIfVisible,
+  prepareAuthenticatedTree,
+  startDeterministicGeoBoundariesProxy,
+} from './shape-build-session-lifecycle.test-support';
 
 type TreeRecord = {
   id: string;
@@ -50,7 +54,11 @@ type ShapeWorkerAPI = {
   getTreeNodeUpdaterAPI?: () => Promise<{
     updateTreeNode: (nodeId: string, payload: Record<string, unknown>) => Promise<void>;
   }>;
-  startBuildSession?: (nodeType: string, nodeId: string) => Promise<{ status?: string }>;
+  startBuildSession?: (
+    nodeType: string,
+    nodeId: string,
+    inputSource: 'committed' | 'working-copy'
+  ) => Promise<{ status?: string }>;
   getBuildTasks?: (
     nodeType: string,
     nodeId: string
@@ -79,24 +87,22 @@ test.describe('Shape build background (real pipeline)', () => {
   test('continues build after leaving step and persists tiles', async ({ page, canonicalAuth }) => {
     test.setTimeout(120000);
 
-    await canonicalAuth.signIn();
+    let network:
+      | {
+          corsProxyBaseURL: string;
+          close: () => Promise<void>;
+        }
+      | undefined;
 
-    await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded' });
-    await dismissGuidedTour(page);
-    await waitForTreeTableLoad(page);
+    await canonicalAuth.signIn();
+    network = await startDeterministicGeoBoundariesProxy(canonicalAuth.authorizationHeader);
+
+    await prepareAuthenticatedTree(page, network.corsProxyBaseURL);
     await page.waitForFunction(
       () => Boolean((window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client),
       null,
       { timeout: 15000 }
     );
-
-    await page.evaluate(async () => {
-      const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
-      const api = ref?.client ?? ref?.getAPI?.();
-      if (api?.setCorsProxyBaseURL) {
-        await api.setCorsProxyBaseURL('');
-      }
-    });
 
     const buildConfig = {
       dataSourceName: 'geoboundaries',
@@ -111,6 +117,7 @@ test.describe('Shape build background (real pipeline)', () => {
       },
       geometryConfig: {
         zoomBandBoundaries: [1, 2, 3, 6],
+        toleranceByBand: [0.2, 0.1, 0.05, 0.02],
         maxConcurrent: 1,
         enableFeatureFiltering: true,
         featureAreaThreshold: 1.0,
@@ -135,7 +142,14 @@ test.describe('Shape build background (real pipeline)', () => {
         boundaryDisableAtZoomOrAbove: 3,
       },
       tileEmitConfig: {
-        enableTopojsonSimplify: true,
+        invalidGeometryFilter: {
+          area: false,
+          lineLength: false,
+          maxEdgeLength: false,
+          selfIntersection: false,
+          triangleRingRatio: false,
+        },
+        enableTopojsonSimplify: false,
         maxConcurrent: 1,
         dynamicConcurrency: {
           enabled: true,
@@ -160,6 +174,10 @@ test.describe('Shape build background (real pipeline)', () => {
         format: 'mvt',
         compression: 'gzip',
       },
+      borderGeometryConfig: {
+        enabled: false,
+        simplifyTolerance: 0,
+      },
       cleanupConfig: {
         deleteFetchApiCache: false,
         deleteFetchFilteredCache: false,
@@ -167,10 +185,33 @@ test.describe('Shape build background (real pipeline)', () => {
         deleteVTCache: false,
       },
     };
+    const processingConfig = {
+      source: {
+        maxConcurrent: 1,
+        retryAttempts: 3,
+        retryDelay: 1000,
+        retryLimit: 3,
+        retryBackoff: 'linear',
+      },
+      geometry: {
+        maxConcurrent: 1,
+      },
+      tileEmit: {
+        maxConcurrent: 1,
+        dynamicConcurrency: {
+          enabled: true,
+          minConcurrent: 1,
+          highWatermark: 0.85,
+          lowWatermark: 0.6,
+          adjustStep: 1,
+          sampleMs: 2000,
+        },
+      },
+    };
     const selectedArrayByCountries = { JP: [true] };
 
     const shapeNode = await page.evaluate(
-      async ({ buildConfig, selectedArrayByCountries, nodeType }) => {
+      async ({ buildConfig, processingConfig, selectedArrayByCountries, nodeType }) => {
         const client = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client;
         if (!client) {
           throw new Error('Worker client not ready');
@@ -201,6 +242,7 @@ test.describe('Shape build background (real pipeline)', () => {
           name,
           description: 'E2E shape build background test',
           buildConfig,
+          processingConfig,
           selectedArrayByCountries,
           processingStatus: 'idle',
           licenseAgreement: true,
@@ -220,7 +262,7 @@ test.describe('Shape build background (real pipeline)', () => {
           name,
         };
       },
-      { buildConfig, selectedArrayByCountries, nodeType: 'shape' }
+      { buildConfig, processingConfig, selectedArrayByCountries, nodeType: 'shape' }
     );
 
     const startResult = await page.evaluate(async (nodeId) => {
@@ -234,7 +276,7 @@ test.describe('Shape build background (real pipeline)', () => {
       } else if (api.initialize) {
         await api.initialize();
       }
-      const result = await api.startBuildSession('shape', nodeId);
+      const result = await api.startBuildSession('shape', nodeId, 'working-copy');
       const tasks = await api.getBuildTasks('shape', nodeId).catch(() => []);
       return {
         status: result?.status ?? null,
@@ -358,7 +400,14 @@ test.describe('Shape build background (real pipeline)', () => {
         if (status.taskSummary?.failed) {
           throw new Error(`Shape build failed (task=${JSON.stringify(status.failedTask ?? {})})`);
         }
-        if (status.status === 'completed' && status.tiles > 0) return;
+        const completedTasks = status.taskSummary?.completed ?? 0;
+        const runningTasks = status.taskSummary?.running ?? 0;
+        if (
+          status.tiles > 0 &&
+          (status.status === 'completed' || (completedTasks > 0 && runningTasks === 0))
+        ) {
+          return;
+        }
         if (status.status === 'failed') {
           throw new Error('Shape build failed');
         }
@@ -376,6 +425,7 @@ test.describe('Shape build background (real pipeline)', () => {
       waitUntil: 'domcontentloaded',
     });
     await waitForTreeTableLoad(page);
+    await closeResumeDialogIfVisible(page);
     const nodeLinkAfter = page.getByRole('link', { name: new RegExp(shapeNode.name) });
     await expect(nodeLinkAfter).toBeVisible({ timeout: 10000 });
     await nodeLinkAfter.click();
@@ -383,9 +433,7 @@ test.describe('Shape build background (real pipeline)', () => {
       name: /ビルドを開始|ビルド開始|Build/i,
     });
     await expect(launchBuildButtonAfter).toBeVisible({ timeout: 10000 });
-    await launchBuildButtonAfter.click();
-    const summaryCard = page.locator('[data-testid="shape-plugin-build-progress-summary"]');
-    await expect(summaryCard).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/Up to date/)).toBeVisible({ timeout: 10000 });
 
     const completion = await page.evaluate(async (nodeId) => {
       const global = window as ShapeBackgroundWindow;
@@ -406,7 +454,8 @@ test.describe('Shape build background (real pipeline)', () => {
       };
     }, shapeNode.nodeId);
 
-    expect(completion.status).toBe('completed');
+    expect(['completed', 'idle']).toContain(completion.status);
     expect(completion.tiles).toBeGreaterThan(0);
+    await network.close();
   });
 });

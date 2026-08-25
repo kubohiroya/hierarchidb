@@ -108,19 +108,19 @@ export const RowContextMenu = memo(
             vertical: 'top',
             horizontal: 'left',
           }}
-          slotProps={{
-            paper: {
-              elevation: 8,
-              sx: {
-                zIndex: 9999,
-                minWidth: 120,
-              },
+          PaperProps={{
+            'data-testid': 'context-menu',
+            elevation: 8,
+            sx: {
+              zIndex: 9999,
+              minWidth: 120,
             },
           }}
         >
           <MenuItem
             onClick={handleAddMenuClick}
             aria-label={t('treeConsole.contextMenu.create', 'Create')}
+            data-testid="context-menu-create"
           >
             <ListItemIcon>
               <AddIcon />
@@ -157,6 +157,7 @@ export const RowContextMenu = memo(
             onClick={handleEditClick}
             disabled={!props.canEdit}
             aria-label={t('treeConsole.contextMenu.edit', 'Edit')}
+            data-testid="context-menu-edit"
           >
             <ListItemIcon>
               <EditIcon />
@@ -168,6 +169,7 @@ export const RowContextMenu = memo(
             onClick={handleDuplicateClick}
             disabled={!props.canDuplicate}
             aria-label={t('treeConsole.contextMenu.duplicate', 'Duplicate')}
+            data-testid="context-menu-duplicate"
           >
             <ListItemIcon>
               <DuplicateIcon />
@@ -179,6 +181,7 @@ export const RowContextMenu = memo(
             onClick={handleArchiveClick}
             disabled={!allowArchive}
             aria-label={t('treeConsole.contextMenu.moveToArchive', 'Move to Archive')}
+            data-testid="context-menu-remove"
           >
             <ListItemIcon>
               <ClearIcon color="error" />

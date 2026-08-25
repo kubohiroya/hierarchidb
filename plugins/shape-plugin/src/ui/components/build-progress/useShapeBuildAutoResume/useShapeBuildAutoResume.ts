@@ -69,6 +69,7 @@ export const useShapeBuildAutoResume = ({
     shouldSuspendRef.current = !isFinished && (hasActiveProcessing || isRunning);
   }, [buildStatus, runtimeStatus]);
   const canAutoResume = useMemo(() => {
+    if (runtimeStatus === 'completed' || runtimeStatus === 'failed') return false;
     if (buildStatus === 'completed' || buildStatus === 'failed') return false;
     if (buildStatus === 'paused') return stopReason === 'route-leave';
     if (stopReason && stopReason !== 'route-leave') return false;

@@ -48,6 +48,17 @@ describe('useShapeBuildAutoResume reload behavior', () => {
     });
   });
 
+  it('does not auto-resume when runtime already completed', async () => {
+    window.localStorage.setItem('autoResumeBuild', String(activeNodeId));
+    const { handleStart } = makeHook({
+      buildStatus: 'idle' as BuildStatus,
+      runtimeStatus: 'completed',
+    });
+    await vi.waitFor(() => {
+      expect(handleStart).not.toHaveBeenCalled();
+    });
+  });
+
   it('does not auto-resume when stopReason is user-pause', async () => {
     window.localStorage.setItem('autoResumeBuild', String(activeNodeId));
     const { handleStart } = makeHook({

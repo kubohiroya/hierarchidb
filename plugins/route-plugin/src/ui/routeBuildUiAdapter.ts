@@ -150,38 +150,26 @@ const isCoordinatePair = (value: unknown): value is readonly [number, number] =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const hasSelectionDrivenRoutes = (routeBuildInput: unknown): boolean => {
-  if (!isRecord(routeBuildInput) || routeBuildInput.kind !== 'selection-driven') {
-    return false;
-  }
-  const routes = routeBuildInput.routes;
-  return (
-    Array.isArray(routes) &&
-    routes.length > 0 &&
-    routes.every((route) => {
-      if (!isRecord(route)) return false;
-      return (
-        typeof route.startLocationId === 'string' &&
-        route.startLocationId.length > 0 &&
-        typeof route.endLocationId === 'string' &&
-        route.endLocationId.length > 0 &&
-        typeof route.routeMode === 'string' &&
-        route.routeMode.length > 0 &&
-        isCoordinatePair(route.startCoordinates) &&
-        isCoordinatePair(route.endCoordinates)
-      );
-    })
+const hasAnyRouteSelection = (value: unknown): boolean => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).some(
+    (row) => Array.isArray(row) && row.some((cell) => cell === true)
   );
 };
 
 const hasSelectionDrivenFields = (draft: Partial<RouteEntity>): boolean =>
   Boolean(draft.tabularSourceId || draft.selectedArrayByCountries);
 
+const hasSelectionDrivenExternalInput = (draft: Partial<RouteEntity>): boolean =>
+  typeof draft.tabularSourceId === 'string' &&
+  draft.tabularSourceId.length > 0 &&
+  hasAnyRouteSelection(draft.selectedArrayByCountries);
+
 const hasRequiredFields = (nodeId: NodeId | null, draft: Partial<RouteEntity>): boolean => {
   if (!nodeId || !draft.buildConfig) return false;
   const routeBuildInput = (draft as Record<string, unknown>).routeBuildInput;
   if (isRecord(routeBuildInput) && routeBuildInput.kind === 'selection-driven') {
-    return !hasDirectRouteFields(draft) && hasSelectionDrivenRoutes(routeBuildInput);
+    return !hasDirectRouteFields(draft) && hasSelectionDrivenExternalInput(draft);
   }
   if (isRecord(routeBuildInput) && routeBuildInput.kind === 'direct-route') {
     return !hasSelectionDrivenFields(draft) && hasDirectRouteFields(draft);

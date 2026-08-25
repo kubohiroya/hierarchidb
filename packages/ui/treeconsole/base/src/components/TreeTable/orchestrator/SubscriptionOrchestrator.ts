@@ -3,9 +3,15 @@ import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
-import { lastUpdateTimestampAtom, pendingUpdatesAtom, subscribedRootNodeIdAtom, subscriptionDepthAtom, subscriptionIdAtom } from '~/components/TreeTable/state/features/subscription.atoms';
 import { tableDataAtom } from '~/components/TreeTable/state/core/data.atoms';
+import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
+import {
+  lastUpdateTimestampAtom,
+  pendingUpdatesAtom,
+  subscribedRootNodeIdAtom,
+  subscriptionDepthAtom,
+  subscriptionIdAtom,
+} from '~/components/TreeTable/state/features/subscription.atoms';
 import { sanitizeForComlink } from '../../../adapters/subscriptions/comlinkSanitizer.js';
 import { coalesceBatches } from './mergeUtils.js';
 
@@ -35,50 +41,60 @@ const toMetadata = (value: unknown): { name: string; description: string; tags: 
 const toTreeNodeFromRecord = (
   raw: { [key: string]: unknown; id: string },
   fallback: TreeNode | undefined
-): TreeNode => ({
-  id: String(raw.id) as NodeId,
-  parentId:
-    typeof raw.parentId === 'string'
-      ? toNodeId(raw.parentId)
-      : (fallback?.parentId ?? toNodeId('')),
-  nodeType:
-    typeof raw.nodeType === 'string'
-      ? toNodeType(raw.nodeType)
-      : (fallback?.nodeType ?? toNodeType('folder')),
-  depth: toNumber(raw.depth, fallback?.depth ?? 1),
-  createdAt: toNumber(raw.createdAt, fallback?.createdAt ?? Date.now()),
-  updatedAt: toNumber(raw.updatedAt, fallback?.updatedAt ?? Date.now()),
-  version: toNumber(raw.version, fallback?.version ?? 0),
-  metadata: {
-    ...toMetadata(fallback?.metadata),
-    ...toMetadata(raw.metadata),
-  },
-  draftMetadata: fallback?.draftMetadata ?? null,
-  data: fallback?.data ?? null,
-  visible: typeof raw.visible === 'boolean' ? raw.visible : (fallback?.visible ?? true),
-  ...(raw.hasChildren === undefined ? {} : { hasChildren: Boolean(raw.hasChildren) }),
-  ...(typeof raw.children === 'object' && Array.isArray(raw.children)
-    ? { children: raw.children as NodeId[] }
-    : {}),
-  ...(raw.originalName === undefined ? {} : { originalName: String(raw.originalName) }),
-  ...(raw.originalParentId === undefined
-    ? {}
-    : { originalParentId: String(raw.originalParentId) as NodeId }),
-  ...(raw.removedAt === undefined
-    ? {}
-    : { removedAt: toNumber(raw.removedAt, fallback?.removedAt ?? Date.now()) }),
-  ...(raw.lastTouchedAt === undefined
-    ? {}
-    : { lastTouchedAt: toNumber(raw.lastTouchedAt, fallback?.lastTouchedAt ?? Date.now()) }),
-  ...(typeof raw.map === 'object' && raw.map !== null ? { map: raw.map as TreeNode['map'] } : {}),
-  ...(typeof raw.references === 'object' && raw.references !== null
-    ? { references: raw.references as NodeId[] }
-    : {}),
-  ...(raw.descendantCount === undefined
-    ? {}
-    : { descendantCount: toNumber(raw.descendantCount, fallback?.descendantCount ?? 0) }),
-  ...(raw.isEstimated === undefined ? {} : { isEstimated: Boolean(raw.isEstimated) }),
-});
+): TreeNode => {
+  const hasMetadataUpdate = raw.metadata !== undefined;
+  const draftMetadata =
+    typeof raw.draftMetadata === 'object' && raw.draftMetadata !== null
+      ? toMetadata(raw.draftMetadata)
+      : hasMetadataUpdate
+        ? null
+        : (fallback?.draftMetadata ?? null);
+
+  return {
+    id: String(raw.id) as NodeId,
+    parentId:
+      typeof raw.parentId === 'string'
+        ? toNodeId(raw.parentId)
+        : (fallback?.parentId ?? toNodeId('')),
+    nodeType:
+      typeof raw.nodeType === 'string'
+        ? toNodeType(raw.nodeType)
+        : (fallback?.nodeType ?? toNodeType('folder')),
+    depth: toNumber(raw.depth, fallback?.depth ?? 1),
+    createdAt: toNumber(raw.createdAt, fallback?.createdAt ?? Date.now()),
+    updatedAt: toNumber(raw.updatedAt, fallback?.updatedAt ?? Date.now()),
+    version: toNumber(raw.version, fallback?.version ?? 0),
+    metadata: {
+      ...toMetadata(fallback?.metadata),
+      ...toMetadata(raw.metadata),
+    },
+    draftMetadata,
+    data: fallback?.data ?? null,
+    visible: typeof raw.visible === 'boolean' ? raw.visible : (fallback?.visible ?? true),
+    ...(raw.hasChildren === undefined ? {} : { hasChildren: Boolean(raw.hasChildren) }),
+    ...(typeof raw.children === 'object' && Array.isArray(raw.children)
+      ? { children: raw.children as NodeId[] }
+      : {}),
+    ...(raw.originalName === undefined ? {} : { originalName: String(raw.originalName) }),
+    ...(raw.originalParentId === undefined
+      ? {}
+      : { originalParentId: String(raw.originalParentId) as NodeId }),
+    ...(raw.removedAt === undefined
+      ? {}
+      : { removedAt: toNumber(raw.removedAt, fallback?.removedAt ?? Date.now()) }),
+    ...(raw.lastTouchedAt === undefined
+      ? {}
+      : { lastTouchedAt: toNumber(raw.lastTouchedAt, fallback?.lastTouchedAt ?? Date.now()) }),
+    ...(typeof raw.map === 'object' && raw.map !== null ? { map: raw.map as TreeNode['map'] } : {}),
+    ...(typeof raw.references === 'object' && raw.references !== null
+      ? { references: raw.references as NodeId[] }
+      : {}),
+    ...(raw.descendantCount === undefined
+      ? {}
+      : { descendantCount: toNumber(raw.descendantCount, fallback?.descendantCount ?? 0) }),
+    ...(raw.isEstimated === undefined ? {} : { isEstimated: Boolean(raw.isEstimated) }),
+  };
+};
 
 /**
  * SubTree

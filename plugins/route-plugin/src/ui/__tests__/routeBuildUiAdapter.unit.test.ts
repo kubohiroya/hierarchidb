@@ -38,7 +38,7 @@ describe('routeBuildUiAdapter', () => {
     }
   );
 
-  it('accepts canonical selection-driven routeBuildInput as build-ready UI input', () => {
+  it('accepts external selection-driven routeBuildInput as build-ready UI input', () => {
     expect(
       routeBuildUiAdapter.hasRequiredFields(
         'route-node' as never,
@@ -46,15 +46,6 @@ describe('routeBuildUiAdapter', () => {
           buildConfig: { corsProxyBaseURL: 'http://localhost:3003', workerConcurrency: 1 },
           routeBuildInput: {
             kind: 'selection-driven',
-            routes: [
-              {
-                startLocationId: 'location-a',
-                endLocationId: 'location-b',
-                startCoordinates: [139, 35],
-                endCoordinates: [140, 36],
-                routeMode: 'road',
-              },
-            ],
           },
           selectedArrayByCountries: { JP: [true] },
           tabularSourceId: 'route-table',

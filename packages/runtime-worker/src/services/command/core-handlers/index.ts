@@ -148,6 +148,7 @@ async function handleUpdateNode(
           tags: meta.tags ?? node.metadata.tags ?? [],
         },
       }),
+      ...(meta && { draftMetadata: null }),
       ...visibilityUpdate,
       updatedAt: Date.now() as Timestamp,
       version: node.version + 1,

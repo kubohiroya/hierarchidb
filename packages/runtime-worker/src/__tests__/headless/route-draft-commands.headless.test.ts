@@ -50,11 +50,19 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       throw new Error('createNode did not return nodeId');
     }
     const nodeId = createRes.nodeId;
+    await core.updateNode({
+      id: nodeId,
+      draftMetadata: { name: 'FolderB draft', description: undefined, tags: [] },
+    });
 
     const updateRes = await cp.processCommand(
       cp.createEnvelope('updateNode', { nodeId, metadata: { name: 'FolderB1' } })
     );
     expect(updateRes.success).toBe(true);
+    await expect(core.getNode(nodeId)).resolves.toMatchObject({
+      metadata: { name: 'FolderB1' },
+      draftMetadata: null,
+    });
 
     const parentId = await core.createNode(
       withPayload({
