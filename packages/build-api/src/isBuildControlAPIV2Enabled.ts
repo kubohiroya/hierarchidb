@@ -94,6 +94,13 @@ export interface BuildProgress extends BuildTaskCountSummary {
   estimatedTimeRemaining?: number;
 }
 
+export interface BuildSessionCurrentActionProgress {
+  actionIndex: number;
+  actionType: string;
+  phase: string;
+  percentage: number;
+}
+
 export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   prepareSession?(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
   startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
@@ -122,6 +129,7 @@ export interface BuildSessionRuntimeRecord {
   status: BuildSessionRuntimeStatus;
   isActive: boolean;
   progress?: BuildProgress;
+  currentAction?: BuildSessionCurrentActionProgress;
   startedAt?: number;
   completedAt?: number;
   updatedAt?: number;

@@ -56,6 +56,7 @@ type BuildSessionQueuePanelProps = {
   compact?: boolean;
   compactMode?: BuildSessionQueueCompactMode;
   autoStartTopSession?: boolean;
+  includeBuildJobQueues?: boolean;
 };
 
 const SESSION_TIMER_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status']>([
@@ -150,6 +151,7 @@ export function BuildSessionQueuePanel({
   compactMode = 'summary',
   onEntriesChange,
   autoStartTopSession = true,
+  includeBuildJobQueues = true,
 }: BuildSessionQueuePanelProps) {
   const { resolveIcon } = useIconRegistry();
   const { t } = useGlobalI18nTranslator();
@@ -202,10 +204,11 @@ export function BuildSessionQueuePanel({
   const visibleJobQueues = useMemo(
     () =>
       jobQueues.filter((queue) => {
+        if (!includeBuildJobQueues) return false;
         if (treeId && queue.treeId !== treeId) return false;
         return JOB_QUEUE_VISIBLE_STATUSES.has(queue.status);
       }),
-    [jobQueues, treeId]
+    [includeBuildJobQueues, jobQueues, treeId]
   );
   const jobQueueEntries = useMemo(
     () =>
