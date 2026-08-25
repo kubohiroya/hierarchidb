@@ -55,6 +55,26 @@ Phase 3 child #1607 の location / route export adapters は canonical column or
 
 Phase 3 child #1612 で、CLI dry-run、injected non-dry-run、typed writer failure、dependency contract violation の representative JSON を `packages/staged-folder-action/src/__tests__/fixtures/` に固定済みである。fixture test は実 browser、実 browser profile、実 output filesystem writer へ接続せず、CLI core、host adapter、typed error mapping の contract だけを検証する。これにより package-scoped CI は flakiness を増やさず、stdout の single JSON object、exit code、action result、failure category/code の回帰を検出する。writer failure は `export-csv` / `export-xlsx` category、dependency contract violation は `dependency` category とし、warning や reference failure へ丸めてはならない。
 
+Phase 4 child #1639 で、staged-folder-action の CI coverage は package-scoped Vitest を基準に校正する。`@hierarchidb/staged-folder-action` 配下の実装差分は CI Validation の affected mode で `typecheck` と `test` を走らせる。docs-only 差分は skip、workflow / root script / `turbo.json` 等の repository-wide input 差分は full validation とする。`pnpm run ci:validate:affected` は Turbo の `[base...head]` filter を使うため、staged-folder-action 実装変更では同 package と依存 build だけを fanout し、docs-only PR に root-level E2E を広げてはならない。
+
+`@hierarchidb/staged-folder-action` の package-scoped tests は次の目的と runtime class を持つ。runtime class は CI の安定性判断に使う分類であり、`fast` は pure unit / mocked port、`fixture` は checked-in fixture I/O、`workflow-smoke` は実 process entrypoint と in-memory host を通す representative flow を表す。いずれも実 browser profile、実 Map UI server、外部 network、任意の既存 IndexedDB には接続しない。
+
+| Test file | Purpose | Runtime class |
+| --- | --- | --- |
+| `cli.test.ts` | CLI option/manifest validation、stdout JSON、injected host result/failure/exit-code mapping | `fast` |
+| `cliFixtures.test.ts` | representative dry-run / non-dry-run / writer failure / dependency violation fixture JSON の固定 | `fixture` |
+| `createStagedFolderActionCliExecutionHost.test.ts` | bundled host module loader、WorkerAPI adapter mapping、typed failure metadata、production-like non-dry workflow smoke | `workflow-smoke` |
+| `parseStagedFolderActionManifest.test.ts` | manifest schema、action registry、CLI option combination、unsafe path validation | `fast` |
+| `createExportFileActionRunner.test.ts` | CSV/XLSX writer ports、canonical columns、safe output path、invalid cell/column failures | `fast` |
+| `createMapImageCaptureBrowserActionRunner.test.ts` | browser runner composition、safe screenshot output path、browser close/failure preservation、Playwright launcher validation | `fast` |
+| `mapImageCaptureBrowserHandoff.test.ts` | Map route URL、page port readiness, timeout, blank-canvas, screenshot handoff contract | `fast` |
+| `mapImageCaptureIntent.test.ts` | IndexedDB state-channel intent shape and viewport validation | `fast` |
+| `stagedFolderActionProgress.test.ts` | progress record phase shape and strict progress percentage validation | `fast` |
+
+Phase 4 browser/file workflow tests must declare their scope through injected ports and checked-in fixtures rather than ambient resources. Browser workflow tests use Playwright-like page/browser mocks, an explicit `timeoutMs` value, and deterministic readiness/blank-canvas/page-error branches. File workflow tests use an explicit `outputBasePath`, writer/materializer ports, and checked-in JSON manifests/expected results where fixture output is part of the contract. Flake controls are contractual fail-fast checks: invalid timeout, unsafe path, missing host/writer, readiness timeout, blank canvas, and typed dependency/reference failures must fail as typed errors instead of being quarantined or silently downgraded.
+
+CLI/result mapping and injected port failure coverage stays package-scoped where feasible. Adding a Phase 4 action must first add or extend the relevant package-scoped runner/adapter/fixture tests; broader root E2E is reserved for app integration surfaces that cannot be represented by injected ports. If a test genuinely requires an app server or real browser profile, the PR must document why package-scoped coverage is insufficient and must give an explicit timeout and fixture boundary in the corresponding issue.
+
 ## 成功 JSON
 
 ```typescript
