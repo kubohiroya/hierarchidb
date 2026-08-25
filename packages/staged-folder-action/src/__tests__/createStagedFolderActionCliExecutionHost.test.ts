@@ -403,6 +403,66 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it.each([
+    'map-image-capture Map UI browser failure: page-error: render crashed',
+    'map-image-capture Map UI rendered a blank canvas',
+    'map-image-capture render timeout',
+    'map-image-capture Map UI reported render error; browser close failed: close failed',
+    'outputPath must not contain empty, current-directory, or parent-directory segments',
+  ])('maps browser capture failure "%s" to a typed map-image-capture CLI failure', async (message) => {
+    const io = createIo({ 'config.json': JSON.stringify(mapCaptureConfig) });
+    const failedRecord = createFailedRecord({
+      runId: 'run-map-failure',
+      sourceNodeId: 'source-1',
+      currentAction: {
+        actionIndex: 1,
+        actionType: 'map-image-capture',
+        phase: 'capturing-canvas',
+        percentage: 75,
+      },
+    });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async () => {
+        throw new Error(message);
+      },
+      getRun: async () => failedRecord,
+      createRunId: () => 'run-map-failure',
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      [
+        '--json',
+        '--config',
+        'config.json',
+        '--source-node-id',
+        'source-1',
+        '--browser',
+        'headless',
+      ],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      actionIndex: number;
+      actionType: string;
+      error: { category: string; code: string; message: string; actionType: string };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      actionIndex: 1,
+      actionType: 'map-image-capture',
+      error: {
+        category: 'map-image-capture',
+        code: 'STAGED_FOLDER_ACTION_MAP_IMAGE_CAPTURE_FAILED',
+        message,
+        actionType: 'map-image-capture',
+      },
+    });
+  });
+
   it('maps missing export file host failures to export action categories', async () => {
     const io = createIo({ 'config.json': JSON.stringify(exportFileConfig) });
     const failedRecord = createFailedRecord({

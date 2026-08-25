@@ -395,6 +395,54 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('records a typed action failure when the standard browser runner rejects an unsafe output path', async () => {
+    const launchBrowser = vi.fn(async () => ({
+      newPage: vi.fn(async () => ({}) as PlaywrightLikeMapImageCapturePage),
+      close: vi.fn(async () => {}),
+    }));
+    const dependencies = createDependencies({
+      runMapImageCaptureAction: createMapImageCaptureBrowserActionRunner({
+        baseUrl: 'http://localhost:3000/app/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        outputBasePath: '/tmp/hdb-capture-output',
+        launchBrowser,
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-capture-unsafe-output' as NodeId,
+        sourceNodeId: 'source-capture-unsafe-output' as NodeId,
+        browserMode: 'headed',
+        config: createConfig({
+          actions: [
+            { type: 'build', mode: 'session-manager' },
+            {
+              type: 'map-image-capture',
+              mode: 'map-ui',
+              output: { path: 'exports/../map.png', width: 800, height: 600 },
+              viewport: { bbox: [139, 35, 140, 36] },
+              layers: [{ path: '.', visible: true }],
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow(/outputPath must not contain empty, current-directory, or parent-directory/);
+    expect(launchBrowser).not.toHaveBeenCalled();
+    await expect(store.getRun('run-capture-unsafe-output' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      currentAction: {
+        actionIndex: 1,
+        actionType: 'map-image-capture',
+        phase: 'handoff-created',
+        percentage: 10,
+      },
+      error: 'outputPath must not contain empty, current-directory, or parent-directory segments',
+    });
+  });
+
   it('requires browser mode before handing off map image capture', async () => {
     const dependencies = createDependencies({
       runMapImageCaptureAction: vi.fn(async () => {}),
