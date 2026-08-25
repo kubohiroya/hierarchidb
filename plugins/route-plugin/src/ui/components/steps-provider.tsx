@@ -89,8 +89,8 @@ const hasDirectRouteFields = (data?: RouteStepData): boolean =>
     data?.routeMode &&
       data.startLocationId &&
       data.endLocationId &&
-      Array.isArray(data.lineGeometry) &&
-      data.lineGeometry.length >= 2
+      isCoordinatePair(data.startCoordinates) &&
+      isCoordinatePair(data.endCoordinates)
   );
 
 const hasSelectionDrivenFields = (data?: RouteStepData): boolean =>

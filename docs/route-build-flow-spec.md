@@ -102,6 +102,14 @@ cache identity の正規仕様（SSOT）とする。
 - 共通ステージ設定は `sourceConfig / geometryConfig / tileEmitConfig / cleanupConfig` に保持する。
 - route固有設定は `routeGeneration / routeGeometryConfig / laneCaps` 等、`RouteBuildConfig` の
   明示フィールドに保持する。
+- route method settings は `RouteBuildConfig.routeMethodSettings` をSSOTとする。
+  `defaults` は system-provided defaults、`overrides` は route node の明示overrideであり、
+  source planning は `overrides[routeMode] ?? defaults[routeMode]` を materialize する。
+  `airway` は `great_circle`、`waterway` は `searoute` を固定defaultとし、node overrideでも
+  別methodへ変更できない。`railway / high-speed-railway / road / highway` は `direct`、
+  `osm_route`、`custom` のいずれかを明示設定する。
+  `great_circle` detail は `numPoints` と任意の `numPointsByZoomBand` で定義し、
+  zoom bandごとの配列長は `geometryConfig.zoomBandBoundaries.length - 1` と一致しなければならない。
 - `RouteProcessingConfig` を別の永続設定木として併存させない。runtime-only handleはbuild設定へ
   シリアライズせず、nodeIdに対応するbuild-session SSOT状態木へ保持する。
 - 同じ設定を `buildConfig` と別フィールドへ複製したり、欠落値を別フィールドから補完したりしない。
@@ -141,17 +149,18 @@ cache identity の正規仕様（SSOT）とする。
   completed internal input を渡す。
 - external payload は次のいずれか1つだけを表す:
   - direct-route: `routeBuildInput.kind='direct-route'` と direct route fields
-    (`startLocationId` / `endLocationId` / `lineGeometry` / `routeMode`)。
+    (`startLocationId` / `endLocationId` / `startCoordinates` / `endCoordinates` / `routeMode`)。
   - selection-driven: `routeBuildInput.kind='selection-driven'`、`tabularSourceId`、
     `selectedArrayByCountries`、任意の `locationNodeIds`。
 - direct-route fields と selection-driven fields の混在、どちらも存在しない payload、
   空selection、5-cell legacy row、非boolean cell、不正国コード、空tabular source、
-  endpoint未解決、unsupported routeMode、解決後route 0件は task 生成前に失敗する。
+  endpoint未解決、unsupported routeMode、precomputed `lineGeometry`、解決後route 0件は task 生成前に失敗する。
   どちらかの形式へ寄せる、空成果物として成功させる、別sourceへfallbackすることは禁止する。
 - `routeBuildInput.routes` は resolver 通過後の completed internal input 専用であり、
   external payload に含めて start してはならない。resolved input は
-  `RouteBuildRouteInput[]` として location ID、始点/終点座標、routeMode、directionality metadata、
-  generation method/options を含み、session 内で selection や endpoint を再解決しない。
+  `RouteBuildRouteInput[]` として location ID、始点/終点座標、routeMode、directionality metadata を
+  含む。source planning は `RouteBuildConfig.routeMethodSettings` から generation method/options を
+  materialize し、session 内で selection、endpoint、method を再解決しない。
 - selection-driven resolver の決定的sort keyは
   `routeMode / fromLocationId / toLocationId / source row identity` とする。同一payloadは
   committed data と Working Copy のどちらから起動しても同じroute順序、source identity、
@@ -162,8 +171,15 @@ cache identity の正規仕様（SSOT）とする。
 - `source` ステージ:
   - shape と同様にデータソースごとの strategy pattern で実装を切り替える。
   - 交通モードに応じた LineString GeoJSON を生成する。
-  - route generation は明示された `generation.method` を canonical request とし、
-    routeModeからmethodを推測しない。`@hierarchidb/route-engine` のengine registryは
+  - route generation は source planning で明示的に materialize された
+    `generation.method` を canonical request とする。`airway` は `great_circle`、`waterway` は
+    `searoute` を正規methodとし、明示された `RouteBuildRouteInput.method` または
+    `routeMethodSettings.overrides` がこれと矛盾する場合は source planning の契約違反として失敗させる。
+    `railway / high-speed-railway / road / highway` は `routeMethodSettings` に明示された
+    `direct`、`osm_route`、`custom` のいずれかを materialize する。
+    この materialization は task 実行前の入力確定であり、engine失敗時の fallback や実行時の
+    曖昧な推測ではない。
+    `@hierarchidb/route-engine` のengine registryは
     engine capability（engine id/version、method、任意のaccepted route modes、network requirement、
     waypoint対応）を必須入力として検証し、未登録engine、capability不一致、不正responseを失敗させる。
     `generation.routeMode` は source planning 済みの正規 `routeMode` を含む必須のcapability検証入力であり、
@@ -322,8 +338,10 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
   payloadをopaqueに渡す。route固有入力の判定と解決はroute pluginの
   `RouteCanonicalBuildInputResolver` が所有する。
 - `routeBuildInput.kind = "direct-route"` は`RouteEntityPayload.buildConfig / routeMode /
-  startLocationId / endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を
-  始点・終点座標として使う。
+  startLocationId / endLocationId / startCoordinates / endCoordinates`を必須とする。
+  precomputed `lineGeometry` は canonical direct-route 外部入力として受け取らず、存在する場合は
+  契約違反としてstartを失敗させる。LineStringはsource planningでmaterializeされたmethodと
+  resolved endpointから生成する。
 - `routeBuildInput.kind = "selection-driven"` は`tabularSourceId`とstrict
   `selectedArrayByCountries`をexternal payloadとして受け取り、route pluginのcanonical
   resolverがtabular rowと関連locationを解決して内部用`RouteBuildRouteInput[]`を生成する。

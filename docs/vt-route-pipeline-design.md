@@ -37,15 +37,22 @@ route pipelineは次の3ステージを、この順序で実行する。
 - Step3 `selectedArrayByCountries`
 - canonical route input resolver が解決したlocation参照と始点/終点Point
 - `RouteBuildConfig.sourceConfig`
-- route generation method/options
+- route generation method/options。source planning は `RouteBuildConfig.routeMethodSettings` の
+  `overrides[routeMode] ?? defaults[routeMode]` を使い、task生成前に明示的な method/options へ
+  materialize する。`airway` は `great_circle`、`waterway` は `searoute` を固定し、
+  land route modes は `direct` / `osm_route` / `custom` の明示設定だけを許可する。
 
 ### 処理
 
 1. data-source strategyからroute metadataを取得する。
 2. data-source strategy / adapter境界で始点/終点のlocationを解決し、session入力では
    location IDと座標を厳格検証する。
-3. `direct / great_circle / osm_route / searoute / custom` の明示されたengineで
-   LineStringを生成する。
+3. `direct / great_circle / osm_route / searoute / custom` の source-planned engineで
+   LineStringを生成する。`airway` は `great_circle`、`waterway` は `searoute` を正規methodとし、
+   明示された `RouteBuildRouteInput.method` または `routeMethodSettings.overrides` がこれと
+   矛盾する場合は source planning の契約違反として失敗させる。
+   `railway / high-speed-railway / road / highway` は `routeMethodSettings` に明示された
+   `direct` / `osm_route` / `custom` のいずれかを materialize する。
    engine registryはmethodごとのcapabilityを必須とし、engine id/version、method、
    任意のaccepted route modes、network requirement、waypoint対応を検証する。
    source planningで確定した`routeMode`はgeneration requestへ渡し、engine capabilityの
@@ -60,7 +67,8 @@ route pipelineは次の3ステージを、この順序で実行する。
 5. geometry taskを、永続化に成功したsource artifactから生成する。
 
 engine、location、routeMode、座標、generation設定が欠落・不正な場合はtaskを失敗させる。
-別engine、直線、大圏航路、cacheへの暗黙fallbackは行わない。
+materialize 済み method の engine が失敗しても、別engine、直線、大圏航路、cacheへの
+暗黙fallbackは行わない。
 session内では曖昧なlocation検索を行わず、admin name/codeは正規`RouteFeature`をSSOTとして
 source cache metadataへ重複保存しない。
 
@@ -71,6 +79,10 @@ direct-route と selection-driven の混在、external payload の `routeBuildIn
 空selection、空解決結果、endpoint未解決は source task 作成前に失敗させる。
 resolver output の順序は route mode、始点location ID、終点location ID、source row identity で
 決定的に固定し、committed / working-copy の input source によって分岐しない。
+direct-route external payload は `startLocationId`、`endLocationId`、`startCoordinates`、
+`endCoordinates`、`routeMode` を必須入力とし、precomputed `lineGeometry` を含む payload は
+canonical boundary で拒否する。LineString は resolved endpoint と materialized generation method から
+source stage が生成し、外部から渡されたLineStringをroute geometry sourceとして使用しない。
 
 ### source keyと入力署名
 
@@ -81,6 +93,8 @@ resolver output の順序は route mode、始点location ID、終点location ID�
 - 同一`sourceKey`でも入力署名が変わったartifactはrecycleしない。
 - canonical direct-route startでは`routeMode`を正規値として明示必須にし、
   `transportMode`や`transportSelection`から補完しない。
+- canonical direct-route startではendpoint coordinatesを明示必須にし、precomputed
+  `lineGeometry` の先頭/末尾からendpointを推測しない。
 
 ## geometry stage
 

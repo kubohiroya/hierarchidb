@@ -204,6 +204,155 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('preserves typed dependency resolver failure metadata in the runner record', async () => {
+    const dependencies = createDependencies({
+      resolveReferences: vi.fn(async () => {
+        const error = new Error('Dependency schema is invalid.') as Error & {
+          category: 'dependency';
+          code: string;
+          nodeId: NodeId;
+          dependentNodeId: NodeId;
+          referencePath: string;
+          expectedTargetType: string;
+          actualTargetType: string;
+          pluginId: string;
+        };
+        error.category = 'dependency';
+        error.code = 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR';
+        error.nodeId = 'shape-1' as NodeId;
+        error.dependentNodeId = 'route-1' as NodeId;
+        error.referencePath = 'metadata.dependencies[0]';
+        error.expectedTargetType = 'location';
+        error.actualTargetType = 'folder';
+        error.pluginId = 'route';
+        throw error;
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-dependency-schema-failure' as NodeId,
+        sourceNodeId: 'source-dependency-schema-failure' as NodeId,
+        config: createConfig({ actions: [] }),
+      })
+    ).rejects.toThrow(/Dependency schema is invalid/);
+    await expect(store.getRun('run-dependency-schema-failure' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1',
+        dependentNodeId: 'route-1',
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+      warnings: [],
+      pendingReferences: [],
+    });
+  });
+
+  it('passes completed import mount records to reference resolution before following actions', async () => {
+    const runImportMountAction = vi.fn(async () => ({
+      type: 'import-mount' as const,
+      status: 'completed' as const,
+      mountId: 'mount-run',
+      mountedRootNodeId: 'mounted-root' as NodeId,
+      importedNodeIds: ['mounted-root' as NodeId],
+      lifetime: 'run' as const,
+    }));
+    const runExportFileAction = vi.fn(async () => ({
+      type: 'export-csv' as const,
+      status: 'completed' as const,
+      outputPath: '/tmp/locations.csv',
+      entityType: 'location' as const,
+      rowCount: 1,
+    }));
+    const resolveReferences = vi.fn<
+      NonNullable<StagedFolderActionRunnerDependencies['resolveReferences']>
+    >(async () => ({
+      warnings: [],
+      pendingReferences: [],
+    }));
+    const dependencies = createDependencies({
+      runImportMountAction,
+      runExportFileAction,
+      safeUnmountImportMounts: vi.fn(async () => {}),
+      resolveReferences,
+    });
+
+    await runStagedFolderAction(dependencies, {
+      runId: 'run-import-mount-resolver-input' as NodeId,
+      sourceNodeId: 'source-import-mount-resolver-input' as NodeId,
+      config: createConfig({
+        actions: [
+          {
+            type: 'import-mount',
+            format: 'canonical-yaml-zip',
+            input: { path: 'archive.zip' },
+            mount: {
+              parentPath: '.',
+              name: 'Mounted',
+              lifetime: 'run',
+            },
+          },
+          {
+            type: 'export-csv',
+            entityType: 'location',
+            source: { path: 'Mounted/locations' },
+            output: { path: 'locations.csv' },
+          },
+        ],
+      }),
+    });
+
+    expect(resolveReferences.mock.calls.map(([input]) => input?.phase)).toEqual([
+      'after-overlay',
+      'before-action',
+      'after-action',
+      'before-action',
+      'after-action',
+    ]);
+    expect(resolveReferences.mock.calls[0]?.[0]?.importMounts).toEqual([]);
+    expect(resolveReferences.mock.calls[1]?.[0]?.importMounts).toEqual([]);
+    expect(resolveReferences.mock.calls[2]?.[0]?.importMounts).toEqual([
+      expect.objectContaining({
+        mountId: 'mount-run',
+        mountedRootNodeId: 'mounted-root',
+        lifetime: 'run',
+      }),
+    ]);
+    expect(resolveReferences.mock.calls[3]?.[0]).toMatchObject({
+      action: {
+        type: 'export-csv',
+        source: { path: 'Mounted/locations' },
+      },
+      importMounts: [
+        {
+          type: 'import-mount',
+          status: 'completed',
+          mountId: 'mount-run',
+          mountedRootNodeId: 'mounted-root',
+          importedNodeIds: ['mounted-root'],
+          lifetime: 'run',
+        },
+      ],
+      actionResults: [
+        {
+          type: 'import-mount',
+          status: 'completed',
+          mountId: 'mount-run',
+          mountedRootNodeId: 'mounted-root',
+          importedNodeIds: ['mounted-root'],
+          lifetime: 'run',
+        },
+      ],
+    });
+  });
+
   it('runs map image capture only after the preceding build action completes', async () => {
     const order: string[] = [];
     const dependencies = createDependencies({
@@ -392,6 +541,54 @@ describe('runStagedFolderAction', () => {
       intentId: 'run-capture-browser-host:1',
       stagingRootNodeId: 'staging-root',
       browserMode: 'headed',
+    });
+  });
+
+  it('records a typed action failure when the standard browser runner rejects an unsafe output path', async () => {
+    const launchBrowser = vi.fn(async () => ({
+      newPage: vi.fn(async () => ({}) as PlaywrightLikeMapImageCapturePage),
+      close: vi.fn(async () => {}),
+    }));
+    const dependencies = createDependencies({
+      runMapImageCaptureAction: createMapImageCaptureBrowserActionRunner({
+        baseUrl: 'http://localhost:3000/app/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        outputBasePath: '/tmp/hdb-capture-output',
+        launchBrowser,
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-capture-unsafe-output' as NodeId,
+        sourceNodeId: 'source-capture-unsafe-output' as NodeId,
+        browserMode: 'headed',
+        config: createConfig({
+          actions: [
+            { type: 'build', mode: 'session-manager' },
+            {
+              type: 'map-image-capture',
+              mode: 'map-ui',
+              output: { path: 'exports/../map.png', width: 800, height: 600 },
+              viewport: { bbox: [139, 35, 140, 36] },
+              layers: [{ path: '.', visible: true }],
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow(/outputPath must not contain empty, current-directory, or parent-directory/);
+    expect(launchBrowser).not.toHaveBeenCalled();
+    await expect(store.getRun('run-capture-unsafe-output' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      currentAction: {
+        actionIndex: 1,
+        actionType: 'map-image-capture',
+        phase: 'handoff-created',
+        percentage: 10,
+      },
+      error: 'outputPath must not contain empty, current-directory, or parent-directory segments',
     });
   });
 
@@ -617,40 +814,72 @@ describe('runStagedFolderAction', () => {
     });
   });
 
-  it('does not safe unmount retained import mounts', async () => {
-    const safeUnmountImportMounts = vi.fn(async () => {});
-    const dependencies = createDependencies({
-      runImportMountAction: vi.fn(async () => ({
-        type: 'import-mount' as const,
-        status: 'completed' as const,
-        mountId: 'mount-retain',
-        mountedRootNodeId: 'mounted-root' as NodeId,
-        importedNodeIds: ['mounted-root' as NodeId],
-        lifetime: 'retain' as const,
-      })),
-      safeUnmountImportMounts,
-    });
+  it.each(['retain', 'permanent'] as const)(
+    'does not safe unmount %s import mounts',
+    async (lifetime) => {
+      const safeUnmountImportMounts = vi.fn(async () => {});
+      const dependencies = createDependencies({
+        runImportMountAction: vi.fn(async () => ({
+          type: 'import-mount' as const,
+          status: 'completed' as const,
+          mountId: `mount-${lifetime}`,
+          mountedRootNodeId: 'mounted-root' as NodeId,
+          importedNodeIds: ['mounted-root' as NodeId],
+          lifetime,
+        })),
+        safeUnmountImportMounts,
+      });
 
-    await runStagedFolderAction(dependencies, {
-      runId: 'run-import-mount-retain' as NodeId,
-      sourceNodeId: 'source-import-mount-retain' as NodeId,
-      config: createConfig({
-        actions: [
-          {
-            type: 'import-mount',
-            format: 'canonical-yaml-zip',
-            input: { path: 'archive.zip' },
-            mount: {
-              parentPath: '.',
-              name: 'Mounted',
-              lifetime: 'retain',
+      await runStagedFolderAction(dependencies, {
+        runId: `run-import-mount-${lifetime}` as NodeId,
+        sourceNodeId: `source-import-mount-${lifetime}` as NodeId,
+        config: createConfig({
+          actions: [
+            {
+              type: 'import-mount',
+              format: 'canonical-yaml-zip',
+              input: { path: 'archive.zip' },
+              mount: {
+                parentPath: '.',
+                name: 'Mounted',
+                lifetime,
+              },
             },
-          },
-        ],
-      }),
+          ],
+        }),
+      });
+
+      expect(safeUnmountImportMounts).not.toHaveBeenCalled();
+    }
+  );
+
+  it('fails fast instead of implicitly resuming or retrying an existing runId', async () => {
+    const firstDependencies = createDependencies();
+    await runStagedFolderAction(firstDependencies, {
+      runId: 'run-retry-boundary' as NodeId,
+      sourceNodeId: 'source-retry-boundary' as NodeId,
+      config: createConfig({ actions: [] }),
+    });
+    const secondPrepareStaging = vi.fn(async () => ({
+      stagingRootNodeId: 'second-staging-root' as NodeId,
+    }));
+    const secondDependencies = createDependencies({
+      prepareStaging: secondPrepareStaging,
     });
 
-    expect(safeUnmountImportMounts).not.toHaveBeenCalled();
+    await expect(
+      runStagedFolderAction(secondDependencies, {
+        runId: 'run-retry-boundary' as NodeId,
+        sourceNodeId: 'source-retry-boundary' as NodeId,
+        config: createConfig({ actions: [] }),
+      })
+    ).rejects.toThrow();
+
+    expect(secondPrepareStaging).not.toHaveBeenCalled();
+    await expect(store.getRun('run-retry-boundary' as NodeId)).resolves.toMatchObject({
+      status: 'completed',
+      phase: 'completed',
+    });
   });
 
   it('keeps the primary failure when run-lifetime safe unmount also fails', async () => {

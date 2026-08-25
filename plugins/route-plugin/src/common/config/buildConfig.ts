@@ -1,9 +1,37 @@
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
+import { ROUTE_MODES, type RouteBuildConfig } from '@hierarchidb/route-api';
 import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 
 type RouteBuildConfigLocal = RouteBuildConfig;
 
 type PartialRouteBuildConfig = Partial<RouteBuildConfigLocal>;
+
+export const DEFAULT_ROUTE_METHOD_SETTINGS: RouteBuildConfig['routeMethodSettings'] = {
+  defaults: {
+    [ROUTE_MODES.AIRWAY]: {
+      method: 'great_circle',
+      greatCircle: {
+        numPoints: 96,
+        numPointsByZoomBand: [32, 64, 128],
+      },
+    },
+    [ROUTE_MODES.WATERWAY]: {
+      method: 'searoute',
+    },
+    [ROUTE_MODES.RAILWAY]: {
+      method: 'direct',
+    },
+    [ROUTE_MODES.H_RAILWAY]: {
+      method: 'direct',
+    },
+    [ROUTE_MODES.ROAD]: {
+      method: 'direct',
+    },
+    [ROUTE_MODES.HIGHWAY]: {
+      method: 'direct',
+    },
+  },
+  overrides: {},
+};
 
 export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
   dataSourceName: 'ide-gsm',
@@ -14,6 +42,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     retryOnFailure: false,
     maxRetries: 0,
   },
+  routeMethodSettings: DEFAULT_ROUTE_METHOD_SETTINGS,
   sourceConfig: {
     maxConcurrent: 2,
     deleteOnComplete: false,
@@ -135,6 +164,19 @@ export const mergeRouteBuildConfig = (
     ? { ...base.routeGeneration, ...overrides.routeGeneration }
     : base.routeGeneration;
 
+  const routeMethodSettings = overrides.routeMethodSettings
+    ? {
+        defaults: {
+          ...base.routeMethodSettings.defaults,
+          ...overrides.routeMethodSettings.defaults,
+        },
+        overrides: {
+          ...(base.routeMethodSettings.overrides ?? {}),
+          ...(overrides.routeMethodSettings.overrides ?? {}),
+        },
+      }
+    : base.routeMethodSettings;
+
   return {
     ...base,
     ...overrides,
@@ -142,6 +184,7 @@ export const mergeRouteBuildConfig = (
     geometryConfig,
     tileEmitConfig,
     routeGeneration,
+    routeMethodSettings,
     cleanupConfig,
     routeGeometryConfig,
   };

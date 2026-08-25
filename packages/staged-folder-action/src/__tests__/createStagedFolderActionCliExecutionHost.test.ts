@@ -64,6 +64,43 @@ const exportFileConfig: StagedFolderActionConfig = {
   ],
 };
 
+const productionLikeWorkflowConfig: StagedFolderActionConfig = {
+  version: 1,
+  staging: {
+    mode: 'temporary-copy',
+    name: 'phase-4-cli-workflow-smoke',
+    cleanup: 'delete-on-success',
+  },
+  overlay: {
+    nodes: [
+      {
+        match: { path: 'locations/tokyo' },
+        data: {
+          metadata: { label: 'Tokyo production-like fixture' },
+          buildConfig: { source: 'phase-4-smoke' },
+        },
+      },
+    ],
+  },
+  actions: [
+    { type: 'build', mode: 'session-manager' },
+    {
+      type: 'export-csv',
+      entityType: 'location',
+      source: { path: 'locations' },
+      output: { path: 'exports/locations.csv' },
+      includeDependencyStatus: true,
+    },
+    {
+      type: 'export-xlsx',
+      entityType: 'route',
+      source: { path: 'routes' },
+      output: { path: 'exports/routes.xlsx', sheetName: 'routes' },
+      includeDependencyStatus: true,
+    },
+  ],
+};
+
 const exportFileActionTypes = ['export-csv', 'export-xlsx'] as const;
 
 describe('createStagedFolderActionCliExecutionHost', () => {
@@ -405,6 +442,69 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it.each([
+    'map-image-capture Map UI browser failure: page-error: render crashed',
+    'map-image-capture Map UI rendered a blank canvas',
+    'map-image-capture render timeout',
+    'map-image-capture Map UI reported render error; browser close failed: close failed',
+    'outputPath must not contain empty, current-directory, or parent-directory segments',
+  ])(
+    'maps browser capture failure "%s" to a typed map-image-capture CLI failure',
+    async (message) => {
+      const io = createIo({ 'config.json': JSON.stringify(mapCaptureConfig) });
+      const failedRecord = createFailedRecord({
+        runId: 'run-map-failure',
+        sourceNodeId: 'source-1',
+        currentAction: {
+          actionIndex: 1,
+          actionType: 'map-image-capture',
+          phase: 'capturing-canvas',
+          percentage: 75,
+        },
+      });
+      const host = createStagedFolderActionCliExecutionHost({
+        runStagedFolderAction: async () => {
+          throw new Error(message);
+        },
+        getRun: async () => failedRecord,
+        createRunId: () => 'run-map-failure',
+      });
+
+      const exitCode = await runStagedFolderActionCli(
+        [
+          '--json',
+          '--config',
+          'config.json',
+          '--source-node-id',
+          'source-1',
+          '--browser',
+          'headless',
+        ],
+        io,
+        { executionHost: host }
+      );
+      const result = JSON.parse(io.stdout.join('')) as {
+        ok: boolean;
+        actionIndex: number;
+        actionType: string;
+        error: { category: string; code: string; message: string; actionType: string };
+      };
+
+      expect(exitCode).toBe(5);
+      expect(result).toMatchObject({
+        ok: false,
+        actionIndex: 1,
+        actionType: 'map-image-capture',
+        error: {
+          category: 'map-image-capture',
+          code: 'STAGED_FOLDER_ACTION_MAP_IMAGE_CAPTURE_FAILED',
+          message,
+          actionType: 'map-image-capture',
+        },
+      });
+    }
+  );
+
   it('maps missing export file host failures to export action categories', async () => {
     const io = createIo({ 'config.json': JSON.stringify(exportFileConfig) });
     const failedRecord = createFailedRecord({
@@ -550,6 +650,70 @@ describe('createStagedFolderActionCliExecutionHost', () => {
         category: 'dependency',
         code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
         message: 'stale edge missing rebuild target',
+      },
+    });
+  });
+
+  it('preserves structured dependency failure metadata from the runner record', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
+    const failedRecord = createFailedRecord({
+      runId: 'run-schema-dependency-failure',
+      sourceNodeId: 'source-1',
+      phase: 'resolving-references',
+      error: 'Dependency schema is invalid.',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1' as NodeId,
+        dependentNodeId: 'route-1' as NodeId,
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+    });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async () => {
+        throw new Error('a message that must not drive dependency classification');
+      },
+      getRun: async () => failedRecord,
+      createRunId: () => 'run-schema-dependency-failure',
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      error: {
+        category: string;
+        code: string;
+        message: string;
+        nodeId: string;
+        dependentNodeId: string;
+        referencePath: string;
+        expectedTargetType: string;
+        actualTargetType: string;
+        pluginId: string;
+      };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1',
+        dependentNodeId: 'route-1',
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
       },
     });
   });
@@ -768,6 +932,234 @@ describe('runStagedFolderActionBundledCli', () => {
         delete process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE;
       } else {
         process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE = previousHostModule;
+      }
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('runs a production-like non-dry-run workflow through the host module and records progress state', async () => {
+    const previousHostModule = process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE;
+    const previousCwd = process.cwd();
+    const previousIndexedDbDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'hdb-staged-folder-action-cli-'));
+    try {
+      process.chdir(tempDir);
+      Object.defineProperty(globalThis, 'indexedDB', {
+        configurable: true,
+        get: () => {
+          throw new Error(
+            'production-like CLI smoke must not depend on cross-profile IndexedDB access'
+          );
+        },
+      });
+      process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE = './workflow-host.mjs';
+      const adapterModuleUrl = pathToFileURL(
+        path.resolve(previousCwd, 'src/createStagedFolderActionCliExecutionHost.ts')
+      ).href;
+      await writeFile(
+        path.join(tempDir, 'progress-store.mjs'),
+        `const runs = new Map();
+
+        export async function saveRun(record) {
+          runs.set(record.runId, structuredClone(record));
+        }
+
+        export async function getRun(runId) {
+          const record = runs.get(runId);
+          return record === undefined ? null : structuredClone(record);
+        }`
+      );
+      await writeFile(
+        path.join(tempDir, 'workflow-host.mjs'),
+        `import { getRun, saveRun } from './progress-store.mjs';
+        import { createStagedFolderActionCliExecutionHost as createAdapter } from ${JSON.stringify(adapterModuleUrl)};
+
+        export function createStagedFolderActionCliExecutionHost() {
+          return createAdapter({
+            createRunId: () => 'run-production-like-cli-smoke',
+            now: () => 140,
+            getRun,
+            runStagedFolderAction: async (input) => {
+              if (
+                input.runId !== 'run-production-like-cli-smoke' ||
+                input.sourceNodeId !== 'source-production-like' ||
+                input.config.staging.mode !== 'temporary-copy' ||
+                input.config.staging.cleanup !== 'delete-on-success' ||
+                input.config.actions.map((action) => action.type).join(',') !== 'build,export-csv,export-xlsx'
+              ) {
+                throw new Error('unexpected production-like WorkerAPI runner input');
+              }
+              const record = {
+                runId: input.runId,
+                sourceNodeId: input.sourceNodeId,
+                stagingRootNodeId: 'stage-production-like',
+                status: 'completed',
+                phase: 'completed',
+                progress: { total: 3, completed: 3, failed: 0, skipped: 0, percentage: 100 },
+                currentAction: {
+                  actionIndex: 2,
+                  actionType: 'export-xlsx',
+                  phase: 'completed',
+                  percentage: 100
+                },
+                buildSession: {
+                  nodeType: 'shape',
+                  nodeId: 'build-production-like',
+                  status: 'completed'
+                },
+                warnings: [
+                  {
+                    category: 'reference',
+                    code: 'STAGED_FOLDER_ACTION_REFERENCE_RESOLVED',
+                    message: 'reference resolved during workflow',
+                    referencePath: 'imports/location-a',
+                    actionIndex: 1,
+                    actionType: 'export-csv'
+                  }
+                ],
+                pendingReferences: [
+                  {
+                    status: 'resolved',
+                    code: 'STAGED_FOLDER_ACTION_REFERENCE_RESOLVED',
+                    referencePath: 'imports/location-a',
+                    resolvedTargetNodeId: 'location-a',
+                    actionIndex: 1,
+                    actionType: 'export-csv'
+                  }
+                ],
+                dependencyChanges: [
+                  {
+                    edgeId: 'edge-production-like',
+                    previousStatus: 'active',
+                    nextStatus: 'stale',
+                    buildTargetId: 'shape-production-like',
+                    targetFieldPath: 'data.buildConfig.source',
+                    rebuildPlanId: 'plan-production-like'
+                  }
+                ],
+                actionResults: [
+                  {
+                    type: 'export-csv',
+                    status: 'completed',
+                    outputPath: 'exports/locations.csv',
+                    entityType: 'location',
+                    rowCount: 3
+                  },
+                  {
+                    type: 'export-xlsx',
+                    status: 'completed',
+                    outputPath: 'exports/routes.xlsx',
+                    entityType: 'route',
+                    rowCount: 2,
+                    sheetName: 'routes'
+                  }
+                ],
+                startedAt: 100,
+                completedAt: 140,
+                updatedAt: 140,
+                revision: 4
+              };
+              await saveRun(record);
+              const stored = await getRun(input.runId);
+              if (stored === null) {
+                throw new Error('production-like progress store did not persist the run record');
+              }
+              return stored;
+            }
+          });
+        }`
+      );
+      const io = createIo({ 'workflow.json': JSON.stringify(productionLikeWorkflowConfig) });
+
+      const exitCode = await runStagedFolderActionBundledCli(
+        [
+          '--json',
+          '--config',
+          'workflow.json',
+          '--source-node-id',
+          'source-production-like',
+          '--profile',
+          'ci',
+        ],
+        io
+      );
+      const result = JSON.parse(io.stdout.join('')) as {
+        ok: boolean;
+        runId: string;
+        profileName: string;
+        stagingRootNodeId: string;
+        buildQueueId: string;
+        actions: string[];
+        cleanup: { policy: string; status: string };
+        warnings: Array<{ referencePath: string; actionType: string }>;
+        pendingReferences: Array<{ status: string; resolvedTargetNodeId: string }>;
+        dependencyChanges: Array<{ edgeId: string; nextStatus: string; rebuildPlanId: string }>;
+        actionResults: Array<{ type: string; outputPath?: string; rowCount?: number }>;
+      };
+      const progressStore = (await import(
+        pathToFileURL(path.join(tempDir, 'progress-store.mjs')).href
+      )) as {
+        getRun(runId: string): Promise<StagedFolderActionRunRecord | null>;
+      };
+      const progressSnapshot = await progressStore.getRun('run-production-like-cli-smoke');
+
+      expect(exitCode).toBe(0);
+      expect(io.stdout).toHaveLength(1);
+      expect(io.stderr).toEqual([]);
+      expect(result).toMatchObject({
+        ok: true,
+        runId: 'run-production-like-cli-smoke',
+        profileName: 'ci',
+        stagingRootNodeId: 'stage-production-like',
+        buildQueueId: 'build-production-like',
+        actions: ['build', 'export-csv', 'export-xlsx'],
+        cleanup: { policy: 'delete-on-success', status: 'deleted' },
+        warnings: [{ referencePath: 'imports/location-a', actionType: 'export-csv' }],
+        pendingReferences: [{ status: 'resolved', resolvedTargetNodeId: 'location-a' }],
+        dependencyChanges: [
+          {
+            edgeId: 'edge-production-like',
+            nextStatus: 'stale',
+            rebuildPlanId: 'plan-production-like',
+          },
+        ],
+        actionResults: [
+          { type: 'build', buildQueueId: 'build-production-like' },
+          { type: 'export-csv', outputPath: 'exports/locations.csv', rowCount: 3 },
+          { type: 'export-xlsx', outputPath: 'exports/routes.xlsx', rowCount: 2 },
+        ],
+      });
+      expect(progressSnapshot).not.toBeNull();
+      expect(progressSnapshot).toMatchObject({
+        runId: 'run-production-like-cli-smoke',
+        status: 'completed',
+        phase: 'completed',
+        progress: { total: 3, completed: 3, failed: 0, skipped: 0, percentage: 100 },
+        currentAction: {
+          actionIndex: 2,
+          actionType: 'export-xlsx',
+          phase: 'completed',
+          percentage: 100,
+        },
+        actionResults: [
+          { type: 'export-csv', outputPath: 'exports/locations.csv', rowCount: 3 },
+          { type: 'export-xlsx', outputPath: 'exports/routes.xlsx', rowCount: 2 },
+        ],
+        warnings: [{ referencePath: 'imports/location-a' }],
+        pendingReferences: [{ status: 'resolved', resolvedTargetNodeId: 'location-a' }],
+        dependencyChanges: [{ edgeId: 'edge-production-like', nextStatus: 'stale' }],
+      });
+    } finally {
+      process.chdir(previousCwd);
+      if (previousHostModule === undefined) {
+        delete process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE;
+      } else {
+        process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE = previousHostModule;
+      }
+      if (previousIndexedDbDescriptor === undefined) {
+        delete (globalThis as { indexedDB?: unknown }).indexedDB;
+      } else {
+        Object.defineProperty(globalThis, 'indexedDB', previousIndexedDbDescriptor);
       }
       await rm(tempDir, { recursive: true, force: true });
     }

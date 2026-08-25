@@ -8,6 +8,9 @@ import {
   resolveMapImageCaptureOutputPath,
 } from '../createMapImageCaptureBrowserActionRunner.js';
 import {
+  MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
+  MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
+  MAP_IMAGE_CAPTURE_READY_SELECTOR,
   type MapImageCaptureBrowserPagePort,
   type MapImageCaptureIntent,
   type PlaywrightLikeMapImageCapturePage,
@@ -77,6 +80,14 @@ describe('createMapImageCaptureBrowserActionRunner', () => {
     expect(pagePort.goto).toHaveBeenCalledWith(
       'http://localhost:3000/app/#/map/staging-root?captureIntentId=run-1%3A1'
     );
+    expect(pagePort.waitForRenderStatus).toHaveBeenCalledWith({
+      readySelector: MAP_IMAGE_CAPTURE_READY_SELECTOR,
+      errorSelector: MAP_IMAGE_CAPTURE_ERROR_SELECTOR,
+      timeoutMs: 5000,
+    });
+    expect(pagePort.assertNonBlankCanvas).toHaveBeenCalledWith({
+      canvasSelector: MAP_IMAGE_CAPTURE_CANVAS_SELECTOR,
+    });
     expect(pagePort.screenshot).toHaveBeenCalledWith({
       path: path.join(outputBasePath, 'exports/map.png'),
       fullPage: false,
@@ -88,6 +99,31 @@ describe('createMapImageCaptureBrowserActionRunner', () => {
       'writing-output',
     ]);
     expect(browser.close).toHaveBeenCalledOnce();
+  });
+
+  it('fails unsafe output paths before launching the browser', async () => {
+    const launchBrowser = vi.fn(async () => ({
+      newPage: vi.fn(async () => ({}) as PlaywrightLikeMapImageCapturePage),
+      close: vi.fn(async () => {}),
+    }));
+    const runner = createMapImageCaptureBrowserActionRunner({
+      baseUrl: 'http://localhost:3000/',
+      routeMode: 'browser',
+      timeoutMs: 5000,
+      outputBasePath,
+      launchBrowser,
+    });
+
+    await expect(
+      runner({
+        intent: createIntent({ output: { path: 'exports/../map.png' } }),
+        config,
+        stagingRootNodeId: 'staging-root' as NodeId,
+        runId: 'run-1' as NodeId,
+        reportProgress: async () => {},
+      })
+    ).rejects.toThrow(/outputPath must not contain empty, current-directory, or parent-directory/);
+    expect(launchBrowser).not.toHaveBeenCalled();
   });
 
   it('launches headed mode without changing the normal Map UI route', async () => {
@@ -234,7 +270,14 @@ describe('resolveMapImageCaptureOutputPath', () => {
   });
 
   it('rejects unsafe output path segments', () => {
-    for (const outputPath of ['../map.png', 'exports/./map.png', 'exports//map.png']) {
+    for (const outputPath of [
+      '\0map.png',
+      'exports/\0map.png',
+      '../map.png',
+      'exports/../map.png',
+      'exports/./map.png',
+      'exports//map.png',
+    ]) {
       expect(() =>
         resolveMapImageCaptureOutputPath({
           outputPath,

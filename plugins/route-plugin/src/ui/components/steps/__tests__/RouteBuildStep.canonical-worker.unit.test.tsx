@@ -32,10 +32,8 @@ const validDraft = {
   transportSelection: 'road',
   startLocationId: 'location-start' as NodeId,
   endLocationId: 'location-end' as NodeId,
-  lineGeometry: [
-    [0, 0],
-    [1, 1],
-  ],
+  startCoordinates: [0, 0],
+  endCoordinates: [1, 1],
 } as Partial<RouteEntity>;
 
 const mocks = vi.hoisted(() => ({

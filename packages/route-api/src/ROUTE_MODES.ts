@@ -76,6 +76,22 @@ export type RouteGenerationConfig = {
   options?: RouteGenerationOptions;
 };
 
+export interface RouteGreatCircleDetailConfig {
+  numPoints: number;
+  numPointsByZoomBand?: number[];
+}
+
+export interface RouteMethodSetting {
+  method: RouteGenerationMethod;
+  options?: RouteGenerationOptions;
+  greatCircle?: RouteGreatCircleDetailConfig;
+}
+
+export interface RouteMethodSettings {
+  defaults: Record<RouteMode, RouteMethodSetting>;
+  overrides?: Partial<Record<RouteMode, RouteMethodSetting>>;
+}
+
 export type RouteTransportSelection =
   | 'air'
   | 'sea'
@@ -103,6 +119,8 @@ export interface RouteEntityPayload {
   routeMode?: RouteMode;
   startLocationId?: NodeId;
   endLocationId?: NodeId;
+  startCoordinates?: [number, number];
+  endCoordinates?: [number, number];
   lineGeometry?: [number, number][];
   buildConfig?: RouteBuildConfig;
   routeStyleConfig?: RouteStyleConfig;
@@ -128,6 +146,7 @@ export interface RouteBuildConfig extends Omit<BaseBuildConfig<string>, 'routeGe
     retryOnFailure: boolean;
     maxRetries: number;
   };
+  routeMethodSettings: RouteMethodSettings;
   locationResolution?: { batchSize: number; cacheResults: boolean; fallbackToCoordinates: boolean };
   validation?: {
     checkLocationExists: boolean;

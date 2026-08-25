@@ -1,10 +1,15 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import {
+  ROUTE_MODES,
   RouteCanonicalBuildInputResolverError,
+  type RouteBuildRouteInput,
   type RouteBuildStartInput,
   type RouteCanonicalBuildInputResolverPorts,
+  type RouteMode,
 } from '@hierarchidb/route-api';
 import { resolveIdeGsmRouteBuildRoutes } from '~/worker/tabular/resolveIdeGsmRouteBuildRoutes.js';
+
+const ROUTE_MODE_VALUES = new Set<RouteMode>(Object.values(ROUTE_MODES));
 
 const requireRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -19,6 +24,8 @@ const requireRecord = (value: unknown, label: string): Record<string, unknown> =
 const hasDirectRouteInput = (draft: Record<string, unknown>): boolean =>
   Object.hasOwn(draft, 'startLocationId') ||
   Object.hasOwn(draft, 'endLocationId') ||
+  Object.hasOwn(draft, 'startCoordinates') ||
+  Object.hasOwn(draft, 'endCoordinates') ||
   Object.hasOwn(draft, 'lineGeometry') ||
   Object.hasOwn(draft, 'routeMode');
 
@@ -56,6 +63,71 @@ const requireLocationNodeIds = (value: unknown): NodeId[] | undefined => {
   return nodeIds;
 };
 
+const rejectPrecomputedLineGeometry = (draft: Record<string, unknown>): void => {
+  if (!Object.hasOwn(draft, 'lineGeometry')) return;
+  throw new RouteCanonicalBuildInputResolverError(
+    'ROUTE_INPUT_INVALID_DIRECT_ROUTE',
+    '[route canonical input resolver] direct-route input must not include precomputed lineGeometry; provide endpoint IDs and endpoint coordinates'
+  );
+};
+
+const requireNodeId = (value: unknown, label: string): NodeId => {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new RouteCanonicalBuildInputResolverError(
+      'ROUTE_INPUT_ENDPOINT_UNRESOLVED',
+      `[route canonical input resolver] ${label} must be a non-empty string`
+    );
+  }
+  return value as NodeId;
+};
+
+const requireRouteMode = (value: unknown): RouteMode => {
+  if (!ROUTE_MODE_VALUES.has(value as RouteMode)) {
+    throw new RouteCanonicalBuildInputResolverError(
+      'ROUTE_INPUT_INVALID_DIRECT_ROUTE',
+      `[route canonical input resolver] direct-route routeMode is unsupported: ${String(value)}`
+    );
+  }
+  return value as RouteMode;
+};
+
+const requireCoordinate = (value: unknown, label: string): [number, number] => {
+  if (!Array.isArray(value) || value.length !== 2) {
+    throw new RouteCanonicalBuildInputResolverError(
+      'ROUTE_INPUT_ENDPOINT_UNRESOLVED',
+      `[route canonical input resolver] ${label} must be [longitude, latitude]`
+    );
+  }
+  const [longitude, latitude] = value;
+  if (
+    typeof longitude !== 'number' ||
+    typeof latitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    !Number.isFinite(latitude) ||
+    longitude < -180 ||
+    longitude > 180 ||
+    latitude < -90 ||
+    latitude > 90
+  ) {
+    throw new RouteCanonicalBuildInputResolverError(
+      'ROUTE_INPUT_ENDPOINT_UNRESOLVED',
+      `[route canonical input resolver] ${label} contains invalid coordinates`
+    );
+  }
+  return [longitude, latitude];
+};
+
+const resolveDirectRouteInput = (draft: Record<string, unknown>): RouteBuildRouteInput => {
+  rejectPrecomputedLineGeometry(draft);
+  return {
+    startLocationId: requireNodeId(draft.startLocationId, 'direct-route startLocationId'),
+    endLocationId: requireNodeId(draft.endLocationId, 'direct-route endLocationId'),
+    startCoordinates: requireCoordinate(draft.startCoordinates, 'direct-route startCoordinates'),
+    endCoordinates: requireCoordinate(draft.endCoordinates, 'direct-route endCoordinates'),
+    routeMode: requireRouteMode(draft.routeMode),
+  };
+};
+
 export const resolveRouteCanonicalBuildInput = async (
   nodeId: NodeId,
   payload: unknown,
@@ -90,7 +162,7 @@ export const resolveRouteCanonicalBuildInput = async (
         '[route canonical input resolver] direct-route input must not include selection-driven fields'
       );
     }
-    return { kind: 'direct-route' };
+    return { kind: 'direct-route', routes: [resolveDirectRouteInput(draft)] };
   }
 
   if (kind === 'selection-driven' || selection) {
@@ -123,7 +195,7 @@ export const resolveRouteCanonicalBuildInput = async (
   }
 
   if (direct) {
-    return { kind: 'direct-route' };
+    return { kind: 'direct-route', routes: [resolveDirectRouteInput(draft)] };
   }
 
   throw new RouteCanonicalBuildInputResolverError(

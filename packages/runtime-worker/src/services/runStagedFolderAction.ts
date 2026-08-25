@@ -59,6 +59,8 @@ export interface StagedFolderActionReferenceResolverInput {
   action?: StagedFolderAction;
   actionIndex?: number;
   pendingReferences: readonly StagedFolderActionPendingReference[];
+  actionResults: readonly StagedFolderActionResult[];
+  importMounts: readonly StagedFolderImportMountActionResult[];
 }
 
 export interface StagedFolderActionReferenceResolutionResult {
@@ -293,6 +295,7 @@ const resolveAndPersistReferences = async (
   if (current === null) {
     throw new Error(`staged-folder-action run ${String(input.runId)} was not found`);
   }
+  const actionResults = [...(current.actionResults ?? [])];
   await progressStore.updateRun(input.runId, {
     status: 'running',
     phase: 'resolving-references',
@@ -324,6 +327,8 @@ const resolveAndPersistReferences = async (
       ...(resolution.action === undefined ? {} : { action: resolution.action }),
       ...(resolution.actionIndex === undefined ? {} : { actionIndex: resolution.actionIndex }),
       pendingReferences: current.pendingReferences ?? [],
+      actionResults,
+      importMounts: actionResults.filter(isImportMountActionResult),
     });
   } catch (error) {
     const failure = classifyReferenceResolutionFailure(error);
@@ -391,11 +396,43 @@ const classifyReferenceResolutionFailure = (error: unknown): StagedFolderActionF
     category,
     code,
     message,
+    ...extractFailureMetadata(candidate),
   };
 };
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+const isImportMountActionResult = (
+  result: StagedFolderActionResult
+): result is StagedFolderImportMountActionResult => result.type === 'import-mount';
+
+const extractFailureMetadata = (
+  candidate: Record<string, unknown>
+): Omit<StagedFolderActionFailure, 'category' | 'code' | 'message'> => ({
+  ...(typeof candidate.nodeId === 'string' && candidate.nodeId.trim().length > 0
+    ? { nodeId: candidate.nodeId as NodeId }
+    : {}),
+  ...(typeof candidate.dependentNodeId === 'string' && candidate.dependentNodeId.trim().length > 0
+    ? { dependentNodeId: candidate.dependentNodeId as NodeId }
+    : {}),
+  ...(typeof candidate.referencePath === 'string' && candidate.referencePath.trim().length > 0
+    ? { referencePath: candidate.referencePath }
+    : {}),
+  ...(typeof candidate.expectedTargetType === 'string' &&
+  candidate.expectedTargetType.trim().length > 0
+    ? { expectedTargetType: candidate.expectedTargetType }
+    : {}),
+  ...(typeof candidate.actualTargetType === 'string' && candidate.actualTargetType.trim().length > 0
+    ? { actualTargetType: candidate.actualTargetType }
+    : {}),
+  ...(typeof candidate.mountId === 'string' && candidate.mountId.trim().length > 0
+    ? { mountId: candidate.mountId }
+    : {}),
+  ...(typeof candidate.pluginId === 'string' && candidate.pluginId.trim().length > 0
+    ? { pluginId: candidate.pluginId }
+    : {}),
+});
 
 const shouldCleanupAfterSuccess = (cleanup: StagedFolderActionConfig['staging']['cleanup']) =>
   cleanup === 'delete-on-success' || cleanup === 'delete-always';

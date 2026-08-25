@@ -179,7 +179,7 @@
     "endLocation": "End:",
     "notConfigured": "Not configured",
     "missing": "Select Route by country before building.",
-    "missingCanonicalInput": "Build config, route mode, start/end locations, and line geometry are required.",
+    "missingCanonicalInput": "Build config, route mode, start/end locations, and start/end coordinates are required.",
     "unknownStage": "unknown stage",
     "crashHint": "A previous build stopped during {{stage}}. Review its canonical task failure before restarting.",
     "crashMemoryHint": "A previous build stopped during {{stage}} after peak memory reached {{ratio}}. Review the canonical task failure before restarting.",

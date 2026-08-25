@@ -73,10 +73,8 @@ describe('routeBuildUiAdapter', () => {
           routeMode: 'road',
           startLocationId: 'location-a',
           endLocationId: 'location-b',
-          lineGeometry: [
-            [139, 35],
-            [140, 36],
-          ],
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
         } as never
       )
     ).toBe(true);
@@ -92,10 +90,8 @@ describe('routeBuildUiAdapter', () => {
           routeMode: 'road',
           startLocationId: 'location-a',
           endLocationId: 'location-b',
-          lineGeometry: [
-            [139, 35],
-            [140, 36],
-          ],
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
           selectedArrayByCountries: { JP: [true] },
         } as never
       )

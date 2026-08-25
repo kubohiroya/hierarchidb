@@ -304,4 +304,53 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
     expect(latestProps?.buildAvailabilityTooltip).toContain('Dependency schema is invalid.');
     expect(latestProps?.buildDiagnosticsLabel).toBe('Build diagnostics');
   });
+
+  it('passes plugin prerequisite failures from the controller through build availability props', () => {
+    let latestProps: NodeContextMenuProps | null = null;
+    const ContextMenuComponent = (props: NodeContextMenuProps) => {
+      latestProps = props;
+      return React.createElement('div', { 'data-testid': 'context-menu-stub' });
+    };
+
+    const route = createNode('route-prerequisite-failure', {
+      nodeType: asNodeType('route'),
+      depth: 1,
+      metadata: { buildMetadata: { buildRequired: true } },
+    });
+
+    render(
+      React.createElement(TreeTableContextMenu, {
+        contextMenuState: {
+          anchorEl: document.createElement('button'),
+          anchorPosition: null,
+          node: route,
+        },
+        onClose: () => {},
+        treeId: 'r',
+        controller: {
+          nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
+          pluginPrerequisiteFailures: [
+            {
+              code: 'PLUGIN_AUTH_REQUIRED',
+              message: 'Route plugin authentication is required.',
+              pluginId: 'route',
+            },
+          ],
+        },
+        buildSessionIndicator: {
+          runningNodeIds: new Set<NodeId>(),
+          activeNodeIds: new Set<NodeId>(),
+        },
+        ContextMenuComponent,
+      })
+    );
+
+    expect(latestProps?.buildRequired).toBe(false);
+    expect(latestProps?.canBuild).toBe(false);
+    expect(latestProps?.buildAvailabilitySummary).toBe('Plugin prerequisite failed');
+    expect(latestProps?.buildAvailabilityTooltip).toContain(
+      'Route plugin authentication is required.'
+    );
+    expect(latestProps?.buildDiagnosticsLabel).toBe('Build diagnostics');
+  });
 });
