@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "staging": {
+    "mode": "temporary-copy",
+    "cleanup": "delete-always"
+  },
+  "overlay": {
+    "nodes": []
+  },
+  "actions": [
+    {
+      "type": "export-csv",
+      "entityType": "location",
+      "source": {
+        "path": "."
+      },
+      "output": {
+        "path": "exports/locations.csv"
+      }
+    }
+  ]
+}

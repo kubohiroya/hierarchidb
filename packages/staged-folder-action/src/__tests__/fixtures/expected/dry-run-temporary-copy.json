@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "version": 1,
+  "dryRun": true,
+  "sourceNodeId": "source-fixture",
+  "profileName": "default",
+  "configPath": "fixtures/manifests/dry-run-temporary-copy.json",
+  "format": "json",
+  "stagingMode": "temporary-copy",
+  "cleanup": "retain",
+  "actions": [],
+  "config": {
+    "version": 1,
+    "staging": {
+      "mode": "temporary-copy",
+      "name": "fixture-dry-run",
+      "cleanup": "retain"
+    },
+    "overlay": {
+      "nodes": [
+        {
+          "match": {
+            "path": "."
+          },
+          "data": {
+            "title": "Fixture Root"
+          }
+        }
+      ]
+    },
+    "actions": []
+  }
+}

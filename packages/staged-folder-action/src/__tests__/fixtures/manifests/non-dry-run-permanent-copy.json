@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "staging": {
+    "mode": "permanent-copy",
+    "name": "fixture-non-dry-run",
+    "cleanup": "delete-on-success"
+  },
+  "overlay": {
+    "nodes": []
+  },
+  "actions": [
+    {
+      "type": "build",
+      "mode": "session-manager"
+    },
+    {
+      "type": "map-image-capture",
+      "mode": "map-ui",
+      "output": {
+        "path": "exports/map.png",
+        "width": 1024,
+        "height": 768
+      },
+      "viewport": {
+        "bbox": [139, 35, 140, 36]
+      },
+      "layers": [
+        {
+          "path": ".",
+          "visible": true
+        }
+      ]
+    }
+  ]
+}
