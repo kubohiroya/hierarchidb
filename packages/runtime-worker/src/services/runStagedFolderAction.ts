@@ -59,6 +59,8 @@ export interface StagedFolderActionReferenceResolverInput {
   action?: StagedFolderAction;
   actionIndex?: number;
   pendingReferences: readonly StagedFolderActionPendingReference[];
+  actionResults: readonly StagedFolderActionResult[];
+  importMounts: readonly StagedFolderImportMountActionResult[];
 }
 
 export interface StagedFolderActionReferenceResolutionResult {
@@ -293,6 +295,7 @@ const resolveAndPersistReferences = async (
   if (current === null) {
     throw new Error(`staged-folder-action run ${String(input.runId)} was not found`);
   }
+  const actionResults = [...(current.actionResults ?? [])];
   await progressStore.updateRun(input.runId, {
     status: 'running',
     phase: 'resolving-references',
@@ -324,6 +327,8 @@ const resolveAndPersistReferences = async (
       ...(resolution.action === undefined ? {} : { action: resolution.action }),
       ...(resolution.actionIndex === undefined ? {} : { actionIndex: resolution.actionIndex }),
       pendingReferences: current.pendingReferences ?? [],
+      actionResults,
+      importMounts: actionResults.filter(isImportMountActionResult),
     });
   } catch (error) {
     const failure = classifyReferenceResolutionFailure(error);
@@ -397,6 +402,10 @@ const classifyReferenceResolutionFailure = (error: unknown): StagedFolderActionF
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+const isImportMountActionResult = (
+  result: StagedFolderActionResult
+): result is StagedFolderImportMountActionResult => result.type === 'import-mount';
 
 const extractFailureMetadata = (
   candidate: Record<string, unknown>

@@ -79,7 +79,7 @@ flowchart LR
 12. `build` action の場合、staging root に対して既存 folder build target collection を実行する。
 13. `build` action は既存 `BuildJobQueue` / canonical build session を作成し、AppBar session manager から進捗を確認できる状態にする。staged-folder-action run 自体も canonical build runtime adapter として AppBar の staged-folder-action badge から確認できる。
 14. `build` action は build queue terminal state まで待つ。
-15. `import-mount` action の場合、runtime runner は injected import/mount runner port に action、actionIndex、config、stagingRootNodeId、runId を渡す。host 側 runner は archive を検証し、mount record を作成し、staging hierarchy の指定位置に mounted root を接続する。runtime runner は返却された `mountId`、`mountedRootNodeId`、`importedNodeIds`、`lifetime` を `actionResults` に保存する。
+15. `import-mount` action の場合、runtime runner は injected import/mount runner port に action、actionIndex、config、stagingRootNodeId、runId を渡す。host 側 runner は archive を検証し、mount record を作成し、staging hierarchy の指定位置に mounted root を接続する。runtime runner は返却された `mountId`、`mountedRootNodeId`、`importedNodeIds`、`lifetime` を `actionResults` に保存する。後続の reference/dependency resolver input には、完了済み action result と `import-mount` result の mount record 一覧を渡し、mounted content を必要とする action が mount record を参照できなければならない。
 16. `export-archive` action の場合、runtime runner は injected archive runner port に action、actionIndex、config、stagingRootNodeId、runId を渡す。host 側 runner は staging hierarchy の指定 subtree を既存 export service へ渡し、artifact を書き出す。runtime runner は返却された `outputPath`、`format`、`byteLength`、`nodeIds` を `actionResults` に保存する。
 17. browser を必要としない action は browser runtime を起動せず、staging hierarchy の effective data と action input schema だけで実行してよい。
 18. `map-image-capture` action は、直前までの `build` action が completed の場合だけ capture を開始する。
@@ -142,6 +142,8 @@ Phase 2 child #1598 で、CLI core から WorkerAPI execution host へ接続す�
 child #1598 は CLI process が任意の既存 browser profile IndexedDB を直接共有する方式を定義しない。通常 WebUI と CLI 実行 browser profile をまたいだ progress 共有は引き続き保証範囲外であり、共有表示を行う場合は Worker/IndexedDB state の共有方式を別 Issue で定義する。`map-image-capture` browser handoff も child #1598 では注入しないため、browser host 未設定の capture は typed failure として停止する。
 
 Phase 3 child #1605 で、bundled CLI entrypoint から host module loader と CLI execution host adapter を通って WorkerAPI-compatible runner input に到達する代表 E2E を固定済みである。host module は `HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE` で指定し、相対 path は `process.cwd()` 基準で解決する。成功時は runner record の `actionResults`、`warnings`、`pendingReferences`、`dependencyChanges` を CLI JSON に保持し、失敗時は progress store から取得できる `stagingRootNodeId`、`buildQueueId`、`currentAction` を typed CLI failure context に写像する。
+
+Phase 4 child #1638 では、暗黙 resume/retry を runner entrypoint に追加しない。`runStagedFolderAction` は新規 `runId` でだけ開始し、既存 `runId` を渡された場合は progress store の create boundary で fail-fast する。中断済み sequence の resume/retry は、再開対象 phase、再利用可能な action result、run-lifetime mount の再検証、cleanup 再試行の重複防止を定義する別 contract が必要であり、この runner entrypoint が既存 run を推測再開してはならない。
 
 Phase 3 child #1606 で、既存の CLI Worker bridge と app Worker execution host を合成し、`runMapImageCaptureAction` injection に Phase 2 の Node 専用 browser host factory を接続する標準経路を代表統合テストで固定済みである。この経路では `--browser headless|headed` が WorkerAPI-compatible input の `browserMode` と `MapImageCaptureIntent.browserMode` に保持され、通常 Map route `/map/$nodeId?captureIntentId=<intentId>` を capture surface として使う。Node 専用 browser host は引き続き `@hierarchidb/staged-folder-action/map-image-capture-browser-host` subpath からのみ import し、browser app root entrypoint や shared manifest/runner contract へ Playwright 型/API を漏らさない。host boundary は manifest validation 済みの `output.path` も再検証し、相対 path だけを `outputBasePath` 基準の絶対 path に解決する。絶対 path、NUL、空 segment、`.` segment、`..` segment は screenshot 前に fail-fast する。
 
@@ -241,7 +243,7 @@ cleanup failure は result に記録する。action output/artifact が成功し
 
 ## Import Mount Cleanup
 
-`import-mount.mount.lifetime: run` は staging cleanup policy とは独立した temporal resource である。runtime runner は action sequence の terminal result を作った後、staging root cleanup の前に safe unmount を行う。`lifetime: retain` と `lifetime: permanent` の import mount は safe-unmount runner port へ渡してはならない。
+`import-mount.mount.lifetime: run` は staging cleanup policy とは独立した temporal resource である。runtime runner は action sequence の terminal result を作った後、staging root cleanup の前に safe unmount を行う。`lifetime: retain` と `lifetime: permanent` の import mount は safe-unmount runner port へ渡してはならない。Phase 4 child #1638 以降、reference/dependency resolver input は完了済み `actionResults` と `importMounts` を受け取り、後続 build/export/capture action が mounted hierarchy を読む前に mount record の有無を検証できる。
 
 safe unmount は以下を確認する。
 
