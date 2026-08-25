@@ -102,6 +102,14 @@ cache identity の正規仕様（SSOT）とする。
 - 共通ステージ設定は `sourceConfig / geometryConfig / tileEmitConfig / cleanupConfig` に保持する。
 - route固有設定は `routeGeneration / routeGeometryConfig / laneCaps` 等、`RouteBuildConfig` の
   明示フィールドに保持する。
+- route method settings は `RouteBuildConfig.routeMethodSettings` をSSOTとする。
+  `defaults` は system-provided defaults、`overrides` は route node の明示overrideであり、
+  source planning は `overrides[routeMode] ?? defaults[routeMode]` を materialize する。
+  `airway` は `great_circle`、`waterway` は `searoute` を固定defaultとし、node overrideでも
+  別methodへ変更できない。`railway / high-speed-railway / road / highway` は `direct`、
+  `osm_route`、`custom` のいずれかを明示設定する。
+  `great_circle` detail は `numPoints` と任意の `numPointsByZoomBand` で定義し、
+  zoom bandごとの配列長は `geometryConfig.zoomBandBoundaries.length - 1` と一致しなければならない。
 - `RouteProcessingConfig` を別の永続設定木として併存させない。runtime-only handleはbuild設定へ
   シリアライズせず、nodeIdに対応するbuild-session SSOT状態木へ保持する。
 - 同じ設定を `buildConfig` と別フィールドへ複製したり、欠落値を別フィールドから補完したりしない。
@@ -150,8 +158,9 @@ cache identity の正規仕様（SSOT）とする。
   どちらかの形式へ寄せる、空成果物として成功させる、別sourceへfallbackすることは禁止する。
 - `routeBuildInput.routes` は resolver 通過後の completed internal input 専用であり、
   external payload に含めて start してはならない。resolved input は
-  `RouteBuildRouteInput[]` として location ID、始点/終点座標、routeMode、directionality metadata、
-  generation method/options を含み、session 内で selection や endpoint を再解決しない。
+  `RouteBuildRouteInput[]` として location ID、始点/終点座標、routeMode、directionality metadata を
+  含む。source planning は `RouteBuildConfig.routeMethodSettings` から generation method/options を
+  materialize し、session 内で selection、endpoint、method を再解決しない。
 - selection-driven resolver の決定的sort keyは
   `routeMode / fromLocationId / toLocationId / source row identity` とする。同一payloadは
   committed data と Working Copy のどちらから起動しても同じroute順序、source identity、
@@ -164,11 +173,10 @@ cache identity の正規仕様（SSOT）とする。
   - 交通モードに応じた LineString GeoJSON を生成する。
   - route generation は source planning で明示的に materialize された
     `generation.method` を canonical request とする。`airway` は `great_circle`、`waterway` は
-    `searoute` を正規methodとし、明示された `RouteBuildRouteInput.method` がこれと矛盾する場合は
-    source planning の契約違反として失敗させる。`railway / high-speed-railway / road / highway`
-    は `direct` または network/custom routing method を許容し、route入力で明示されたmethod、
-    または configured default を materialize する。#1646 のsettings modelが入るまでは、
-    land route modes の configured default は `buildConfig.routeGeneration.method` とする。
+    `searoute` を正規methodとし、明示された `RouteBuildRouteInput.method` または
+    `routeMethodSettings.overrides` がこれと矛盾する場合は source planning の契約違反として失敗させる。
+    `railway / high-speed-railway / road / highway` は `routeMethodSettings` に明示された
+    `direct`、`osm_route`、`custom` のいずれかを materialize する。
     この materialization は task 実行前の入力確定であり、engine失敗時の fallback や実行時の
     曖昧な推測ではない。
     `@hierarchidb/route-engine` のengine registryは
