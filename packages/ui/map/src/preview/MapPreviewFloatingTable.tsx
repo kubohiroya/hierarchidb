@@ -1,4 +1,6 @@
 import {
+  type GridCellEditCommitResult,
+  type GridCellEditParams,
   type GridColumn,
   type GridGroupingState,
   type GridSortingState,
@@ -23,7 +25,13 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import { type FeatureTableSearchConfig, FeatureTableToolbar } from './FeatureTableToolbar.js';
+import {
+  buildFeatureCellEditRequest,
+  type FeatureTableEditConfig,
+  findFeatureTableEditableColumn,
+} from './featureTableEditContract.js';
 import { useMapPreviewFloatingTable } from './useMapPreviewFloatingTable.js';
 import { useMapPreviewFloatingTableView } from './useMapPreviewFloatingTableView.js';
 
@@ -82,6 +90,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   statusAdornment?: (row: Row) => React.ReactNode;
   toolbarActions?: React.ReactNode;
   onCellClick?: (params: { row: Row; columnId: string }) => void;
+  featureTableEdit?: FeatureTableEditConfig<Row>;
   containerSx?: Record<string, unknown>;
   rowFilterConfig?: {
     mode: 'all' | 'viewport';
@@ -164,6 +173,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     statusAdornment,
     toolbarActions,
     onCellClick,
+    featureTableEdit,
     containerSx,
     rowFilterConfig,
   } = props;
@@ -218,6 +228,55 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     resolvedColumns = [statusColumn, ...columns, errorCountColumn, errorMessageColumn];
   }
 
+  const editableColumnById = useMemo(() => {
+    const entries =
+      featureTableEdit?.editableColumns.map((column) => [column.columnId, column] as const) ?? [];
+    return new Map(entries);
+  }, [featureTableEdit?.editableColumns]);
+
+  const gridColumns = useMemo(
+    () =>
+      resolvedColumns.map((column) => {
+        const id = String(column.id);
+        if (!featureTableEdit || !editableColumnById.has(id)) {
+          return column;
+        }
+        return {
+          ...column,
+          editable: true,
+        };
+      }),
+    [editableColumnById, featureTableEdit, resolvedColumns]
+  );
+
+  const handleFeatureCellEdit = useCallback(
+    async (params: GridCellEditParams<Row>): Promise<void | GridCellEditCommitResult> => {
+      if (!featureTableEdit) {
+        return {
+          ok: false,
+          error: 'Feature table edit config is required for editable cell commits.',
+        };
+      }
+      const editableColumn = findFeatureTableEditableColumn(
+        featureTableEdit.editableColumns,
+        params.columnId
+      );
+      if (!editableColumn) {
+        return {
+          ok: false,
+          error: `Column "${params.columnId}" does not define a feature source mapping.`,
+        };
+      }
+      const request = buildFeatureCellEditRequest(
+        params,
+        featureTableEdit.editOrigin,
+        editableColumn
+      );
+      return featureTableEdit.onCellEditRequest(request);
+    },
+    [featureTableEdit]
+  );
+
   const {
     columnSelectorOpen,
     columnVisibility,
@@ -233,7 +292,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     handleCloseColumnSelector,
     handleColumnVisibilityToggle,
   } = useMapPreviewFloatingTableView({
-    resolvedColumns,
+    resolvedColumns: gridColumns,
     persistKeyBase,
     defaultGrouping,
     grouping,
@@ -272,7 +331,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           emptyContent
         ) : (
           <TanstackDataGrid
-            columns={resolvedColumns}
+            columns={gridColumns}
             rows={rows}
             maxHeight={maxHeight ?? '100%'}
             enableVirtualization
@@ -284,6 +343,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             selectedRows={selectedRows}
             onSelectionChange={onSelectionChange}
             onCellClick={onCellClick}
+            onCellEdit={featureTableEdit ? handleFeatureCellEdit : undefined}
             sorting={sorting}
             onSortingChange={setSorting}
             grouping={resolvedGrouping}
@@ -309,7 +369,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             Columns
           </Typography>
           <FormGroup>
-            {resolvedColumns.map((column) => {
+            {gridColumns.map((column) => {
               const id = String(column.id);
               const isVisible = columnVisibility[id] !== false;
               return (

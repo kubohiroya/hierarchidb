@@ -109,6 +109,8 @@ Preview table、Map UI floating table、map feature popover は同じ source map
 
 #1652 の DataGrid edit substrate は、`onCellEdit` の async result と `onCellEditStateChange` の lifecycle event だけを公開する。grid が区別する lifecycle は edit start、dirty、pending commit、success、failure、cancel、rollback である。failed commit では source row value を authoritative として表示し、typed failure state を host へ通知する。grid は dependency status、plugin write target、Dexie/IndexedDB transaction、rebuild enqueue を推測または実行しない。
 
+#1653 の feature table edit contract は、`MapPreviewFloatingTable` の optional `featureTableEdit` config として公開する。`featureTableEdit` が未指定の table は従来通り read-only であり、`FeatureTableEditableColumn` で明示された `columnId` だけが grid の editable input lifecycle に接続される。UI は commit 時に `FeatureCellEditRequest` を生成して `onCellEditRequest` へ emit するだけで、plugin storage write、dependency impact calculation、stale transition、rebuild enqueue は行わない。source mapping のない column commit は request を emit せず typed failure として扱う。
+
 ## Implementation Issue Split
 
 | Issue | Scope | DoD | Rollback |

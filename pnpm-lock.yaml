@@ -2514,6 +2514,9 @@ importers:
       '@deck.gl/core':
         specifier: ^9.2.10
         version: 9.2.11
+      '@hierarchidb/build-api':
+        specifier: workspace:*
+        version: link:../../build-api
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../components
@@ -2537,16 +2540,28 @@ importers:
         version: 7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@storybook/react-vite':
         specifier: 7.6.21
-        version: 7.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rollup@4.59.0)(typescript@5.8.2)(vite@7.3.1(@types/node@18.19.123)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
+        version: 7.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(rollup@4.59.0)(typescript@5.8.2)
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@9.3.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@types/geojson':
         specifier: ^7946.0.8
         version: 7946.0.16
       jotai:
         specifier: ^2.16.0
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       react:
         specifier: ^19.0.0
         version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.0(@types/node@18.19.123)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@26.1.0)(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
 
   packages/ui/memory:
     dependencies:
@@ -19603,7 +19618,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.1.0(@types/node@18.19.123)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@26.1.0)(vite@7.3.1(@types/node@18.19.123)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
+      vitest: 4.1.0(@types/node@18.19.123)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@26.1.0)(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
 
   '@vitest/utils@3.2.4':
     dependencies:
