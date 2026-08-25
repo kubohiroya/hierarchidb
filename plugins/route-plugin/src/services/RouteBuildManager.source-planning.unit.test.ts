@@ -1,8 +1,36 @@
-import { ROUTE_MODES, type RouteBuildRouteInput } from '@hierarchidb/route-api';
-import { describe, expect, it } from 'vitest';
-import { materializeSourcePlannedRouteGenerationMethod } from './RouteBuildManager.js';
+// @vitest-environment node
+
+import type { NodeId } from '@hierarchidb/core-types';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import {
+  ROUTE_MODES,
+  type RouteBuildConfig,
+  type RouteBuildRouteInput,
+} from '@hierarchidb/route-api';
+import { deleteTasksByNode, listTasksByStatus, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '../common/config/buildConfig.js';
+import {
+  materializeSourcePlannedRouteGenerationMethod,
+  RouteBuildManager,
+} from './RouteBuildManager.js';
+import type { RouteBuildTaskQueueInput } from './RouteBuildSession.js';
+
+const nodeId = 'route-source-planning-manager' as NodeId;
+const ephemeralStore = initializeEphemeralDB('route-source-planning-manager-test');
+const taskQueue = new VtTaskQueueDb();
 
 describe('materializeSourcePlannedRouteGenerationMethod', () => {
+  afterEach(async () => {
+    await deleteTasksByNode(taskQueue, nodeId);
+  });
+
+  afterAll(async () => {
+    await deleteTasksByNode(taskQueue, nodeId);
+    ephemeralStore.close();
+    await ephemeralStore.delete();
+  });
+
   it('materializes airway routes as great-circle generation', () => {
     expect(materializeMethod(ROUTE_MODES.AIRWAY)).toBe('great_circle');
   });
@@ -45,6 +73,41 @@ describe('materializeSourcePlannedRouteGenerationMethod', () => {
       'routeMode railway does not support generation method great_circle'
     );
   });
+
+  it('materializes route task data through the build manager path', async () => {
+    const config: RouteBuildConfig = {
+      ...DEFAULT_ROUTE_BUILD_CONFIG,
+      routeGeneration: {
+        ...DEFAULT_ROUTE_BUILD_CONFIG.routeGeneration,
+        method: 'osm_route',
+      },
+    };
+    const manager = new RouteBuildManager({
+      session: { ephemeralStore },
+    });
+
+    await manager.createRouteBuildSession(nodeId, config, [
+      createRouteInput(ROUTE_MODES.AIRWAY, 'location-air-start', 'location-air-end'),
+      createRouteInput(ROUTE_MODES.WATERWAY, 'location-sea-start', 'location-sea-end'),
+      createRouteInput(ROUTE_MODES.ROAD, 'location-road-start', 'location-road-end'),
+      createRouteInput(ROUTE_MODES.RAILWAY, 'location-rail-start', 'location-rail-end', 'custom'),
+    ]);
+
+    const sourceTasks = (await listTasksByStatus(taskQueue, nodeId, 'queued')).flatMap((task) => {
+      const inputData = task.inputData as RouteBuildTaskQueueInput | undefined;
+      if (inputData?.routeStage !== 'source') return [];
+      return inputData.routeData === undefined ? [] : [inputData.routeData];
+    });
+
+    expect(sourceTasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ routeMode: ROUTE_MODES.AIRWAY, method: 'great_circle' }),
+        expect.objectContaining({ routeMode: ROUTE_MODES.WATERWAY, method: 'searoute' }),
+        expect.objectContaining({ routeMode: ROUTE_MODES.ROAD, method: 'osm_route' }),
+        expect.objectContaining({ routeMode: ROUTE_MODES.RAILWAY, method: 'custom' }),
+      ])
+    );
+  });
 });
 
 const materializeMethod = (
@@ -59,3 +122,17 @@ const materializeMethod = (
     },
     configuredMethod
   );
+
+const createRouteInput = (
+  routeMode: RouteBuildRouteInput['routeMode'],
+  startLocationId: string,
+  endLocationId: string,
+  method?: RouteBuildRouteInput['method']
+): RouteBuildRouteInput => ({
+  startLocationId: startLocationId as NodeId,
+  endLocationId: endLocationId as NodeId,
+  startCoordinates: [0, 0],
+  endCoordinates: [1, 1],
+  routeMode,
+  ...(method === undefined ? {} : { method }),
+});

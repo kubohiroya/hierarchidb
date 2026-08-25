@@ -167,8 +167,10 @@ cache identity の正規仕様（SSOT）とする。
     `searoute` を正規methodとし、明示された `RouteBuildRouteInput.method` がこれと矛盾する場合は
     source planning の契約違反として失敗させる。`railway / high-speed-railway / road / highway`
     は `direct` または network/custom routing method を許容し、route入力で明示されたmethod、
-    または nodeごとの明示設定/システム既定methodを materialize する。この materialization は
-    task 実行前の入力確定であり、engine失敗時の fallback や実行時の曖昧な推測ではない。
+    または configured default を materialize する。#1646 のsettings modelが入るまでは、
+    land route modes の configured default は `buildConfig.routeGeneration.method` とする。
+    この materialization は task 実行前の入力確定であり、engine失敗時の fallback や実行時の
+    曖昧な推測ではない。
     `@hierarchidb/route-engine` のengine registryは
     engine capability（engine id/version、method、任意のaccepted route modes、network requirement、
     waypoint対応）を必須入力として検証し、未登録engine、capability不一致、不正responseを失敗させる。
