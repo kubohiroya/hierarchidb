@@ -89,6 +89,8 @@ export type {
   CreateStagedFolderActionRunRecordInput,
   StagedFolderActionCurrentActionProgress,
   StagedFolderActionDependencyChange,
+  StagedFolderActionFailure,
+  StagedFolderActionFailureCategory,
   StagedFolderActionPendingReference,
   StagedFolderActionProgressCounts,
   StagedFolderActionReferenceWarning,

@@ -227,6 +227,13 @@ function classifyRunnerError(
   record: StagedFolderActionRunRecord | null
 ): StagedFolderActionCliFailureError {
   const message = error instanceof Error ? error.message : String(error);
+  if (record?.failure !== undefined) {
+    return {
+      category: record.failure.category,
+      code: record.failure.code,
+      message: record.failure.message,
+    };
+  }
   const actionType = record?.currentAction?.actionType;
   const phase = record?.phase;
   if (actionType === 'map-image-capture') {
@@ -272,13 +279,6 @@ function classifyRunnerError(
     };
   }
   if (phase === 'resolving-references') {
-    if (message.includes('dependency')) {
-      return {
-        category: 'dependency',
-        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
-        message,
-      };
-    }
     return {
       category: 'reference',
       code: 'STAGED_FOLDER_ACTION_REFERENCE_FAILED',

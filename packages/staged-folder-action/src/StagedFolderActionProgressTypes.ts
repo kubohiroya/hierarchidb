@@ -89,6 +89,14 @@ export type StagedFolderActionDependencyChange = {
   rebuildPlanId?: string;
 };
 
+export type StagedFolderActionFailureCategory = 'reference' | 'dependency';
+
+export type StagedFolderActionFailure = {
+  category: StagedFolderActionFailureCategory;
+  code: string;
+  message: string;
+};
+
 export type StagedFolderExportCsvActionResult = {
   type: StagedFolderExportCsvAction['type'];
   status: 'completed';
@@ -152,6 +160,7 @@ export interface StagedFolderActionRunRecord {
   pendingReferences?: readonly StagedFolderActionPendingReference[];
   dependencyChanges?: readonly StagedFolderActionDependencyChange[];
   actionResults?: readonly StagedFolderActionResult[];
+  failure?: StagedFolderActionFailure;
   error?: string;
   startedAt: number;
   completedAt?: number;
@@ -176,6 +185,7 @@ export type StagedFolderActionRunRecordPatch = {
   pendingReferences?: readonly StagedFolderActionPendingReference[];
   dependencyChanges?: readonly StagedFolderActionDependencyChange[];
   actionResults?: readonly StagedFolderActionResult[];
+  failure?: StagedFolderActionFailure;
   stagingRootNodeId?: NodeId;
   error?: string;
   completedAt?: number;
@@ -240,6 +250,9 @@ export const assertStagedFolderActionRunRecord = (
   record.pendingReferences?.forEach(assertPendingReference);
   record.dependencyChanges?.forEach(assertDependencyChange);
   record.actionResults?.forEach(assertActionResult);
+  if (record.failure !== undefined) {
+    assertFailure(record.failure);
+  }
   return record;
 };
 
@@ -310,6 +323,14 @@ const assertDependencyStatus = (value: string, field: string): void => {
   ) {
     throw new Error(`staged-folder-action progress ${field} is invalid`);
   }
+};
+
+const assertFailure = (failure: StagedFolderActionFailure): void => {
+  if (failure.category !== 'reference' && failure.category !== 'dependency') {
+    throw new Error('staged-folder-action failure.category is invalid');
+  }
+  assertNonEmptyString(failure.code, 'failure.code');
+  assertNonEmptyString(failure.message, 'failure.message');
 };
 
 const assertActionResult = (result: StagedFolderActionResult, index: number): void => {

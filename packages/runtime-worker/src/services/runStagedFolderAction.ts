@@ -4,6 +4,7 @@ import type {
   MapImageCaptureIntent,
   StagedFolderAction,
   StagedFolderActionConfig,
+  StagedFolderActionFailure,
   StagedFolderActionPendingReference,
   StagedFolderActionReferenceWarning,
   StagedFolderActionResult,
@@ -138,6 +139,7 @@ const runStagedFolderAction = async (
   let stagingRootNodeId: NodeId | undefined;
   const runLifetimeMounts: StagedFolderImportMountActionResult[] = [];
   let terminalSafeUnmountStarted = false;
+  let terminalCleanupAttempted = false;
   try {
     await progressStore.updateRun(input.runId, {
       status: 'running',
@@ -201,6 +203,7 @@ const runStagedFolderAction = async (
         progress: progressFor(input.config.actions.length, input.config.actions.length),
         updatedAt: dependencies.now(),
       });
+      terminalCleanupAttempted = true;
       await dependencies.cleanup({
         config: input.config,
         stagingRootNodeId,
@@ -239,6 +242,7 @@ const runStagedFolderAction = async (
     if (
       stagingRootNodeId !== undefined &&
       !safeUnmountFailed &&
+      !terminalCleanupAttempted &&
       dependencies.cleanup &&
       shouldCleanupAfterFailure(input.config.staging.cleanup)
     ) {
@@ -310,15 +314,27 @@ const resolveAndPersistReferences = async (
     ),
     updatedAt: dependencies.now(),
   });
-  const result = await dependencies.resolveReferences({
-    config: input.config,
-    stagingRootNodeId,
-    runId: input.runId,
-    phase: resolution.phase,
-    ...(resolution.action === undefined ? {} : { action: resolution.action }),
-    ...(resolution.actionIndex === undefined ? {} : { actionIndex: resolution.actionIndex }),
-    pendingReferences: current.pendingReferences ?? [],
-  });
+  let result: StagedFolderActionReferenceResolutionResult;
+  try {
+    result = await dependencies.resolveReferences({
+      config: input.config,
+      stagingRootNodeId,
+      runId: input.runId,
+      phase: resolution.phase,
+      ...(resolution.action === undefined ? {} : { action: resolution.action }),
+      ...(resolution.actionIndex === undefined ? {} : { actionIndex: resolution.actionIndex }),
+      pendingReferences: current.pendingReferences ?? [],
+    });
+  } catch (error) {
+    const failure = classifyReferenceResolutionFailure(error);
+    await progressStore.updateRun(input.runId, {
+      status: 'running',
+      phase: 'resolving-references',
+      failure,
+      updatedAt: dependencies.now(),
+    });
+    throw error;
+  }
   assertReferenceResolutionResult(result);
   await progressStore.updateRun(input.runId, {
     status: 'running',
@@ -360,6 +376,26 @@ const safeUnmountRunLifetimeMounts = async (
     mounts: [...mounts],
   });
 };
+
+const classifyReferenceResolutionFailure = (error: unknown): StagedFolderActionFailure => {
+  const message = error instanceof Error ? error.message : String(error);
+  const candidate = isObjectRecord(error) ? error : {};
+  const category = candidate.category === 'reference' ? 'reference' : 'dependency';
+  const code =
+    typeof candidate.code === 'string' && candidate.code.trim().length > 0
+      ? candidate.code
+      : category === 'reference'
+        ? 'STAGED_FOLDER_ACTION_REFERENCE_FAILED'
+        : 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION';
+  return {
+    category,
+    code,
+    message,
+  };
+};
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 const shouldCleanupAfterSuccess = (cleanup: StagedFolderActionConfig['staging']['cleanup']) =>
   cleanup === 'delete-on-success' || cleanup === 'delete-always';

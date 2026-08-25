@@ -8,7 +8,7 @@
   "error": {
     "category": "dependency",
     "code": "STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION",
-    "message": "dependency resolver returned stale edge without rebuild target",
+    "message": "stale edge missing rebuild target",
     "runId": "run-fixture-dependency-failure",
     "sourceNodeId": "source-fixture",
     "stagingRootNodeId": "stage-fixture"

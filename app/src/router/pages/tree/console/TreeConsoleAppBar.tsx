@@ -96,6 +96,7 @@ export function TreeConsoleAppBar({
                 treeId={data.tree.id}
                 nodeType={STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE}
                 autoStartTopSession={false}
+                onEntriesChange={handleStagedFolderActionDialogEntriesChange}
                 includeBuildJobQueues={false}
               />
             </>
