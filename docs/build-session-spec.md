@@ -54,6 +54,10 @@ node type + nodeId 単位で非負整数として進め、同じ runtime surface
 や transient command state の変化を観測可能にする。`isActive` は runtime status
 から導出し、`starting / running / pausing / resuming / finalizing` だけを
 active とする。`completed` や `failed` を active として補完してはならない。
+`currentAction` を公開する場合、`actionIndex` は非負整数、`actionType` と `phase`
+は空でない文字列、`percentage` は有限かつ `0..100` の数値でなければならない。
+不正な `currentAction` は canonical runtime record の契約違反として失敗させ、
+表示用に丸めたり空文字を補完してはならない。
 
 ## ビルドセッションライフサイクル
 

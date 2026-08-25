@@ -106,4 +106,65 @@ describe('CanonicalBuildRuntimeAdapter contract', () => {
       CanonicalBuildRuntimeError
     );
   });
+
+  it('accepts current action progress inside the canonical contract', () => {
+    const record = createRuntimeRecord({
+      currentAction: {
+        actionIndex: 0,
+        actionType: 'build',
+        phase: 'running',
+        percentage: 50,
+      },
+    });
+
+    expect(assertCanonicalBuildRuntimeRecord(record, nodeType).currentAction).toMatchObject({
+      actionIndex: 0,
+      actionType: 'build',
+      phase: 'running',
+      percentage: 50,
+    });
+  });
+
+  it('rejects current action progress outside the canonical contract', () => {
+    const invalidRecords: BuildSessionRuntimeRecord[] = [
+      createRuntimeRecord({
+        currentAction: {
+          actionIndex: -1,
+          actionType: 'build',
+          phase: 'running',
+          percentage: 50,
+        },
+      }),
+      createRuntimeRecord({
+        currentAction: {
+          actionIndex: 0,
+          actionType: '',
+          phase: 'running',
+          percentage: 50,
+        },
+      }),
+      createRuntimeRecord({
+        currentAction: {
+          actionIndex: 0,
+          actionType: 'build',
+          phase: ' ',
+          percentage: 50,
+        },
+      }),
+      createRuntimeRecord({
+        currentAction: {
+          actionIndex: 0,
+          actionType: 'build',
+          phase: 'running',
+          percentage: 101,
+        },
+      }),
+    ];
+
+    for (const record of invalidRecords) {
+      expect(() => assertCanonicalBuildRuntimeRecord(record, nodeType)).toThrow(
+        CanonicalBuildRuntimeError
+      );
+    }
+  });
 });

@@ -44,6 +44,8 @@ export function TreeConsoleAppBar({
   const {
     resumeSessionNodeType,
     resumeDialogRows,
+    resumeDialogSessionCount,
+    canResumeDialogQueue,
     isResumeDialogOpen,
     isQueueAutoStartEnabled,
     isDeletingQueue,
@@ -51,6 +53,7 @@ export function TreeConsoleAppBar({
     handleNavigateToBuild,
     handleNavigateToBuildJobEntry,
     handleResumeDialogEntriesChange,
+    handleStagedFolderActionDialogEntriesChange,
     handleResumeQueue,
     handleDeleteQueue,
     handleSkipResumeDialog,
@@ -103,7 +106,7 @@ export function TreeConsoleAppBar({
       <Dialog open={isResumeDialogOpen} onClose={handleSkipResumeDialog} fullWidth maxWidth="md">
         <DialogTitle>
           {t('treeConsole.toolbar.resumeQueueDialog.title', 'Build sessions: {{count}} sessions', {
-            count: resumeDialogRows.length,
+            count: resumeDialogSessionCount,
           })}
         </DialogTitle>
         <DialogContent dividers>
@@ -121,6 +124,7 @@ export function TreeConsoleAppBar({
               treeId={data.tree?.id}
               nodeType={STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE}
               autoStartTopSession={false}
+              onEntriesChange={handleStagedFolderActionDialogEntriesChange}
               includeBuildJobQueues={false}
               compact={false}
             />
@@ -131,7 +135,7 @@ export function TreeConsoleAppBar({
             onClick={handleDeleteQueue}
             color="error"
             startIcon={<DeleteIcon />}
-            disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
+            disabled={resumeDialogSessionCount === 0 || isDeletingQueue || isResumingQueue}
           >
             {t('treeConsole.toolbar.resumeQueueDialog.deleteQueue', 'Delete all sessions')}
           </Button>
@@ -139,7 +143,7 @@ export function TreeConsoleAppBar({
             onClick={handleResumeQueue}
             variant="contained"
             startIcon={<ReplayIcon />}
-            disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
+            disabled={!canResumeDialogQueue || isDeletingQueue || isResumingQueue}
           >
             {t(
               'treeConsole.toolbar.resumeQueueDialog.resumeQueue',
