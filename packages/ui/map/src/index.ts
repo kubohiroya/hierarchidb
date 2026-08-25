@@ -72,6 +72,18 @@ export {
   type FeatureTableToolbarProps,
 } from './preview/FeatureTableToolbar.js';
 export {
+  buildFeatureCellEditRequest,
+  type FeatureCellDependencyStatus,
+  type FeatureCellEditRequest,
+  type FeatureTableDependencyRole,
+  type FeatureTableEditableColumn,
+  type FeatureTableEditConfig,
+  type FeatureTableEditOrigin,
+  type FeatureTableEntityType,
+  type FeatureTableValueKind,
+  findFeatureTableEditableColumn,
+} from './preview/featureTableEditContract.js';
+export {
   buildLayerSetListItems,
   type LayerSetListItem,
   type LayerSetVisibility,
