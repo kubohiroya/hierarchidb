@@ -8,6 +8,9 @@ export type { BuildLocationVectorLayersArgs } from './buildLocationVectorLayers.
 export { buildLocationVectorLayers } from './buildLocationVectorLayers.js';
 export type { LocationAttributionInfo } from './datasources/resolveLocationAttribution.js';
 export { resolveLocationAttribution } from './datasources/resolveLocationAttribution.js';
+export * from './entities/LocationEntity.js';
+export * from './entities/LocationPoint.js';
+export * from './featureTableEditAdapters.js';
 export type {
   BuildLocationMvtStyleExpressionsArgs,
   LocationMvtStyleExpressions,
@@ -20,5 +23,3 @@ export {
   LOCATION_MVT_PROMOTE_ID,
   LOCATION_MVT_SOURCE_LAYER,
 } from './locationMvtStyleExpressions.js';
-export * from './entities/LocationEntity.js';
-export * from './entities/LocationPoint.js';

@@ -6,6 +6,7 @@
 export { PLUGIN_MANIFEST as RoutePluginManifest } from '../plugin-manifest.js';
 export type { RouteDataSourceConfig } from './datasource/ROUTE_DATA_SOURCES.js';
 export { ROUTE_DATA_SOURCES } from './datasource/ROUTE_DATA_SOURCES.js';
+export * from './featureTableEditAdapters.js';
 export * from './styles/routeMvtLayerConstants.js';
 export * from './types/index.js';
 
