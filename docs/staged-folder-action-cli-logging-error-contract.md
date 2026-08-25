@@ -53,6 +53,8 @@ Phase 2 child #1602 の export file host factory は Node 専用 subpath `@hiera
 
 Phase 3 child #1607 の location / route export adapters は canonical column order を plugin 側の定数として固定し、shared export host に row/column materialization result として渡す。CLI / Node host は source path 解決、common effective data resolver、plugin feature store reader、file writer を明示 port として合成する。adapter は effective staged data resolver を通らない raw copy-on-write payload を使用してはならず、列順を row key から推測してはならない。invalid source path、unsupported requested column、object/array/NaN/Infinity cell、route `metadata.oneway` の non-boolean 値、Node writer 未設定は `export-csv` / `export-xlsx` の typed failure として返す。
 
+Phase 3 child #1612 では、CLI dry-run、injected non-dry-run、typed writer failure、dependency contract violation の representative JSON を `packages/staged-folder-action/src/__tests__/fixtures/` に固定する。fixture test は実 browser、実 browser profile、実 output filesystem writer へ接続せず、CLI core、host adapter、typed error mapping の contract だけを検証する。これにより package-scoped CI は flakiness を増やさず、stdout の single JSON object、exit code、action result、failure category/code の回帰を検出する。writer failure は `export-csv` / `export-xlsx` category、dependency contract violation は `dependency` category とし、warning や reference failure へ丸めてはならない。
+
 ## 成功 JSON
 
 ```typescript

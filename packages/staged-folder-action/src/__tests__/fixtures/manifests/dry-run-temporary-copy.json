@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "staging": {
+    "mode": "temporary-copy",
+    "name": "fixture-dry-run",
+    "cleanup": "retain"
+  },
+  "overlay": {
+    "nodes": [
+      {
+        "match": {
+          "path": "."
+        },
+        "data": {
+          "title": "Fixture Root"
+        }
+      }
+    ]
+  },
+  "actions": []
+}

@@ -272,6 +272,13 @@ function classifyRunnerError(
     };
   }
   if (phase === 'resolving-references') {
+    if (message.includes('dependency')) {
+      return {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
+        message,
+      };
+    }
     return {
       category: 'reference',
       code: 'STAGED_FOLDER_ACTION_REFERENCE_FAILED',

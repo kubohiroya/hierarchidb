@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "version": 1,
+  "dryRun": false,
+  "runId": "run-fixture-writer-failure",
+  "sourceNodeId": "source-fixture",
+  "stagingRootNodeId": "stage-fixture",
+  "actionIndex": 0,
+  "actionType": "export-csv",
+  "error": {
+    "category": "export-csv",
+    "code": "STAGED_FOLDER_ACTION_EXPORT_FILE_FAILED",
+    "message": "CSV writer failed",
+    "actionType": "export-csv",
+    "runId": "run-fixture-writer-failure",
+    "sourceNodeId": "source-fixture",
+    "stagingRootNodeId": "stage-fixture",
+    "actionIndex": 0
+  }
+}

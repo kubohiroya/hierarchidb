@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "version": 1,
+  "dryRun": false,
+  "runId": "run-fixture-success",
+  "sourceNodeId": "source-fixture",
+  "outputParentNodeId": "output-parent-fixture",
+  "browserMode": "headless",
+  "profileName": "ci",
+  "configPath": "fixtures/manifests/non-dry-run-permanent-copy.json",
+  "format": "json",
+  "stagingMode": "permanent-copy",
+  "actions": ["build", "map-image-capture"],
+  "stagingRootNodeId": "stage-fixture",
+  "buildQueueId": "build-fixture",
+  "actionResults": [
+    {
+      "type": "build",
+      "status": "completed",
+      "buildQueueId": "build-fixture"
+    },
+    {
+      "type": "map-image-capture",
+      "status": "completed",
+      "outputPath": "exports/map.png",
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "cleanup": {
+    "policy": "delete-on-success",
+    "status": "deleted"
+  },
+  "warnings": [],
+  "pendingReferences": [],
+  "dependencyChanges": [],
+  "elapsedMs": 7
+}

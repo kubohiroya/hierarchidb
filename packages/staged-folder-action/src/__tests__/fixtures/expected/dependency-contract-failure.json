@@ -1,0 +1,16 @@
+{
+  "ok": false,
+  "version": 1,
+  "dryRun": false,
+  "runId": "run-fixture-dependency-failure",
+  "sourceNodeId": "source-fixture",
+  "stagingRootNodeId": "stage-fixture",
+  "error": {
+    "category": "dependency",
+    "code": "STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION",
+    "message": "dependency resolver returned stale edge without rebuild target",
+    "runId": "run-fixture-dependency-failure",
+    "sourceNodeId": "source-fixture",
+    "stagingRootNodeId": "stage-fixture"
+  }
+}
