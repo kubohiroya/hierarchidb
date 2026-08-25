@@ -38,7 +38,6 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
     handleSimplifyAlgorithmChange,
     handlePreserveTopologyChange,
     onGeometryUpdate,
-    onBorderGeometryUpdate,
   }) => {
     return (
       <Accordion defaultExpanded>
@@ -125,15 +124,8 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Stack spacing={0.5}>
                       <FormControlLabel
-                        control={
-                          <Switch
-                            checked={borderGeometryConfig.enabled}
-                            onChange={(event) =>
-                              onBorderGeometryUpdate({ enabled: event.target.checked })
-                            }
-                          />
-                        }
-                        disabled={disabled}
+                        control={<Switch checked={borderGeometryConfig.enabled} />}
+                        disabled
                         label={t(
                           'processing.geometry.borderGeometry.enabled',
                           'Build shared-arc topology artifacts'
@@ -142,7 +134,7 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
                       <Typography variant="caption" color="text.secondary">
                         {t(
                           'processing.geometry.borderGeometry.hint',
-                          'Runs arc extraction, arc simplification, and polygon reconstruction when the storage gate is enabled.'
+                          'Shared-arc reconstruction is not yet connected to vector-tile generation.'
                         )}
                       </Typography>
                     </Stack>
@@ -152,7 +144,7 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
                       type="number"
                       size="small"
                       fullWidth
-                      disabled={disabled || !borderGeometryConfig.enabled}
+                      disabled
                       label={t(
                         'processing.geometry.borderGeometry.simplifyTolerance',
                         'Arc simplify tolerance'
@@ -163,11 +155,6 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
                           min: 0,
                           step: 0.000001,
                         },
-                      }}
-                      onChange={(event) => {
-                        const next = Number(event.target.value);
-                        if (!Number.isFinite(next) || next < 0) return;
-                        onBorderGeometryUpdate({ simplifyTolerance: next });
                       }}
                     />
                   </Grid>

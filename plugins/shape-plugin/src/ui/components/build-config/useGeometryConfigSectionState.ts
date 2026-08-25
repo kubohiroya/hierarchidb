@@ -35,7 +35,6 @@ export interface GeometryConfigSectionViewProps {
   readonly handleSimplifyAlgorithmChange: (_event: unknown, value: string) => void;
   readonly handlePreserveTopologyChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   readonly onGeometryUpdate: (partial: Partial<ShapeBuildGeometryConfig>) => void;
-  readonly onBorderGeometryUpdate: (partial: Partial<ShapeBuildBorderGeometryConfig>) => void;
 }
 
 export function useGeometryConfigSectionState(
@@ -62,8 +61,6 @@ export function useGeometryConfigSectionState(
 
   const onGeometryUpdate = (partial: Partial<ShapeBuildGeometryConfig>) =>
     update({ geometryConfig: partial });
-  const onBorderGeometryUpdate = (partial: Partial<ShapeBuildBorderGeometryConfig>) =>
-    update({ borderGeometryConfig: partial });
 
   return {
     t,
@@ -78,6 +75,5 @@ export function useGeometryConfigSectionState(
     handleSimplifyAlgorithmChange,
     handlePreserveTopologyChange,
     onGeometryUpdate,
-    onBorderGeometryUpdate,
   };
 }
