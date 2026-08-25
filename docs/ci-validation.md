@@ -12,7 +12,7 @@ PR の待ち時間を短縮しながら、変更された workspace package の 
 2. `app/`、`packages/`、`plugins/` の内側だけにある非ドキュメント変更は `affected` とする。`pnpm-lock.yaml` は単独変更、または workspace-local 変更との組み合わせであれば `affected` に含める。
 3. それ以外の非ドキュメント変更は repository-wide input とみなし、`full` とする。root `package.json`、workspace/Turbo/TypeScript/Vitest/tsdown 設定、`.github/`、`scripts/`、`config/` の変更がこの分類に含まれる。`pnpm-lock.yaml` も repository-wide input と同時に変更された場合は `full` とする。
 
-`affected` では `TURBO_SCM_BASE` と `TURBO_SCM_HEAD` を固定し、Turbo filter `[<base>...<head>]` で直接変更されたpackageをentry pointにする。既定のblocking taskは`typecheck,test`であり、task依存に必要な上流packageは実行するが、変更packageを利用する下流packageのtestとlintはPRごとに実行しない。下流packageを含む回帰検証はmainのfull validationが担当する。必要に応じて`CI_AFFECTED_TASKS`で一時的にtaskを追加できるが、既定taskの拡大はCI時間への影響を確認する別Issueを必要とする。
+`affected` では `TURBO_SCM_BASE` と `TURBO_SCM_HEAD` を固定し、Turbo filter `[<base>...<head>]` で直接変更されたpackageとその変更に依存するpackageを検証対象にする。既定のblocking taskは`typecheck,test`であり、各対象packageで一回ずつ実行する。task依存に必要な上流packageは`build`だけを実行し、型解決に必要な`.d.ts`を生成する。上流依存packageの`typecheck`を再帰的に実行してはならない。必要に応じて`CI_AFFECTED_TASKS`で一時的にtaskを追加できるが、既定taskの拡大はCI時間への影響を確認する別Issueを必要とする。
 
 Vite、Turbo、build scriptなどのconfig評価時に直接または間接的にworkspace packageを読み込むpackageは、そのworkspace packageを直接dependencyとして宣言し、Turboのtask graphへbuild依存を明示する。必要な`dist`生成を、別taskのcache miss時にだけ発生する副作用へ依存させてはならない。
 
@@ -37,6 +37,8 @@ Full workspace testは、Vitest project間でworker scheduling設定が競合し
 Dep-Fence strict、dependency guard、shim・`as any` budget・UI hook配置のポリシーは、package-local taskとは別のaffected repository-wide blocking checksとしてPRで実行する。license summaryはfull validationで実行する。affected PRでは変更packageの`typecheck,test`とaffected repository-wide checksを実行し、license summaryのようなheavy checkだけを避ける。
 
 CI scope resolverのunit testは、CI workflow、root `package.json`、または`scripts/ci/`が変更されたPRでだけblocking実行する。`main` pushと`workflow_dispatch`ではfull validationの一部として実行する。公開型参照ポリシー`policy:ban-tsconfig-paths-dist-dts`はdisabled policyであり、blocking CIから外す。再度有効化する場合は、契約を更新してからCIへ戻す。
+
+`@hierarchidb/app`のtypecheckは、必要なworkspace buildをTurbo graphの依存に任せる。package script内部で`pnpm --filter ... build`を再実行してはならない。`@hierarchidb/app#test`はroot `turbo.json`で`TURBO_SCM_BASE`と`TURBO_SCM_HEAD`を`env`/`passThroughEnv`に持ち、affected CIの差分情報をapp test processへ渡す。worker entry boundaryのproduction artifact検証はapp buildで実行する。worker entry boundary verifierのunit testは、通常のlocal test、またはaffected diffがboundary関連入力を変更した場合に実行する。affected diffがapp内の非boundary入力だけを変更した場合は、appのVitest後にboundary unit testをskipする。diff取得やbase/head検証に失敗した場合はskipにせず、CIを失敗させる。
 
 Dependency CruiserとSyncpackは非blocking診断である。PRごとのblocking validationから外し、週次または手動の`Repository Diagnostics` workflowで実行する。publish artifactを生成しない状態のPublintとAre The Types WrongはCI診断から外し、release/package検証時の明示コマンドとして残す。
 
