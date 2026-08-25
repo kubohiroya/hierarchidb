@@ -113,6 +113,8 @@ Preview table、Map UI floating table、map feature popover は同じ source map
 
 #1654 の runtime-worker feature dependency edit service は、UI request と構造互換の `FeatureCellEditRequest` を worker 側境界として受け取り、plugin-owned source write を `FeatureCellSourceUpdater` に委譲する。service は dependency index を `featureNodeId` / `fieldPath` で逆引きし、`active` edge は source update 成功後に `stale` へ遷移して deterministic incremental rebuild plan を enqueue する。既存 `stale` は rebuild requirement を保持した成功結果、`pending-reference` は warning context 付き成功結果、`rebuilding` / `orphaned` は typed failure として返す。`none` は dependency impact なしの source update だけを許可する。必須 source/write-target field が欠落している request は補完せず validation failure とする。
 
+#1655 の plugin preview adapters は、shape/location/route それぞれの `common` export から `create*FeatureTableEditAdapter()` を公開する。adapter は `editableColumns`、`getEditableColumn()`、`parseCellValue()`、`validateCellValue()` を返し、許可列以外は `not-editable-column` typed failure とする。初期許可列は shape: `countryName` / `adminName` / `adminCode` / `dataSource`、location: `name` / `longitude` / `latitude` / `admin0Name` / `admin1Name` / `admin2Name`、route: `routeName` / `routeMode` / `startName` / `endName` だけである。`bbox`、`area`、`vertexCount`、`polygonCount`、`distanceMeters`、`waypointCount`、centroid/resolved endpoint label などの derived columns には source mapping を付けない。
+
 ## Implementation Issue Split
 
 | Issue | Scope | DoD | Rollback |
