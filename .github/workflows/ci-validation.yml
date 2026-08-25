@@ -35,26 +35,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validation:
-    name: Run CI validation
+  validation-mode:
+    name: Resolve CI validation mode
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
+    outputs:
+      mode: ${{ steps.validation-mode.outputs.mode }}
+      cache-scope: ${{ steps.cache-scope.outputs.scope }}
+      base-sha: ${{ steps.refs.outputs.base-sha }}
+      head-sha: ${{ steps.refs.outputs.head-sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v6
-        with:
-          package_json_file: package.json
-
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: 'pnpm'
 
       - name: Resolve cache scope
         id: cache-scope
@@ -83,17 +82,22 @@ jobs:
           esac
           echo "scope=${cache_scope}" >> "${GITHUB_OUTPUT}"
 
-      - name: Restore Turbo cache
-        uses: actions/cache@v6
-        with:
-          path: .turbo/cache
-          key: ${{ runner.os }}-turbo-${{ steps.cache-scope.outputs.scope }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-${{ steps.cache-scope.outputs.scope }}-${{ hashFiles('pnpm-lock.yaml') }}-
-            ${{ runner.os }}-turbo-main-${{ hashFiles('pnpm-lock.yaml') }}-
-
-      - name: Install dependencies (workspace)
-        run: pnpm install --frozen-lockfile
+      - name: Resolve refs
+        id: refs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" = "pull_request" ]]; then
+            echo "base-sha=${PR_BASE_SHA}" >> "${GITHUB_OUTPUT}"
+            echo "head-sha=${PR_HEAD_SHA}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "base-sha=${GITHUB_SHA_VALUE}" >> "${GITHUB_OUTPUT}"
+            echo "head-sha=${GITHUB_SHA_VALUE}" >> "${GITHUB_OUTPUT}"
+          fi
 
       - name: Resolve validation mode
         id: validation-mode
@@ -123,27 +127,42 @@ jobs:
             echo "- head: ${HEAD_SHA}" >> "${GITHUB_STEP_SUMMARY}"
           fi
 
-      - name: Run repository-wide blocking checks
-        if: steps.validation-mode.outputs.mode == 'full'
-        run: pnpm run ci:checks
+  affected-checks:
+    name: Affected repository checks
+    needs: validation-mode
+    if: needs.validation-mode.outputs.mode == 'affected'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Run affected repository-wide checks
-        if: steps.validation-mode.outputs.mode == 'affected'
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run repository-wide blocking checks
         run: pnpm run ci:checks:affected
 
       - name: Run CI validation self-tests
-        if: steps.validation-mode.outputs.mode != 'skip'
         env:
           EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ needs.validation-mode.outputs.base-sha }}
+          HEAD_SHA: ${{ needs.validation-mode.outputs.head-sha }}
         run: |
           set -euo pipefail
-          if [[ "${EVENT_NAME}" != "pull_request" ]]; then
-            pnpm run ci:validation:test
-            exit 0
-          fi
-
           if git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" -- \
             .github/workflows/ci-validation.yml \
             package.json \
@@ -154,26 +173,153 @@ jobs:
             echo "CI validation self-tests skipped; CI resolver inputs are unchanged."
           fi
 
-      - name: Validate affected packages
-        if: steps.validation-mode.outputs.mode == 'affected'
+  affected-package-validation:
+    name: Affected package ${{ matrix.validation-task }}
+    needs: validation-mode
+    if: needs.validation-mode.outputs.mode == 'affected'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        validation-task: [typecheck, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: ${{ runner.os }}-turbo-${{ needs.validation-mode.outputs.cache-scope }}-${{ matrix.validation-task }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ needs.validation-mode.outputs.cache-scope }}-${{ matrix.validation-task }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-turbo-main-${{ matrix.validation-task }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Validate affected package typecheck
+        if: matrix.validation-task == 'typecheck'
         env:
-          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
-          TURBO_SCM_HEAD: ${{ github.event.pull_request.head.sha }}
+          TURBO_SCM_BASE: ${{ needs.validation-mode.outputs.base-sha }}
+          TURBO_SCM_HEAD: ${{ needs.validation-mode.outputs.head-sha }}
+          CI_AFFECTED_TASKS: typecheck
         run: |
           set -euo pipefail
-          echo "### Validation executed: affected package tasks" >> "${GITHUB_STEP_SUMMARY}"
+          echo "### Validation executed: affected package typecheck" >> "${GITHUB_STEP_SUMMARY}"
           pnpm run ci:validate:affected
 
+      - name: Validate affected package fast tests
+        if: matrix.validation-task == 'test'
+        env:
+          TURBO_SCM_BASE: ${{ needs.validation-mode.outputs.base-sha }}
+          TURBO_SCM_HEAD: ${{ needs.validation-mode.outputs.head-sha }}
+        run: |
+          set -euo pipefail
+          echo "### Validation executed: affected package fast tests" >> "${GITHUB_STEP_SUMMARY}"
+          pnpm run ci:validate:affected:tests
+
+  full-validation:
+    name: Full workspace validation
+    needs: validation-mode
+    if: needs.validation-mode.outputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: ${{ runner.os }}-turbo-${{ needs.validation-mode.outputs.cache-scope }}-full-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ needs.validation-mode.outputs.cache-scope }}-full-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-turbo-main-full-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run repository-wide blocking checks
+        run: pnpm run ci:checks
+
+      - name: Run CI validation self-tests
+        run: pnpm run ci:validation:test
+
       - name: Validate full workspace
-        if: steps.validation-mode.outputs.mode == 'full'
         run: |
           set -euo pipefail
           echo "### Validation executed: repository-wide checks + full workspace build/lint" >> "${GITHUB_STEP_SUMMARY}"
           pnpm run ci:validate:full
 
+  skip-validation:
+    name: Skip validation
+    needs: validation-mode
+    if: needs.validation-mode.outputs.mode == 'skip'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
       - name: Skip validation
-        if: steps.validation-mode.outputs.mode == 'skip'
         run: |
           set -euo pipefail
           echo "### Validation skipped" >> "${GITHUB_STEP_SUMMARY}"
           echo "Only documentation-only paths changed." >> "${GITHUB_STEP_SUMMARY}"
+
+  validation:
+    name: Run CI validation
+    needs:
+      - validation-mode
+      - affected-checks
+      - affected-package-validation
+      - full-validation
+      - skip-validation
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check validation result
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+        run: |
+          node -e '
+            const needs = JSON.parse(process.env.NEEDS_JSON);
+            const failures = Object.entries(needs)
+              .filter(([, value]) => !["success", "skipped"].includes(value.result))
+              .map(([name, value]) => `${name}:${value.result}`);
+            if (failures.length > 0) {
+              console.error(`CI validation failed: ${failures.join(", ")}`);
+              process.exit(1);
+            }
+            for (const [name, value] of Object.entries(needs)) {
+              console.log(`${name}: ${value.result}`);
+            }
+            console.log("CI validation passed.");
+          '
