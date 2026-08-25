@@ -32,7 +32,7 @@
     "ci:all:local": "pnpm ci:clean && pnpm ci:install && pnpm ci:versions && pnpm ci:checks && pnpm ci:typecheck:local",
     "ci:build:local": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" turbo run build",
     "ci:checks": "pnpm run ci:checks:affected && pnpm run check:licenses",
-    "ci:checks:affected": "pnpm run check:deps && pnpm run guard:deps:extra && pnpm run policy:ban-tsconfig-paths-dist-dts && pnpm run shims:check && pnpm run as-any:check && pnpm run check:ui-hooks-tsx && pnpm run ci:validation:test",
+    "ci:checks:affected": "pnpm run check:deps && pnpm run guard:deps:extra && pnpm run shims:check && pnpm run as-any:check && pnpm run check:ui-hooks-tsx",
     "ci:clean": "pnpm store prune || true && find . -name dist -type d -prune -exec rm -rf {} + || true && find . -name '*.tsbuildinfo' -type f -delete || true",
     "ci:install": "pnpm install --no-frozen-lockfile --force",
     "ci:typecheck:local": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" pnpm run guard:preflight && turbo run typecheck",

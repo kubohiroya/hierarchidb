@@ -131,6 +131,29 @@ jobs:
         if: steps.validation-mode.outputs.mode == 'affected'
         run: pnpm run ci:checks:affected
 
+      - name: Run CI validation self-tests
+        if: steps.validation-mode.outputs.mode != 'skip'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" != "pull_request" ]]; then
+            pnpm run ci:validation:test
+            exit 0
+          fi
+
+          if git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" -- \
+            .github/workflows/ci-validation.yml \
+            package.json \
+            scripts/ci/ \
+            | grep -q .; then
+            pnpm run ci:validation:test
+          else
+            echo "CI validation self-tests skipped; CI resolver inputs are unchanged."
+          fi
+
       - name: Validate affected packages
         if: steps.validation-mode.outputs.mode == 'affected'
         env:
