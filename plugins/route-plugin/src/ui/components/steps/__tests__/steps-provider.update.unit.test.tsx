@@ -166,10 +166,8 @@ describe('route steps provider update merge', () => {
       routeMode: 'road',
       startLocationId: 'location-node',
       endLocationId: 'location-node',
-      lineGeometry: [
-        [139.6917, 35.6895],
-        [135.5023, 34.6937],
-      ],
+      startCoordinates: [139.6917, 35.6895],
+      endCoordinates: [135.5023, 34.6937],
       routeBuildInput: { kind: 'direct-route' },
     } as RouteStepData;
 

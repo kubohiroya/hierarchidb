@@ -80,6 +80,10 @@ direct-route と selection-driven の混在、external payload の `routeBuildIn
 空selection、空解決結果、endpoint未解決は source task 作成前に失敗させる。
 resolver output の順序は route mode、始点location ID、終点location ID、source row identity で
 決定的に固定し、committed / working-copy の input source によって分岐しない。
+direct-route external payload は `startLocationId`、`endLocationId`、`startCoordinates`、
+`endCoordinates`、`routeMode` を必須入力とし、precomputed `lineGeometry` を含む payload は
+canonical boundary で拒否する。LineString は resolved endpoint と materialized generation method から
+source stage が生成し、外部から渡されたLineStringをroute geometry sourceとして使用しない。
 
 ### source keyと入力署名
 
@@ -90,6 +94,8 @@ resolver output の順序は route mode、始点location ID、終点location ID�
 - 同一`sourceKey`でも入力署名が変わったartifactはrecycleしない。
 - canonical direct-route startでは`routeMode`を正規値として明示必須にし、
   `transportMode`や`transportSelection`から補完しない。
+- canonical direct-route startではendpoint coordinatesを明示必須にし、precomputed
+  `lineGeometry` の先頭/末尾からendpointを推測しない。
 
 ## geometry stage
 

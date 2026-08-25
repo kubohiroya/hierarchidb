@@ -106,28 +106,6 @@ const requireRouteMode = (value: unknown, label: string): RouteMode => {
   return value as RouteMode;
 };
 
-const requireDirectRouteInput = (draft: Record<string, unknown>): RouteBuildRouteInput => {
-  const startLocationId = requireNodeId(draft.startLocationId, 'payload.startLocationId');
-  const endLocationId = requireNodeId(draft.endLocationId, 'payload.endLocationId');
-  if (!Array.isArray(draft.lineGeometry) || draft.lineGeometry.length < 2) {
-    throw new Error(
-      '[route canonical build API] payload.lineGeometry must contain at least two coordinates'
-    );
-  }
-  const startCoordinates = requireCoordinate(draft.lineGeometry[0], 'payload.lineGeometry[0]');
-  const endCoordinates = requireCoordinate(
-    draft.lineGeometry[draft.lineGeometry.length - 1],
-    `payload.lineGeometry[${String(draft.lineGeometry.length - 1)}]`
-  );
-  return {
-    startLocationId,
-    endLocationId,
-    startCoordinates,
-    endCoordinates,
-    routeMode: requireRouteMode(draft.routeMode, 'payload.routeMode'),
-  };
-};
-
 const requireResolvedRouteInput = (value: unknown, index: number): RouteBuildRouteInput => {
   const route = requireRecord(value, `payload.routeBuildInput.routes[${String(index)}]`);
   return {
@@ -326,10 +304,7 @@ export const canonicalBuildAPI = {
       draft,
       routeCanonicalBuildInputResolverPorts ?? undefined
     );
-    const routes =
-      startInput.kind === 'direct-route'
-        ? [requireDirectRouteInput(draft)]
-        : startInput.routes.map((route, index) => requireResolvedRouteInput(route, index));
+    const routes = startInput.routes.map((route, index) => requireResolvedRouteInput(route, index));
     await manager.prepareSession(nodeId, buildConfig, { routes });
     return manager.startBuildSession(nodeId);
   },

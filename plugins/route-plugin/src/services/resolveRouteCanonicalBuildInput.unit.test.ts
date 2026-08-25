@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteCanonicalBuildInputResolverPorts } from '@hierarchidb/route-api';
+import { ROUTE_MODES, type RouteCanonicalBuildInputResolverPorts } from '@hierarchidb/route-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveRouteCanonicalBuildInput } from './resolveRouteCanonicalBuildInput.js';
 
@@ -111,6 +111,55 @@ describe('resolveRouteCanonicalBuildInput', () => {
         createPorts()
       )
     ).rejects.toMatchObject({ code: 'ROUTE_INPUT_INVALID_SELECTION' });
+  });
+
+  it('rejects precomputed lineGeometry on direct-route external payloads', async () => {
+    await expect(
+      resolveRouteCanonicalBuildInput(
+        nodeId,
+        {
+          routeBuildInput: { kind: 'direct-route' },
+          startLocationId: 'location-a',
+          endLocationId: 'location-b',
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
+          lineGeometry: [
+            [139, 35],
+            [140, 36],
+          ],
+          routeMode: ROUTE_MODES.ROAD,
+        },
+        createPorts()
+      )
+    ).rejects.toMatchObject({ code: 'ROUTE_INPUT_INVALID_DIRECT_ROUTE' });
+  });
+
+  it('resolves direct-route external payloads from endpoint IDs and coordinates', async () => {
+    await expect(
+      resolveRouteCanonicalBuildInput(
+        nodeId,
+        {
+          routeBuildInput: { kind: 'direct-route' },
+          startLocationId: 'location-a',
+          endLocationId: 'location-b',
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
+          routeMode: ROUTE_MODES.WATERWAY,
+        },
+        createPorts()
+      )
+    ).resolves.toEqual({
+      kind: 'direct-route',
+      routes: [
+        {
+          startLocationId: 'location-a',
+          endLocationId: 'location-b',
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
+          routeMode: ROUTE_MODES.WATERWAY,
+        },
+      ],
+    });
   });
 
   it('resolves selection-driven external payloads to completed internal input', async () => {
