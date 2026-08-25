@@ -57,6 +57,7 @@ const shouldProbeFirefox = (config: FullConfig): boolean => {
   if (!hasFirefoxProject) return false;
 
   const projectFilters = getExplicitProjectFilters();
+  if (process.env.HIERARCHIDB_E2E_ENABLE_FIREFOX === '1') return true;
   if (projectFilters.length === 0) return false;
   return projectFilters.some((filter) => filter.split(',').some((part) => part === 'firefox'));
 };

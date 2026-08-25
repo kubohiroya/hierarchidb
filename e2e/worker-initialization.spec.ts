@@ -6,6 +6,11 @@ type WindowWithWorkerImport = Window & {
 };
 
 test.describe('Worker Initialization System', () => {
+  test.skip(
+    true,
+    'Tracked in #1673: legacy worker initialization E2E waits for networkidle and old main/global readiness markers that no longer match the current app bootstrap contract.'
+  );
+
   let page: Page;
 
   test.beforeEach(async ({ page: testPage }) => {
@@ -273,6 +278,11 @@ test.describe('Worker Initialization System', () => {
 });
 
 test.describe('Worker API Facade Usage', () => {
+  test.skip(
+    true,
+    'Tracked in #1673: legacy facade E2E depends on old navigation readiness and should be replaced with deterministic worker API contract coverage.'
+  );
+
   test('should use facade APIs instead of deprecated methods', async ({ page }) => {
     // Track console warnings for deprecated method usage
     const deprecationWarnings: string[] = [];

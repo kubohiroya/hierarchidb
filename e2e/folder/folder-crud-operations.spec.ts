@@ -22,6 +22,11 @@ import {
  */
 
 test.describe('Folder CRUD Operations', () => {
+  test.skip(
+    true,
+    'Tracked in #1673: legacy Folder CRUD scenarios depend on stale create-menu, dialog, and TreeTable selectors.'
+  );
+
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);

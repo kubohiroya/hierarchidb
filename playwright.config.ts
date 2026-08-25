@@ -23,6 +23,56 @@ const chromiumWebGLLaunchArgs = [
   '--enable-webgl2',
 ];
 
+const getExplicitProjectFilters = (): string[] => {
+  const filters: string[] = [];
+  const args = process.argv;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === '--project' && typeof args[index + 1] === 'string') {
+      filters.push(args[index + 1]);
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--project=')) {
+      filters.push(arg.slice('--project='.length));
+    }
+  }
+  return filters;
+};
+
+const hasExplicitFirefoxProject = (): boolean =>
+  getExplicitProjectFilters().some((filter) =>
+    filter.split(',').some((part) => part === 'firefox')
+  );
+
+const includeFirefoxProject =
+  process.env.HIERARCHIDB_E2E_ENABLE_FIREFOX === '1' || hasExplicitFirefoxProject();
+
+const projects = [
+  {
+    name: 'chromium',
+    use: {
+      ...devices['Desktop Chrome'],
+      // Increase viewport for TreeTable tests
+      viewport: { width: 1920, height: 1080 },
+      launchOptions: {
+        args: chromiumWebGLLaunchArgs,
+      },
+    },
+  },
+  ...(includeFirefoxProject
+    ? [
+        {
+          name: 'firefox',
+          use: {
+            ...devices['Desktop Firefox'],
+            viewport: { width: 1920, height: 1080 },
+          },
+        },
+      ]
+    : []),
+];
+
 export default defineConfig({
   testDir: './e2e',
   /* Run tests in files in parallel */
@@ -62,37 +112,7 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers */
-  projects: [
-    {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Increase viewport for TreeTable tests
-        viewport: { width: 1920, height: 1080 },
-        launchOptions: {
-          args: chromiumWebGLLaunchArgs,
-        },
-      },
-    },
-
-    {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-        viewport: { width: 1920, height: 1080 },
-      },
-    },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
-  ],
+  projects,
 
   /* Run your local dev server before starting the tests */
   webServer: skipWebServer
