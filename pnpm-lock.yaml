@@ -3938,6 +3938,9 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
+      '@hierarchidb/staged-folder-action':
+        specifier: workspace:*
+        version: link:../../packages/staged-folder-action
       '@hierarchidb/tabular-source':
         specifier: workspace:*
         version: link:../../packages/tabular-source
@@ -4177,6 +4180,9 @@ importers:
       '@hierarchidb/spreadsheet-plugin':
         specifier: workspace:*
         version: link:../spreadsheet-plugin
+      '@hierarchidb/staged-folder-action':
+        specifier: workspace:*
+        version: link:../../packages/staged-folder-action
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
         version: link:../../packages/tabular-source-xlsx

@@ -51,6 +51,8 @@ Phase 2 child #1600 の browser host factory は Node 専用 subpath `@hierarchi
 
 Phase 2 child #1602 の export file host factory は Node 専用 subpath `@hierarchidb/staged-folder-action/export-file-host` から import し、`outputBasePath`、Step2 adapter 由来の row/column materializer、file writer、optional XLSX writer を明示的に受け取る。相対 `export-csv.output.path` / `export-xlsx.output.path` は `outputBasePath` 基準で絶対 path に解決して writer に渡す。host 境界でも絶対 path、NUL、空 segment、`.` segment、`..` segment は拒否する。CSV/XLSX row cell は string、finite number、boolean、null、undefined のみを受け付け、object/array/NaN/Infinity は成功扱いしない。CLI success JSON は runner record の `actionResults` に保存された `export-csv` / `export-xlsx` typed result をそのまま返す。export host 未設定、writer 未設定、invalid row、invalid output path、action/result mismatch は `export-csv` または `export-xlsx` category の typed failure として返す。
 
+Phase 3 child #1607 の location / route export adapters は canonical column order を plugin 側の定数として固定し、shared export host に row/column materialization result として渡す。CLI / Node host は source path 解決、common effective data resolver、plugin feature store reader、file writer を明示 port として合成する。adapter は effective staged data resolver を通らない raw copy-on-write payload を使用してはならず、列順を row key から推測してはならない。invalid source path、unsupported requested column、object/array/NaN/Infinity cell、route `metadata.oneway` の non-boolean 値、Node writer 未設定は `export-csv` / `export-xlsx` の typed failure として返す。
+
 ## 成功 JSON
 
 ```typescript
