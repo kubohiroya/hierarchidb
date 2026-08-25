@@ -752,6 +752,7 @@ action 追加時に `StagedFolderActionRunProgress.status` の top-level enum �
 - 出力 schema、required column、column name、value encoding は、当該 location/route dialog の Step2 で local file import source として受け付ける schema と互換でなければならない。
 - Step2 import schema が更新された場合、tabular export schema も同じ versioned adapter で更新する。import と export が別々の column mapping を持って乖離してはならない。
 - Step2 local-file import は未知カラムを無視しなければならない。未知カラムは warning なしで無視してよいが、required column の欠落、不正型、不正値は従来通り validation error とする。
+- Phase 4 の fixture-level round-trip validation では、各 plugin の Step2 local-file import/export adapter が公開する canonical column 定数（location は `LOCATION_EXPORT_COLUMNS`、route は `ROUTE_EXPORT_COLUMNS`）を互換性 SSOT として扱う。CSV header と XLSX writer `columns` はこの順序と一致しなければならない。実 file を既存 node へ差分適用する import action は別 action として扱う。
 - build artifact の geometry や cache binary を CSV / XLSX に暗黙展開してはならない。tabular export は Step2 local-file input が表す source data / editable field / reference field を対象にする。
 - stale edge、pending reference、orphaned edge がある場合、`includeDependencyStatus: true` では diagnostic status column を追加出力してよい。この column は Step2 import では未知カラムとして無視されるため、round-trip import 互換性を壊さない。`includeDependencyStatus: false` でも、stale/pending/orphaned が存在することは action result warning に残す。
 - column order は Step2 local-file input adapter が定義する canonical import/export order を既定とする。manifest の `columns` が指定された場合、export adapter が生成できない column、required column の欠落、Step2 import schema と互換でない required column set は fail-fast する。ただし Step2 import 側は file 内の未知カラムを無視する。

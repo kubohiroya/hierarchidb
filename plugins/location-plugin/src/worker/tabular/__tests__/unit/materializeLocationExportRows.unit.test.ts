@@ -109,6 +109,50 @@ describe('createLocationExportRowsMaterializer', () => {
       /outputPath must not contain empty, current-directory, or parent-directory segments/
     );
   });
+
+  it('exports Step2 local-file compatible CSV and XLSX with canonical location columns', async () => {
+    const materializeRows = createLocationExportRowsMaterializer({
+      resolveSourceNodeId: vi.fn(async () => 'location-node' as NodeId),
+      resolveEffectiveData: vi.fn(async () => ({ dataSource: 'custom' })),
+      listLocationPoints: vi.fn(async () => [createPoint({ pointId: 'point-a' })]),
+    });
+    const writeFile = vi.fn(async () => {});
+    const writeXlsx = vi.fn(async () => {});
+    const runner = createExportFileActionRunner({
+      outputBasePath: '/tmp/staged-action',
+      materializeRows,
+      writeFile,
+      writeXlsx,
+    });
+
+    await runner(createInput());
+    await runner({
+      ...createInput(),
+      action: {
+        type: 'export-xlsx',
+        entityType: 'location',
+        source: { path: 'locations/current' },
+        output: { path: 'exports/locations.xlsx', sheetName: 'Step2 Location Input' },
+      },
+    });
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/staged-action/exports/locations.csv',
+      expect.stringMatching(new RegExp(`^${LOCATION_EXPORT_COLUMNS.join(',')}\\n`))
+    );
+    expect(writeXlsx).toHaveBeenCalledWith({
+      path: '/tmp/staged-action/exports/locations.xlsx',
+      sheetName: 'Step2 Location Input',
+      columns: LOCATION_EXPORT_COLUMNS,
+      rows: [
+        expect.objectContaining({
+          pointId: 'point-a',
+          latitude: 35,
+          longitude: 139,
+        }),
+      ],
+    });
+  });
 });
 
 const createInput = () => ({

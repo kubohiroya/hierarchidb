@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteFeature } from '@hierarchidb/route-api';
+import { createExportFileActionRunner } from '@hierarchidb/staged-folder-action/export-file-host';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createRouteExportRowsMaterializer,
@@ -68,6 +69,89 @@ describe('createRouteExportRowsMaterializer', () => {
     await expect(materializeRows(createInput())).rejects.toThrow(
       /\[route export\] distance must be a finite number/
     );
+  });
+
+  it('fails fast when route oneway metadata is not boolean', async () => {
+    const materializeRows = createRouteExportRowsMaterializer({
+      resolveSourceNodeId: vi.fn(async () => 'route-node' as NodeId),
+      resolveEffectiveData: vi.fn(async () => ({ routeMode: 'airway' })),
+      listRouteFeatures: vi.fn(async () => [
+        createRoute({
+          metadata: { oneway: 'true' } as unknown as RouteFeature['metadata'],
+          featureId: 'route-invalid-oneway',
+        }),
+      ]),
+    });
+
+    await expect(materializeRows(createInput())).rejects.toThrow(
+      /\[route export\] metadata\.oneway must be a boolean when present/
+    );
+  });
+
+  it('exports Step2 local-file compatible CSV and XLSX with canonical route columns', async () => {
+    const materializeRows = createRouteExportRowsMaterializer({
+      resolveSourceNodeId: vi.fn(async () => 'route-node' as NodeId),
+      resolveEffectiveData: vi.fn(async () => ({ routeMode: 'airway' })),
+      listRouteFeatures: vi.fn(async () => [createRoute({ featureId: 'route-a' })]),
+    });
+    const writeFile = vi.fn(async () => {});
+    const writeXlsx = vi.fn(async () => {});
+    const runner = createExportFileActionRunner({
+      outputBasePath: '/tmp/staged-action',
+      materializeRows,
+      writeFile,
+      writeXlsx,
+    });
+
+    await runner({
+      ...createInput(),
+      action: {
+        type: 'export-csv',
+        entityType: 'route',
+        source: { path: 'routes/current' },
+        output: { path: 'exports/routes.csv' },
+      },
+    });
+    await runner(createInput());
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/staged-action/exports/routes.csv',
+      expect.stringMatching(new RegExp(`^${ROUTE_EXPORT_COLUMNS.join(',')}\\n`))
+    );
+    expect(writeXlsx).toHaveBeenCalledWith({
+      path: '/tmp/staged-action/exports/routes.xlsx',
+      sheetName: 'route',
+      columns: ROUTE_EXPORT_COLUMNS,
+      rows: [
+        expect.objectContaining({
+          featureId: 'route-a',
+          oneway: true,
+        }),
+      ],
+    });
+  });
+
+  it('keeps shared export host unsupported-column contract for route columns', async () => {
+    const materializeRows = createRouteExportRowsMaterializer({
+      resolveSourceNodeId: vi.fn(async () => 'route-node' as NodeId),
+      resolveEffectiveData: vi.fn(async () => ({ routeMode: 'airway' })),
+      listRouteFeatures: vi.fn(async () => [createRoute({ featureId: 'route-a' })]),
+    });
+    const runner = createExportFileActionRunner({
+      outputBasePath: '/tmp/staged-action',
+      materializeRows,
+      writeFile: vi.fn(async () => {}),
+    });
+
+    await expect(
+      runner({
+        ...createInput(),
+        action: {
+          ...createInput().action,
+          columns: ['featureId', 'unknown'],
+        },
+      })
+    ).rejects.toThrow(/action.columns contains unsupported columns: unknown/);
   });
 });
 
