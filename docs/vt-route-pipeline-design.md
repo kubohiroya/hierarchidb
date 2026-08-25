@@ -38,7 +38,9 @@ route pipelineは次の3ステージを、この順序で実行する。
 - canonical route input resolver が解決したlocation参照と始点/終点Point
 - `RouteBuildConfig.sourceConfig`
 - route generation method/options。`method` が route 入力に明示されていない場合は、source planning
-  段階で routeMode に基づく既定 method を materialize する。
+  段階で `airway` / `waterway` の正規method、または land route modes の configured default を
+  materialize する。#1646 のsettings modelが入るまでは、land route modes の configured default は
+  `buildConfig.routeGeneration.method` とする。
 
 ### 処理
 
@@ -50,7 +52,8 @@ route pipelineは次の3ステージを、この順序で実行する。
    明示された `RouteBuildRouteInput.method` がこれと矛盾する場合は source planning の
    契約違反として失敗させる。`railway / high-speed-railway / road / highway` は `direct` または
    network/custom routing method を許容し、route入力で明示されたmethod、または
-   nodeごとの明示設定/システム既定methodを materialize する。
+   configured default を materialize する。#1646 のsettings modelが入るまでは、
+   land route modes の configured default は `buildConfig.routeGeneration.method` とする。
    engine registryはmethodごとのcapabilityを必須とし、engine id/version、method、
    任意のaccepted route modes、network requirement、waypoint対応を検証する。
    source planningで確定した`routeMode`はgeneration requestへ渡し、engine capabilityの
