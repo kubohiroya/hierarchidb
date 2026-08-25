@@ -29,6 +29,8 @@ export type StagedFolderActionCliErrorCategory =
   | 'build'
   | 'action'
   | 'export-archive'
+  | 'export-csv'
+  | 'export-xlsx'
   | 'import-mount'
   | 'map-image-capture'
   | 'simulation-run'
@@ -53,6 +55,21 @@ export type StagedFolderActionCliActionResult =
       outputPath: string;
       width: number;
       height: number;
+    }
+  | {
+      type: 'export-csv';
+      status: 'completed';
+      outputPath: string;
+      entityType: 'location' | 'route';
+      rowCount: number;
+    }
+  | {
+      type: 'export-xlsx';
+      status: 'completed';
+      outputPath: string;
+      entityType: 'location' | 'route';
+      rowCount: number;
+      sheetName: string;
     }
   | {
       type: 'export-archive';
@@ -495,6 +512,8 @@ function resolveExitCode(category: StagedFolderActionCliErrorCategory): number {
     category === 'dependency' ||
     category === 'action' ||
     category === 'export-archive' ||
+    category === 'export-csv' ||
+    category === 'export-xlsx' ||
     category === 'import-mount' ||
     category === 'map-image-capture' ||
     category === 'simulation-run' ||

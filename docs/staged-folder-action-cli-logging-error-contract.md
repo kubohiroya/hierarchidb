@@ -45,6 +45,8 @@ child #1598 は Node process から既存 browser profile IndexedDB を共有す
 
 Phase 2 child #1600 の browser host factory は Node 専用 subpath `@hierarchidb/staged-folder-action/map-image-capture-browser-host` から import し、`baseUrl`、`routeMode`、`timeoutMs`、`outputBasePath`、browser launcher を明示的に受け取る。相対 `map-image-capture.output.path` は `outputBasePath` 基準で絶対 path に解決して screenshot write に使う。`headless` / `headed` は launcher の visibility option にだけ反映し、どちらも通常 Map route と同一 readiness contract を使う。render readiness error、blank canvas、page error、unhandled rejection、WebGL context loss、invalid browser host configuration は成功扱いせず、`map-image-capture` または host setup failure の typed failure として CLI result に反映する。capture failure 後の browser close failure は本来の capture failure を上書きせず、追加 context として扱う。CLI success JSON は completed run の `map-image-capture` action から `outputPath`、`width`、`height` を含む action result を出す。
 
+Phase 2 child #1602 の export file host factory は Node 専用 subpath `@hierarchidb/staged-folder-action/export-file-host` から import し、`outputBasePath`、Step2 adapter 由来の row/column materializer、file writer、optional XLSX writer を明示的に受け取る。相対 `export-csv.output.path` / `export-xlsx.output.path` は `outputBasePath` 基準で絶対 path に解決して writer に渡す。host 境界でも絶対 path、NUL、空 segment、`.` segment、`..` segment は拒否する。CSV/XLSX row cell は string、finite number、boolean、null、undefined のみを受け付け、object/array/NaN/Infinity は成功扱いしない。CLI success JSON は runner record の `actionResults` に保存された `export-csv` / `export-xlsx` typed result をそのまま返す。export host 未設定、writer 未設定、invalid row、invalid output path、action/result mismatch は `export-csv` または `export-xlsx` category の typed failure として返す。
+
 ## 成功 JSON
 
 ```typescript
@@ -72,6 +74,21 @@ type StagedFolderActionCliSuccessResult = {
         outputPath: string;
         width: number;
         height: number;
+      }
+    | {
+        type: 'export-csv';
+        status: 'completed';
+        outputPath: string;
+        entityType: 'location' | 'route';
+        rowCount: number;
+      }
+    | {
+        type: 'export-xlsx';
+        status: 'completed';
+        outputPath: string;
+        entityType: 'location' | 'route';
+        rowCount: number;
+        sheetName: string;
       }
     | {
         type: 'export-archive';
@@ -208,6 +225,8 @@ type StagedFolderActionCliErrorResult = {
 | `build` | build queue 作成失敗、canonical build failure、auth-required timeout、paused |
 | `action` | registry prerequisite violation、unknown action runtime failure |
 | `export-archive` | export source 解決失敗、canonical export failure、archive write failure |
+| `export-csv` | export host 未設定、row materialization failure、invalid row/cell、CSV write failure |
+| `export-xlsx` | export host 未設定、XLSX writer 未設定、invalid row/cell、XLSX write failure |
 | `import-mount` | archive validation failure、mount path conflict、participant compatibility failure、safe unmount failure |
 | `map-image-capture` | Map UI 起動失敗、layer 解決失敗、MapLibre idle timeout、canvas blank |
 | `simulation-run` | simulation engine failure、invalid simulation input、result persistence failure |

@@ -6,6 +6,7 @@ import type {
   StagedFolderActionConfig,
   StagedFolderActionPendingReference,
   StagedFolderActionReferenceWarning,
+  StagedFolderActionResult,
 } from '@hierarchidb/staged-folder-action';
 import { createMapImageCaptureIntent } from '@hierarchidb/staged-folder-action';
 import type { StagedFolderActionProgressStore } from './stagedFolderActionProgressStore.js';
@@ -81,6 +82,13 @@ export interface StagedFolderActionRunnerDependencies {
     runId: NodeId;
     reportProgress(update: StagedFolderActionProgressUpdate): Promise<void>;
   }): Promise<void>;
+  runExportFileAction?(input: {
+    action: Extract<StagedFolderAction, { type: 'export-csv' | 'export-xlsx' }>;
+    actionIndex: number;
+    config: StagedFolderActionConfig;
+    stagingRootNodeId: NodeId;
+    runId: NodeId;
+  }): Promise<StagedFolderActionResult>;
   cleanup?(input: {
     config: StagedFolderActionConfig;
     stagingRootNodeId: NodeId;
@@ -358,6 +366,38 @@ const runAction = async (
     return;
   }
 
+  if (action.type === 'export-csv' || action.type === 'export-xlsx') {
+    if (!dependencies.runExportFileAction) {
+      throw new Error(`${action.type} action runner is not configured`);
+    }
+    const current = await progressStore.getRun(input.runId);
+    if (current === null) {
+      throw new Error(`staged-folder-action run ${String(input.runId)} was not found`);
+    }
+    const actionResult = await dependencies.runExportFileAction({
+      action,
+      actionIndex,
+      config: input.config,
+      stagingRootNodeId,
+      runId: input.runId,
+    });
+    assertExportActionResultMatchesAction(actionResult, action);
+    await progressStore.updateRun(input.runId, {
+      status: 'running',
+      phase: 'running-action',
+      currentAction: {
+        actionIndex,
+        actionType: action.type,
+        phase: 'completed',
+        percentage: 100,
+      },
+      actionResults: [...(current.actionResults ?? []), actionResult],
+      progress: progressFor(input.config.actions.length, actionIndex + 1),
+      updatedAt: dependencies.now(),
+    });
+    return;
+  }
+
   throw new Error(`staged-folder-action runner for ${action.type} is not configured`);
 };
 
@@ -380,6 +420,22 @@ const updateCurrentActionProgress = async (
     progress: progressFor(input.config.actions.length, actionIndex),
     updatedAt: dependencies.now(),
   });
+};
+
+const assertExportActionResultMatchesAction = (
+  result: StagedFolderActionResult,
+  action: Extract<StagedFolderAction, { type: 'export-csv' | 'export-xlsx' }>
+): void => {
+  if (result.type !== action.type) {
+    throw new Error(
+      `export action result type ${result.type} does not match action type ${action.type}`
+    );
+  }
+  if (result.entityType !== action.entityType) {
+    throw new Error(
+      `export action result entityType ${result.entityType} does not match action entityType ${action.entityType}`
+    );
+  }
 };
 
 const assertReferenceResolutionResult = (

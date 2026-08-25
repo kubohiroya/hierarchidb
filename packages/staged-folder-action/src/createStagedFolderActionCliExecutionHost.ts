@@ -104,7 +104,16 @@ function toActionResults(
   config: StagedFolderActionConfig,
   record: StagedFolderActionRunRecord
 ): StagedFolderActionCliActionResult[] {
+  const recordedActionResults = [...(record.actionResults ?? [])];
   return config.actions.flatMap((action): StagedFolderActionCliActionResult[] => {
+    if (action.type === 'export-csv' || action.type === 'export-xlsx') {
+      const resultIndex = recordedActionResults.findIndex((result) => result.type === action.type);
+      if (resultIndex === -1) {
+        return [];
+      }
+      const [result] = recordedActionResults.splice(resultIndex, 1);
+      return result === undefined ? [] : [result];
+    }
     if (action.type === 'map-image-capture') {
       return [
         {
@@ -223,6 +232,17 @@ function classifyRunnerError(
           ? 'STAGED_FOLDER_ACTION_MAP_IMAGE_CAPTURE_HOST_NOT_CONFIGURED'
           : 'STAGED_FOLDER_ACTION_MAP_IMAGE_CAPTURE_FAILED',
       message,
+    };
+  }
+  if (actionType === 'export-csv' || actionType === 'export-xlsx') {
+    return {
+      category: actionType,
+      code:
+        message === `${actionType} action runner is not configured`
+          ? 'STAGED_FOLDER_ACTION_EXPORT_FILE_HOST_NOT_CONFIGURED'
+          : 'STAGED_FOLDER_ACTION_EXPORT_FILE_FAILED',
+      message,
+      actionType,
     };
   }
   if (actionType === 'build' || record?.buildSession?.status === 'failed') {

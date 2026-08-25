@@ -1,5 +1,9 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { StagedFolderActionType } from './StagedFolderActionManifestTypes.js';
+import type {
+  StagedFolderActionType,
+  StagedFolderExportCsvAction,
+  StagedFolderExportXlsxAction,
+} from './StagedFolderActionManifestTypes.js';
 
 export const STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE = 'staged-folder-action' as NodeType;
 
@@ -83,6 +87,27 @@ export type StagedFolderActionDependencyChange = {
   rebuildPlanId?: string;
 };
 
+export type StagedFolderExportCsvActionResult = {
+  type: StagedFolderExportCsvAction['type'];
+  status: 'completed';
+  outputPath: string;
+  entityType: StagedFolderExportCsvAction['entityType'];
+  rowCount: number;
+};
+
+export type StagedFolderExportXlsxActionResult = {
+  type: StagedFolderExportXlsxAction['type'];
+  status: 'completed';
+  outputPath: string;
+  entityType: StagedFolderExportXlsxAction['entityType'];
+  rowCount: number;
+  sheetName: string;
+};
+
+export type StagedFolderActionResult =
+  | StagedFolderExportCsvActionResult
+  | StagedFolderExportXlsxActionResult;
+
 export interface StagedFolderActionRunRecord {
   runId: NodeId;
   sourceNodeId: NodeId;
@@ -104,6 +129,7 @@ export interface StagedFolderActionRunRecord {
   warnings?: readonly StagedFolderActionReferenceWarning[];
   pendingReferences?: readonly StagedFolderActionPendingReference[];
   dependencyChanges?: readonly StagedFolderActionDependencyChange[];
+  actionResults?: readonly StagedFolderActionResult[];
   error?: string;
   startedAt: number;
   completedAt?: number;
@@ -127,6 +153,7 @@ export type StagedFolderActionRunRecordPatch = {
   warnings?: readonly StagedFolderActionReferenceWarning[];
   pendingReferences?: readonly StagedFolderActionPendingReference[];
   dependencyChanges?: readonly StagedFolderActionDependencyChange[];
+  actionResults?: readonly StagedFolderActionResult[];
   stagingRootNodeId?: NodeId;
   error?: string;
   completedAt?: number;
@@ -154,6 +181,7 @@ export const createStagedFolderActionRunRecord = ({
   warnings: [],
   pendingReferences: [],
   dependencyChanges: [],
+  actionResults: [],
   startedAt: now,
   updatedAt: now,
   revision: 0,
@@ -189,6 +217,7 @@ export const assertStagedFolderActionRunRecord = (
   record.warnings?.forEach(assertReferenceWarning);
   record.pendingReferences?.forEach(assertPendingReference);
   record.dependencyChanges?.forEach(assertDependencyChange);
+  record.actionResults?.forEach(assertActionResult);
   return record;
 };
 
@@ -258,6 +287,35 @@ const assertDependencyStatus = (value: string, field: string): void => {
     value !== 'orphaned'
   ) {
     throw new Error(`staged-folder-action progress ${field} is invalid`);
+  }
+};
+
+const assertActionResult = (result: StagedFolderActionResult, index: number): void => {
+  if (result.status !== 'completed') {
+    throw new Error(`staged-folder-action actionResults[${index}].status must be completed`);
+  }
+  assertNonEmptyString(result.outputPath, `actionResults[${index}].outputPath`);
+  assertNonNegativeInteger(result.rowCount, `actionResults[${index}].rowCount`);
+  assertEntityType(result.entityType, `actionResults[${index}].entityType`);
+  if (result.type === 'export-xlsx') {
+    assertSheetName(result.sheetName, `actionResults[${index}].sheetName`);
+    return;
+  }
+  if (result.type !== 'export-csv') {
+    throw new Error(`staged-folder-action actionResults[${index}].type is invalid`);
+  }
+};
+
+const assertEntityType = (value: string, field: string): void => {
+  if (value !== 'location' && value !== 'route') {
+    throw new Error(`staged-folder-action progress ${field} is invalid`);
+  }
+};
+
+const assertSheetName = (value: string, field: string): void => {
+  assertNonEmptyString(value, field);
+  if (value.length > 31 || /[:\\/?*[\]]/.test(value)) {
+    throw new Error(`staged-folder-action progress ${field} must be a valid Excel worksheet name`);
   }
 };
 
