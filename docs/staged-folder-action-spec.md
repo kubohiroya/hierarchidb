@@ -552,6 +552,8 @@ UI は stale artifact を隠して通常状態に見せてはならない。prev
 
 ## Preview / Map UI Feature Table Gap Specification
 
+Design split の詳細は `docs/staged-folder-action-feature-table-design.md` を正とする。本節は staged-folder-action 全体仕様から見た gap の要約であり、実装 Issue への分割、write target contract、rollback、verification は design split 文書に従う。
+
 現状の Preview / Map UI feature table は、shape/location/route の行を一覧表示する read-only surface としては利用可能である。しかし staged-folder-action と dependency lifecycle を実用化するには、現状機能だけでは不足する。本節は、ただちに Issue 化する作業項目ではなく、後続 phase で詳細設計とテスト計画へ分解するための追加仕様である。
 
 現状実装が満たしている範囲は以下である。
