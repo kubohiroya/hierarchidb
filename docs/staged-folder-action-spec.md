@@ -554,7 +554,7 @@ UI は stale artifact を隠して通常状態に見せてはならない。prev
 
 Design split の詳細は `docs/staged-folder-action-feature-table-design.md` を正とする。本節は staged-folder-action 全体仕様から見た gap の要約であり、実装 Issue への分割、write target contract、rollback、verification は design split 文書に従う。
 
-現状の Preview / Map UI feature table は、shape/location/route の行を一覧表示する read-only surface としては利用可能である。しかし staged-folder-action と dependency lifecycle を実用化するには、現状機能だけでは不足する。本節は Phase 3 child #1611 で design split 済みであり、Phase 4 では `docs/staged-folder-action-feature-table-design.md` を入力として editable table 実装 Issue へ分割する。
+現状の Preview / Map UI feature table は、shape/location/route の行を一覧表示する read-only surface としては利用可能である。しかし staged-folder-action と dependency lifecycle を実用化するには、現状機能だけでは不足する。本節は Phase 3 child #1611 で design split 済みであり、Phase 4 child #1637 で `docs/staged-folder-action-feature-table-design.md` を入力として editable table 実装 Issue #1652-#1657 へ分割済みである。
 
 現状実装が満たしている範囲は以下である。
 
@@ -659,7 +659,7 @@ shape/location/route ごとの初期 editable field は保守的に定義する�
 
 地図上の feature click toast / popover は、feature table と同じ source mapping と dependency query を使う。別経路の編集実装を作ってはならない。popover の edit menu は、対象 feature row を feature table 上で選択し、同じ `FeatureCellEditRequest` flow に入る。
 
-この設計は Phase 3 child #1611 で read-only Preview 実装との差分を固定済みである。Phase 4 では、DataGrid editing substrate、preview adapter、dependency edit service、plugin-specific editable fields、map popover integration、UI tests を小粒 Issue として分割する。
+この設計は Phase 3 child #1611 で read-only Preview 実装との差分を固定済みである。Phase 4 child #1637 では、DataGrid editing substrate、preview adapter、dependency edit service、plugin-specific editable fields、map popover integration、UI tests を小粒 Issue #1652-#1657 として分割済みである。
 
 ## Action Contract
 
@@ -953,7 +953,7 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 4. overlay 後の staging root にだけ build/capture を行う。
 5. 元 folder は変更しない。
 
-## Phase 3 完了後の実装状態
+## Phase 4 完了後の実装状態
 
 - 専用 route を正規 route とする案は撤回する。
 - `BuildJobQueue.mode = 'export'` は今後も利用候補だが、専用 route のためではなく staging folder build を表す mode として再定義する。
@@ -967,9 +967,9 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 - `export-archive` / `import-mount` runtime runners、`lifetime: run` mount の terminal safe unmount、cleanup failure / safe unmount failure の typed result 境界を接続済みである。safe unmount failure を成功扱いに戻してはならない。
 - Phase 3 hardening fixture は dry-run manifest validation、injected non-dry-run result mapping、export writer failure、dependency contract violation、browser/page port failure、cleanup/safe-unmount failure を package-scoped tests で固定する。
 - 追加定義が必要なのは、build 入力が TreeNode.data 以外の Group/Relation store に存在する plugin の copy-on-write 参照または materialize participant 境界である。
-- 現状の Preview / Map UI feature table は read-only 一覧としては使えるが、DependencyEdgeStatus 表示、field-level status、dependency-aware cell editing、map feature popover 連動、stale 化と incremental rebuild plan 作成の入口としては不足している。この不足分は Phase 3 child #1611 で design split 済みであり、Phase 4 で実装 Issue に分解する。
+- 現状の Preview / Map UI feature table は read-only 一覧としては使えるが、DependencyEdgeStatus 表示、field-level status、dependency-aware cell editing、map feature popover 連動、stale 化と incremental rebuild plan 作成の入口としては不足している。この不足分は Phase 3 child #1611 で design split 済みであり、Phase 4 child #1637 で実装 Issue #1652-#1657 に分解済みである。
 
-## Phase 4 対象 / Out-of-scope 分類
+## Phase 4 完了 / Out-of-scope 分類
 
 Phase 3 までに完了済み:
 
@@ -987,13 +987,13 @@ Phase 3 までに完了済み:
 12. `export-csv` / `export-xlsx` adapter と canonical column / primitive row cell contract。
 13. package-scoped hardening fixtures。
 
-Phase 4 対象:
+Phase 4 で完了済み:
 
-1. docs reconciliation により、Phase 0/1/2/3 の stale future-tense を実装済み / Phase 4 対象 / out-of-scope に分類する。
-2. CLI non-dry-run、browser capture、CSV/XLSX round-trip、dependency diagnostics、multi-action cleanup を production-like workflow smoke として強化する。
-3. Preview / Map UI feature table design split を editable implementation Issue に分解し、write target / dependency lifecycle contract を実装単位へ落とす。
-4. import-mount -> patch/overlay -> export/capture/build の multi-action sequence で、mount record の resolver input 接続、resume/retry、primary failure、cleanup failure、safe unmount failure を検証する。
-5. CI coverage を実行時間と安定性の両面で調整する。
+1. #1630 により、Phase 0/1/2/3 の stale future-tense を実装済み / Phase 4 完了 / out-of-scope に分類した。
+2. #1633 / #1634 / #1635 / #1636 により、CLI non-dry-run、browser capture、CSV/XLSX round-trip、dependency diagnostics を production-like workflow smoke として強化した。
+3. #1637 により、Preview / Map UI feature table design split を editable implementation Issue #1652-#1657 に分解し、write target / dependency lifecycle contract を実装単位へ落とした。
+4. #1638 により、import-mount -> patch/overlay -> export/capture/build の multi-action sequence で、mount record の resolver input 接続、resume/retry 境界、primary failure、cleanup failure、safe unmount failure を検証した。
+5. #1639 により、CI coverage を実行時間と安定性の両面で調整し、docs-only PR / push、affected validation、full validation の境界を明文化した。
 
 Out-of-scope / 別仕様:
 
