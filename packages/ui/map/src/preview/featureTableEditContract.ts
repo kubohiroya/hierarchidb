@@ -90,3 +90,28 @@ export const buildFeatureCellEditRequest = <Row extends { id: string | number }>
   dependencyStatus: resolveValue(editableColumn.dependencyStatus, params.row),
   editOrigin,
 });
+
+export const commitFeatureTableCellEdit = async <Row extends { id: string | number }>(
+  params: GridCellEditParams<Row>,
+  featureTableEdit: FeatureTableEditConfig<Row> | undefined,
+  editOrigin: FeatureTableEditOrigin = featureTableEdit?.editOrigin ?? 'preview-table'
+): Promise<void | GridCellEditCommitResult> => {
+  if (!featureTableEdit) {
+    return {
+      ok: false,
+      error: 'Feature table edit config is required for editable cell commits.',
+    };
+  }
+  const editableColumn = findFeatureTableEditableColumn(
+    featureTableEdit.editableColumns,
+    params.columnId
+  );
+  if (!editableColumn) {
+    return {
+      ok: false,
+      error: `Column "${params.columnId}" does not define a feature source mapping.`,
+    };
+  }
+  const request = buildFeatureCellEditRequest(params, editOrigin, editableColumn);
+  return featureTableEdit.onCellEditRequest(request);
+};

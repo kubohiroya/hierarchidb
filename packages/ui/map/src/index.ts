@@ -73,6 +73,7 @@ export {
 } from './preview/FeatureTableToolbar.js';
 export {
   buildFeatureCellEditRequest,
+  commitFeatureTableCellEdit,
   type FeatureCellDependencyStatus,
   type FeatureCellEditRequest,
   type FeatureTableDependencyRole,
@@ -94,7 +95,6 @@ export {
   LocationPreviewList,
   type LocationPreviewListProps,
 } from './preview/LocationPreviewList.js';
-
 // Vector tile preview helpers
 export {
   type AdminLevel,
@@ -128,6 +128,11 @@ export {
   type ShapeLayerSymbol,
   toLayerSetEntryId,
 } from './preview/layerSetDefinitions.js';
+export {
+  commitMapFeaturePopoverEdit,
+  MapFeatureEditPopover,
+  type MapFeatureEditPopoverProps,
+} from './preview/MapFeatureEditPopover.js';
 export {
   buildErrorSummaryById,
   type MapPreviewErrorColumnLabels,
