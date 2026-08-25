@@ -648,12 +648,14 @@ vt-orchestratorはsource処理を実行しない。
 
 ## Step4 入力契約（規範）
 
-- shape の正規 top-level config は `sourceConfig` / `geometryConfig` / `tileEmitConfig` / `cleanupConfig` とする。
+- shape の正規 top-level config は `sourceConfig` / `geometryConfig` / `tileEmitConfig` / `borderGeometryConfig` / `cleanupConfig` とする。
 - すべての required field は config 作成時に確定し、Worker/API 境界で型・finite・整数・範囲・配列長・相互順序を検証する。
 - UI slider/rating の min/max は入力支援であり、runtime の clamp 根拠ではない。不正値は契約違反として失敗させる。
 - 旧 `downloadConfig` / `extract1Config` / `extract2Config` / `tileConfig`、route の旧 alias を runtime で互換読み込みしない。旧 config は明示的 migration または cache invalidation の対象とする。
 - shape の tolerance は `docs/spec/shape4-geometry-tolerance-bisection-spec.md`、invalid geometry は `docs/spec/shape-step4-invalid-geometry-filter-tileemit-spec-and-plan.md` をSSOTとする。
 - shape の `tileEmitConfig.invalidGeometryFilter` は必須の5 boolean fieldを持ち、Source/Geometry stageでは参照しない。
+- shape の `borderGeometryConfig` は必須 config であり、`enabled=false` を既定値とする。`enabled=true` の場合は Source artifact 保存後に `validateShapeBorderGeometryPipeline` を呼び、`HDB_SHAPE_BORDER_GEOMETRY_STORAGE` が有効なときだけ shared-border arc extraction、arc simplification、polygon reconstruction、ShapeDB border geometry table 保存を実行する。storage gate が無効で `enabled=true` の場合は可視な build error とし、通常 geometry path への silent fallback で成功扱いしない。
+- `borderGeometryConfig.simplifyTolerance` は finite かつ `>= 0` の必須値とする。UI は非負値入力を支援するが、runtime で丸め、clamp、既定補完を行わない。
 
 ## Step4 入力仕様（履歴資料・非規範）
 
@@ -724,6 +726,7 @@ vt-orchestratorはsource処理を実行しない。
 - `Simplification strength` / `簡略化強度`
 - `Geometry preprocessing` / `Geometry 前処理`
 - `Tile generation` / `タイル生成`
+- `Border geometry / shared arcs` / `Border geometry / shared arcs`
 - `Delete source cache` / `source キャッシュ削除`
 - `Delete geometry cache` / `geometry キャッシュ削除`
 - `Delete tile cache` / `tile キャッシュ削除`

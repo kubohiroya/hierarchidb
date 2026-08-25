@@ -7,16 +7,30 @@ import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
-import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
-import type { ShapeBuildConfig, ShapeProcessingConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
-import { applyBuildConfigPatch, assertShapeBuildConfigTileEmitContract, composeRuntimeBuildConfig, mergeProcessingConfig, validateBuildConfig } from '~/services/utils/shapeBuildUtils';
+import type {
+  ShapeBuildConfig,
+  ShapeProcessingConfig,
+  ShapeRuntimeBuildConfig,
+} from '~/common/types/BuildTaskResult';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import type {
+  CountryMetadata,
+  DataSourceName,
+  SourceTaskPayload,
+} from '~/common/types/data-source';
 import { requireDataSourceName } from '~/common/types/data-source';
+import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import { cacheValidator } from '~/services/CacheValidator';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { countSelectedAdminPairs } from '~/services/utils/shapeBuildUtils';
+import {
+  applyBuildConfigPatch,
+  assertShapeBuildConfigTileEmitContract,
+  composeRuntimeBuildConfig,
+  countSelectedAdminPairs,
+  mergeProcessingConfig,
+  validateBuildConfig,
+} from '~/services/utils/shapeBuildUtils';
 import {
   emitHeartbeat,
   emitSessionLifecyclePhaseUpdated,
@@ -348,6 +362,7 @@ const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSes
     sourceConfig: buildConfig.sourceConfig,
     geometryConfig: buildConfig.geometryConfig,
     vectorTiles: buildConfig.tileEmitConfig,
+    borderGeometryConfig: buildConfig.borderGeometryConfig,
   };
 };
 

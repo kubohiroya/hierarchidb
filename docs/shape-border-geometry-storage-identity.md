@@ -61,7 +61,7 @@ Border geometry dataset identity は次の field をすべて必須とする。
 | `borderGeometryConfigHash` | border geometry 専用 config の canonical hash。source/geometry/tileEmit config hash を読み替えない。 |
 | `schemaVersion` | border geometry storage schema の整数 version。 |
 
-実装時の dataset key は上記 field の canonical serialization から作る。serialization は field 欠落を空文字に落とさず、数値丸めや trim を行わない。
+実装時の `datasetId` は上記 field の canonical serialization signature から作る。serialization は field 欠落を空文字に落とさず、数値丸めや trim を行わない。
 
 ### Arc Identity
 
@@ -158,7 +158,7 @@ Storage implementation は default-off feature flag 配下で導入する。flag
 
 ## Pipeline Validation Boundary
 
-#1486 の初期 pipeline integration は、既存 `source` / `geometry` / `tileEmit` stage の cache identity を置き換えず、`validateShapeBorderGeometryPipeline` を default-off の検証境界として追加する。この境界は flag off では storage、extractor、simplifier、reconstructor を呼ばず `skipped` を返す。flag on の場合のみ、同一 dataset で次の順序を実行する。
+#1486 の初期 pipeline integration は、既存 `source` / `geometry` / `tileEmit` stage の cache identity を置き換えず、`validateShapeBorderGeometryPipeline` を default-off の検証境界として追加する。Step4 の `borderGeometryConfig.enabled=false` では storage、extractor、simplifier、reconstructor を呼ばない。`borderGeometryConfig.enabled=true` で storage flag が無効な場合は、呼び出し元が可視な build error として扱い、通常 geometry path への silent fallback で成功扱いしない。flag on の場合のみ、同一 dataset で次の順序を実行する。再実行時の置換削除は `datasetId` 境界に限定し、同一 node の別 `sourceKey` / `adminLevel` / `borderGeometryConfigHash` / `schemaVersion` の artifact を削除しない。
 
 ```text
 source FeatureCollection

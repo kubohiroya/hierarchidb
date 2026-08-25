@@ -17,6 +17,7 @@ import {
   RadioGroup,
   Stack,
   Switch,
+  TextField,
   Typography,
 } from '@mui/material';
 import React from 'react';
@@ -30,12 +31,14 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
     disableHoverLift,
     hoverCardSx,
     baseGeometryConfig,
+    borderGeometryConfig,
     simplifyAlgorithm,
     preserveTopology,
     summaryHelp,
     handleSimplifyAlgorithmChange,
     handlePreserveTopologyChange,
     onGeometryUpdate,
+    onBorderGeometryUpdate,
   }) => {
     return (
       <Accordion defaultExpanded>
@@ -105,6 +108,68 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
                         </Typography>
                       ) : null}
                     </Stack>
+                  </Grid>
+                </Grid>
+              </Stack>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+              <Stack spacing={2}>
+                <BuildConfigSectionTitle
+                  icon={<TuneIcon fontSize="small" color="primary" />}
+                  title={t(
+                    'processing.geometry.borderGeometry.title',
+                    'Border geometry / shared arcs'
+                  )}
+                />
+                <Grid container spacing={2} alignItems="center">
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Stack spacing={0.5}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={borderGeometryConfig.enabled}
+                            onChange={(event) =>
+                              onBorderGeometryUpdate({ enabled: event.target.checked })
+                            }
+                          />
+                        }
+                        disabled={disabled}
+                        label={t(
+                          'processing.geometry.borderGeometry.enabled',
+                          'Build shared-arc topology artifacts'
+                        )}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {t(
+                          'processing.geometry.borderGeometry.hint',
+                          'Runs arc extraction, arc simplification, and polygon reconstruction when the storage gate is enabled.'
+                        )}
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      disabled={disabled || !borderGeometryConfig.enabled}
+                      label={t(
+                        'processing.geometry.borderGeometry.simplifyTolerance',
+                        'Arc simplify tolerance'
+                      )}
+                      value={borderGeometryConfig.simplifyTolerance}
+                      slotProps={{
+                        htmlInput: {
+                          min: 0,
+                          step: 0.000001,
+                        },
+                      }}
+                      onChange={(event) => {
+                        const next = Number(event.target.value);
+                        if (!Number.isFinite(next) || next < 0) return;
+                        onBorderGeometryUpdate({ simplifyTolerance: next });
+                      }}
+                    />
                   </Grid>
                 </Grid>
               </Stack>

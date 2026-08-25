@@ -5,7 +5,11 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { SxProps, Theme } from '@mui/material';
 import type { TFunction } from 'i18next';
 import { useMemo } from 'react';
-import type { ShapeBuildConfig, ShapeBuildGeometryConfig } from '~/common/types/BuildTaskResult';
+import type {
+  ShapeBuildBorderGeometryConfig,
+  ShapeBuildConfig,
+  ShapeBuildGeometryConfig,
+} from '~/common/types/BuildTaskResult';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import { useGeometryConfigSectionView } from './useGeometryConfigSectionView.js';
 
@@ -24,12 +28,14 @@ export interface GeometryConfigSectionViewProps {
   readonly disableHoverLift: boolean;
   readonly hoverCardSx: SxProps<Theme>;
   readonly baseGeometryConfig: ShapeBuildGeometryConfig;
+  readonly borderGeometryConfig: ShapeBuildBorderGeometryConfig;
   readonly simplifyAlgorithm: 'topojson' | 'geojson';
   readonly preserveTopology: boolean;
   readonly summaryHelp: string;
   readonly handleSimplifyAlgorithmChange: (_event: unknown, value: string) => void;
   readonly handlePreserveTopologyChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   readonly onGeometryUpdate: (partial: Partial<ShapeBuildGeometryConfig>) => void;
+  readonly onBorderGeometryUpdate: (partial: Partial<ShapeBuildBorderGeometryConfig>) => void;
 }
 
 export function useGeometryConfigSectionState(
@@ -56,6 +62,8 @@ export function useGeometryConfigSectionState(
 
   const onGeometryUpdate = (partial: Partial<ShapeBuildGeometryConfig>) =>
     update({ geometryConfig: partial });
+  const onBorderGeometryUpdate = (partial: Partial<ShapeBuildBorderGeometryConfig>) =>
+    update({ borderGeometryConfig: partial });
 
   return {
     t,
@@ -63,11 +71,13 @@ export function useGeometryConfigSectionState(
     disableHoverLift,
     hoverCardSx,
     baseGeometryConfig,
+    borderGeometryConfig: config.borderGeometryConfig,
     simplifyAlgorithm,
     preserveTopology,
     summaryHelp,
     handleSimplifyAlgorithmChange,
     handlePreserveTopologyChange,
     onGeometryUpdate,
+    onBorderGeometryUpdate,
   };
 }
