@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   validation:
-    name: Validate affected packages
+    name: Run CI validation
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

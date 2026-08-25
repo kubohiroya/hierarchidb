@@ -25,6 +25,12 @@
       "dependsOn": ["^build"],
       "outputs": ["coverage/**", "reports/**"]
     },
+    "@hierarchidb/app#test": {
+      "dependsOn": ["^build"],
+      "env": ["TURBO_SCM_BASE", "TURBO_SCM_HEAD"],
+      "passThroughEnv": ["TURBO_SCM_BASE", "TURBO_SCM_HEAD"],
+      "outputs": []
+    },
     "lint": {},
     "format": {
       "dependsOn": ["^format"],
@@ -64,7 +70,7 @@
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^build", "^typecheck"],
+      "dependsOn": ["^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!**/*.md",
