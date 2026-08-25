@@ -2,7 +2,7 @@
 
 ## 目的
 
-PR の待ち時間を短縮しながら、変更された workspace package の build、typecheck、unit test、lint を必ず検証する。モノレポ全体を毎回実行する代わりに、Git の base/head 差分から変更 package をentry pointとして選択し、Turboのtask graphで必要な上流packageだけを実行する。
+PR の待ち時間を短縮しながら、変更された workspace package の blocking task を必ず検証する。モノレポ全体を毎回実行する代わりに、Git の base/head 差分から変更 package をentry pointとして選択し、Turboのtask graphで必要な上流packageだけを実行する。
 
 ## PR validation
 
@@ -12,7 +12,7 @@ PR の待ち時間を短縮しながら、変更された workspace package の 
 2. `app/`、`packages/`、`plugins/` の内側だけにある非ドキュメント変更は `affected` とする。`pnpm-lock.yaml` は単独変更、または workspace-local 変更との組み合わせであれば `affected` に含める。
 3. それ以外の非ドキュメント変更は repository-wide input とみなし、`full` とする。root `package.json`、workspace/Turbo/TypeScript/Vitest/tsdown 設定、`.github/`、`scripts/`、`config/` の変更がこの分類に含まれる。`pnpm-lock.yaml` も repository-wide input と同時に変更された場合は `full` とする。
 
-`affected` では `TURBO_SCM_BASE` と `TURBO_SCM_HEAD` を固定し、Turbo filter `[<base>...<head>]` で直接変更されたpackageをentry pointにする。`build typecheck test lint`のtask依存に必要な上流packageは実行するが、変更packageを利用する下流packageのtestとlintはPRごとに実行しない。下流packageを含む回帰検証はmainのfull validationが担当する。
+`affected` では `TURBO_SCM_BASE` と `TURBO_SCM_HEAD` を固定し、Turbo filter `[<base>...<head>]` で直接変更されたpackageをentry pointにする。既定のblocking taskは`typecheck,test`であり、task依存に必要な上流packageは実行するが、変更packageを利用する下流packageのtestとlintはPRごとに実行しない。下流packageを含む回帰検証はmainのfull validationが担当する。必要に応じて`CI_AFFECTED_TASKS`で一時的にtaskを追加できるが、既定taskの拡大はCI時間への影響を確認する別Issueを必要とする。
 
 Vite、Turbo、build scriptなどのconfig評価時に直接または間接的にworkspace packageを読み込むpackageは、そのworkspace packageを直接dependencyとして宣言し、Turboのtask graphへbuild依存を明示する。必要な`dist`生成を、別taskのcache miss時にだけ発生する副作用へ依存させてはならない。
 
@@ -34,7 +34,9 @@ Full workspace testは、Vitest project間でworker scheduling設定が競合し
 
 ## Repository-wide checks
 
-Dep-Fence strict、dependency guard、公開型参照・shim・`as any` budget・UI hook配置のポリシー、CI scope resolverのunit testは package-local taskとは別のaffected repository-wide blocking checksとしてPRで実行する。license summaryはfull validationで実行する。affected PRでは変更packageの`build typecheck test lint`とaffected repository-wide checksを実行し、license summaryのようなheavy checkだけを避ける。lintはaffected/full package validationに統合し、二重実行しない。
+Dep-Fence strict、dependency guard、shim・`as any` budget・UI hook配置のポリシーは、package-local taskとは別のaffected repository-wide blocking checksとしてPRで実行する。license summaryはfull validationで実行する。affected PRでは変更packageの`typecheck,test`とaffected repository-wide checksを実行し、license summaryのようなheavy checkだけを避ける。
+
+CI scope resolverのunit testは、CI workflow、root `package.json`、または`scripts/ci/`が変更されたPRでだけblocking実行する。`main` pushと`workflow_dispatch`ではfull validationの一部として実行する。公開型参照ポリシー`policy:ban-tsconfig-paths-dist-dts`はdisabled policyであり、blocking CIから外す。再度有効化する場合は、契約を更新してからCIへ戻す。
 
 Dependency CruiserとSyncpackは非blocking診断である。PRごとのblocking validationから外し、週次または手動の`Repository Diagnostics` workflowで実行する。publish artifactを生成しない状態のPublintとAre The Types WrongはCI診断から外し、release/package検証時の明示コマンドとして残す。
 
