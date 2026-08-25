@@ -72,6 +72,26 @@ export {
   updateTreeNodeDraftMetadata,
 } from './services/draft/lookupOperationUtils.js';
 export {
+  type FeatureCellDependencyStatus,
+  type FeatureCellEditFailure,
+  type FeatureCellEditFailureCategory,
+  type FeatureCellEditFailureCode,
+  type FeatureCellEditFailureContext,
+  type FeatureCellEditRefreshHint,
+  type FeatureCellEditRequest,
+  type FeatureCellEditResult,
+  type FeatureCellEditSuccess,
+  type FeatureCellEditWarning,
+  type FeatureCellSourceUpdateResult,
+  type FeatureCellSourceUpdater,
+  type FeatureDependencyEditImpact,
+  FeatureDependencyEditService,
+  type FeatureDependencyRebuildEnqueuer,
+  type FeatureTableEditOrigin,
+  type FeatureTableEntityType,
+  type ValidatedFeatureCellEditRequest,
+} from './services/FeatureDependencyEditService.js';
+export {
   getRuntimeWorkerClient,
   hasRuntimeWorkerClient,
   type RuntimeWorkerClientProvider,

@@ -111,6 +111,8 @@ Preview table、Map UI floating table、map feature popover は同じ source map
 
 #1653 の feature table edit contract は、`MapPreviewFloatingTable` の optional `featureTableEdit` config として公開する。`featureTableEdit` が未指定の table は従来通り read-only であり、`FeatureTableEditableColumn` で明示された `columnId` だけが grid の editable input lifecycle に接続される。UI は commit 時に `FeatureCellEditRequest` を生成して `onCellEditRequest` へ emit するだけで、plugin storage write、dependency impact calculation、stale transition、rebuild enqueue は行わない。source mapping のない column commit は request を emit せず typed failure として扱う。
 
+#1654 の runtime-worker feature dependency edit service は、UI request と構造互換の `FeatureCellEditRequest` を worker 側境界として受け取り、plugin-owned source write を `FeatureCellSourceUpdater` に委譲する。service は dependency index を `featureNodeId` / `fieldPath` で逆引きし、`active` edge は source update 成功後に `stale` へ遷移して deterministic incremental rebuild plan を enqueue する。既存 `stale` は rebuild requirement を保持した成功結果、`pending-reference` は warning context 付き成功結果、`rebuilding` / `orphaned` は typed failure として返す。`none` は dependency impact なしの source update だけを許可する。必須 source/write-target field が欠落している request は補完せず validation failure とする。
+
 ## Implementation Issue Split
 
 | Issue | Scope | DoD | Rollback |
