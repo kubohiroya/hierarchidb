@@ -185,6 +185,57 @@ describe('BuildAvailabilityResolver', () => {
     );
   });
 
+  it('returns not-buildable for schema errors without downgrading to build-not-required', () => {
+    const candidate = node('shape-1', 'shape', false);
+
+    const availability = resolveBuildAvailability({
+      candidates: [candidate],
+      dependencySummary: {
+        edgeCounts: { active: 1 },
+        schemaErrors: [
+          {
+            code: 'DEPENDENCY_SCHEMA_INVALID',
+            message: 'Dependency schema is invalid.',
+            nodeId: candidate.id,
+          },
+        ],
+      },
+    });
+
+    expect(availability.status).toBe('not-buildable');
+    expect(availability.reason).toBe('schema-error');
+    expect(availability.canStartBuild).toBe(false);
+    expect(availability.requiredTargets).toEqual([]);
+    expect(availability.details).toContainEqual(
+      expect.objectContaining({ kind: 'schema-error', nodeId: candidate.id })
+    );
+  });
+
+  it('returns not-buildable for unsupported plugin participants', () => {
+    const candidate = node('route-1', 'route', true);
+
+    const availability = resolveBuildAvailability({
+      candidates: [candidate],
+      dependencySummary: {
+        unsupportedPluginParticipants: [
+          {
+            code: 'DEPENDENCY_PARTICIPANT_UNSUPPORTED',
+            message: 'The route plugin cannot participate in this dependency edge.',
+            pluginId: 'route',
+          },
+        ],
+      },
+    });
+
+    expect(availability.status).toBe('not-buildable');
+    expect(availability.reason).toBe('unsupported-plugin-participant');
+    expect(availability.canStartBuild).toBe(false);
+    expect(availability.requiredTargets).toEqual([]);
+    expect(availability.details).toContainEqual(
+      expect.objectContaining({ kind: 'unsupported-plugin-participant', pluginId: 'route' })
+    );
+  });
+
   it('fails fast when dependency edge counts are invalid', () => {
     const candidate = node('shape-1', 'shape', false);
 

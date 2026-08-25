@@ -111,6 +111,24 @@ describe('runMapImageCaptureBrowserHandoff', () => {
     expect(page.screenshot).not.toHaveBeenCalled();
   });
 
+  it('fails before screenshot when render readiness times out', async () => {
+    const page = createPagePort('ready');
+    vi.mocked(page.waitForRenderStatus).mockRejectedValueOnce(new Error('render timeout'));
+
+    await expect(
+      runMapImageCaptureBrowserHandoff({
+        page,
+        intent: createIntent(),
+        baseUrl: 'http://localhost:3000/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        reportProgress: async () => {},
+      })
+    ).rejects.toThrow(/render timeout/);
+    expect(page.assertNonBlankCanvas).not.toHaveBeenCalled();
+    expect(page.screenshot).not.toHaveBeenCalled();
+  });
+
   it('fails before screenshot when the rendered canvas is blank', async () => {
     const page = createPagePort('ready', false);
 

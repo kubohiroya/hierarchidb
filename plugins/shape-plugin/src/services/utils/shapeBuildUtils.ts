@@ -9,14 +9,23 @@ import {
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
+import type {
+  ShapeBuildConfig,
+  ShapeBuildConfigPatch,
+  ShapeProcessingConfig,
+  ShapeRuntimeBuildConfig,
+} from '~/common/types/BuildTaskResult';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   SHAPE_DATA_SOURCES,
 } from '~/common/types/constants';
-import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type {
+  CountryMetadata,
+  DataSourceName,
+  SourceTaskPayload,
+} from '~/common/types/data-source';
 import type { SelectedArrayByCountries, ShapeEntity } from '~/common/types/ShapeEntity';
-import type { ShapeBuildConfig, ShapeBuildConfigPatch, ShapeProcessingConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { ShapeStepValidationResult } from '~/common/types/validationTypes';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 
@@ -405,6 +414,10 @@ export function applyBuildConfigPatch(
       }
     : base.tileEmitConfig;
 
+  const borderGeometryConfig = overrides.borderGeometryConfig
+    ? { ...base.borderGeometryConfig, ...overrides.borderGeometryConfig }
+    : base.borderGeometryConfig;
+
   const cleanupConfig = overrides.cleanupConfig
     ? { ...(base.cleanupConfig ?? {}), ...overrides.cleanupConfig }
     : base.cleanupConfig;
@@ -415,6 +428,7 @@ export function applyBuildConfigPatch(
     sourceConfig,
     geometryConfig,
     tileEmitConfig,
+    borderGeometryConfig,
     cleanupConfig,
   };
 }
@@ -508,6 +522,28 @@ export function assertShapeBuildConfigTileEmitContract(buildConfig: ShapeBuildCo
       '[shape-build] tileEmitConfig.enableTopojsonSimplify must be false at the canonical invalid-geometry filter boundary'
     );
   }
+
+  const borderGeometryConfig = buildConfigRecord.borderGeometryConfig;
+  if (
+    !borderGeometryConfig ||
+    typeof borderGeometryConfig !== 'object' ||
+    Array.isArray(borderGeometryConfig)
+  ) {
+    throw new Error('[shape-build] borderGeometryConfig is required');
+  }
+  const borderGeometryConfigRecord = borderGeometryConfig as Record<string, unknown>;
+  if (typeof borderGeometryConfigRecord.enabled !== 'boolean') {
+    throw new Error('[shape-build] borderGeometryConfig.enabled must be boolean');
+  }
+  if (
+    typeof borderGeometryConfigRecord.simplifyTolerance !== 'number' ||
+    !Number.isFinite(borderGeometryConfigRecord.simplifyTolerance) ||
+    borderGeometryConfigRecord.simplifyTolerance < 0
+  ) {
+    throw new Error(
+      '[shape-build] borderGeometryConfig.simplifyTolerance must be a finite non-negative number'
+    );
+  }
 }
 
 export function composeRuntimeBuildConfig(
@@ -534,6 +570,7 @@ export function composeRuntimeBuildConfig(
       maxConcurrent: processingConfig.tileEmit.maxConcurrent,
       dynamicConcurrency: processingConfig.tileEmit.dynamicConcurrency,
     },
+    borderGeometryConfig: buildConfig.borderGeometryConfig,
   };
 }
 

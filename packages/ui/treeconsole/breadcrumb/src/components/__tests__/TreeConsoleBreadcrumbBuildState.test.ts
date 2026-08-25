@@ -153,4 +153,97 @@ describe('resolveBreadcrumbContextMenuBuildState', () => {
       buildDiagnosticsLabel: 'Build diagnostics',
     });
   });
+
+  it('shows stale dependency edges as rebuild-required breadcrumb state', () => {
+    const state = resolveBreadcrumbContextMenuBuildState(
+      {
+        id: 'shape-1',
+        nodeType: 'shape',
+      },
+      undefined,
+      [],
+      {
+        dependencySummary: {
+          edgeCounts: { stale: 1 },
+          rebuildRequiredTargetIds: ['shape-1'],
+        },
+      }
+    );
+
+    expect(state).toEqual({
+      buildRequired: true,
+      canBuild: true,
+      buildAvailabilitySummary: 'Stale artifact',
+      buildAvailabilityTooltip:
+        'Build ready\nA stale artifact dependency edge requires this build target to be rebuilt. (shape-1)',
+      buildDiagnosticsLabel: undefined,
+    });
+  });
+
+  it.each([
+    {
+      name: 'schema errors',
+      options: {
+        dependencySummary: {
+          schemaErrors: [
+            {
+              code: 'DEPENDENCY_SCHEMA_INVALID',
+              message: 'Dependency schema is invalid.',
+              nodeId: 'shape-1',
+            },
+          ],
+        },
+      },
+      summary: 'Schema error',
+      tooltip: 'Build unavailable\nDependency schema is invalid. (shape-1)',
+    },
+    {
+      name: 'unsupported plugin participants',
+      options: {
+        dependencySummary: {
+          unsupportedPluginParticipants: [
+            {
+              code: 'DEPENDENCY_PARTICIPANT_UNSUPPORTED',
+              message: 'The route plugin cannot participate in this dependency edge.',
+              pluginId: 'route',
+            },
+          ],
+        },
+      },
+      summary: 'Unsupported participant',
+      tooltip: 'Build unavailable\nThe route plugin cannot participate in this dependency edge.',
+    },
+    {
+      name: 'plugin prerequisite failures',
+      options: {
+        pluginPrerequisiteFailures: [
+          {
+            code: 'PLUGIN_AUTH_REQUIRED',
+            message: 'Plugin auth is required before build can start.',
+            pluginId: 'shape',
+          },
+        ],
+      },
+      summary: 'Plugin prerequisite failed',
+      tooltip: 'Build unavailable\nPlugin auth is required before build can start.',
+    },
+  ])('surfaces $name through breadcrumb diagnostics state', ({ options, summary, tooltip }) => {
+    const state = resolveBreadcrumbContextMenuBuildState(
+      {
+        id: 'shape-1',
+        nodeType: 'shape',
+      },
+      undefined,
+      [],
+      options
+    );
+
+    expect(state).toEqual({
+      buildRequired: false,
+      canBuild: false,
+      buildAvailabilitySummary: summary,
+      buildAvailabilityTooltip: tooltip,
+      buildDiagnosticsLabel: 'Build diagnostics',
+    });
+  });
 });

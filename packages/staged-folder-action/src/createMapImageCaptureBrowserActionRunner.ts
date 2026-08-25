@@ -82,6 +82,10 @@ export function createMapImageCaptureBrowserActionRunner({
   assertPositiveInteger(timeoutMs, 'timeoutMs');
   assertAbsolutePath(outputBasePath, 'outputBasePath');
   return async ({ intent, reportProgress }) => {
+    const outputPath = resolveMapImageCaptureOutputPath({
+      outputPath: intent.output.path,
+      outputBasePath,
+    });
     const browser = await launchBrowser({ browserMode: intent.browserMode });
     let captureError: unknown;
     try {
@@ -92,10 +96,7 @@ export function createMapImageCaptureBrowserActionRunner({
         intent: {
           ...intent,
           output: {
-            path: resolveMapImageCaptureOutputPath({
-              outputPath: intent.output.path,
-              outputBasePath,
-            }),
+            path: outputPath,
           },
         },
         baseUrl,

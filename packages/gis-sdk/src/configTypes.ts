@@ -162,6 +162,11 @@ export interface GeometryConfig {
   boundaryDisableAtZoomOrAbove?: number;
 }
 
+export interface BorderGeometryConfig {
+  enabled: boolean;
+  simplifyTolerance: number;
+}
+
 export type DynamicConcurrencyConfig = {
   enabled: boolean;
   minConcurrent: number;
@@ -211,6 +216,7 @@ export interface BaseBuildConfig<TDataSourceName = unknown> {
   sourceConfig: SourceConfig;
   geometryConfig: GeometryConfig;
   tileEmitConfig: TileEmitConfig;
+  borderGeometryConfig?: BorderGeometryConfig;
   cleanupConfig?: CleanupConfig;
   routeGeometryConfig?: RouteGeometryConfig;
 }

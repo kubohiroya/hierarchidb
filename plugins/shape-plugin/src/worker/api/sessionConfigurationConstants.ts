@@ -7,12 +7,16 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildSessionConfig, BuildSessionRecord } from '@hierarchidb/shape-store';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
-import { applyBuildConfigPatch, composeRuntimeBuildConfig, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import { BuildSession } from '~/common/types/BuildTaskResult';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
 import { requireDataSourceName } from '~/common/types/data-source';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { toBuildSessionRecord } from '~/services/build/shapeSessionMapperUtils';
+import {
+  applyBuildConfigPatch,
+  composeRuntimeBuildConfig,
+  mergeProcessingConfig,
+} from '~/services/utils/shapeBuildUtils';
 import { ShapeEntityService as ShapeEntityHandler } from '../handlers/ShapeEntityService.js';
 
 // Singleton entity handler
@@ -66,6 +70,7 @@ const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSes
     sourceConfig: buildConfig.sourceConfig,
     geometryConfig: buildConfig.geometryConfig,
     vectorTiles: buildConfig.tileEmitConfig,
+    borderGeometryConfig: buildConfig.borderGeometryConfig,
   };
 };
 

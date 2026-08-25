@@ -5,10 +5,12 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
-import type {
-  RouteBuildConfig,
-  RouteBuildRouteInput,
-  RouteGenerationConfig,
+import {
+  ROUTE_MODES,
+  type RouteBuildConfig,
+  type RouteBuildRouteInput,
+  type RouteGenerationConfig,
+  type RouteGenerationMethod,
 } from '@hierarchidb/route-api';
 import type { RouteEnginesProvider } from '@hierarchidb/route-engine';
 import { initializeRouteDB } from '@hierarchidb/route-store';
@@ -94,7 +96,10 @@ function createRouteTaskData(
   route: RouteBuildRouteInput,
   config: RouteBuildConfig
 ): NonNullable<RouteBuildTask['routeData']> {
-  const method = route.method ?? config.routeGeneration.method;
+  const method = materializeSourcePlannedRouteGenerationMethod(
+    route,
+    config.routeGeneration.method
+  );
   const generation = {
     method,
     routeMode: route.routeMode,
@@ -126,4 +131,40 @@ function createRouteTaskData(
     bidirectional: identity.bidirectional,
     ...(route.methodOptions === undefined ? {} : { methodOptions: route.methodOptions }),
   };
+}
+
+export function materializeSourcePlannedRouteGenerationMethod(
+  route: Pick<RouteBuildRouteInput, 'routeMode' | 'method'>,
+  configuredMethod: RouteGenerationMethod
+): RouteGenerationMethod {
+  switch (route.routeMode) {
+    case ROUTE_MODES.AIRWAY: {
+      if (route.method !== undefined && route.method !== 'great_circle') {
+        throw new Error('routeMode airway requires generation method great_circle');
+      }
+      return 'great_circle';
+    }
+    case ROUTE_MODES.WATERWAY: {
+      if (route.method !== undefined && route.method !== 'searoute') {
+        throw new Error('routeMode waterway requires generation method searoute');
+      }
+      return 'searoute';
+    }
+    case ROUTE_MODES.RAILWAY:
+    case ROUTE_MODES.H_RAILWAY:
+    case ROUTE_MODES.ROAD:
+    case ROUTE_MODES.HIGHWAY: {
+      const method = route.method ?? configuredMethod;
+      if (method !== 'direct' && method !== 'osm_route' && method !== 'custom') {
+        throw new Error(
+          `routeMode ${route.routeMode} does not support generation method ${method}`
+        );
+      }
+      return method;
+    }
+    default:
+      throw new Error(
+        `[route source planning] routeMode is unsupported for generation method materialization: ${String(route.routeMode)}`
+      );
+  }
 }

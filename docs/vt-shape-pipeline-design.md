@@ -124,11 +124,21 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 - フィルタ後の feature だけを入力に `featureStats` と `featuresByContinent` を再構築し、親タイルサマリーと全 geojson-vt build flow が同じ collection を使用する
 - warning metadata は `invalidPolygonFilteredCount`、`invalidPolygonCheckedCount`、`invalidPolygonFilteredRate`、`affectedFeatureCount`、`featureErrorCountTotal`、`invalidPolygonFilteredByCheck` を task metadata のトップレベルに保存する
 
+## borderGeometry validation boundary（shape）
+
+- Step4 の `borderGeometryConfig.enabled` が `false` の場合、通常 build は border geometry reader / writer / extractor / simplifier / reconstructor を呼ばず、既存 source / geometry / tileEmit lineage を維持する。
+- `borderGeometryConfig.enabled=true` の場合、Source stage がフィルタ後 FeatureCollection を source artifact として保存した直後に `validateShapeBorderGeometryPipeline` を実行する。
+- Source artifact を既存 cache から再利用する場合も、`borderGeometryConfig.enabled=true` なら復元した FeatureCollection から同じ validation boundary を実行する。decode 不能な非空 source cache では silent skip せず task error とする。
+- 入力 FeatureCollection が空の場合は、抽出対象の polygon が存在しないため no-op completed とする。この場合は storage gate、extractor、simplifier、reconstructor を呼ばず、arc/ring/reconstruction count は 0 として task metadata に記録する。
+- `HDB_SHAPE_BORDER_GEOMETRY_STORAGE` が無効な状態で `borderGeometryConfig.enabled=true` の build を開始した場合、要求された shared-arc pipeline は実行できないため可視な build error とする。通常 geometry path へ silent fallback して成功扱いしない。
+- 現行統合は border geometry artifact の生成・保存・検証を行う境界であり、通常の geometryCache / tileEmit 入力を reconstructed polygon artifact へ置換しない。置換を導入する場合は、source → borderGeometry → reconstructed geometry → tileEmit の cache identity と cleanup lineage を別途仕様化してから実装する。
+
 ## Cache identity 契約（shape）
 
 - source: 必須の `dataSource + sourceKey + request signature + output shaping config signature` と、存在する場合の upstream revision
 - geometry: `sourceKey + bandIndex + source artifact hash + baseTolerance + geometry config signature`
 - tileEmit: `bandIndex + zBase + tileId + canonical bufferIds[] + tileEmit config signature`
+- borderGeometry: `nodeId + dataSource + sourceKey + upstream revision state + borderGeometryConfig signature + schemaVersion` の canonical signature を `datasetId` とし、同一 `datasetId` の再生成だけを置換対象にする
 - 各必須文字列は空でなく、各数値は finite かつ定義された整数/範囲でなければならない。`bufferIds` は field 自体を必須とし、空配列は正規の empty-tile 判定としてのみ許容する
 - 永続済み `cacheKey` / `inputHash` は両方が空でない場合だけ有効とする。一方だけの欠落、stage不明、identity構成値欠落をlegacy keyや既定値で補完しない
 - `sourceKey` は正規の `ISO2:adminLevel`、source request は絶対HTTP(S) URLとして検証する。URLのrequest targetはsource `inputHash`へ含め、queryの異なるrequestを同一入力へ収束させない。upstream revisionは存在する場合に空でない値を要求する
@@ -218,7 +228,7 @@ Storage identity と schema の正規契約は `docs/shape-border-geometry-stora
    - Rollback: flag OFF、reconstructed artifact の破棄。
 7. `feat(shape): integrate border geometry pipeline and regression validation`
    - 入力: reconstruction。
-   - DoD: `validateShapeBorderGeometryPipeline` の default-off boundary で flag off の既存挙動維持、flag on の extract/simplify/reconstruct/storage、source/geometry/tileEmit lineage cleanup、Step5/preview 用 reconstructed polygon output、fixture benchmark metrics を通す。
+   - DoD: `validateShapeBorderGeometryPipeline` の default-off boundary で flag off の既存挙動維持、flag on の extract/simplify/reconstruct/storage、dataset-scoped replacement、source lineage cleanup、fixture benchmark metrics を通す。Step5/preview 用 reconstructed polygon output と tileEmit 入力置換は、cache identity と cleanup lineage を別途仕様化してから後続 issue で扱う。
    - Rollback: flag OFF、対象 artifact cleanup。
 
 ### #548 実装時の禁止事項

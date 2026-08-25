@@ -323,11 +323,11 @@ slot の意味:
 | --- | --- |
 | `committed` | node の committed `data`。copy-on-write node では `copyOnWriteOf.data + patchData` を返す |
 | `draft` | dialog / working copy が対象とする draft view。draftData が存在する場合は committed/effective base に draftData を重ねる |
-| `effective-staged` | staged-folder-action が action input として読む view。copy-on-write、`patchData`、`import-mount`、`patch-source` の結果を反映する |
+| `effective-staged` | staged-folder-action が action input として読む view。Phase 3 時点では copy-on-write と `patchData` を反映する。`patch-source` と `import-mount` の mount record 適用は Phase 4 の workflow hardening で resolver input へ接続する |
 
 resolver は strict merge rules を `Overlay Contract` と共有する。object は再帰 merge、scalar と array は replace、未知の patch 操作は contract violation とする。resolver の利用者が独自 merge、fallback、default 補完、近似 node 探索、slot 間 fallback を実装してはならない。
 
-Phase 0 の resolver 実装では、`effective-staged` は copy-on-write と `patchData` を反映する。`import-mount`、`patch-source` の action 実行結果、staging context の mount record 適用は後続 phase で resolver input に接続する。それまでは `mountedContentApplied: false` を返し、呼び出し側で独自に mount record を混ぜてはならない。
+Phase 3 完了後の resolver 実装では、`effective-staged` は copy-on-write と `patchData` を反映し、metadata の `mountedContentApplied` は `false` のままである。`import-mount` action result と safe unmount boundary は runner 側で接続済みだが、mount record を resolver input として適用する処理は Phase 4 対象である。それまでは呼び出し側で独自に mount record を混ぜたり、`mountedContentApplied: false` を mounted content 適用済みとして扱ったりしてはならない。
 
 Phase 0 では `TreeQueryService` が `copyOnWriteOf` または `patchData` を持つ node を返す場合、共通 resolver を通して `data` を effective staged data に差し替える。これにより、既存 Map UI / capture が通常の `getNode` / `listChildren` / `listDescendants` 経路を使っても CoW overlay 後の値を読む。通常 node は resolver を通さず従来通り返す。`patchData` が `copyOnWriteOf` なしに存在する場合は contract violation として失敗させ、空 object や raw `data` への fallback は行わない。
 
@@ -416,7 +416,7 @@ pending reference / warning には同じ診断情報を含めるが、exit code 
 
 pending reference は action sequence の進行に応じて再解決する。たとえば route definition を先に `import-mount` し、その時点では start/end location が存在しない場合、runner は unresolved route location を pending reference として記録して import を成功させる。後続 action で location definition を `import-mount` した場合、runner は pending reference を再評価し、解決済みに遷移させる。location が存在しないまま vector tile build を開始する場合、その pending reference は build input dependency に昇格し、typed dependency error として失敗する。
 
-Phase 2 child #1596 では、pending reference / warning の共有型を `@hierarchidb/staged-folder-action` の progress contract と CLI contract で共通化する。runtime-worker runner は overlay 適用後、各 action 実行前、各 action 実行後に注入された reference resolver を呼び、resolver が返す `pendingReferences` と `warnings` を Worker / IndexedDB progress record に保存する。後続 action で解決された entry は削除して隠すのではなく、`status: "resolved"` として保存し、解決先 node がある場合は `resolvedTargetNodeId` を記録する。
+Phase 2 child #1596 で、pending reference / warning の共有型を `@hierarchidb/staged-folder-action` の progress contract と CLI contract で共通化済みである。runtime-worker runner は overlay 適用後、各 action 実行前、各 action 実行後に注入された reference resolver を呼び、resolver が返す `pendingReferences` と `warnings` を Worker / IndexedDB progress record に保存する。後続 action で解決された entry は削除して隠すのではなく、`status: "resolved"` として保存し、解決先 node がある場合は `resolvedTargetNodeId` を記録する。
 
 runner は reference resolver の例外や hard dependency error を warning に変換しない。dependency 未解決は `dependency` category の typed failure として扱い、CLI exit code は action failure 系の `5` とする。CLI success JSON は host が返した `warnings`、`pendingReferences`、`dependencyChanges` を空配列でない場合もそのまま出力し、progress store と result のどちらからも pending/resolved reference entry を欠落させてはならない。
 
@@ -436,7 +436,7 @@ vector tile などの build artifact に reference が地理的図形データ�
 
 artifact dependency edge は build artifact / dependency index / mount record から追跡できなければならない。TreeNode.data に参照元セットを埋め込まず、artifact/build result 側が作成した dependency index を SSOT とする。編集 UI、CLI overlay、`patch-source`、import/mount cleanup は dependency index を逆引きし、影響を受ける artifact と incremental rebuild target を特定する。
 
-Phase 2 child #1588 では、dependency index の永続化境界を runtime-worker 管理の dedicated Dexie store として導入する。CoreDB の tree/node schema は YAML activation の canonical native version と強く結合しているため、この child issue では CoreDB 本体の version を上げない。dependency lifecycle store は `TreeNode.data` ではなく artifact 側 index を SSOT とし、後続の edit/overlay/patch-source 経路は source data の変更と lifecycle store 更新を同一 action sequence の必須 step として扱う。source data と lifecycle state を同じ CoreDB transaction へ統合するかどうかは、YAML canonical DB versioning と合わせて別 issue で再確定する。
+Phase 2 child #1588 で、dependency index の永続化境界を runtime-worker 管理の dedicated Dexie store として導入済みである。CoreDB の tree/node schema は YAML activation の canonical native version と強く結合しているため、この child issue では CoreDB 本体の version を上げない。dependency lifecycle store は `TreeNode.data` ではなく artifact 側 index を SSOT とし、edit/overlay/patch-source 経路は source data の変更と lifecycle store 更新を同一 action sequence の必須 step として扱う。source data と lifecycle state を同じ CoreDB transaction へ統合するかどうかは、YAML canonical DB versioning と合わせて別 issue で再確定する。
 
 dependency edge は少なくとも以下の状態を持つ。
 
@@ -495,13 +495,13 @@ build availability は少なくとも以下の状態を持つ。
 
 Phase 1 の初期 resolver は `@hierarchidb/build-api` の `resolveBuildAvailability` / `resolveSubtreeBuildAvailability` を SSOT とする。この初期版は canonical build API availability、`metadata.buildMetadata.buildRequired` / `draftMetadata.buildMetadata.buildRequired`、呼び出し側から渡された active session set による重複抑止を評価する。TreeConsole UI は active session set を渡して重複投入を抑止する。TreeTable と Breadcrumb は folder context でロード済み descendants を resolver に渡し、配下の required target と active session を同じ判定で扱う。WorkerAPI execution host は build target collection に同じ resolver を使うが、active session preflight は標準 Worker host の追加入力接続後に同じ resolver 境界へ統合する。
 
-Phase 2 child #1584 では、同じ resolver 境界に dependency-aware な availability contract を追加する。`DependencyEdgeStatus` は `active` / `stale` / `rebuilding` / `resolved` / `orphaned` の shared type とし、artifact lifecycle summary、plugin prerequisite failure、dependency/schema/unsupported participant diagnostics を resolver input に渡せる。resolver output は従来の `status` / `reason` に加えて `details[]` を返し、UI は disabled Build entry の理由を独自推測せずこの detail を表示する。`stale` edge が存在する場合は、対応する rebuild target ID が input に含まれていなければ contract violation として fail-fast する。`orphaned` edge、dependency error、schema error、unsupported plugin participant、plugin prerequisite failure は `not-buildable` とし、`build-not-required` と混同しない。`rebuilding` edge は対応 target ID を要求し、既に rebuild が予約または実行中であることを `build-blocked-by-active-session` 相当の disabled reason/detail として表現する。
+Phase 2 child #1584 で、同じ resolver 境界に dependency-aware な availability contract を追加済みである。`DependencyEdgeStatus` は `active` / `stale` / `rebuilding` / `resolved` / `orphaned` の shared type とし、artifact lifecycle summary、plugin prerequisite failure、dependency/schema/unsupported participant diagnostics を resolver input に渡せる。resolver output は従来の `status` / `reason` に加えて `details[]` を返し、UI は disabled Build entry の理由を独自推測せずこの detail を表示する。`stale` edge が存在する場合は、対応する rebuild target ID が input に含まれていなければ contract violation として fail-fast する。`orphaned` edge、dependency error、schema error、unsupported plugin participant、plugin prerequisite failure は `not-buildable` とし、`build-not-required` と混同しない。`rebuilding` edge は対応 target ID を要求し、既に rebuild が予約または実行中であることを `build-blocked-by-active-session` 相当の disabled reason/detail として表現する。
 
-Phase 2 child #1590 では、TreeTable context menu、Breadcrumb context menu、node info panel の Build 表示は shared resolver output を `formatBuildAvailabilityView()` で表示用 summary / tooltip / diagnostics entry label に変換する。`not-buildable`、`build-not-required`、`build-blocked-by-active-session` はいずれも disabled Build entry になり得るが、UI は `reason` / `details[]` 由来の summary と tooltip で区別する。diagnostics entry は `details[]` に error severity または dependency/schema/plugin prerequisite 系 detail が含まれる場合だけ表示し、UI component は原因を metadata や node type から再推測してはならない。
+Phase 2 child #1590 で、TreeTable context menu、Breadcrumb context menu、node info panel の Build 表示は shared resolver output を `formatBuildAvailabilityView()` で表示用 summary / tooltip / diagnostics entry label に変換する contract を固定済みである。`not-buildable`、`build-not-required`、`build-blocked-by-active-session` はいずれも disabled Build entry になり得るが、UI は `reason` / `details[]` 由来の summary と tooltip で区別する。diagnostics entry は `details[]` に error severity または dependency/schema/plugin prerequisite 系 detail が含まれる場合だけ表示し、UI component は原因を metadata や node type から再推測してはならない。
 
-Phase 2 child #1592 では、field-level edit lock は canonical build session runtime context を SSOT とする。UI は presentation flag や local component state から active build を推測せず、active runtime session と明示的な locked field id list から field ごとの disabled state と理由を解決する。metadata field を含む build input field は active session 中だけ lock し、対象外 field は同じ dialog 内でも編集可能なままにする。field id または locked field id が空の場合は contract violation として fail-fast し、黙って unlock してはならない。
+Phase 2 child #1592 で、field-level edit lock は canonical build session runtime context を SSOT とする contract を固定済みである。UI は presentation flag や local component state から active build を推測せず、active runtime session と明示的な locked field id list から field ごとの disabled state と理由を解決する。metadata field を含む build input field は active session 中だけ lock し、対象外 field は同じ dialog 内でも編集可能なままにする。field id または locked field id が空の場合は contract violation として fail-fast し、黙って unlock してはならない。
 
-Phase 2 child #1594 では、build 完了後の committed target field 編集を runtime-worker の dependency lifecycle service/API に接続する。final save が成功した場合のみ、旧 committed node と新 committed node の `metadata` / `data` を比較し、変更された target field path に紐づく `active` edge を `stale` に遷移させる。`save-draft` は committed data を変更しないため stale 化も rebuild plan 作成も行わない。service は stale edge から deterministic incremental rebuild plan と `BuildDependencyAvailabilitySummary` を返し、空 field path、空 target id、rebuild target ID を持たない stale edge は contract violation として fail-fast する。UI/app は dependency Dexie store へ直接書き込まず、build availability や warning 表示は runtime-worker が返す summary 境界を SSOT とする。
+Phase 2 child #1594 で、build 完了後の committed target field 編集を runtime-worker の dependency lifecycle service/API に接続済みである。final save が成功した場合のみ、旧 committed node と新 committed node の `metadata` / `data` を比較し、変更された target field path に紐づく `active` edge を `stale` に遷移させる。`save-draft` は committed data を変更しないため stale 化も rebuild plan 作成も行わない。service は stale edge から deterministic incremental rebuild plan と `BuildDependencyAvailabilitySummary` を返し、空 field path、空 target id、rebuild target ID を持たない stale edge は contract violation として fail-fast する。UI/app は dependency Dexie store へ直接書き込まず、build availability や warning 表示は runtime-worker が返す summary 境界を SSOT とする。
 
 build session は modal dialog として UI 全体をブロックしてはならない。build button 押下後、session manager が閉じていても新しい session は登録され、AppBar 上の icon / badge / indicator により running session の存在を確認できなければならない。詳細進捗、pause/resume/cancel、error detail は AppBar から session manager を開いて確認する。
 
@@ -554,7 +554,7 @@ UI は stale artifact を隠して通常状態に見せてはならない。prev
 
 Design split の詳細は `docs/staged-folder-action-feature-table-design.md` を正とする。本節は staged-folder-action 全体仕様から見た gap の要約であり、実装 Issue への分割、write target contract、rollback、verification は design split 文書に従う。
 
-現状の Preview / Map UI feature table は、shape/location/route の行を一覧表示する read-only surface としては利用可能である。しかし staged-folder-action と dependency lifecycle を実用化するには、現状機能だけでは不足する。本節は、ただちに Issue 化する作業項目ではなく、後続 phase で詳細設計とテスト計画へ分解するための追加仕様である。
+現状の Preview / Map UI feature table は、shape/location/route の行を一覧表示する read-only surface としては利用可能である。しかし staged-folder-action と dependency lifecycle を実用化するには、現状機能だけでは不足する。本節は Phase 3 child #1611 で design split 済みであり、Phase 4 では `docs/staged-folder-action-feature-table-design.md` を入力として editable table 実装 Issue へ分割する。
 
 現状実装が満たしている範囲は以下である。
 
@@ -659,7 +659,7 @@ shape/location/route ごとの初期 editable field は保守的に定義する�
 
 地図上の feature click toast / popover は、feature table と同じ source mapping と dependency query を使う。別経路の編集実装を作ってはならない。popover の edit menu は、対象 feature row を feature table 上で選択し、同じ `FeatureCellEditRequest` flow に入る。
 
-この設計は issue 化を急がない。次 phase では、まず read-only Preview 実装との差分を固定する design issue を作り、その後に DataGrid editing substrate、preview adapter、dependency edit service、plugin-specific editable fields、map popover integration、UI tests を分割する。
+この設計は Phase 3 child #1611 で read-only Preview 実装との差分を固定済みである。Phase 4 では、DataGrid editing substrate、preview adapter、dependency edit service、plugin-specific editable fields、map popover integration、UI tests を小粒 Issue として分割する。
 
 ## Action Contract
 
@@ -752,6 +752,7 @@ action 追加時に `StagedFolderActionRunProgress.status` の top-level enum �
 - 出力 schema、required column、column name、value encoding は、当該 location/route dialog の Step2 で local file import source として受け付ける schema と互換でなければならない。
 - Step2 import schema が更新された場合、tabular export schema も同じ versioned adapter で更新する。import と export が別々の column mapping を持って乖離してはならない。
 - Step2 local-file import は未知カラムを無視しなければならない。未知カラムは warning なしで無視してよいが、required column の欠落、不正型、不正値は従来通り validation error とする。
+- Phase 4 の fixture-level round-trip validation では、各 plugin の Step2 local-file import/export adapter が公開する canonical column 定数（location は `LOCATION_EXPORT_COLUMNS`、route は `ROUTE_EXPORT_COLUMNS`）を互換性 SSOT として扱う。CSV header と XLSX writer `columns` はこの順序と一致しなければならない。実 file を既存 node へ差分適用する import action は別 action として扱う。
 - build artifact の geometry や cache binary を CSV / XLSX に暗黙展開してはならない。tabular export は Step2 local-file input が表す source data / editable field / reference field を対象にする。
 - stale edge、pending reference、orphaned edge がある場合、`includeDependencyStatus: true` では diagnostic status column を追加出力してよい。この column は Step2 import では未知カラムとして無視されるため、round-trip import 互換性を壊さない。`includeDependencyStatus: false` でも、stale/pending/orphaned が存在することは action result warning に残す。
 - column order は Step2 local-file input adapter が定義する canonical import/export order を既定とする。manifest の `columns` が指定された場合、export adapter が生成できない column、required column の欠落、Step2 import schema と互換でない required column set は fail-fast する。ただし Step2 import 側は file 内の未知カラムを無視する。
@@ -952,41 +953,54 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 4. overlay 後の staging root にだけ build/capture を行う。
 5. 元 folder は変更しない。
 
-## 現状実装との差分
+## Phase 3 完了後の実装状態
 
 - 専用 route を正規 route とする案は撤回する。
 - `BuildJobQueue.mode = 'export'` は今後も利用候補だが、専用 route のためではなく staging folder build を表す mode として再定義する。
-- Phase 0 実装では `StagedFolderActionProgressStore` を canonical build runtime adapter として登録し、TreeConsole AppBar に staged-folder-action runtime 用の badge button を追加する。これにより staged-folder-action run は既存 session manager surface から確認できる。ただし shape build session と staged-folder-action run を1つの統合 queue として並べる UI、action-specific detail、capture/output/cleanup の詳細表示は後続 phase で拡張する。
+- `StagedFolderActionProgressStore` は canonical build runtime adapter として登録され、TreeConsole AppBar の session manager surface から staged-folder-action run を確認できる。Phase 3 child #1609 / #1627 で staged run count、current action projection、cleanup/output finalizing 表示境界を hardening 済みである。
 - TreeNode hierarchy の複製は `CoreDB.duplicateSubtreeWithMap()` 相当を基礎にできるが、copy-on-write node として `copyOnWriteOf` / `patchData` を持たせ、effective data 解決を build / Map UI / capture の読み取り経路に接続する必要がある。
-- Phase 0 実装では temporary-copy / permanent-copy について CoW subtree 作成、Map UI/capture の TreeQueryService 経由 effective data 読み取り、canonical build session 開始時の CoW effective committed data 読み取りを接続済みである。Preview feature table、TreeTable、CSV/XLSX export、diagnostics への resolver 接続は後続 phase で行う。
-- Phase 0 実装では runtime-worker が staged-folder-action runner 用の core dependency adapter を提供する。この adapter は `temporary-copy` の CoW staging、`permanent-copy` の output parent 配下 CoW staging、`patch-source` の source node staging、overlay 適用、temporary-copy cleanup policy を CoreDB 上で実行する。
-- Phase 0 実装では WorkerAPI に `runStagedFolderAction(input)` を追加し、WebUI または後続 CLI bridge から同一 application profile の Worker 内 runner を起動できる。WebUI 側の標準入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` も同じ WorkerAPI method に転送する。WorkerAPI execution host は staging/overlay/action/cleanup の状態を `StagedFolderActionProgressStore` に記録する。`build` action では、staging root 自身が canonical build API を持つ場合は root を build candidate とし、folder など直接 build できない場合は配下 descendants から canonical build API を持つ node を candidate として収集する。candidate のうち `buildRequired` な node だけを build target とし、candidate がない場合は fail-fast、candidate はあるが target がない場合は no-op completed とする。各 build target は既存 canonical build session を開始し、terminal state まで待つ。`completed` 以外の terminal state は action failure として扱う。
-- Phase 1 初期実装では `@hierarchidb/build-api` に build availability resolver を追加し、WorkerAPI execution host の build target collection、TreeTable context menu、Breadcrumb context menu、通常 TreeConsole build flow の `buildRequired` 判定を共有 API 経由に寄せる。TreeTable context menu と Breadcrumb context menu は folder context でロード済み descendants と active session set を resolver に渡す。通常 TreeConsole build flow は現時点で `isNodeBuildRequired` を共有し、完全な availability status 表現は後続 phase で統合する。
-- Phase 1 初期の WorkerAPI execution host は optional `runMapImageCaptureAction` injection を受け取り、runtime-worker runner へ渡せる。`map-image-capture` intent、Map UI readiness、capture page port helper、canvas nonblank 判定は実装済みだが、標準 Worker bootstrap / CLI bridge はまだ headed/headless browser host を注入しないため、未注入時の WorkerAPI run は `map-image-capture action runner is not configured` として fail-fast する。
+- temporary-copy / permanent-copy について CoW subtree 作成、Map UI/capture の TreeQueryService 経由 effective data 読み取り、canonical build session 開始時の CoW effective committed data 読み取りを接続済みである。Phase 3 child #1607 で CSV/XLSX export adapter も canonical columns / primitive row cell contract / effective data resolver 境界に接続済みである。`import-mount` の mount record を resolver input に適用する処理は Phase 4 対象である。
+- runtime-worker は staged-folder-action runner 用の core dependency adapter を提供する。この adapter は `temporary-copy` の CoW staging、`permanent-copy` の output parent 配下 CoW staging、`patch-source` の source node staging、overlay 適用、temporary-copy cleanup policy を CoreDB 上で実行する。
+- WorkerAPI に `runStagedFolderAction(input)` を追加済みであり、WebUI または CLI host module bridge から同一 application profile の Worker 内 runner を起動できる。WebUI 側の標準入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` も同じ WorkerAPI method に転送する。WorkerAPI execution host は staging/overlay/action/cleanup の状態を `StagedFolderActionProgressStore` に記録する。`build` action では、staging root 自身が canonical build API を持つ場合は root を build candidate とし、folder など直接 build できない場合は配下 descendants から canonical build API を持つ node を candidate として収集する。candidate のうち `buildRequired` な node だけを build target とし、candidate がない場合は fail-fast、candidate はあるが target がない場合は no-op completed とする。各 build target は既存 canonical build session を開始し、terminal state まで待つ。`completed` 以外の terminal state は action failure として扱う。
+- `@hierarchidb/build-api` の build availability resolver は dependency lifecycle と plugin prerequisite diagnostics を受け取る境界まで拡張済みである。TreeTable / Breadcrumb / dialog / CLI result は dependency/schema/orphan/plugin prerequisite failure を `build-not-required` と混同せず、runtime-worker / build-api の summary 境界を表示入力として扱う。
+- `map-image-capture` intent、Map UI readiness、capture page port helper、canvas nonblank 判定、Node 専用 browser host factory、CLI Worker bridge からの `--browser headless|headed` 伝播は接続済みである。browser host 未設定時は fallback せず、typed failure として停止する。
+- `export-archive` / `import-mount` runtime runners、`lifetime: run` mount の terminal safe unmount、cleanup failure / safe unmount failure の typed result 境界を接続済みである。safe unmount failure を成功扱いに戻してはならない。
+- Phase 3 hardening fixture は dry-run manifest validation、injected non-dry-run result mapping、export writer failure、dependency contract violation、browser/page port failure、cleanup/safe-unmount failure を package-scoped tests で固定する。
 - 追加定義が必要なのは、build 入力が TreeNode.data 以外の Group/Relation store に存在する plugin の copy-on-write 参照または materialize participant 境界である。
-- 現状の Preview / Map UI feature table は read-only 一覧としては使えるが、DependencyEdgeStatus 表示、field-level status、dependency-aware cell editing、map feature popover 連動、stale 化と incremental rebuild plan 作成の入口としては不足している。この不足分は本仕様で追加仕様として定義し、ただちに Issue 化せず次 phase で詳細設計から分解する。
+- 現状の Preview / Map UI feature table は read-only 一覧としては使えるが、DependencyEdgeStatus 表示、field-level status、dependency-aware cell editing、map feature popover 連動、stale 化と incremental rebuild plan 作成の入口としては不足している。この不足分は Phase 3 child #1611 で design split 済みであり、Phase 4 で実装 Issue に分解する。
 
-## 後続 Issue 分割
+## Phase 4 対象 / Out-of-scope 分類
 
-1. staging/overlay manifest parser を実装する。
-2. source node から temporary folder または output parent 配下へ staging copy を作る。temporary-copy / permanent-copy は Phase 0 で実装済み。
-3. effective data resolver を実装し、build / Map UI / Preview / TreeTable / CSV/XLSX export / reference resolver / diagnostics から独自解決コードを排除する。Phase 0 では resolver 本体と Map UI/capture の TreeQueryService 接続を実装済み。build input collection など残りの接続は後続 phase で行う。
-4. overlay を copy-on-write node の `patchData` または patch-source の committed `data` に strict merge する。
-5. pending reference resolver と warning/result persistence を実装する。
-6. artifact dependency index と `active/stale/rebuilding/resolved/orphaned` lifecycle を実装する。
-7. target field 編集時に stale 化と incremental rebuild plan を同一 transaction/action sequence で作る。
-8. stale artifact の preview/capture/export/build policy を実装する。
-9. build availability resolver を dependency lifecycle と plugin-specific prerequisite へ拡張し、disabled 理由表示と diagnostics / repair flow への導線を完成させる。Phase 1 初期版では canonical build API availability、`buildRequired`、呼び出し側が active session set を渡せる resolver contract まで実装済みである。
-10. build button 押下後は modal blocking ではなく AppBar session indicator / session manager に登録し、対象 data / draftData field だけを canonical session state に基づいて edit lock する。
-11. build 完了後の対象 field 編集で stale edge を発生させ、個別 UI、node dialog、TreeTable / 上位 folder の aggregate warning、build availability に伝播させる。
-12. TreeTable / node 詳細 Dialog に集合 node の dependency status 集約 badge と診断導線を実装する。
-13. Preview / Map UI の feature table row、cell editing、feature click toast/popover、編集 menu に個別 feature の dependency status と修正導線を実装する。これは即時実装 Issue ではなく、まず read-only 現状との差分と editable table substrate を固める design phase を先行する。
-14. staging root を既存 folder build queue / session manager に接続する。Phase 0 では WorkerAPI execution host が build action を canonical build session に接続済みであり、root が直接 build できない場合の descendants build target collection も実装済みである。plugin 固有 prerequisite、dependency-aware availability 拡張、session manager 詳細 UI は後続 phase で行う。
-15. CLI 主導 phase を Worker / IndexedDB progress state に報告する。Phase 0 CLI は dry-run validation host までであり、WorkerAPI execution host への CLI bridge は後続 phase で行う。
-16. `map-image-capture` action intent を実装する。Phase 0 では intent store、WorkerAPI の intent read、Map UI readiness、browser page port helper を実装済みである。
-17. `export-csv` / `export-xlsx` action intent、location/route Step2 local-file import/export adapter、TreeTable context menu `Export` submenu item を実装する。
-18. CLI の `--browser headless|headed` に応じて新規 tab の Map UI capture を実行する。
-19. cleanup policy を実装する。
+Phase 3 までに完了済み:
+
+1. staging/overlay manifest parser。
+2. temporary folder または output parent 配下への CoW staging copy。
+3. effective data resolver と Map UI/capture/build/export 境界への CoW / `patchData` 接続。
+4. overlay の strict merge。
+5. pending reference resolver と warning/result persistence。
+6. artifact dependency index と `active/stale/rebuilding/resolved/orphaned` lifecycle。
+7. build availability resolver の dependency lifecycle / plugin prerequisite 拡張。
+8. AppBar session manager への staged-folder-action run 表示。
+9. CLI host module bridge、non-dry-run representative E2E、stdout/stderr JSON contract。
+10. standard browser host injection による `map-image-capture` representative E2E。
+11. `export-archive` / `import-mount` runtime runner と safe unmount / cleanup failure boundary。
+12. `export-csv` / `export-xlsx` adapter と canonical column / primitive row cell contract。
+13. package-scoped hardening fixtures。
+
+Phase 4 対象:
+
+1. docs reconciliation により、Phase 0/1/2/3 の stale future-tense を実装済み / Phase 4 対象 / out-of-scope に分類する。
+2. CLI non-dry-run、browser capture、CSV/XLSX round-trip、dependency diagnostics、multi-action cleanup を production-like workflow smoke として強化する。
+3. Preview / Map UI feature table design split を editable implementation Issue に分解し、write target / dependency lifecycle contract を実装単位へ落とす。
+4. import-mount -> patch/overlay -> export/capture/build の multi-action sequence で、mount record の resolver input 接続、resume/retry、primary failure、cleanup failure、safe unmount failure を検証する。
+5. CI coverage を実行時間と安定性の両面で調整する。
+
+Out-of-scope / 別仕様:
+
+1. Node CLI process から任意の既存 browser profile IndexedDB を直接共有する方式。
+2. 専用 `/map-export` route または hidden capture-only route。
+3. TreeNode.data 以外の plugin Group/Relation store を暗黙 materialize する copy/import participant。
+4. stale / pending / orphaned dependency を warning に丸めて build/capture/export を成功扱いする互換 fallback。
 
 dependency lifecycle 実装は、既存編集 UI、CLI overlay、`patch-source`、import/mount、build artifact 管理、incremental build queue、Map UI、export/backup、CSV / XLSX export に影響する可能性が高い。テストは単一 package だけで完結させず、service-level、CoreDB/Dexie integration、effective data resolver slot/merge/error tests、UI guard、TreeTable/Dialog aggregate UI、Preview/Map feature-level editable table UI、cell edit commit/rollback、build button availability、build-running edit lock、post-build edit stale warning propagation、location/route Step2 local-file import/export schema round-trip、CSV / XLSX export column/status output、CLI result、incremental rebuild queue、cleanup/mount lifecycle を分けて作成する。
 

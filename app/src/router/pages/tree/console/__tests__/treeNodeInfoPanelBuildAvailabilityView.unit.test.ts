@@ -109,6 +109,57 @@ describe('resolveTreeNodeInfoPanelBuildAvailabilityView', () => {
     expect(view?.diagnosticsLabel).toBe('Build diagnostics');
   });
 
+  it('surfaces plugin prerequisite failures instead of allowing a metadata rebuild', () => {
+    const currentNode = makeNode({
+      id: 'r:route' as NodeId,
+      nodeType: 'route',
+      metadata: { buildMetadata: { buildRequired: true } },
+    });
+
+    const view = resolveTreeNodeInfoPanelBuildAvailabilityView({
+      currentNode,
+      folderDescendantNodes: [],
+      buildTargetLoading: false,
+      pluginPrerequisiteFailures: [
+        {
+          code: 'PLUGIN_AUTH_REQUIRED',
+          message: 'Route plugin authentication is required.',
+          pluginId: 'route',
+        },
+      ],
+    });
+
+    expect(view?.summary).toBe('Plugin prerequisite failed');
+    expect(view?.tooltip).toContain('Route plugin authentication is required.');
+    expect(view?.diagnosticsLabel).toBe('Build diagnostics');
+  });
+
+  it('surfaces unsupported participants as diagnostics for dialog summary boundaries', () => {
+    const currentNode = makeNode({
+      id: 'r:route' as NodeId,
+      nodeType: 'route',
+    });
+
+    const view = resolveTreeNodeInfoPanelBuildAvailabilityView({
+      currentNode,
+      folderDescendantNodes: [],
+      buildTargetLoading: false,
+      dependencySummary: {
+        unsupportedPluginParticipants: [
+          {
+            code: 'DEPENDENCY_PARTICIPANT_UNSUPPORTED',
+            message: 'The route plugin cannot participate in this dependency edge.',
+            pluginId: 'route',
+          },
+        ],
+      },
+    });
+
+    expect(view?.summary).toBe('Unsupported participant');
+    expect(view?.tooltip).toContain('The route plugin cannot participate in this dependency edge.');
+    expect(view?.diagnosticsLabel).toBe('Build diagnostics');
+  });
+
   it('keeps non-build node types out of the info panel build action surface', () => {
     const view = resolveTreeNodeInfoPanelBuildAvailabilityView({
       currentNode: makeNode({

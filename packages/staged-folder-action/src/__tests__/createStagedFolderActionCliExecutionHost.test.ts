@@ -101,6 +101,8 @@ const productionLikeWorkflowConfig: StagedFolderActionConfig = {
   ],
 };
 
+const exportFileActionTypes = ['export-csv', 'export-xlsx'] as const;
+
 describe('createStagedFolderActionCliExecutionHost', () => {
   it('bridges non-dry-run CLI execution into the injected runner', async () => {
     vi.useFakeTimers();
@@ -440,6 +442,69 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it.each([
+    'map-image-capture Map UI browser failure: page-error: render crashed',
+    'map-image-capture Map UI rendered a blank canvas',
+    'map-image-capture render timeout',
+    'map-image-capture Map UI reported render error; browser close failed: close failed',
+    'outputPath must not contain empty, current-directory, or parent-directory segments',
+  ])(
+    'maps browser capture failure "%s" to a typed map-image-capture CLI failure',
+    async (message) => {
+      const io = createIo({ 'config.json': JSON.stringify(mapCaptureConfig) });
+      const failedRecord = createFailedRecord({
+        runId: 'run-map-failure',
+        sourceNodeId: 'source-1',
+        currentAction: {
+          actionIndex: 1,
+          actionType: 'map-image-capture',
+          phase: 'capturing-canvas',
+          percentage: 75,
+        },
+      });
+      const host = createStagedFolderActionCliExecutionHost({
+        runStagedFolderAction: async () => {
+          throw new Error(message);
+        },
+        getRun: async () => failedRecord,
+        createRunId: () => 'run-map-failure',
+      });
+
+      const exitCode = await runStagedFolderActionCli(
+        [
+          '--json',
+          '--config',
+          'config.json',
+          '--source-node-id',
+          'source-1',
+          '--browser',
+          'headless',
+        ],
+        io,
+        { executionHost: host }
+      );
+      const result = JSON.parse(io.stdout.join('')) as {
+        ok: boolean;
+        actionIndex: number;
+        actionType: string;
+        error: { category: string; code: string; message: string; actionType: string };
+      };
+
+      expect(exitCode).toBe(5);
+      expect(result).toMatchObject({
+        ok: false,
+        actionIndex: 1,
+        actionType: 'map-image-capture',
+        error: {
+          category: 'map-image-capture',
+          code: 'STAGED_FOLDER_ACTION_MAP_IMAGE_CAPTURE_FAILED',
+          message,
+          actionType: 'map-image-capture',
+        },
+      });
+    }
+  );
+
   it('maps missing export file host failures to export action categories', async () => {
     const io = createIo({ 'config.json': JSON.stringify(exportFileConfig) });
     const failedRecord = createFailedRecord({
@@ -485,6 +550,68 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it.each(exportFileActionTypes)(
+    'maps unsupported %s columns to typed export file failures',
+    async (actionType) => {
+      const io = createIo({
+        'config.json': JSON.stringify({
+          ...emptyConfig,
+          actions: [
+            {
+              type: actionType,
+              entityType: 'location',
+              source: { path: '.' },
+              output: { path: actionType === 'export-csv' ? 'locations.csv' : 'locations.xlsx' },
+              columns: ['name', 'unknown'],
+            },
+          ],
+        } satisfies StagedFolderActionConfig),
+      });
+      const failedRecord = createFailedRecord({
+        runId: 'run-export-unsupported-columns',
+        sourceNodeId: 'source-1',
+        currentAction: {
+          actionIndex: 0,
+          actionType,
+          phase: 'starting',
+          percentage: 0,
+        },
+      });
+      const host = createStagedFolderActionCliExecutionHost({
+        runStagedFolderAction: async () => {
+          throw new Error('action.columns contains unsupported columns: unknown');
+        },
+        getRun: async () => failedRecord,
+        createRunId: () => 'run-export-unsupported-columns',
+      });
+
+      const exitCode = await runStagedFolderActionCli(
+        ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+        io,
+        { executionHost: host }
+      );
+      const result = JSON.parse(io.stdout.join('')) as {
+        ok: boolean;
+        actionIndex: number;
+        actionType: string;
+        error: { category: string; code: string; actionType: string; message: string };
+      };
+
+      expect(exitCode).toBe(5);
+      expect(result).toMatchObject({
+        ok: false,
+        actionIndex: 0,
+        actionType,
+        error: {
+          category: actionType,
+          code: 'STAGED_FOLDER_ACTION_EXPORT_FILE_FAILED',
+          actionType,
+          message: 'action.columns contains unsupported columns: unknown',
+        },
+      });
+    }
+  );
+
   it('uses structured runner failure metadata before phase heuristics', async () => {
     const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
     const failedRecord = createFailedRecord({
@@ -523,6 +650,70 @@ describe('createStagedFolderActionCliExecutionHost', () => {
         category: 'dependency',
         code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
         message: 'stale edge missing rebuild target',
+      },
+    });
+  });
+
+  it('preserves structured dependency failure metadata from the runner record', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
+    const failedRecord = createFailedRecord({
+      runId: 'run-schema-dependency-failure',
+      sourceNodeId: 'source-1',
+      phase: 'resolving-references',
+      error: 'Dependency schema is invalid.',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1' as NodeId,
+        dependentNodeId: 'route-1' as NodeId,
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+    });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async () => {
+        throw new Error('a message that must not drive dependency classification');
+      },
+      getRun: async () => failedRecord,
+      createRunId: () => 'run-schema-dependency-failure',
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      error: {
+        category: string;
+        code: string;
+        message: string;
+        nodeId: string;
+        dependentNodeId: string;
+        referencePath: string;
+        expectedTargetType: string;
+        actualTargetType: string;
+        pluginId: string;
+      };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1',
+        dependentNodeId: 'route-1',
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
       },
     });
   });
@@ -756,7 +947,9 @@ describe('runStagedFolderActionBundledCli', () => {
       Object.defineProperty(globalThis, 'indexedDB', {
         configurable: true,
         get: () => {
-          throw new Error('production-like CLI smoke must not depend on cross-profile IndexedDB access');
+          throw new Error(
+            'production-like CLI smoke must not depend on cross-profile IndexedDB access'
+          );
         },
       });
       process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE = './workflow-host.mjs';

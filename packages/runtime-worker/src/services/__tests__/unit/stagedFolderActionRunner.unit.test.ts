@@ -204,6 +204,57 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('preserves typed dependency resolver failure metadata in the runner record', async () => {
+    const dependencies = createDependencies({
+      resolveReferences: vi.fn(async () => {
+        const error = new Error('Dependency schema is invalid.') as Error & {
+          category: 'dependency';
+          code: string;
+          nodeId: NodeId;
+          dependentNodeId: NodeId;
+          referencePath: string;
+          expectedTargetType: string;
+          actualTargetType: string;
+          pluginId: string;
+        };
+        error.category = 'dependency';
+        error.code = 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR';
+        error.nodeId = 'shape-1' as NodeId;
+        error.dependentNodeId = 'route-1' as NodeId;
+        error.referencePath = 'metadata.dependencies[0]';
+        error.expectedTargetType = 'location';
+        error.actualTargetType = 'folder';
+        error.pluginId = 'route';
+        throw error;
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-dependency-schema-failure' as NodeId,
+        sourceNodeId: 'source-dependency-schema-failure' as NodeId,
+        config: createConfig({ actions: [] }),
+      })
+    ).rejects.toThrow(/Dependency schema is invalid/);
+    await expect(store.getRun('run-dependency-schema-failure' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1',
+        dependentNodeId: 'route-1',
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+      warnings: [],
+      pendingReferences: [],
+    });
+  });
+
   it('runs map image capture only after the preceding build action completes', async () => {
     const order: string[] = [];
     const dependencies = createDependencies({
@@ -392,6 +443,54 @@ describe('runStagedFolderAction', () => {
       intentId: 'run-capture-browser-host:1',
       stagingRootNodeId: 'staging-root',
       browserMode: 'headed',
+    });
+  });
+
+  it('records a typed action failure when the standard browser runner rejects an unsafe output path', async () => {
+    const launchBrowser = vi.fn(async () => ({
+      newPage: vi.fn(async () => ({}) as PlaywrightLikeMapImageCapturePage),
+      close: vi.fn(async () => {}),
+    }));
+    const dependencies = createDependencies({
+      runMapImageCaptureAction: createMapImageCaptureBrowserActionRunner({
+        baseUrl: 'http://localhost:3000/app/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        outputBasePath: '/tmp/hdb-capture-output',
+        launchBrowser,
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-capture-unsafe-output' as NodeId,
+        sourceNodeId: 'source-capture-unsafe-output' as NodeId,
+        browserMode: 'headed',
+        config: createConfig({
+          actions: [
+            { type: 'build', mode: 'session-manager' },
+            {
+              type: 'map-image-capture',
+              mode: 'map-ui',
+              output: { path: 'exports/../map.png', width: 800, height: 600 },
+              viewport: { bbox: [139, 35, 140, 36] },
+              layers: [{ path: '.', visible: true }],
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow(/outputPath must not contain empty, current-directory, or parent-directory/);
+    expect(launchBrowser).not.toHaveBeenCalled();
+    await expect(store.getRun('run-capture-unsafe-output' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      currentAction: {
+        actionIndex: 1,
+        actionType: 'map-image-capture',
+        phase: 'handoff-created',
+        percentage: 10,
+      },
+      error: 'outputPath must not contain empty, current-directory, or parent-directory segments',
     });
   });
 

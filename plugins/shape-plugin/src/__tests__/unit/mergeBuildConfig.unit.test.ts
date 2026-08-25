@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
 import type { ShapeBuildConfig } from '../../common/types/BuildTaskResult.js';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
 import {
   applyBuildConfigPatch,
   assertShapeBuildConfigTileEmitContract,
@@ -72,6 +72,29 @@ describe('applyBuildConfigPatch', () => {
     });
 
     expect(merged.geometryConfig.simplifyAlgorithm).toBe('geojson');
+  });
+
+  it('keeps border geometry disabled by default', () => {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {});
+
+    expect(merged.borderGeometryConfig).toEqual({
+      enabled: false,
+      simplifyTolerance: 0,
+    });
+  });
+
+  it('applies border geometry config overrides', () => {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+      borderGeometryConfig: {
+        enabled: true,
+        simplifyTolerance: 0.0001,
+      },
+    });
+
+    expect(merged.borderGeometryConfig).toEqual({
+      enabled: true,
+      simplifyTolerance: 0.0001,
+    });
   });
 
   it('normalizes incomplete toleranceByBand with default geometry preset values', () => {
@@ -227,6 +250,25 @@ describe('composeRuntimeBuildConfig invalid geometry filter contract', () => {
 
     expect(() => assertShapeBuildConfigTileEmitContract(receivedConfig)).toThrow(
       'tileEmitConfig.enableTopojsonSimplify must be false'
+    );
+  });
+
+  it('rejects missing border geometry config', () => {
+    const receivedConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig &
+      Record<string, unknown>;
+    delete receivedConfig.borderGeometryConfig;
+
+    expect(() => assertShapeBuildConfigTileEmitContract(receivedConfig)).toThrow(
+      'borderGeometryConfig is required'
+    );
+  });
+
+  it('rejects invalid border geometry tolerance', () => {
+    const receivedConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig;
+    receivedConfig.borderGeometryConfig.simplifyTolerance = -1;
+
+    expect(() => assertShapeBuildConfigTileEmitContract(receivedConfig)).toThrow(
+      'borderGeometryConfig.simplifyTolerance must be a finite non-negative number'
     );
   });
 });
