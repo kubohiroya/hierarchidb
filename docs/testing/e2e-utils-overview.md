@@ -26,6 +26,8 @@
 
 ### 実行制御
 - `e2e/utils/skip-if-disabled.ts` で `HIERARCHIDB_E2E=1` が未指定なら `test.skip` を実行。CI／ローカルでの切替を容易にします。
+- ルートの `pnpm e2e` は決定論的な既定スイートとして Chromium project のみを `--workers=1` で実行します。
+  Firefox は `pnpm e2e:firefox`、全 Playwright project は `pnpm e2e:all` で明示実行します。
 
 ## 2. Worker 結合テスト向けユーティリティ
 
@@ -57,7 +59,7 @@ MapLibre preview を含む Playwright E2E は、route/location/shape など個�
 
 ## 5. Firefox 起動確認
 
-Playwright の `firefox` project が `--project=firefox` で明示選択された場合、global setup はテスト本体の前に短い Firefox launch probe を実行する。起動に失敗した場合は、アプリ assertion やURL契約の失敗と混ぜず、環境/ブラウザ起動障害として fail-fast する。project 未指定の full suite では Chromium など他 project の実行到達を妨げないよう、Firefox 起動可否は Playwright の project 実行結果として分離する。suite 成功扱いにするための skip、retry、fallback、過剰 timeout は追加しない。
+Playwright の `firefox` project が `--project=firefox` で明示選択された場合、global setup はテスト本体の前に短い Firefox launch probe を実行する。起動に失敗した場合は、アプリ assertion やURL契約の失敗と混ぜず、環境/ブラウザ起動障害として fail-fast する。`pnpm e2e` の既定対象は Chromium のため、Firefox 起動可否は `pnpm e2e:firefox` または `pnpm e2e:all` の opt-in 検証として分離する。suite 成功扱いにするための skip、retry、fallback、過剰 timeout は追加しない。
 
 ## 6. 期待動作のレビュー観点
 
