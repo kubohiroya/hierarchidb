@@ -224,14 +224,24 @@ describe('resolveMapImageCaptureOutputPath', () => {
     ).toBe(path.join(outputBasePath, 'exports/map.png'));
   });
 
-  it('keeps absolute output paths unchanged', () => {
-    const absoluteOutputPath = path.resolve('/tmp/hdb-map.png');
-    expect(
+  it('rejects absolute output paths', () => {
+    expect(() =>
       resolveMapImageCaptureOutputPath({
-        outputPath: absoluteOutputPath,
+        outputPath: path.resolve('/tmp/hdb-map.png'),
         outputBasePath,
       })
-    ).toBe(absoluteOutputPath);
+    ).toThrow(/outputPath must be relative to outputBasePath/);
+  });
+
+  it('rejects unsafe output path segments', () => {
+    for (const outputPath of ['../map.png', 'exports/./map.png', 'exports//map.png']) {
+      expect(() =>
+        resolveMapImageCaptureOutputPath({
+          outputPath,
+          outputBasePath,
+        })
+      ).toThrow(/outputPath must not contain empty, current-directory, or parent-directory/);
+    }
   });
 });
 

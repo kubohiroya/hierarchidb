@@ -1,6 +1,12 @@
 import 'fake-indexeddb/auto';
+import path from 'node:path';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { StagedFolderActionConfig } from '@hierarchidb/staged-folder-action';
+import type {
+  MapImageCaptureBrowserPagePort,
+  PlaywrightLikeMapImageCapturePage,
+  StagedFolderActionConfig,
+} from '@hierarchidb/staged-folder-action';
+import { createMapImageCaptureBrowserActionRunner } from '@hierarchidb/staged-folder-action/map-image-capture-browser-host';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   runStagedFolderAction,
@@ -314,6 +320,73 @@ describe('runStagedFolderAction', () => {
       status: 'completed',
       phase: 'completed',
       currentAction: undefined,
+    });
+  });
+
+  it('connects injected map image capture actions to the standard browser runner', async () => {
+    const page = {} as PlaywrightLikeMapImageCapturePage;
+    const browser = {
+      newPage: vi.fn(async () => page),
+      close: vi.fn(async () => {}),
+    };
+    const launchBrowser = vi.fn(async () => browser);
+    const pagePort: MapImageCaptureBrowserPagePort = {
+      startPageFailureMonitoring: vi.fn(async () => {}),
+      setViewportSize: vi.fn(async () => {}),
+      goto: vi.fn(async () => {}),
+      waitForRenderStatus: vi.fn(async () => 'ready' as const),
+      assertNonBlankCanvas: vi.fn(async () => true),
+      collectPageFailures: vi.fn(async () => []),
+      screenshot: vi.fn(async () => {}),
+    };
+    const dependencies = createDependencies({
+      runMapImageCaptureAction: createMapImageCaptureBrowserActionRunner({
+        baseUrl: 'http://localhost:3000/app/',
+        routeMode: 'browser',
+        timeoutMs: 5000,
+        outputBasePath: '/tmp/hdb-capture-output',
+        launchBrowser,
+        createPagePort: () => pagePort,
+      }),
+    });
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-capture-browser-host' as NodeId,
+      sourceNodeId: 'source-capture-browser-host' as NodeId,
+      browserMode: 'headed',
+      config: createConfig({
+        actions: [
+          { type: 'build', mode: 'session-manager' },
+          {
+            type: 'map-image-capture',
+            mode: 'map-ui',
+            output: { path: 'exports/map.png', width: 800, height: 600 },
+            viewport: { bbox: [139, 35, 140, 36] },
+            layers: [{ path: '.', visible: true }],
+          },
+        ],
+      }),
+    });
+
+    expect(result).toMatchObject({
+      status: 'completed',
+      phase: 'completed',
+      progress: { total: 2, completed: 2, percentage: 100 },
+    });
+    expect(launchBrowser).toHaveBeenCalledWith({ browserMode: 'headed' });
+    expect(pagePort.goto).toHaveBeenCalledWith(
+      'http://localhost:3000/app/map/staging-root?captureIntentId=run-capture-browser-host%3A1'
+    );
+    expect(pagePort.screenshot).toHaveBeenCalledWith({
+      path: path.join('/tmp/hdb-capture-output', 'exports/map.png'),
+      fullPage: false,
+    });
+    await expect(
+      store.getMapImageCaptureIntent('run-capture-browser-host:1')
+    ).resolves.toMatchObject({
+      intentId: 'run-capture-browser-host:1',
+      stagingRootNodeId: 'staging-root',
+      browserMode: 'headed',
     });
   });
 

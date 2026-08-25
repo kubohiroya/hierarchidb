@@ -148,7 +148,17 @@ export function resolveMapImageCaptureOutputPath({
   assertNonEmptyTrimmedString(outputPath, 'outputPath');
   assertAbsolutePath(outputBasePath, 'outputBasePath');
   if (path.isAbsolute(outputPath)) {
-    return outputPath;
+    throw new Error('outputPath must be relative to outputBasePath');
+  }
+  if (
+    outputPath.includes('\0') ||
+    outputPath
+      .split('/')
+      .some((segment) => segment.length === 0 || segment === '.' || segment === '..')
+  ) {
+    throw new Error(
+      'outputPath must not contain empty, current-directory, or parent-directory segments'
+    );
   }
   return path.resolve(outputBasePath, outputPath);
 }

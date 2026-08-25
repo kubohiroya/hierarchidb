@@ -127,10 +127,18 @@ describe('runMapImageCaptureBrowserHandoff', () => {
     expect(page.screenshot).not.toHaveBeenCalled();
   });
 
-  it('fails before screenshot when the page reports browser failures', async () => {
-    const page = createPagePort('ready', true, [
-      { kind: 'unhandled-rejection', message: 'failed to load layer' },
-    ]);
+  it.each([
+    [{ kind: 'page-error' as const, message: 'render crashed' }, /page-error: render crashed/],
+    [
+      { kind: 'unhandled-rejection' as const, message: 'failed to load layer' },
+      /unhandled-rejection: failed to load layer/,
+    ],
+    [
+      { kind: 'webgl-context-lost' as const, message: 'WebGL context lost' },
+      /webgl-context-lost: WebGL context lost/,
+    ],
+  ])('fails before screenshot when the page reports %s', async (failure, expectedMessage) => {
+    const page = createPagePort('ready', true, [failure]);
 
     await expect(
       runMapImageCaptureBrowserHandoff({
@@ -141,7 +149,7 @@ describe('runMapImageCaptureBrowserHandoff', () => {
         timeoutMs: 5000,
         reportProgress: async () => {},
       })
-    ).rejects.toThrow(/unhandled-rejection: failed to load layer/);
+    ).rejects.toThrow(expectedMessage);
     expect(page.screenshot).not.toHaveBeenCalled();
   });
 });
