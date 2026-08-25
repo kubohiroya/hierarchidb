@@ -71,10 +71,6 @@ type ShapeBackgroundWindow = Window & {
 };
 
 test.describe('Shape build background (real pipeline)', () => {
-  test.skip(
-    true,
-    'Tracked in #1673: Shape build availability currently reports "Build not required" for the seeded fixture, so the background build cannot be started deterministically.'
-  );
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);

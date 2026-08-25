@@ -57,11 +57,7 @@ MapLibre preview を含む Playwright E2E は、route/location/shape など個�
 
 ## 5. Firefox 起動確認
 
-Playwright の既定 project は Chromium のみとする。Firefox は macOS headless 環境で browser process が起動後に framebuffer / sandbox エラーで停止することがあるため、project 未指定の `pnpm e2e` には含めない。
-
-- Firefox を検証する場合は `--project=firefox`、または `HIERARCHIDB_E2E_ENABLE_FIREFOX=1` を明示する。
-- Firefox project が有効な場合、global setup はテスト本体の前に短い Firefox launch probe を実行する。起動に失敗した場合は、アプリ assertion やURL契約の失敗と混ぜず、環境/ブラウザ起動障害として fail-fast する。
-- Firefox 起動障害をアプリ成功として扱う skip、retry、fallback、過剰 timeout は追加しない。
+Playwright の `firefox` project が `--project=firefox` で明示選択された場合、global setup はテスト本体の前に短い Firefox launch probe を実行する。起動に失敗した場合は、アプリ assertion やURL契約の失敗と混ぜず、環境/ブラウザ起動障害として fail-fast する。project 未指定の full suite では Chromium など他 project の実行到達を妨げないよう、Firefox 起動可否は Playwright の project 実行結果として分離する。suite 成功扱いにするための skip、retry、fallback、過剰 timeout は追加しない。
 
 ## 6. 期待動作のレビュー観点
 

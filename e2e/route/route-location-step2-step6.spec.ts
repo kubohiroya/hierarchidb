@@ -962,10 +962,6 @@ async function waitForRouteBuildCompletion(page: Page, nodeId: string): Promise<
 }
 
 test.describe('Route canonical Step2-Step6 with Location cascade', () => {
-  test.skip(
-    true,
-    'Tracked in #1673: Route selection-driven UI readiness requires internal routes while the canonical Worker boundary rejects routeBuildInput.routes in external payloads.'
-  );
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);

@@ -340,10 +340,6 @@ test.describe('PluginDialog caret E2E', () => {
     page,
     canonicalAuth,
   }) => {
-    test.skip(
-      true,
-      'Tracked in #1673: this caret scenario relies on legacy node-link selection semantics; the seeded Shape node remains unselected and the edit action stays disabled.'
-    );
     test.setTimeout(180000);
 
     setupConsoleErrorTracking(page);

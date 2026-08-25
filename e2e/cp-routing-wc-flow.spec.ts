@@ -14,10 +14,6 @@ import {
 
 test.describe
   .serial('CP routing + Working Copy build flow', () => {
-    test.skip(
-      true,
-      'Tracked in #1673: legacy Folder TreeTable selectors and create-menu flow no longer match the current console DOM.'
-    );
     async function runBuildFlow(page: Page) {
       setupConsoleErrorTracking(page);
 

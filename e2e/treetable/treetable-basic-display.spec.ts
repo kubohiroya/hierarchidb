@@ -21,8 +21,7 @@ const treeTable = (page: Page) => treeTableContainer(page).locator('table').firs
  * TreeTable Basic Display E2E Tests
  *
  * Tests the fundamental display and rendering functionality of the TreeTable component.
- * Based on the current console TreeTable contract. Legacy interaction scenarios are
- * tracked separately because docs/12-1-e2e-treetable.md was deprecated.
+ * Based on the specification in docs/12-1-e2e-treetable.md
  */
 
 test.describe('TreeTable Basic Display', () => {
@@ -54,29 +53,25 @@ test.describe('TreeTable Basic Display', () => {
     await waitForTreeTableLoad(page);
 
     // 標準カラムの表示確認
-    await expect(page.getByRole('columnheader', { name: /Name|名前/ })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /Description|説明/ })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /Created|作成日時/ })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /Updated|更新日時/ })).toBeVisible();
+    await expect(page.locator('th:has-text("Name"), th:has-text("名前")')).toBeVisible();
+    await expect(page.locator('th:has-text("Type"), th:has-text("種類")')).toBeVisible();
+    await expect(page.locator('th:has-text("Updated"), th:has-text("更新日時")')).toBeVisible();
 
     // カラムヘッダーの基本属性確認
     const nameColumn = page
-      .getByRole('columnheader')
+      .locator('th')
       .filter({ hasText: /Name|名前/ })
       .first();
     await expect(nameColumn).toBeVisible();
+    await expect(nameColumn).toHaveAttribute('role', 'columnheader');
 
     // テーブルの基本構造確認
-    await expect(treeTable(page)).toBeVisible();
+    await expect(page.locator('table')).toHaveAttribute('role', 'table');
     await expect(page.locator('thead')).toBeVisible();
     await expect(page.locator('tbody')).toBeVisible();
   });
 
   test('ローディング状態の表示', async ({ page }) => {
-    test.skip(
-      true,
-      'Tracked in #1673: legacy **/api/tree/** route interception no longer drives current TreeTable loading state.'
-    );
     // ネットワークを遅延させてローディング状態をテスト
     await page.route('**/api/tree/**', async (route) => {
       await page.waitForTimeout(1000);
@@ -95,10 +90,6 @@ test.describe('TreeTable Basic Display', () => {
   });
 
   test('エラー状態のハンドリング', async ({ page }) => {
-    test.skip(
-      true,
-      'Tracked in #1673: legacy **/api/tree/** route interception no longer drives current TreeTable error state.'
-    );
     // API エラーをシミュレート
     await page.route('**/api/tree/**', (route) => route.abort());
 
@@ -137,10 +128,6 @@ test.describe('TreeTable Basic Display', () => {
   });
 
   test('レスポンシブデザインの確認', async ({ page }) => {
-    test.skip(
-      true,
-      'Tracked in #1673: current compact console layout does not expose the legacy table visibility contract on mobile.'
-    );
     await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
@@ -236,6 +223,7 @@ test.describe('TreeTable Basic Display', () => {
   test('ブレッドクラムナビゲーションの表示', async ({ page }) => {
     await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
+    await waitForTreeTableLoad(page);
 
     // ブレッドクラムの基本表示確認
     await expect(page.getByRole('navigation', { name: 'breadcrumb' })).toBeVisible();

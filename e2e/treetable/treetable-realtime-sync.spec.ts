@@ -30,14 +30,10 @@ type RealtimeSyncWindow = Window & {
  * TreeTable Real-time Synchronization E2E Tests
  *
  * Tests the SubTree subscription system and real-time updates.
- * Based on the deprecated docs/12-1-e2e-treetable.md contract.
+ * Based on the specification in docs/12-1-e2e-treetable.md
  */
 
 test.describe('TreeTable Real-time Synchronization', () => {
-  test.skip(
-    true,
-    'Tracked in #1673: these scenarios depend on legacy SubTree subscription controls and worker globals that are not present in the current console DOM.'
-  );
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);

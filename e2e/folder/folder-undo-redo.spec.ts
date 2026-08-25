@@ -23,10 +23,6 @@ import {
 
 test.describe
   .serial('Folder Undo/Redo Flow', () => {
-    test.skip(
-      true,
-      'Tracked in #1673: undo/redo flow depends on legacy Folder create/edit/archive selectors that are no longer present in the current console DOM.'
-    );
     async function runUndoRedoCycle(page: Parameters<typeof test>[0]['page']) {
       setupConsoleErrorTracking(page);
       await clearTestData(page);
