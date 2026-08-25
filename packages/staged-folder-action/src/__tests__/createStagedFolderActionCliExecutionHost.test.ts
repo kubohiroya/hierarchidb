@@ -64,6 +64,8 @@ const exportFileConfig: StagedFolderActionConfig = {
   ],
 };
 
+const exportFileActionTypes = ['export-csv', 'export-xlsx'] as const;
+
 describe('createStagedFolderActionCliExecutionHost', () => {
   it('bridges non-dry-run CLI execution into the injected runner', async () => {
     vi.useFakeTimers();
@@ -447,6 +449,68 @@ describe('createStagedFolderActionCliExecutionHost', () => {
       },
     });
   });
+
+  it.each(exportFileActionTypes)(
+    'maps unsupported %s columns to typed export file failures',
+    async (actionType) => {
+      const io = createIo({
+        'config.json': JSON.stringify({
+          ...emptyConfig,
+          actions: [
+            {
+              type: actionType,
+              entityType: 'location',
+              source: { path: '.' },
+              output: { path: actionType === 'export-csv' ? 'locations.csv' : 'locations.xlsx' },
+              columns: ['name', 'unknown'],
+            },
+          ],
+        } satisfies StagedFolderActionConfig),
+      });
+      const failedRecord = createFailedRecord({
+        runId: 'run-export-unsupported-columns',
+        sourceNodeId: 'source-1',
+        currentAction: {
+          actionIndex: 0,
+          actionType,
+          phase: 'starting',
+          percentage: 0,
+        },
+      });
+      const host = createStagedFolderActionCliExecutionHost({
+        runStagedFolderAction: async () => {
+          throw new Error('action.columns contains unsupported columns: unknown');
+        },
+        getRun: async () => failedRecord,
+        createRunId: () => 'run-export-unsupported-columns',
+      });
+
+      const exitCode = await runStagedFolderActionCli(
+        ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+        io,
+        { executionHost: host }
+      );
+      const result = JSON.parse(io.stdout.join('')) as {
+        ok: boolean;
+        actionIndex: number;
+        actionType: string;
+        error: { category: string; code: string; actionType: string; message: string };
+      };
+
+      expect(exitCode).toBe(5);
+      expect(result).toMatchObject({
+        ok: false,
+        actionIndex: 0,
+        actionType,
+        error: {
+          category: actionType,
+          code: 'STAGED_FOLDER_ACTION_EXPORT_FILE_FAILED',
+          actionType,
+          message: 'action.columns contains unsupported columns: unknown',
+        },
+      });
+    }
+  );
 
   it('uses structured runner failure metadata before phase heuristics', async () => {
     const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });

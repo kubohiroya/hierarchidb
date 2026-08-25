@@ -93,12 +93,17 @@ describe('createExportFileActionRunner', () => {
     });
   });
 
-  it('fails fast for invalid row cell values', async () => {
+  it.each([
+    ['object', { nested: true }],
+    ['array', ['Tokyo']],
+    ['NaN', Number.NaN],
+    ['Infinity', Number.POSITIVE_INFINITY],
+  ])('fails fast for invalid %s row cell values', async (_label, value) => {
     const runner = createExportFileActionRunner({
       outputBasePath: '/tmp/staged-action',
       materializeRows: async () => ({
         columns: ['name'],
-        rows: [{ name: ['Tokyo'] as unknown as string }],
+        rows: [{ name: value as string }],
       }),
       writeFile: vi.fn(async () => {}),
     });
