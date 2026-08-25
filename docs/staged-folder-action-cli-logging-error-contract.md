@@ -179,6 +179,8 @@ Phase 2 child #1598 の WorkerAPI adapter は runner record が保持する `war
 
 artifact dependency edge の状態変化は `dependencyChanges` に記録する。元データ変更により artifact を `stale` にした場合、または incremental rebuild を `rebuilding` として予約した場合、CLI result から追跡できなければならない。
 
+Phase 4 child #1636 では、runner record の `failure` が `dependency` / `reference` metadata（`nodeId`、`dependentNodeId`、`referencePath`、`expectedTargetType`、`actualTargetType`、`mountId`、`pluginId`）を持つ場合、CLI adapter はその metadata を失敗 JSON の `error` に保持する。CLI adapter は dependency / reference failure を error message substring で分類してはならず、runner record の typed `failure.category` / `failure.code` / metadata を優先する。
+
 ## 失敗 JSON
 
 ```typescript

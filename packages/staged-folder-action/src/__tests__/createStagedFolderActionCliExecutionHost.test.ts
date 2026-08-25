@@ -554,6 +554,70 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it('preserves structured dependency failure metadata from the runner record', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
+    const failedRecord = createFailedRecord({
+      runId: 'run-schema-dependency-failure',
+      sourceNodeId: 'source-1',
+      phase: 'resolving-references',
+      error: 'Dependency schema is invalid.',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1' as NodeId,
+        dependentNodeId: 'route-1' as NodeId,
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+    });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async () => {
+        throw new Error('a message that must not drive dependency classification');
+      },
+      getRun: async () => failedRecord,
+      createRunId: () => 'run-schema-dependency-failure',
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      error: {
+        category: string;
+        code: string;
+        message: string;
+        nodeId: string;
+        dependentNodeId: string;
+        referencePath: string;
+        expectedTargetType: string;
+        actualTargetType: string;
+        pluginId: string;
+      };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1',
+        dependentNodeId: 'route-1',
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+    });
+  });
+
   it('keeps the original failure classification when progress lookup fails', async () => {
     const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
     const host = createStagedFolderActionCliExecutionHost({

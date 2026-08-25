@@ -229,9 +229,7 @@ function classifyRunnerError(
   const message = error instanceof Error ? error.message : String(error);
   if (record?.failure !== undefined) {
     return {
-      category: record.failure.category,
-      code: record.failure.code,
-      message: record.failure.message,
+      ...record.failure,
     };
   }
   const actionType = record?.currentAction?.actionType;
