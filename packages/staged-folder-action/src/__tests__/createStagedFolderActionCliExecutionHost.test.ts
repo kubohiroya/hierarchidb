@@ -448,6 +448,48 @@ describe('createStagedFolderActionCliExecutionHost', () => {
     });
   });
 
+  it('uses structured runner failure metadata before phase heuristics', async () => {
+    const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
+    const failedRecord = createFailedRecord({
+      runId: 'run-structured-dependency-failure',
+      sourceNodeId: 'source-1',
+      phase: 'resolving-references',
+      error: 'stale edge missing rebuild target',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
+        message: 'stale edge missing rebuild target',
+      },
+    });
+    const host = createStagedFolderActionCliExecutionHost({
+      runStagedFolderAction: async () => {
+        throw new Error('stale edge missing rebuild target');
+      },
+      getRun: async () => failedRecord,
+      createRunId: () => 'run-structured-dependency-failure',
+    });
+
+    const exitCode = await runStagedFolderActionCli(
+      ['--json', '--config', 'config.json', '--source-node-id', 'source-1'],
+      io,
+      { executionHost: host }
+    );
+    const result = JSON.parse(io.stdout.join('')) as {
+      ok: boolean;
+      error: { category: string; code: string; message: string };
+    };
+
+    expect(exitCode).toBe(5);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
+        message: 'stale edge missing rebuild target',
+      },
+    });
+  });
+
   it('keeps the original failure classification when progress lookup fails', async () => {
     const io = createIo({ 'config.json': JSON.stringify(emptyConfig) });
     const host = createStagedFolderActionCliExecutionHost({
@@ -769,9 +811,10 @@ function createFailedRecord(input: TestRunRecordInput): StagedFolderActionRunRec
     sourceNodeId: input.sourceNodeId,
     stagingRootNodeId: input.stagingRootNodeId ?? ('stage-1' as NodeId),
     status: 'failed',
-    phase: 'failed',
+    phase: input.phase ?? 'failed',
     progress: { total: 1, completed: 0, failed: 1, skipped: 0, percentage: 0 },
     currentAction: input.currentAction,
+    failure: input.failure,
     error: input.error ?? 'failed',
     warnings: [],
     pendingReferences: [],

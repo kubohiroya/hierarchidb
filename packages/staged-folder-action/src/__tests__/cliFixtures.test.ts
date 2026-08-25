@@ -134,12 +134,17 @@ describe('staged-folder-action CLI fixture contracts', () => {
       runId: 'run-fixture-dependency-failure',
       sourceNodeId: 'source-fixture',
       phase: 'resolving-references',
-      error: 'dependency resolver returned stale edge without rebuild target',
+      error: 'stale edge missing rebuild target',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
+        message: 'stale edge missing rebuild target',
+      },
     });
     const host = createStagedFolderActionCliExecutionHost({
       createRunId: () => 'run-fixture-dependency-failure',
       runStagedFolderAction: async () => {
-        throw new Error('dependency resolver returned stale edge without rebuild target');
+        throw new Error('stale edge missing rebuild target');
       },
       getRun: async () => failedRecord,
     });
@@ -203,6 +208,7 @@ function createFailedRecord(
     phase: input.phase ?? 'failed',
     progress: { total: 1, completed: 0, failed: 1, skipped: 0, percentage: 0 },
     currentAction: input.currentAction,
+    failure: input.failure,
     error: input.error ?? 'failed',
     warnings: [],
     pendingReferences: [],

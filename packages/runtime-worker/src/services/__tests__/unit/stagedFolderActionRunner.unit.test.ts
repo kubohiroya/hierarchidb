@@ -179,7 +179,7 @@ describe('runStagedFolderAction', () => {
   it('fails dependency resolver errors without converting them to warnings', async () => {
     const dependencies = createDependencies({
       resolveReferences: vi.fn(async () => {
-        throw new Error('hard dependency missing');
+        throw new Error('stale edge missing rebuild target');
       }),
     });
 
@@ -189,11 +189,16 @@ describe('runStagedFolderAction', () => {
         sourceNodeId: 'source-dependency-failure' as NodeId,
         config: createConfig({ actions: [] }),
       })
-    ).rejects.toThrow(/hard dependency missing/);
+    ).rejects.toThrow(/stale edge missing rebuild target/);
     await expect(store.getRun('run-dependency-failure' as NodeId)).resolves.toMatchObject({
       status: 'failed',
       phase: 'failed',
-      error: 'hard dependency missing',
+      error: 'stale edge missing rebuild target',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_CONTRACT_VIOLATION',
+        message: 'stale edge missing rebuild target',
+      },
       warnings: [],
       pendingReferences: [],
     });
@@ -903,6 +908,67 @@ describe('runStagedFolderAction', () => {
     await expect(store.getRun('run-cleanup-rejection' as NodeId)).resolves.toMatchObject({
       status: 'failed',
       error: 'build failed; cleanup failed: cleanup failed',
+    });
+  });
+
+  it('does not retry successful cleanup failures through the delete-always failure path', async () => {
+    const cleanup = vi.fn(async () => {
+      throw new Error('cleanup failed');
+    });
+    const dependencies = createDependencies({ cleanup });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-success-cleanup-rejection' as NodeId,
+        sourceNodeId: 'source-success-cleanup-rejection' as NodeId,
+        config: {
+          ...createConfig({ actions: [] }),
+          staging: {
+            mode: 'temporary-copy',
+            cleanup: 'delete-always',
+          },
+        },
+      })
+    ).rejects.toThrow(/cleanup failed/);
+
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    await expect(store.getRun('run-success-cleanup-rejection' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      error: 'cleanup failed',
+    });
+  });
+
+  it('runs delete-always failure cleanup when the success cleanup progress update fails', async () => {
+    const cleanup = vi.fn(async () => {});
+    const dependencies = createDependencies({ cleanup });
+    const originalUpdateRun = store.updateRun.bind(store);
+    vi.spyOn(store, 'updateRun').mockImplementation(async (runId, patch) => {
+      if (patch.status === 'running' && patch.phase === 'cleanup' && patch.progress !== undefined) {
+        throw new Error('cleanup progress update failed');
+      }
+      return originalUpdateRun(runId, patch);
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-success-cleanup-progress-failure' as NodeId,
+        sourceNodeId: 'source-success-cleanup-progress-failure' as NodeId,
+        config: {
+          ...createConfig({ actions: [] }),
+          staging: {
+            mode: 'temporary-copy',
+            cleanup: 'delete-always',
+          },
+        },
+      })
+    ).rejects.toThrow(/cleanup progress update failed/);
+
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    await expect(
+      store.getRun('run-success-cleanup-progress-failure' as NodeId)
+    ).resolves.toMatchObject({
+      status: 'failed',
+      error: 'cleanup progress update failed',
     });
   });
 
