@@ -37,10 +37,10 @@ route pipelineは次の3ステージを、この順序で実行する。
 - Step3 `selectedArrayByCountries`
 - canonical route input resolver が解決したlocation参照と始点/終点Point
 - `RouteBuildConfig.sourceConfig`
-- route generation method/options。`method` が route 入力に明示されていない場合は、source planning
-  段階で `airway` / `waterway` の正規method、または land route modes の configured default を
-  materialize する。#1646 のsettings modelが入るまでは、land route modes の configured default は
-  `buildConfig.routeGeneration.method` とする。
+- route generation method/options。source planning は `RouteBuildConfig.routeMethodSettings` の
+  `overrides[routeMode] ?? defaults[routeMode]` を使い、task生成前に明示的な method/options へ
+  materialize する。`airway` は `great_circle`、`waterway` は `searoute` を固定し、
+  land route modes は `direct` / `osm_route` / `custom` の明示設定だけを許可する。
 
 ### 処理
 
@@ -49,11 +49,10 @@ route pipelineは次の3ステージを、この順序で実行する。
    location IDと座標を厳格検証する。
 3. `direct / great_circle / osm_route / searoute / custom` の source-planned engineで
    LineStringを生成する。`airway` は `great_circle`、`waterway` は `searoute` を正規methodとし、
-   明示された `RouteBuildRouteInput.method` がこれと矛盾する場合は source planning の
-   契約違反として失敗させる。`railway / high-speed-railway / road / highway` は `direct` または
-   network/custom routing method を許容し、route入力で明示されたmethod、または
-   configured default を materialize する。#1646 のsettings modelが入るまでは、
-   land route modes の configured default は `buildConfig.routeGeneration.method` とする。
+   明示された `RouteBuildRouteInput.method` または `routeMethodSettings.overrides` がこれと
+   矛盾する場合は source planning の契約違反として失敗させる。
+   `railway / high-speed-railway / road / highway` は `routeMethodSettings` に明示された
+   `direct` / `osm_route` / `custom` のいずれかを materialize する。
    engine registryはmethodごとのcapabilityを必須とし、engine id/version、method、
    任意のaccepted route modes、network requirement、waypoint対応を検証する。
    source planningで確定した`routeMode`はgeneration requestへ渡し、engine capabilityの

@@ -11,6 +11,7 @@ import { deleteTasksByNode, listTasksByStatus, VtTaskQueueDb } from '@hierarchid
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../common/config/buildConfig.js';
 import {
+  materializeSourcePlannedRouteGeneration,
   materializeSourcePlannedRouteGenerationMethod,
   RouteBuildManager,
 } from './RouteBuildManager.js';
@@ -47,8 +48,8 @@ describe('materializeSourcePlannedRouteGenerationMethod', () => {
   });
 
   it('uses the configured node method for land routes', () => {
-    expect(materializeMethod(ROUTE_MODES.ROAD, undefined, 'osm_route')).toBe('osm_route');
-    expect(materializeMethod(ROUTE_MODES.RAILWAY, undefined, 'custom')).toBe('custom');
+    expect(materializeGeneration(ROUTE_MODES.ROAD, undefined, 'osm_route').method).toBe('osm_route');
+    expect(materializeGeneration(ROUTE_MODES.RAILWAY, undefined, 'custom').method).toBe('custom');
   });
 
   it('keeps compatible explicit route input methods authoritative', () => {
@@ -69,20 +70,27 @@ describe('materializeSourcePlannedRouteGenerationMethod', () => {
   });
 
   it('rejects configured land methods outside direct or network routing', () => {
-    expect(() => materializeMethod(ROUTE_MODES.ROAD, undefined, 'searoute')).toThrow(
+    expect(() => materializeGeneration(ROUTE_MODES.ROAD, undefined, 'searoute')).toThrow(
       'routeMode road does not support generation method searoute'
     );
-    expect(() => materializeMethod(ROUTE_MODES.RAILWAY, undefined, 'great_circle')).toThrow(
+    expect(() => materializeGeneration(ROUTE_MODES.RAILWAY, undefined, 'great_circle')).toThrow(
       'routeMode railway does not support generation method great_circle'
     );
+  });
+
+  it('materializes zoom-aware great-circle detail for airway routes', () => {
+    expect(materializeGeneration(ROUTE_MODES.AIRWAY).options).toEqual({ numPoints: 128 });
   });
 
   it('materializes route task data through the build manager path', async () => {
     const config: RouteBuildConfig = {
       ...DEFAULT_ROUTE_BUILD_CONFIG,
-      routeGeneration: {
-        ...DEFAULT_ROUTE_BUILD_CONFIG.routeGeneration,
-        method: 'osm_route',
+      routeMethodSettings: {
+        defaults: DEFAULT_ROUTE_BUILD_CONFIG.routeMethodSettings.defaults,
+        overrides: {
+          road: { method: 'osm_route' },
+          railway: { method: 'custom' },
+        },
       },
     };
     const manager = new RouteBuildManager({
@@ -124,6 +132,33 @@ const materializeMethod = (
       ...(method === undefined ? {} : { method }),
     },
     configuredMethod
+  );
+
+const materializeGeneration = (
+  routeMode: RouteBuildRouteInput['routeMode'],
+  method?: RouteBuildRouteInput['method'],
+  configuredMethod?: RouteBuildRouteInput['method']
+) =>
+  materializeSourcePlannedRouteGeneration(
+    {
+      routeMode,
+      ...(method === undefined ? {} : { method }),
+    },
+    {
+      routeMethodSettings: {
+        defaults: DEFAULT_ROUTE_BUILD_CONFIG.routeMethodSettings.defaults,
+        ...(configuredMethod === undefined
+          ? {}
+          : {
+              overrides: {
+                [routeMode]: {
+                  method: configuredMethod,
+                },
+              },
+            }),
+      },
+      geometryConfig: DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+    }
   );
 
 const createRouteInput = (

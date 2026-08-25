@@ -1,5 +1,10 @@
 import { requireCanonicalStageBuildConfig } from '@hierarchidb/build-runtime-services';
-import type { RouteBuildConfig, RouteGenerationMethod } from '@hierarchidb/route-api';
+import {
+  ROUTE_MODES,
+  type RouteBuildConfig,
+  type RouteGenerationMethod,
+  type RouteMode,
+} from '@hierarchidb/route-api';
 
 const ROUTE_GENERATION_METHODS = new Set<RouteGenerationMethod>([
   'direct',
@@ -8,6 +13,15 @@ const ROUTE_GENERATION_METHODS = new Set<RouteGenerationMethod>([
   'searoute',
   'custom',
 ]);
+
+const ROUTE_MODE_VALUES = Object.values(ROUTE_MODES);
+const LAND_ROUTE_MODES = new Set<RouteMode>([
+  ROUTE_MODES.RAILWAY,
+  ROUTE_MODES.H_RAILWAY,
+  ROUTE_MODES.ROAD,
+  ROUTE_MODES.HIGHWAY,
+]);
+const LAND_ROUTE_METHODS = new Set<RouteGenerationMethod>(['direct', 'osm_route', 'custom']);
 
 export const requireRouteBuildConfig = (value: unknown): RouteBuildConfig => {
   const config = requireCanonicalStageBuildConfig(value, {
@@ -18,12 +32,97 @@ export const requireRouteBuildConfig = (value: unknown): RouteBuildConfig => {
     requireTileExecutionFields: true,
   });
   requireRouteGeneration(config.routeGeneration);
+  requireRouteMethodSettings(config.routeMethodSettings, config.geometryConfig);
   requireOptionalConfig(config.cleanupConfig, 'payload.buildConfig.cleanupConfig');
   requireRouteGeometryConfig(config.geometryConfig, config.routeGeometryConfig);
   requireOptionalConfig(config.locationResolution, 'payload.buildConfig.locationResolution');
   requireOptionalConfig(config.validation, 'payload.buildConfig.validation');
   requireOptionalConfig(config.laneCaps, 'payload.buildConfig.laneCaps');
   return value as RouteBuildConfig;
+};
+
+const requireRouteMethodSettings = (value: unknown, geometryConfig: unknown): void => {
+  const settings = requireRecord(value, 'payload.buildConfig.routeMethodSettings');
+  const defaults = requireRecord(
+    settings.defaults,
+    'payload.buildConfig.routeMethodSettings.defaults'
+  );
+  const overrides =
+    settings.overrides === undefined
+      ? undefined
+      : requireRecord(settings.overrides, 'payload.buildConfig.routeMethodSettings.overrides');
+  const boundaries = requireStrictZoomBoundaries(
+    requireRecord(geometryConfig, 'payload.buildConfig.geometryConfig').zoomBandBoundaries,
+    'payload.buildConfig.geometryConfig.zoomBandBoundaries'
+  );
+  const bandCount = boundaries.length - 1;
+
+  for (const routeMode of ROUTE_MODE_VALUES) {
+    requireRouteMethodSetting(
+      defaults[routeMode],
+      routeMode,
+      `payload.buildConfig.routeMethodSettings.defaults.${routeMode}`,
+      bandCount
+    );
+    if (overrides && Object.hasOwn(overrides, routeMode)) {
+      requireRouteMethodSetting(
+        overrides[routeMode],
+        routeMode,
+        `payload.buildConfig.routeMethodSettings.overrides.${routeMode}`,
+        bandCount
+      );
+    }
+  }
+};
+
+const requireRouteMethodSetting = (
+  value: unknown,
+  routeMode: RouteMode,
+  label: string,
+  bandCount: number
+): void => {
+  const setting = requireRecord(value, label);
+  requireEnum(setting.method, ROUTE_GENERATION_METHODS, `${label}.method`);
+  if (routeMode === ROUTE_MODES.AIRWAY && setting.method !== 'great_circle') {
+    throw new Error(`[route canonical build API] ${label}.method must be great_circle`);
+  }
+  if (routeMode === ROUTE_MODES.WATERWAY && setting.method !== 'searoute') {
+    throw new Error(`[route canonical build API] ${label}.method must be searoute`);
+  }
+  if (
+    LAND_ROUTE_MODES.has(routeMode) &&
+    !LAND_ROUTE_METHODS.has(setting.method as RouteGenerationMethod)
+  ) {
+    throw new Error(
+      `[route canonical build API] ${label}.method is not supported for ${routeMode}`
+    );
+  }
+  if (setting.options !== undefined) {
+    requireRecord(setting.options, `${label}.options`);
+  }
+  if (setting.greatCircle !== undefined) {
+    requireGreatCircleDetail(setting.greatCircle, `${label}.greatCircle`, bandCount);
+  }
+};
+
+const requireGreatCircleDetail = (value: unknown, label: string, bandCount: number): void => {
+  const detail = requireRecord(value, label);
+  requirePositiveInteger(detail.numPoints, `${label}.numPoints`);
+  if (detail.numPointsByZoomBand === undefined) return;
+  if (
+    !Array.isArray(detail.numPointsByZoomBand) ||
+    detail.numPointsByZoomBand.length !== bandCount
+  ) {
+    throw new Error(
+      `[route canonical build API] ${label}.numPointsByZoomBand must contain exactly ${String(bandCount)} values`
+    );
+  }
+  for (let index = 0; index < detail.numPointsByZoomBand.length; index += 1) {
+    requirePositiveInteger(
+      detail.numPointsByZoomBand[index],
+      `${label}.numPointsByZoomBand[${String(index)}]`
+    );
+  }
 };
 
 const requireRouteGeometryConfig = (geometryValue: unknown, routeValue: unknown): void => {
