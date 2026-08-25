@@ -40,6 +40,7 @@
     "ci:unit:treeconsole": "pnpm -r --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-treetable run test:run",
     "ci:validation:test": "node --test scripts/ci/resolve-validation-mode.test.mjs",
     "ci:validate:affected": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" node scripts/ci/run-affected-validation.mjs",
+    "ci:validate:affected:tests": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" node scripts/ci/run-affected-fast-tests.mjs",
     "ci:validate:full": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" turbo run build lint --log-order=grouped --output-logs=errors-only",
     "ci:versions": "git rev-parse HEAD && node -v && pnpm -v && npx tsc -v || true",
     "clean": "turbo run clean",

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { classifyChangedPaths } from './resolve-validation-mode.mjs';
+import { selectRelatedTests } from './run-affected-fast-tests.mjs';
 import { createTurboArguments } from './run-affected-validation.mjs';
 
 const BASE_SHA = '1111111111111111111111111111111111111111';
@@ -23,10 +27,8 @@ test('selects affected validation for workspace-local changes', () => {
     'affected'
   );
   assert.equal(
-    classifyChangedPaths([
-      'packages/core-types/src/index.ts',
-      'scripts/naming-audit-baseline.json',
-    ]).mode,
+    classifyChangedPaths(['packages/core-types/src/index.ts', 'scripts/naming-audit-baseline.json'])
+      .mode,
     'affected'
   );
 });
@@ -58,17 +60,10 @@ test('rejects empty and invalid path lists', () => {
 
 test('builds an exact changed-package Turbo filter', () => {
   const args = createTurboArguments({ baseSha: BASE_SHA, headSha: HEAD_SHA });
-  assert.deepEqual(args.slice(0, 6), [
-    'exec',
-    'turbo',
-    'run',
-    'typecheck',
-    'test',
-    '--filter',
-  ]);
-  assert.equal(args[6], `[${BASE_SHA}...${HEAD_SHA}]`);
-  assert.equal(args[7], '--log-order=grouped');
-  assert.equal(args[8], '--output-logs=errors-only');
+  assert.deepEqual(args.slice(0, 5), ['exec', 'turbo', 'run', 'typecheck', '--filter']);
+  assert.equal(args[5], `[${BASE_SHA}...${HEAD_SHA}]`);
+  assert.equal(args[6], '--log-order=grouped');
+  assert.equal(args[7], '--output-logs=errors-only');
 });
 
 test('allows affected Turbo task escalation through CI_AFFECTED_TASKS', () => {
@@ -84,6 +79,76 @@ test('allows affected Turbo task escalation through CI_AFFECTED_TASKS', () => {
       process.env.CI_AFFECTED_TASKS = previousTasks;
     }
   }
+});
+
+test('selects changed and related package tests for fast PR validation', () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'hdb-ci-fast-tests-'));
+  mkdirSync(path.join(cwd, 'plugins/example-plugin/src/common/__tests__'), { recursive: true });
+  writeFileSync(
+    path.join(cwd, 'plugins/example-plugin/package.json'),
+    JSON.stringify({ name: '@hierarchidb/example-plugin' })
+  );
+  writeFileSync(
+    path.join(cwd, 'plugins/example-plugin/src/common/featureTableEditAdapters.ts'),
+    ''
+  );
+  writeFileSync(
+    path.join(
+      cwd,
+      'plugins/example-plugin/src/common/__tests__/featureTableEditAdapters.unit.test.ts'
+    ),
+    ''
+  );
+  writeFileSync(
+    path.join(cwd, 'plugins/example-plugin/src/common/__tests__/unrelated.unit.test.ts'),
+    ''
+  );
+
+  const [selection] = selectRelatedTests({
+    cwd,
+    changedPaths: ['plugins/example-plugin/src/common/featureTableEditAdapters.ts'],
+  });
+  assert.equal(selection?.packageName, '@hierarchidb/example-plugin');
+  assert.deepEqual(selection?.relatedTests, [
+    'plugins/example-plugin/src/common/__tests__/featureTableEditAdapters.unit.test.ts',
+  ]);
+});
+
+test('selects changed test files directly for fast PR validation', () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'hdb-ci-changed-tests-'));
+  mkdirSync(path.join(cwd, 'packages/example/src/__tests__'), { recursive: true });
+  writeFileSync(
+    path.join(cwd, 'packages/example/package.json'),
+    JSON.stringify({ name: '@hierarchidb/example' })
+  );
+  writeFileSync(path.join(cwd, 'packages/example/src/__tests__/changed.unit.test.ts'), '');
+
+  const [selection] = selectRelatedTests({
+    cwd,
+    changedPaths: ['packages/example/src/__tests__/changed.unit.test.ts'],
+  });
+  assert.deepEqual(selection?.relatedTests, [
+    'packages/example/src/__tests__/changed.unit.test.ts',
+  ]);
+});
+
+test('marks selected test packages without test scripts as non-runnable', () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'hdb-ci-missing-test-script-'));
+  mkdirSync(path.join(cwd, 'packages/example/src/__tests__'), { recursive: true });
+  writeFileSync(
+    path.join(cwd, 'packages/example/package.json'),
+    JSON.stringify({ name: '@hierarchidb/example' })
+  );
+  writeFileSync(path.join(cwd, 'packages/example/src/__tests__/changed.unit.test.ts'), '');
+
+  const [selection] = selectRelatedTests({
+    cwd,
+    changedPaths: ['packages/example/src/__tests__/changed.unit.test.ts'],
+  });
+  assert.equal(selection?.hasTestScript, false);
+  assert.deepEqual(selection?.relatedTests, [
+    'packages/example/src/__tests__/changed.unit.test.ts',
+  ]);
 });
 
 test('rejects missing or malformed Turbo comparison refs', () => {

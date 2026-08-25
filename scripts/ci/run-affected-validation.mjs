@@ -7,13 +7,15 @@ const assertCommitSha = (value, variableName) => {
   }
 };
 
-export const createTurboArguments = ({ baseSha, headSha }) => {
+export const createTurboArguments = ({ baseSha, headSha, tasks: explicitTasks }) => {
   assertCommitSha(baseSha, 'TURBO_SCM_BASE');
   assertCommitSha(headSha, 'TURBO_SCM_HEAD');
-  const tasks = (process.env.CI_AFFECTED_TASKS ?? 'typecheck,test')
-    .split(',')
-    .map((task) => task.trim())
-    .filter((task) => task.length > 0);
+  const tasks =
+    explicitTasks ??
+    (process.env.CI_AFFECTED_TASKS ?? 'typecheck')
+      .split(',')
+      .map((task) => task.trim())
+      .filter((task) => task.length > 0);
   if (tasks.length === 0) {
     throw new Error('CI_AFFECTED_TASKS must contain at least one Turbo task.');
   }
@@ -32,7 +34,7 @@ export const createTurboArguments = ({ baseSha, headSha }) => {
 export const runAffectedValidation = ({
   baseSha = process.env.TURBO_SCM_BASE,
   headSha = process.env.TURBO_SCM_HEAD,
-  } = {}) => {
+} = {}) => {
   const args = createTurboArguments({ baseSha, headSha });
   console.error(
     `[ci-validation] affected Turbo tasks: ${args.slice(3, args.indexOf('--filter')).join(', ')}`
