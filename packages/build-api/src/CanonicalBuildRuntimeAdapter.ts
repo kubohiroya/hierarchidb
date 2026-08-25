@@ -84,6 +84,7 @@ export const assertCanonicalBuildRuntimeRecord = (
       'nodeType'
     );
   }
+  assertCurrentAction(record);
   return record;
 };
 
@@ -108,3 +109,50 @@ const throwRuntimeRecordError = (
     }
   );
 };
+
+const assertCurrentAction = (record: BuildSessionRuntimeRecord): void => {
+  if (record.currentAction === undefined) {
+    return;
+  }
+
+  const currentAction = record.currentAction as unknown;
+  if (typeof currentAction !== 'object' || currentAction === null) {
+    throwRuntimeRecordError(
+      'CANONICAL_BUILD_RUNTIME_RECORD_INVALID_CURRENT_ACTION',
+      record,
+      'currentAction'
+    );
+  }
+
+  const fields = currentAction as {
+    actionIndex?: unknown;
+    actionType?: unknown;
+    phase?: unknown;
+    percentage?: unknown;
+  };
+  if (!isValidCurrentActionFieldSet(fields)) {
+    throwRuntimeRecordError(
+      'CANONICAL_BUILD_RUNTIME_RECORD_INVALID_CURRENT_ACTION',
+      record,
+      'currentAction'
+    );
+  }
+};
+
+const isValidCurrentActionFieldSet = (fields: {
+  actionIndex?: unknown;
+  actionType?: unknown;
+  phase?: unknown;
+  percentage?: unknown;
+}): boolean =>
+  Number.isInteger(fields.actionIndex) &&
+  typeof fields.actionIndex === 'number' &&
+  fields.actionIndex >= 0 &&
+  typeof fields.actionType === 'string' &&
+  fields.actionType.trim().length > 0 &&
+  typeof fields.phase === 'string' &&
+  fields.phase.trim().length > 0 &&
+  typeof fields.percentage === 'number' &&
+  Number.isFinite(fields.percentage) &&
+  fields.percentage >= 0 &&
+  fields.percentage <= 100;
