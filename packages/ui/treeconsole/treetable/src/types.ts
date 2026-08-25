@@ -2,6 +2,10 @@
  * Types for TreeTable package
  */
 
+import type {
+  BuildDependencyAvailabilitySummary,
+  BuildPluginPrerequisiteFailure,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -65,6 +69,8 @@ export interface TreeTableController {
     node: TreeNodeInUI
   ) => Promise<{ canOpen: boolean; finalStepIndex?: number }>;
   resolveOpenSteps?: (node: TreeNodeInUI) => Promise<OpenStepOption[]>;
+  dependencySummary?: BuildDependencyAvailabilitySummary;
+  pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
 }
 
 // TreeTable core props

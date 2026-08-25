@@ -2,6 +2,10 @@
  * Types for TreeConsoleBreadcrumb package
  */
 
+import type {
+  BuildDependencyAvailabilitySummary,
+  BuildPluginPrerequisiteFailure,
+} from '@hierarchidb/build-api';
 import type { MouseEvent, ReactElement } from 'react';
 import type { NodeContextMenuProps, OpenStepOption } from './components/NodeContextMenu.js';
 
@@ -159,6 +163,16 @@ export interface TreeConsoleBreadcrumbProps {
    * Optional node-id set with queued or running build sessions.
    */
   activeBuildNodeIds?: ReadonlySet<string>;
+
+  /**
+   * Optional dependency availability summary supplied by the build-api/runtime boundary.
+   */
+  dependencySummary?: BuildDependencyAvailabilitySummary;
+
+  /**
+   * Optional plugin prerequisite failures supplied by the build-api/runtime boundary.
+   */
+  pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
 
   /**
    * Optional descendant collector used to resolve folder build availability.

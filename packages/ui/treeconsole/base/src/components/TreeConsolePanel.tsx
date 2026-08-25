@@ -1,3 +1,7 @@
+import type {
+  BuildDependencyAvailabilitySummary,
+  BuildPluginPrerequisiteFailure,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type {
@@ -132,6 +136,10 @@ export interface TreeConsolePanelProps {
   readonly selectAllIdPrefix?: string;
   /** Optional build session indicator state for row-level status */
   readonly buildSessionIndicator?: BuildSessionIndicator;
+  /** Optional dependency availability summary from the build-api/runtime boundary. */
+  readonly dependencySummary?: BuildDependencyAvailabilitySummary;
+  /** Optional plugin prerequisite failures from the build-api/runtime boundary. */
+  readonly pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
   /** Enable archive-specific columns and behaviours */
   readonly useArchiveColumns?: boolean;
   readonly archiveAction?: 'restore' | 'empty';
@@ -191,6 +199,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     onBreadcrumbContextAction: props.onBreadcrumbContextAction,
     breadcrumbRenderer: props.breadcrumbRenderer,
     buildSessionIndicator: props.buildSessionIndicator,
+    dependencySummary: props.dependencySummary,
+    pluginPrerequisiteFailures: props.pluginPrerequisiteFailures,
     leftSlot: tagsLeftSlot,
   });
 

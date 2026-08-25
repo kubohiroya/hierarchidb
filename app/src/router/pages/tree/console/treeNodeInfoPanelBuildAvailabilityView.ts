@@ -1,4 +1,9 @@
-import { resolveBuildAvailability, resolveSubtreeBuildAvailability } from '@hierarchidb/build-api';
+import {
+  type BuildDependencyAvailabilitySummary,
+  type BuildPluginPrerequisiteFailure,
+  resolveBuildAvailability,
+  resolveSubtreeBuildAvailability,
+} from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import {
@@ -14,6 +19,8 @@ export type TreeNodeInfoPanelBuildAvailabilityViewInput = {
   readonly folderDescendantNodes?: readonly TreeNode[];
   readonly buildTargetLoading: boolean;
   readonly activeNodeIds?: ReadonlySet<NodeId>;
+  readonly dependencySummary?: BuildDependencyAvailabilitySummary;
+  readonly pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
 };
 
 export const canBuildInfoPanelNodeType = (nodeType: NodeType | string): boolean =>
@@ -24,6 +31,8 @@ export const resolveTreeNodeInfoPanelBuildAvailabilityView = ({
   folderDescendantNodes,
   buildTargetLoading,
   activeNodeIds,
+  dependencySummary,
+  pluginPrerequisiteFailures,
 }: TreeNodeInfoPanelBuildAvailabilityViewInput): BuildAvailabilityView | undefined => {
   if (!currentNode || buildTargetLoading) return undefined;
 
@@ -35,6 +44,8 @@ export const resolveTreeNodeInfoPanelBuildAvailabilityView = ({
         descendants: folderDescendantNodes,
         canBuildNodeType: canBuildInfoPanelNodeType,
         activeNodeIds,
+        dependencySummary,
+        pluginPrerequisiteFailures,
       })
     );
   }
@@ -45,6 +56,8 @@ export const resolveTreeNodeInfoPanelBuildAvailabilityView = ({
     resolveBuildAvailability({
       candidates: [currentNode],
       activeNodeIds,
+      dependencySummary,
+      pluginPrerequisiteFailures,
     })
   );
 };

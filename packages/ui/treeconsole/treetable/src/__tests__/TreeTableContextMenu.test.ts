@@ -255,4 +255,53 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
     expect(latestProps?.buildAvailabilitySummary).toBe('No build target');
     expect(latestProps?.buildDiagnosticsLabel).toBe('Build diagnostics');
   });
+
+  it('passes dependency diagnostics from the controller through build availability props', () => {
+    let latestProps: NodeContextMenuProps | null = null;
+    const ContextMenuComponent = (props: NodeContextMenuProps) => {
+      latestProps = props;
+      return React.createElement('div', { 'data-testid': 'context-menu-stub' });
+    };
+
+    const shape = createNode('shape-dependency-error', {
+      nodeType: asNodeType('shape'),
+      depth: 1,
+    });
+
+    render(
+      React.createElement(TreeTableContextMenu, {
+        contextMenuState: {
+          anchorEl: document.createElement('button'),
+          anchorPosition: null,
+          node: shape,
+        },
+        onClose: () => {},
+        treeId: 'r',
+        controller: {
+          nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
+          dependencySummary: {
+            edgeCounts: { active: 1 },
+            schemaErrors: [
+              {
+                code: 'DEPENDENCY_SCHEMA_INVALID',
+                message: 'Dependency schema is invalid.',
+                nodeId: shape.id,
+              },
+            ],
+          },
+        },
+        buildSessionIndicator: {
+          runningNodeIds: new Set<NodeId>(),
+          activeNodeIds: new Set<NodeId>(),
+        },
+        ContextMenuComponent,
+      })
+    );
+
+    expect(latestProps?.buildRequired).toBe(false);
+    expect(latestProps?.canBuild).toBe(false);
+    expect(latestProps?.buildAvailabilitySummary).toBe('Schema error');
+    expect(latestProps?.buildAvailabilityTooltip).toContain('Dependency schema is invalid.');
+    expect(latestProps?.buildDiagnosticsLabel).toBe('Build diagnostics');
+  });
 });

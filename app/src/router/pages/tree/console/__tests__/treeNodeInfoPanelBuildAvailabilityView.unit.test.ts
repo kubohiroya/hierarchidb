@@ -82,6 +82,33 @@ describe('resolveTreeNodeInfoPanelBuildAvailabilityView', () => {
     ).toBe(true);
   });
 
+  it('uses dependency availability diagnostics instead of treating the target as up to date', () => {
+    const currentNode = makeNode({
+      id: 'r:shape' as NodeId,
+      nodeType: 'shape',
+    });
+
+    const view = resolveTreeNodeInfoPanelBuildAvailabilityView({
+      currentNode,
+      folderDescendantNodes: [],
+      buildTargetLoading: false,
+      dependencySummary: {
+        edgeCounts: { active: 1 },
+        dependencyErrors: [
+          {
+            code: 'DEPENDENCY_RELATION_UNRESOLVED',
+            message: 'A hard dependency relation is unresolved.',
+            nodeId: currentNode.id,
+          },
+        ],
+      },
+    });
+
+    expect(view?.summary).toBe('Dependency error');
+    expect(view?.tooltip).toContain('A hard dependency relation is unresolved. (r:shape)');
+    expect(view?.diagnosticsLabel).toBe('Build diagnostics');
+  });
+
   it('keeps non-build node types out of the info panel build action surface', () => {
     const view = resolveTreeNodeInfoPanelBuildAvailabilityView({
       currentNode: makeNode({

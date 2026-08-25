@@ -4,6 +4,8 @@
  */
 
 import {
+  type BuildDependencyAvailabilitySummary,
+  type BuildPluginPrerequisiteFailure,
   isNodeBuildRequired,
   resolveBuildAvailability,
   resolveSubtreeBuildAvailability,
@@ -51,10 +53,16 @@ export type BreadcrumbContextMenuBuildState = {
   buildDiagnosticsLabel?: string;
 };
 
+export type BreadcrumbContextMenuBuildOptions = {
+  dependencySummary?: BuildDependencyAvailabilitySummary;
+  pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
+};
+
 export const resolveBreadcrumbContextMenuBuildState = (
   node: BreadcrumbNode | null,
   activeBuildNodeIds?: ReadonlySet<string>,
-  descendants: readonly BreadcrumbNode[] = []
+  descendants: readonly BreadcrumbNode[] = [],
+  options: BreadcrumbContextMenuBuildOptions = {}
 ): BreadcrumbContextMenuBuildState => {
   const rawNodeType = String(node?.nodeType ?? node?.type ?? '');
   const normalizedNodeType = rawNodeType.toLowerCase();
@@ -94,11 +102,15 @@ export const resolveBreadcrumbContextMenuBuildState = (
           canBuildNodeType: (nodeType) =>
             buildActionNodeTypes.has(String(nodeType).trim().toLowerCase()),
           activeNodeIds,
+          dependencySummary: options.dependencySummary,
+          pluginPrerequisiteFailures: options.pluginPrerequisiteFailures,
         })
       : buildNode && isBuildCandidateNodeType
         ? resolveBuildAvailability({
             candidates: [buildNode],
             activeNodeIds,
+            dependencySummary: options.dependencySummary,
+            pluginPrerequisiteFailures: options.pluginPrerequisiteFailures,
           })
         : null;
 
@@ -280,7 +292,11 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
   const contextMenuBuildState = resolveBreadcrumbContextMenuBuildState(
     contextMenuNode,
     props.activeBuildNodeIds,
-    contextMenuNodeId ? props.collectDescendantNodes?.(String(contextMenuNodeId)) : []
+    contextMenuNodeId ? props.collectDescendantNodes?.(String(contextMenuNodeId)) : [],
+    {
+      dependencySummary: props.dependencySummary,
+      pluginPrerequisiteFailures: props.pluginPrerequisiteFailures,
+    }
   );
 
   return (

@@ -1,3 +1,7 @@
+import type {
+  BuildDependencyAvailabilitySummary,
+  BuildPluginPrerequisiteFailure,
+} from '@hierarchidb/build-api';
 import {
   NodeTypeIcon,
   SEARCH_FIELD_MIN_WIDTH_PX,
@@ -59,6 +63,8 @@ export interface TreeNodeInfoPanelProps {
   readonly viewMode?: string;
   /** Current sort mode to preserve in navigation. */
   readonly sortMode?: string;
+  readonly dependencySummary?: BuildDependencyAvailabilitySummary;
+  readonly pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
 }
 
 export function TreeNodeInfoPanel({
@@ -70,6 +76,8 @@ export function TreeNodeInfoPanel({
   hideBackButton = false,
   viewMode,
   sortMode,
+  dependencySummary,
+  pluginPrerequisiteFailures,
 }: TreeNodeInfoPanelProps) {
   const navigate = useNavigate();
   const {
@@ -109,8 +117,17 @@ export function TreeNodeInfoPanel({
         folderDescendantNodes,
         buildTargetLoading,
         activeNodeIds,
+        dependencySummary,
+        pluginPrerequisiteFailures,
       }),
-    [activeNodeIds, buildTargetLoading, currentNode, folderDescendantNodes]
+    [
+      activeNodeIds,
+      buildTargetLoading,
+      currentNode,
+      dependencySummary,
+      folderDescendantNodes,
+      pluginPrerequisiteFailures,
+    ]
   );
   const showBuildButton = shouldShowTreeNodeInfoPanelBuildButton({
     currentNode,
