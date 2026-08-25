@@ -57,6 +57,7 @@
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/route-engine": "workspace:*",
     "@hierarchidb/route-store": "workspace:*",
+    "@hierarchidb/staged-folder-action": "workspace:*",
     "@hierarchidb/build-runtime-services": "workspace:*",
     "@hierarchidb/vt-orchestrator": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",

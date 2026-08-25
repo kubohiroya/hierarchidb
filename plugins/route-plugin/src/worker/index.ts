@@ -9,6 +9,11 @@ export {
   configureRouteCanonicalBuildInputResolver,
 } from './canonicalBuildAPI.js';
 export { getBuildTasks } from './getBuildTasks.js';
+export {
+  createRouteExportRowsMaterializer,
+  ROUTE_EXPORT_COLUMNS,
+  type RouteExportAdapterPorts,
+} from './tabular/materializeRouteExportRows.js';
 
 export const registerRouteWorkerStores = async (): Promise<void> => {
   const db = resolveRouteDB();

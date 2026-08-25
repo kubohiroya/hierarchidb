@@ -33,6 +33,7 @@ export type CreateStagedFolderActionWorkerExecutionHostInput = {
   ): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   runMapImageCaptureAction?: StagedFolderActionRunnerDependencies['runMapImageCaptureAction'];
+  runExportFileAction?: StagedFolderActionRunnerDependencies['runExportFileAction'];
   now?: () => number;
   delay?: (ms: number) => Promise<void>;
   buildPollIntervalMs?: number;
@@ -58,6 +59,7 @@ export function createStagedFolderActionWorkerExecutionHost({
   startBuildSession,
   getBuildSessionStatus,
   runMapImageCaptureAction,
+  runExportFileAction,
   now = Date.now,
   delay = defaultDelay,
   buildPollIntervalMs = DEFAULT_BUILD_POLL_INTERVAL_MS,
@@ -69,6 +71,7 @@ export function createStagedFolderActionWorkerExecutionHost({
       progressStore,
       now,
       runMapImageCaptureAction,
+      runExportFileAction,
       runBuildAction: async ({ stagingRootNodeId }) => {
         const stagingRoot = await getNode(stagingRootNodeId);
         if (!stagingRoot) {

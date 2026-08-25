@@ -163,6 +163,78 @@ describe('createStagedFolderActionCoreRunnerDependencies', () => {
     });
   });
 
+  it('passes the injected export file runner through the core runner dependencies', async () => {
+    const source = await createNode({
+      id: 'source-export-file-runner',
+      parentId: 'r:root' as NodeId,
+      name: 'Source Export File Runner',
+      data: { value: 'source' },
+    });
+    const runExportFileAction = vi.fn(async () => ({
+      type: 'export-csv' as const,
+      status: 'completed' as const,
+      outputPath: '/tmp/staged-action/locations.csv',
+      entityType: 'location' as const,
+      rowCount: 1,
+    }));
+    const dependencies = createStagedFolderActionCoreRunnerDependencies({
+      coreDB,
+      progressStore: store,
+      now: () => nowValue++,
+      runBuildAction: vi.fn(async ({ stagingRootNodeId }) => ({
+        nodeType: 'shape' as NodeType,
+        nodeId: stagingRootNodeId,
+        status: 'completed',
+      })),
+      runExportFileAction,
+    });
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-core-export-file-runner' as NodeId,
+      sourceNodeId: source.id as NodeId,
+      config: {
+        version: 1,
+        staging: {
+          mode: 'temporary-copy',
+          cleanup: 'retain',
+        },
+        overlay: {
+          nodes: [],
+        },
+        actions: [
+          {
+            type: 'export-csv',
+            entityType: 'location',
+            source: { path: '.' },
+            output: { path: 'locations.csv' },
+          },
+        ],
+      },
+    });
+
+    expect(runExportFileAction).toHaveBeenCalledWith({
+      action: {
+        type: 'export-csv',
+        entityType: 'location',
+        source: { path: '.' },
+        output: { path: 'locations.csv' },
+      },
+      actionIndex: 0,
+      config: expect.any(Object),
+      stagingRootNodeId: expect.any(String),
+      runId: 'run-core-export-file-runner',
+    });
+    expect(result.actionResults).toEqual([
+      {
+        type: 'export-csv',
+        status: 'completed',
+        outputPath: '/tmp/staged-action/locations.csv',
+        entityType: 'location',
+        rowCount: 1,
+      },
+    ]);
+  });
+
   it('deletes temporary staging roots when cleanup is delete-on-success', async () => {
     const source = await createNode({
       id: 'source-cleanup',

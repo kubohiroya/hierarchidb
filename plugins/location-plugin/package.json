@@ -55,6 +55,7 @@
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/staged-folder-action": "workspace:*",
     "@hierarchidb/tabular-source-xlsx": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",

@@ -136,6 +136,51 @@ describe('createStagedFolderActionWorkerExecutionHost', () => {
     );
   });
 
+  it('passes an injected export file runner to the core runner dependencies', async () => {
+    const runExportFileAction = vi.fn(async () => ({
+      type: 'export-csv' as const,
+      status: 'completed' as const,
+      outputPath: '/tmp/locations.csv',
+      entityType: 'location' as const,
+      rowCount: 1,
+    }));
+    const host = createStagedFolderActionWorkerExecutionHost({
+      coreDB: {} as never,
+      progressStore: {} as never,
+      getNode: vi.fn(
+        async () =>
+          ({
+            id: 'stage-1',
+            nodeType: 'shape' as NodeType,
+            metadata: { buildMetadata: { buildRequired: true } },
+          }) as never
+      ),
+      listDescendants: vi.fn(async () => []),
+      canBuildNodeType: (nodeType) => nodeType === 'shape',
+      startBuildSession: vi.fn(async () => createStatus('completed')),
+      getBuildSessionStatus: vi.fn(async () => createStatus('completed')),
+      runExportFileAction,
+      now: () => 1,
+    });
+
+    await host({
+      runId: 'run-1' as NodeId,
+      sourceNodeId: 'source-1' as NodeId,
+      config: {
+        version: 1,
+        staging: { mode: 'patch-source', cleanup: 'retain' },
+        overlay: { nodes: [] },
+        actions: [{ type: 'build', mode: 'session-manager' }],
+      },
+    });
+
+    expect(runtimeWorkerMocks.createStagedFolderActionCoreRunnerDependencies).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runExportFileAction,
+      })
+    );
+  });
+
   it('fails when the canonical build reaches a non-completed terminal state', async () => {
     const host = createStagedFolderActionWorkerExecutionHost({
       coreDB: {} as never,
