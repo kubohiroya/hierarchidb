@@ -98,6 +98,10 @@
                 "tileExpandMargin": 0,
                 "format": "mvt",
                 "compression": "gzip"
+              },
+              "borderGeometryConfig": {
+                "enabled": false,
+                "simplifyTolerance": 0
               }
             },
             "licenseAgreement": false,

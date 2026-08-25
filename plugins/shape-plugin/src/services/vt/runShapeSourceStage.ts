@@ -12,6 +12,7 @@ import {
   pickCountryName,
 } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
+import { shapeDB } from '@hierarchidb/shape-store';
 import { buildZoomBandRanges } from '@hierarchidb/util';
 import {
   deleteTasksByIds,
@@ -25,10 +26,14 @@ import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from
 import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
 import { topology as topojsonTopology } from 'topojson-server';
 import type { Topology } from 'topojson-specification';
-import type { CountryMetadata, DataSourceName, SourceTaskPayload } from '~/common/types/data-source';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
+import type {
+  CountryMetadata,
+  DataSourceName,
+  SourceTaskPayload,
+} from '~/common/types/data-source';
 import type { SelectedArrayByCountries } from '~/common/types/ShapeEntity';
 import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { RetryConfig } from '~/services/datasources/DataSourceStrategy';
 import { DataSourceStrategyFactory } from '~/services/datasources/DataSourceStrategyFactory';
@@ -66,6 +71,7 @@ import {
   buildSourceTaskCacheIdentity,
   resolveTaskCacheIdentity,
 } from './shapeTaskCacheIdentity.ts';
+import { validateShapeBorderGeometryPipeline } from './validateShapeBorderGeometryPipeline.ts';
 
 export type ShapeSourceTaskInput = {
   url: string;
@@ -572,6 +578,67 @@ const putSourceCache = async (params: {
 
   return { id: recordId, contentHash };
 };
+
+const runBorderGeometryValidationIfEnabled = async (params: {
+  nodeId: NodeId;
+  buildConfig: ShapeRuntimeBuildConfig;
+  input: ShapeSourceTaskInput;
+  featureCollection: FeatureCollection<Geometry>;
+  outputArtifactIdPrefix: string;
+  abortSignal?: AbortSignal;
+}): Promise<Record<string, unknown> | undefined> => {
+  const borderGeometryConfig = params.buildConfig.borderGeometryConfig;
+  if (!borderGeometryConfig.enabled) return undefined;
+  assertNotAborted(params.abortSignal);
+  if (params.featureCollection.features.length === 0) {
+    return {
+      status: 'completed',
+      reason: 'empty-feature-collection',
+      arcCount: 0,
+      ringCount: 0,
+      polygonRelationCount: 0,
+      reconstructedPolygonCount: 0,
+      durationMs: 0,
+    };
+  }
+  const result = await validateShapeBorderGeometryPipeline({
+    shapeDb: shapeDB,
+    nodeId: params.nodeId,
+    dataSource: params.input.dataSource,
+    countryCode: params.input.countryCode,
+    adminLevel: params.input.adminLevel,
+    sourceKey: params.input.sourceKey,
+    upstreamRevision: params.input.upstreamRevision ?? 'none',
+    borderGeometryConfigHash: buildStableJsonSignature(borderGeometryConfig),
+    featureCollection: params.featureCollection as FeatureCollection<
+      Geometry,
+      Record<string, unknown>
+    >,
+    outputArtifactIdPrefix: params.outputArtifactIdPrefix,
+    simplifyTolerance: borderGeometryConfig.simplifyTolerance,
+    now: Date.now(),
+  });
+  assertNotAborted(params.abortSignal);
+  if (result.status === 'skipped') {
+    throw new Error(
+      '[shape-build] borderGeometryConfig.enabled requires HDB_SHAPE_BORDER_GEOMETRY_STORAGE'
+    );
+  }
+  return {
+    status: result.status,
+    datasetId: result.dataset.datasetId,
+    arcCount: result.metrics.arcCount,
+    ringCount: result.metrics.ringCount,
+    polygonRelationCount: result.metrics.polygonRelationCount,
+    reconstructedPolygonCount: result.metrics.reconstructedPolygonCount,
+    durationMs: result.metrics.durationMs,
+  };
+};
+
+const buildEmptyFeatureCollection = (): FeatureCollection<Geometry> => ({
+  type: 'FeatureCollection',
+  features: [],
+});
 
 const buildSourceFeatureCollection = (
   entities: ShapeFeaturePayload[],
@@ -1203,11 +1270,14 @@ const createSourceHandler = (params: {
         const cachedBaseToleranceVertexLimit =
           readNumericProperty(existingMetadata, 'baseToleranceVertexLimit') ??
           SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
-        const cachedCollection = await decodeSourceCacheData({
-          data: existing.data,
-          format: existing.format,
-          compression: existing.compression,
-        });
+        const cachedCollection =
+          existing.featureCount > 0
+            ? await decodeSourceCacheData({
+                data: existing.data,
+                format: existing.format,
+                compression: existing.compression,
+              })
+            : null;
         const buildCurrentSourceMetadata = (): Record<string, unknown> =>
           buildSourceCacheMetadata({
             status: 'completed',
@@ -1313,30 +1383,52 @@ const createSourceHandler = (params: {
             cachedVertexCount
           ),
         ].join(', ');
+        let borderGeometry: Record<string, unknown> | undefined;
+        if (params.buildConfig.borderGeometryConfig.enabled) {
+          const borderGeometryCollection =
+            cachedCollection ??
+            (existing.featureCount === 0 ? buildEmptyFeatureCollection() : null);
+          if (!borderGeometryCollection) {
+            throw new Error(
+              '[shape-build] borderGeometryConfig.enabled requires decodable source cache'
+            );
+          }
+          borderGeometry = await runBorderGeometryValidationIfEnabled({
+            nodeId: params.nodeId,
+            buildConfig: params.buildConfig,
+            input,
+            featureCollection: borderGeometryCollection,
+            outputArtifactIdPrefix: `${existing.id}:border-geometry`,
+            abortSignal: params.abortSignal,
+          });
+        }
         return {
           status: 'completed',
           message: `reused: source cache exists (${cachedSummary})`,
-          metadata: buildSourceDetailMetadata(
-            input,
-            {
-              inputFeatureCount: existingInputFeatureCount,
-              featureCount: existing.featureCount,
-              inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
-              polygonCount: cachedPolygonCount,
-              inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
-              polygonPerFeatureMax: cachedPolygonPerFeatureMax,
-              inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
-              maxPolygonVertexCount: cachedMaxPolygonVertexCount,
-              baseTolerance: cachedBaseTolerance,
-              baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
-            },
-            {
-              sourceCacheId: existing.id,
-              sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
-              sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
-              rawSourceCacheKey: cachedRawSourceCacheKey,
-            }
-          ),
+          metadata: {
+            ...buildSourceDetailMetadata(
+              input,
+              {
+                inputFeatureCount: existingInputFeatureCount,
+                featureCount: existing.featureCount,
+                inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
+                polygonCount: cachedPolygonCount,
+                inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
+                polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+                inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
+                maxPolygonVertexCount: cachedMaxPolygonVertexCount,
+                baseTolerance: cachedBaseTolerance,
+                baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
+              },
+              {
+                sourceCacheId: existing.id,
+                sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
+                sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
+                rawSourceCacheKey: cachedRawSourceCacheKey,
+              }
+            ),
+            borderGeometry,
+          },
           outputData: {
             sourceCacheId: existing.id,
             sourceArtifactHash,
@@ -1417,27 +1509,38 @@ const createSourceHandler = (params: {
         });
         assertNotAborted(params.abortSignal);
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
+        const borderGeometry = await runBorderGeometryValidationIfEnabled({
+          nodeId: params.nodeId,
+          buildConfig: params.buildConfig,
+          input,
+          featureCollection: buildEmptyFeatureCollection(),
+          outputArtifactIdPrefix: `${String(params.nodeId)}:${input.sourceKey}:empty-source:border-geometry`,
+          abortSignal: params.abortSignal,
+        });
         return {
           status: 'completed',
           message: buildSourceFilterReductionSummary(inputSummary),
-          metadata: buildSourceDetailMetadata(
-            input,
-            {
-              inputFeatureCount: inputSummary.featureCount,
-              featureCount: 0,
-              inputPolygonCount: inputSummary.polygonCount,
-              polygonCount: 0,
-              inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-              polygonPerFeatureMax: 0,
-              inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-              maxPolygonVertexCount: 0,
-              baseTolerance: 0,
-              baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-            },
-            {
-              rawSourceCacheKey,
-            }
-          ),
+          metadata: {
+            ...buildSourceDetailMetadata(
+              input,
+              {
+                inputFeatureCount: inputSummary.featureCount,
+                featureCount: 0,
+                inputPolygonCount: inputSummary.polygonCount,
+                polygonCount: 0,
+                inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+                polygonPerFeatureMax: 0,
+                inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+                maxPolygonVertexCount: 0,
+                baseTolerance: 0,
+                baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+              },
+              {
+                rawSourceCacheKey,
+              }
+            ),
+            borderGeometry,
+          },
         };
       }
 
@@ -1506,6 +1609,14 @@ const createSourceHandler = (params: {
         taskQueue: params.taskQueue,
         abortSignal: params.abortSignal,
       });
+      const borderGeometry = await runBorderGeometryValidationIfEnabled({
+        nodeId: params.nodeId,
+        buildConfig: params.buildConfig,
+        input,
+        featureCollection: collectionWithOrigin,
+        outputArtifactIdPrefix: `${sourceCacheRecord.id}:border-geometry`,
+        abortSignal: params.abortSignal,
+      });
       const reductionSummary = [
         formatChangeSummary('features', inputSummary.featureCount, outputSummary.featureCount),
         formatChangeSummary('polygons', inputSummary.polygonCount, outputSummary.polygonCount),
@@ -1515,27 +1626,30 @@ const createSourceHandler = (params: {
       return {
         status: 'completed',
         message: reductionSummary,
-        metadata: buildSourceDetailMetadata(
-          input,
-          {
-            inputFeatureCount: inputSummary.featureCount,
-            featureCount: outputSummary.featureCount,
-            inputPolygonCount: inputSummary.polygonCount,
-            polygonCount: outputSummary.polygonCount,
-            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-            polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
-            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-            maxPolygonVertexCount: outputSummary.maxPolygonVertexCount,
-            baseTolerance: undefined,
-            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-          },
-          {
-            sourceCacheId: sourceCacheRecord.id,
-            sourceCacheFormat: 'topojson',
-            sourceCacheCompression: 'gzip',
-            rawSourceCacheKey,
-          }
-        ),
+        metadata: {
+          ...buildSourceDetailMetadata(
+            input,
+            {
+              inputFeatureCount: inputSummary.featureCount,
+              featureCount: outputSummary.featureCount,
+              inputPolygonCount: inputSummary.polygonCount,
+              polygonCount: outputSummary.polygonCount,
+              inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+              polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
+              inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+              maxPolygonVertexCount: outputSummary.maxPolygonVertexCount,
+              baseTolerance: undefined,
+              baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+            },
+            {
+              sourceCacheId: sourceCacheRecord.id,
+              sourceCacheFormat: 'topojson',
+              sourceCacheCompression: 'gzip',
+              rawSourceCacheKey,
+            }
+          ),
+          borderGeometry,
+        },
         outputData: {
           sourceCacheId: sourceCacheRecord.id,
           sourceArtifactHash: sourceCacheRecord.contentHash,
@@ -1609,27 +1723,38 @@ const createSourceHandler = (params: {
       });
       assertNotAborted(params.abortSignal);
       await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
+      const borderGeometry = await runBorderGeometryValidationIfEnabled({
+        nodeId: params.nodeId,
+        buildConfig: params.buildConfig,
+        input,
+        featureCollection: buildEmptyFeatureCollection(),
+        outputArtifactIdPrefix: `${String(params.nodeId)}:${input.sourceKey}:empty-source:border-geometry`,
+        abortSignal: params.abortSignal,
+      });
       return {
         status: 'completed',
         message: buildSourceFilterReductionSummary(inputSummary),
-        metadata: buildSourceDetailMetadata(
-          input,
-          {
-            inputFeatureCount: inputSummary.featureCount,
-            featureCount: 0,
-            inputPolygonCount: inputSummary.polygonCount,
-            polygonCount: 0,
-            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-            polygonPerFeatureMax: 0,
-            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-            maxPolygonVertexCount: 0,
-            baseTolerance: 0,
-            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-          },
-          {
-            rawSourceCacheKey,
-          }
-        ),
+        metadata: {
+          ...buildSourceDetailMetadata(
+            input,
+            {
+              inputFeatureCount: inputSummary.featureCount,
+              featureCount: 0,
+              inputPolygonCount: inputSummary.polygonCount,
+              polygonCount: 0,
+              inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+              polygonPerFeatureMax: 0,
+              inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+              maxPolygonVertexCount: 0,
+              baseTolerance: 0,
+              baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+            },
+            {
+              rawSourceCacheKey,
+            }
+          ),
+          borderGeometry,
+        },
       };
     }
 
@@ -1702,6 +1827,14 @@ const createSourceHandler = (params: {
       taskQueue: params.taskQueue,
       abortSignal: params.abortSignal,
     });
+    const borderGeometry = await runBorderGeometryValidationIfEnabled({
+      nodeId: params.nodeId,
+      buildConfig: params.buildConfig,
+      input,
+      featureCollection: filteredCollection,
+      outputArtifactIdPrefix: `${sourceCacheRecord.id}:border-geometry`,
+      abortSignal: params.abortSignal,
+    });
     const reductionSummary = [
       formatChangeSummary('features', inputSummary.featureCount, featureCount),
       formatChangeSummary('polygons', inputSummary.polygonCount, polygonCount),
@@ -1711,27 +1844,30 @@ const createSourceHandler = (params: {
     return {
       status: 'completed',
       message: reductionSummary,
-      metadata: buildSourceDetailMetadata(
-        input,
-        {
-          inputFeatureCount: inputSummary.featureCount,
-          featureCount,
-          inputPolygonCount: inputSummary.polygonCount,
-          polygonCount,
-          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-          polygonPerFeatureMax: maxPolygonPerFeature,
-          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-          maxPolygonVertexCount,
-          baseTolerance: undefined,
-          baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-        },
-        {
-          sourceCacheId: sourceCacheRecord.id,
-          sourceCacheFormat: 'flatgeobuf',
-          sourceCacheCompression: 'none',
-          rawSourceCacheKey,
-        }
-      ),
+      metadata: {
+        ...buildSourceDetailMetadata(
+          input,
+          {
+            inputFeatureCount: inputSummary.featureCount,
+            featureCount,
+            inputPolygonCount: inputSummary.polygonCount,
+            polygonCount,
+            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+            polygonPerFeatureMax: maxPolygonPerFeature,
+            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+            maxPolygonVertexCount,
+            baseTolerance: undefined,
+            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+          },
+          {
+            sourceCacheId: sourceCacheRecord.id,
+            sourceCacheFormat: 'flatgeobuf',
+            sourceCacheCompression: 'none',
+            rawSourceCacheKey,
+          }
+        ),
+        borderGeometry,
+      },
       outputData: {
         sourceCacheId: sourceCacheRecord.id,
         sourceArtifactHash: sourceCacheRecord.contentHash,

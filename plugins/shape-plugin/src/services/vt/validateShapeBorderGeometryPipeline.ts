@@ -1,8 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { buildStableJsonSignature } from '@hierarchidb/gis-sdk';
 import {
   type BorderGeometryDatasetRecord,
   type BorderGeometryExtractionResult,
   type BorderGeometryPolygonReconstructionResult,
+  type BorderGeometryStorageFlagOptions,
   extractBorderGeometryArcs,
   isShapeBorderGeometryStorageEnabled,
   reconstructBorderGeometryPolygons,
@@ -74,22 +76,49 @@ const requireAdminLevel = (value: number): number => {
   return value;
 };
 
+const buildDatasetId = (
+  params: ValidateShapeBorderGeometryPipelineParams,
+  sourceKey: string,
+  upstreamRevision: string,
+  borderGeometryConfigHash: string,
+  schemaVersion: number
+): string =>
+  `dataset:${buildStableJsonSignature({
+    nodeId: params.nodeId,
+    dataSource: params.dataSource,
+    sourceKey,
+    upstreamRevision,
+    borderGeometryConfigHash,
+    schemaVersion,
+  })}`;
+
 const buildDatasetRecord = (
   params: ValidateShapeBorderGeometryPipelineParams
 ): BorderGeometryDatasetRecord => {
   const now = requireFiniteTimestamp(params.now);
   const sourceKey = requireNonEmptyString('source-key', params.sourceKey);
   const upstreamRevision = requireNonEmptyString('upstream-revision', params.upstreamRevision);
+  const borderGeometryConfigHash = requireNonEmptyString(
+    'config-hash',
+    params.borderGeometryConfigHash
+  );
+  const schemaVersion = params.schemaVersion ?? 1;
   return {
-    datasetId: `dataset:${sourceKey}:${upstreamRevision}`,
+    datasetId: buildDatasetId(
+      params,
+      sourceKey,
+      upstreamRevision,
+      borderGeometryConfigHash,
+      schemaVersion
+    ),
     nodeId: params.nodeId,
     dataSource: requireNonEmptyString('data-source', params.dataSource),
     countryCode: requireNonEmptyString('country-code', params.countryCode),
     adminLevel: requireAdminLevel(params.adminLevel),
     sourceKey,
     upstreamRevision,
-    borderGeometryConfigHash: requireNonEmptyString('config-hash', params.borderGeometryConfigHash),
-    schemaVersion: params.schemaVersion ?? 1,
+    borderGeometryConfigHash,
+    schemaVersion,
     createdFromRevision: upstreamRevision,
     createdAt: now,
     updatedAt: now,
@@ -100,7 +129,7 @@ const storeValidationArtifacts = async (
   shapeDb: ShapeDB,
   dataset: BorderGeometryDatasetRecord,
   extraction: BorderGeometryExtractionResult,
-  storage: { enabled: boolean }
+  storage?: BorderGeometryStorageFlagOptions
 ): Promise<void> => {
   await shapeDb.transaction(
     'rw',
@@ -113,11 +142,14 @@ const storeValidationArtifacts = async (
     ],
     async () => {
       await Promise.all([
-        shapeDb.borderGeometryDatasets.where('nodeId').equals(dataset.nodeId).delete(),
-        shapeDb.borderGeometryArcs.where('nodeId').equals(dataset.nodeId).delete(),
-        shapeDb.borderGeometryRings.where('nodeId').equals(dataset.nodeId).delete(),
-        shapeDb.borderGeometryPolygonRelations.where('nodeId').equals(dataset.nodeId).delete(),
-        shapeDb.borderSpatialIndexes.where('nodeId').equals(dataset.nodeId).delete(),
+        shapeDb.borderGeometryDatasets.delete(dataset.datasetId),
+        shapeDb.borderGeometryArcs.where('datasetId').equals(dataset.datasetId).delete(),
+        shapeDb.borderGeometryRings.where('datasetId').equals(dataset.datasetId).delete(),
+        shapeDb.borderGeometryPolygonRelations
+          .where('datasetId')
+          .equals(dataset.datasetId)
+          .delete(),
+        shapeDb.borderSpatialIndexes.where('datasetId').equals(dataset.datasetId).delete(),
       ]);
       await shapeDb.putBorderGeometryDataset(dataset, storage);
       for (const arc of extraction.arcs) {
@@ -136,7 +168,7 @@ const storeValidationArtifacts = async (
 export const validateShapeBorderGeometryPipeline = async (
   params: ValidateShapeBorderGeometryPipelineParams
 ): Promise<ShapeBorderGeometryPipelineValidationResult> => {
-  const storage = params.storage ?? { enabled: false };
+  const storage = params.storage;
   if (!isShapeBorderGeometryStorageEnabled(storage)) {
     return {
       status: 'skipped',

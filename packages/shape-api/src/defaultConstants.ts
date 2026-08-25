@@ -124,6 +124,10 @@ export const DEFAULT_BUILD_CONFIG = {
       features: [],
     },
   },
+  borderGeometryConfig: {
+    enabled: false,
+    simplifyTolerance: 0,
+  },
   cleanupConfig: {
     deleteSourceApiCache: false,
     deleteSourceFilteredCache: false,

@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
+  BorderGeometryConfig,
   FeatureFilterMethod,
   GeometryConfig,
   HybridFilterConfig,
@@ -23,6 +24,7 @@ export interface BuildSessionConfig extends CommonSessionConfig {
   sourceConfig: SourceConfig;
   geometryConfig: GeometryConfig;
   vectorTiles: TileEmitConfig;
+  borderGeometryConfig?: BorderGeometryConfig;
   quantize?: number;
   extract?: number;
   tolerance?: number;

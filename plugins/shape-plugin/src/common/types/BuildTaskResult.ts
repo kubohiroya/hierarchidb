@@ -2,6 +2,7 @@ import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   BaseBuildConfig,
+  BorderGeometryConfig,
   CleanupConfig,
   DynamicConcurrencyConfig,
   GeometryConfig,
@@ -18,6 +19,7 @@ export type ShapeBuildSourceConfig = Omit<
 >;
 export type ShapeBuildGeometryConfig = Omit<GeometryConfig, 'maxConcurrent'>;
 export type ShapeBuildTileEmitConfig = Omit<TileEmitConfig, 'maxConcurrent' | 'dynamicConcurrency'>;
+export type ShapeBuildBorderGeometryConfig = BorderGeometryConfig;
 
 export type ShapeUrlMatchType = 'default' | 'regexp' | 'prefix';
 
@@ -32,11 +34,12 @@ export interface ShapeBuildUrlRule {
 export type ShapeBuildUrlConfigPatch = Omit<Partial<ShapeBuildConfig>, 'urlBuildConfigRules'>;
 export type ShapeBuildConfigPatch = Omit<
   Partial<ShapeBuildConfig>,
-  'sourceConfig' | 'geometryConfig' | 'tileEmitConfig' | 'cleanupConfig'
+  'sourceConfig' | 'geometryConfig' | 'tileEmitConfig' | 'borderGeometryConfig' | 'cleanupConfig'
 > & {
   sourceConfig?: Partial<ShapeBuildConfig['sourceConfig']>;
   geometryConfig?: Partial<ShapeBuildConfig['geometryConfig']>;
   tileEmitConfig?: Partial<ShapeBuildConfig['tileEmitConfig']>;
+  borderGeometryConfig?: Partial<ShapeBuildConfig['borderGeometryConfig']>;
   cleanupConfig?: Partial<NonNullable<ShapeBuildConfig['cleanupConfig']>>;
 };
 
@@ -45,6 +48,7 @@ export interface ShapeBuildConfig {
   sourceConfig: ShapeBuildSourceConfig;
   geometryConfig: ShapeBuildGeometryConfig;
   tileEmitConfig: ShapeBuildTileEmitConfig;
+  borderGeometryConfig: ShapeBuildBorderGeometryConfig;
   cleanupConfig?: CleanupConfig;
   urlBuildConfigRules?: ShapeBuildUrlRule[];
 }
@@ -63,7 +67,9 @@ export interface ShapeProcessingConfig {
   };
 }
 
-export type ShapeRuntimeBuildConfig = BaseBuildConfig<DataSourceName>;
+export type ShapeRuntimeBuildConfig = BaseBuildConfig<DataSourceName> & {
+  borderGeometryConfig: ShapeBuildBorderGeometryConfig;
+};
 
 export type BuildTaskType = TaskStage;
 export type BuildTaskStatus =

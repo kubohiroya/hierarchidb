@@ -2,10 +2,14 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import type { AlertColor } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { applyBuildConfigPatch, composeRuntimeBuildConfig, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
+import type { ShapeBuildConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
 import { DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
-import { ShapeBuildConfig, ShapeRuntimeBuildConfig } from '~/common/types/BuildTaskResult';
-import { ShapeEntity } from '~/common/types/ShapeEntity';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import {
+  applyBuildConfigPatch,
+  composeRuntimeBuildConfig,
+  mergeProcessingConfig,
+} from '~/services/utils/shapeBuildUtils';
 import {
   filteringHighUrl,
   filteringLowUrl,
@@ -42,6 +46,9 @@ const toBuildConfigUpdate = (
       ...tileEmitConfig
     } = partial.tileEmitConfig;
     next.tileEmitConfig = tileEmitConfig;
+  }
+  if (partial.borderGeometryConfig) {
+    next.borderGeometryConfig = partial.borderGeometryConfig;
   }
   if (partial.cleanupConfig) {
     next.cleanupConfig = partial.cleanupConfig;
