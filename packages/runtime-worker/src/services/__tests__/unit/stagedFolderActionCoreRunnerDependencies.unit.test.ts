@@ -235,6 +235,123 @@ describe('createStagedFolderActionCoreRunnerDependencies', () => {
     ]);
   });
 
+  it('passes injected archive and import mount runners through the core runner dependencies', async () => {
+    const source = await createNode({
+      id: 'source-archive-mount-runner',
+      parentId: 'r:root' as NodeId,
+      name: 'Source Archive Mount Runner',
+      data: { value: 'source' },
+    });
+    const runExportArchiveAction = vi.fn(async () => ({
+      type: 'export-archive' as const,
+      status: 'completed' as const,
+      outputPath: '/tmp/staged-action/archive.zip',
+      format: 'canonical-yaml-zip' as const,
+      byteLength: 256,
+      nodeIds: ['source-archive-mount-runner' as NodeId],
+    }));
+    const runImportMountAction = vi.fn(async () => ({
+      type: 'import-mount' as const,
+      status: 'completed' as const,
+      mountId: 'mount-run',
+      mountedRootNodeId: 'mounted-root' as NodeId,
+      importedNodeIds: ['mounted-root' as NodeId],
+      lifetime: 'run' as const,
+    }));
+    const safeUnmountImportMounts = vi.fn(async () => {});
+    const dependencies = createStagedFolderActionCoreRunnerDependencies({
+      coreDB,
+      progressStore: store,
+      now: () => nowValue++,
+      runBuildAction: vi.fn(async ({ stagingRootNodeId }) => ({
+        nodeType: 'shape' as NodeType,
+        nodeId: stagingRootNodeId,
+        status: 'completed',
+      })),
+      runExportArchiveAction,
+      runImportMountAction,
+      safeUnmountImportMounts,
+    });
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-core-archive-mount-runner' as NodeId,
+      sourceNodeId: source.id as NodeId,
+      config: {
+        version: 1,
+        staging: {
+          mode: 'temporary-copy',
+          cleanup: 'retain',
+        },
+        overlay: {
+          nodes: [],
+        },
+        actions: [
+          {
+            type: 'export-archive',
+            format: 'canonical-yaml-zip',
+            source: { path: '.' },
+            output: { path: 'archive.zip' },
+          },
+          {
+            type: 'import-mount',
+            format: 'canonical-yaml-zip',
+            input: { path: 'archive.zip' },
+            mount: {
+              parentPath: '.',
+              name: 'Mounted',
+              lifetime: 'run',
+            },
+          },
+        ],
+      },
+    });
+
+    expect(runExportArchiveAction).toHaveBeenCalledWith({
+      action: {
+        type: 'export-archive',
+        format: 'canonical-yaml-zip',
+        source: { path: '.' },
+        output: { path: 'archive.zip' },
+      },
+      actionIndex: 0,
+      config: expect.any(Object),
+      stagingRootNodeId: expect.any(String),
+      runId: 'run-core-archive-mount-runner',
+    });
+    expect(runImportMountAction).toHaveBeenCalledWith({
+      action: {
+        type: 'import-mount',
+        format: 'canonical-yaml-zip',
+        input: { path: 'archive.zip' },
+        mount: {
+          parentPath: '.',
+          name: 'Mounted',
+          lifetime: 'run',
+        },
+      },
+      actionIndex: 1,
+      config: expect.any(Object),
+      stagingRootNodeId: expect.any(String),
+      runId: 'run-core-archive-mount-runner',
+    });
+    expect(safeUnmountImportMounts).toHaveBeenCalledWith({
+      config: expect.any(Object),
+      stagingRootNodeId: expect.any(String),
+      runId: 'run-core-archive-mount-runner',
+      mounts: [
+        {
+          type: 'import-mount',
+          status: 'completed',
+          mountId: 'mount-run',
+          mountedRootNodeId: 'mounted-root',
+          importedNodeIds: ['mounted-root'],
+          lifetime: 'run',
+        },
+      ],
+    });
+    expect(result.actionResults).toHaveLength(2);
+  });
+
   it('deletes temporary staging roots when cleanup is delete-on-success', async () => {
     const source = await createNode({
       id: 'source-cleanup',

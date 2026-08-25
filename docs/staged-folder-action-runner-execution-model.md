@@ -79,14 +79,14 @@ flowchart LR
 12. `build` action の場合、staging root に対して既存 folder build target collection を実行する。
 13. `build` action は既存 `BuildJobQueue` / canonical build session を作成し、AppBar session manager から進捗を確認できる状態にする。staged-folder-action run 自体も canonical build runtime adapter として AppBar の staged-folder-action badge から確認できる。
 14. `build` action は build queue terminal state まで待つ。
-15. `import-mount` action の場合、runner は archive を検証し、mount record を作成し、staging hierarchy の指定位置に mounted root を接続する。
-16. `export-archive` action の場合、runner は staging hierarchy の指定 subtree を既存 export service へ渡し、artifact を書き出す。
+15. `import-mount` action の場合、runtime runner は injected import/mount runner port に action、actionIndex、config、stagingRootNodeId、runId を渡す。host 側 runner は archive を検証し、mount record を作成し、staging hierarchy の指定位置に mounted root を接続する。runtime runner は返却された `mountId`、`mountedRootNodeId`、`importedNodeIds`、`lifetime` を `actionResults` に保存する。
+16. `export-archive` action の場合、runtime runner は injected archive runner port に action、actionIndex、config、stagingRootNodeId、runId を渡す。host 側 runner は staging hierarchy の指定 subtree を既存 export service へ渡し、artifact を書き出す。runtime runner は返却された `outputPath`、`format`、`byteLength`、`nodeIds` を `actionResults` に保存する。
 17. browser を必要としない action は browser runtime を起動せず、staging hierarchy の effective data と action input schema だけで実行してよい。
 18. `map-image-capture` action は、直前までの `build` action が completed の場合だけ capture を開始する。
 19. `map-image-capture` action は `--browser headless|headed` に従い、新規 tab で通常 Map UI を開く。どちらも同じ Map UI route/component を使う。
 20. `map-image-capture` action は画像を `output.path` へ書き込む。
 21. action sequence が完了したら terminal result を作る。
-22. runner は `lifetime: run` の import mount を safe unmount する。
+22. runtime runner は `lifetime: run` の import mount result を追跡し、terminal cleanup の前に injected safe-unmount runner port で safe unmount する。
 23. `staging.cleanup` に従って staging root を保持または削除する。`delete-on-success` は action sequence 成功時だけ cleanup を実行し、失敗時は staging root を保持する。`delete-always` は action sequence 失敗時にも cleanup を試みる。cleanup 自体が失敗した場合は run result/error に記録し、黙って成功扱いにしてはならない。
 24. CLI runner は success/error result を stdout/stderr/JSON contract に従って出す。
 
@@ -239,7 +239,7 @@ cleanup failure は result に記録する。action output/artifact が成功し
 
 ## Import Mount Cleanup
 
-`import-mount.mount.lifetime: run` は staging cleanup policy とは独立した temporal resource である。runner は action sequence の terminal result を作った後、staging root cleanup の前に safe unmount を行う。
+`import-mount.mount.lifetime: run` は staging cleanup policy とは独立した temporal resource である。runtime runner は action sequence の terminal result を作った後、staging root cleanup の前に safe unmount を行う。`lifetime: retain` と `lifetime: permanent` の import mount は safe-unmount runner port へ渡してはならない。
 
 safe unmount は以下を確認する。
 
@@ -248,7 +248,7 @@ safe unmount は以下を確認する。
 - mounted content に未処理 write、dirty state、未保存 artifact がない。
 - unmount 対象外の user-owned node、draft holder、別 staging root を削除しない。
 
-safe unmount に失敗した場合、runner は cleanup failure として扱う。`staging.cleanup: delete-always` が指定されていても、unsafe な mounted content を暗黙削除して成功扱いにしてはならない。
+safe unmount に失敗した場合、runner は cleanup failure として扱う。action failure が先に発生していた場合は primary failure message を保持し、safe unmount failure を cleanup failure として追記する。`staging.cleanup: delete-always` が指定されていても、unsafe な mounted content を暗黙削除して成功扱いにしてはならない。
 
 ## 後続 Issue との接続
 

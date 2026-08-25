@@ -1,8 +1,10 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type {
   StagedFolderActionType,
+  StagedFolderExportArchiveAction,
   StagedFolderExportCsvAction,
   StagedFolderExportXlsxAction,
+  StagedFolderImportMountAction,
 } from './StagedFolderActionManifestTypes.js';
 
 export const STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE = 'staged-folder-action' as NodeType;
@@ -104,9 +106,29 @@ export type StagedFolderExportXlsxActionResult = {
   sheetName: string;
 };
 
+export type StagedFolderExportArchiveActionResult = {
+  type: StagedFolderExportArchiveAction['type'];
+  status: 'completed';
+  outputPath: string;
+  format: StagedFolderExportArchiveAction['format'];
+  byteLength: number;
+  nodeIds: readonly NodeId[];
+};
+
+export type StagedFolderImportMountActionResult = {
+  type: StagedFolderImportMountAction['type'];
+  status: 'completed';
+  mountId: string;
+  mountedRootNodeId: NodeId;
+  importedNodeIds: readonly NodeId[];
+  lifetime: StagedFolderImportMountAction['mount']['lifetime'];
+};
+
 export type StagedFolderActionResult =
   | StagedFolderExportCsvActionResult
-  | StagedFolderExportXlsxActionResult;
+  | StagedFolderExportXlsxActionResult
+  | StagedFolderExportArchiveActionResult
+  | StagedFolderImportMountActionResult;
 
 export interface StagedFolderActionRunRecord {
   runId: NodeId;
@@ -294,6 +316,22 @@ const assertActionResult = (result: StagedFolderActionResult, index: number): vo
   if (result.status !== 'completed') {
     throw new Error(`staged-folder-action actionResults[${index}].status must be completed`);
   }
+  if (result.type === 'export-archive') {
+    assertNonEmptyString(result.outputPath, `actionResults[${index}].outputPath`);
+    if (result.format !== 'canonical-yaml-zip') {
+      throw new Error(`staged-folder-action actionResults[${index}].format is invalid`);
+    }
+    assertNonNegativeInteger(result.byteLength, `actionResults[${index}].byteLength`);
+    assertNodeIdArray(result.nodeIds, `actionResults[${index}].nodeIds`);
+    return;
+  }
+  if (result.type === 'import-mount') {
+    assertNonEmptyString(result.mountId, `actionResults[${index}].mountId`);
+    assertNonEmptyString(result.mountedRootNodeId, `actionResults[${index}].mountedRootNodeId`);
+    assertNodeIdArray(result.importedNodeIds, `actionResults[${index}].importedNodeIds`);
+    assertMountLifetime(result.lifetime, `actionResults[${index}].lifetime`);
+    return;
+  }
   assertNonEmptyString(result.outputPath, `actionResults[${index}].outputPath`);
   assertNonNegativeInteger(result.rowCount, `actionResults[${index}].rowCount`);
   assertEntityType(result.entityType, `actionResults[${index}].entityType`);
@@ -303,6 +341,21 @@ const assertActionResult = (result: StagedFolderActionResult, index: number): vo
   }
   if (result.type !== 'export-csv') {
     throw new Error(`staged-folder-action actionResults[${index}].type is invalid`);
+  }
+};
+
+const assertNodeIdArray = (value: readonly NodeId[], field: string): void => {
+  if (!Array.isArray(value)) {
+    throw new Error(`staged-folder-action progress ${field} must be an array`);
+  }
+  value.forEach((nodeId, index) => {
+    assertNonEmptyString(nodeId, `${field}[${index}]`);
+  });
+};
+
+const assertMountLifetime = (value: string, field: string): void => {
+  if (value !== 'run' && value !== 'retain' && value !== 'permanent') {
+    throw new Error(`staged-folder-action progress ${field} is invalid`);
   }
 };
 

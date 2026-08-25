@@ -492,6 +492,273 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('runs export archive actions through the injected archive runner and stores action results', async () => {
+    const runExportArchiveAction = vi.fn(async () => ({
+      type: 'export-archive' as const,
+      status: 'completed' as const,
+      outputPath: '/tmp/archive.zip',
+      format: 'canonical-yaml-zip' as const,
+      byteLength: 128,
+      nodeIds: ['staging-root' as NodeId],
+    }));
+    const dependencies = createDependencies({ runExportArchiveAction });
+    const action = {
+      type: 'export-archive' as const,
+      format: 'canonical-yaml-zip' as const,
+      source: { path: '.' },
+      output: { path: 'archive.zip' },
+    };
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-export-archive' as NodeId,
+      sourceNodeId: 'source-export-archive' as NodeId,
+      config: createConfig({
+        actions: [action],
+      }),
+    });
+
+    expect(runExportArchiveAction).toHaveBeenCalledWith({
+      action,
+      actionIndex: 0,
+      config: expect.any(Object),
+      stagingRootNodeId: 'staging-root',
+      runId: 'run-export-archive',
+    });
+    expect(result).toMatchObject({
+      status: 'completed',
+      actionResults: [
+        {
+          type: 'export-archive',
+          status: 'completed',
+          outputPath: '/tmp/archive.zip',
+          format: 'canonical-yaml-zip',
+          byteLength: 128,
+          nodeIds: ['staging-root'],
+        },
+      ],
+    });
+  });
+
+  it('safe unmounts run-lifetime import mounts before deleting staging roots', async () => {
+    const order: string[] = [];
+    const runImportMountAction = vi.fn(async () => {
+      order.push('import-mount');
+      return {
+        type: 'import-mount' as const,
+        status: 'completed' as const,
+        mountId: 'mount-run',
+        mountedRootNodeId: 'mounted-root' as NodeId,
+        importedNodeIds: ['mounted-root' as NodeId],
+        lifetime: 'run' as const,
+      };
+    });
+    const safeUnmountImportMounts = vi.fn(async () => {
+      order.push('safe-unmount');
+    });
+    const cleanup = vi.fn(async () => {
+      order.push('cleanup');
+    });
+    const dependencies = createDependencies({
+      runImportMountAction,
+      safeUnmountImportMounts,
+      cleanup,
+    });
+    const action = {
+      type: 'import-mount' as const,
+      format: 'canonical-yaml-zip' as const,
+      input: { path: 'archive.zip' },
+      mount: {
+        parentPath: '.',
+        name: 'Mounted',
+        lifetime: 'run' as const,
+      },
+    };
+
+    const result = await runStagedFolderAction(dependencies, {
+      runId: 'run-import-mount' as NodeId,
+      sourceNodeId: 'source-import-mount' as NodeId,
+      config: createConfig({
+        actions: [action],
+      }),
+    });
+
+    expect(order).toEqual(['import-mount', 'safe-unmount', 'cleanup']);
+    expect(safeUnmountImportMounts).toHaveBeenCalledWith({
+      config: expect.any(Object),
+      stagingRootNodeId: 'staging-root',
+      runId: 'run-import-mount',
+      mounts: [
+        {
+          type: 'import-mount',
+          status: 'completed',
+          mountId: 'mount-run',
+          mountedRootNodeId: 'mounted-root',
+          importedNodeIds: ['mounted-root'],
+          lifetime: 'run',
+        },
+      ],
+    });
+    expect(result).toMatchObject({
+      status: 'completed',
+      actionResults: [
+        {
+          type: 'import-mount',
+          mountId: 'mount-run',
+          mountedRootNodeId: 'mounted-root',
+          importedNodeIds: ['mounted-root'],
+          lifetime: 'run',
+        },
+      ],
+    });
+  });
+
+  it('does not safe unmount retained import mounts', async () => {
+    const safeUnmountImportMounts = vi.fn(async () => {});
+    const dependencies = createDependencies({
+      runImportMountAction: vi.fn(async () => ({
+        type: 'import-mount' as const,
+        status: 'completed' as const,
+        mountId: 'mount-retain',
+        mountedRootNodeId: 'mounted-root' as NodeId,
+        importedNodeIds: ['mounted-root' as NodeId],
+        lifetime: 'retain' as const,
+      })),
+      safeUnmountImportMounts,
+    });
+
+    await runStagedFolderAction(dependencies, {
+      runId: 'run-import-mount-retain' as NodeId,
+      sourceNodeId: 'source-import-mount-retain' as NodeId,
+      config: createConfig({
+        actions: [
+          {
+            type: 'import-mount',
+            format: 'canonical-yaml-zip',
+            input: { path: 'archive.zip' },
+            mount: {
+              parentPath: '.',
+              name: 'Mounted',
+              lifetime: 'retain',
+            },
+          },
+        ],
+      }),
+    });
+
+    expect(safeUnmountImportMounts).not.toHaveBeenCalled();
+  });
+
+  it('keeps the primary failure when run-lifetime safe unmount also fails', async () => {
+    const cleanup = vi.fn(async () => {});
+    const dependencies = createDependencies({
+      runImportMountAction: vi.fn(async () => ({
+        type: 'import-mount' as const,
+        status: 'completed' as const,
+        mountId: 'mount-run',
+        mountedRootNodeId: 'mounted-root' as NodeId,
+        importedNodeIds: ['mounted-root' as NodeId],
+        lifetime: 'run' as const,
+      })),
+      safeUnmountImportMounts: vi.fn(async () => {
+        throw new Error('safe unmount failed');
+      }),
+      runBuildAction: vi.fn(async () => {
+        throw new Error('build failed');
+      }),
+      cleanup,
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-import-mount-unmount-failure' as NodeId,
+        sourceNodeId: 'source-import-mount-unmount-failure' as NodeId,
+        config: {
+          ...createConfig({
+            actions: [
+              {
+                type: 'import-mount',
+                format: 'canonical-yaml-zip',
+                input: { path: 'archive.zip' },
+                mount: {
+                  parentPath: '.',
+                  name: 'Mounted',
+                  lifetime: 'run',
+                },
+              },
+              { type: 'build', mode: 'session-manager' },
+            ],
+          }),
+          staging: {
+            mode: 'temporary-copy',
+            cleanup: 'delete-always',
+          },
+        },
+      })
+    ).rejects.toThrow(/build failed; cleanup failed: safe unmount failed/);
+    await expect(store.getRun('run-import-mount-unmount-failure' as NodeId)).resolves.toMatchObject(
+      {
+        status: 'failed',
+        error: 'build failed; cleanup failed: safe unmount failed',
+      }
+    );
+    expect(cleanup).not.toHaveBeenCalled();
+  });
+
+  it('fails successful action sequences when run-lifetime safe unmount fails', async () => {
+    const safeUnmountImportMounts = vi.fn(async () => {
+      throw new Error('safe unmount failed');
+    });
+    const cleanup = vi.fn(async () => {});
+    const dependencies = createDependencies({
+      runImportMountAction: vi.fn(async () => ({
+        type: 'import-mount' as const,
+        status: 'completed' as const,
+        mountId: 'mount-run',
+        mountedRootNodeId: 'mounted-root' as NodeId,
+        importedNodeIds: ['mounted-root' as NodeId],
+        lifetime: 'run' as const,
+      })),
+      safeUnmountImportMounts,
+      cleanup,
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-import-mount-success-unmount-failure' as NodeId,
+        sourceNodeId: 'source-import-mount-success-unmount-failure' as NodeId,
+        config: {
+          ...createConfig({
+            actions: [
+              {
+                type: 'import-mount',
+                format: 'canonical-yaml-zip',
+                input: { path: 'archive.zip' },
+                mount: {
+                  parentPath: '.',
+                  name: 'Mounted',
+                  lifetime: 'run',
+                },
+              },
+            ],
+          }),
+          staging: {
+            mode: 'temporary-copy',
+            cleanup: 'delete-always',
+          },
+        },
+      })
+    ).rejects.toThrow(/safe unmount failed/);
+
+    expect(safeUnmountImportMounts).toHaveBeenCalledTimes(1);
+    expect(cleanup).not.toHaveBeenCalled();
+    await expect(
+      store.getRun('run-import-mount-success-unmount-failure' as NodeId)
+    ).resolves.toMatchObject({
+      status: 'failed',
+      error: 'safe unmount failed',
+    });
+  });
+
   it('rejects export runner results that do not match the executed action', async () => {
     const dependencies = createDependencies({
       runExportFileAction: vi.fn(async () => ({

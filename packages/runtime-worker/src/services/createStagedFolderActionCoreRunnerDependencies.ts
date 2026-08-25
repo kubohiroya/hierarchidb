@@ -20,6 +20,9 @@ export type CreateStagedFolderActionCoreRunnerDependenciesInput = Pick<
   | 'runBuildAction'
   | 'runMapImageCaptureAction'
   | 'runExportFileAction'
+  | 'runExportArchiveAction'
+  | 'runImportMountAction'
+  | 'safeUnmountImportMounts'
   | 'resolveReferences'
 > & {
   coreDB: CoreDB;
@@ -33,6 +36,9 @@ function createStagedFolderActionCoreRunnerDependencies({
   runBuildAction,
   runMapImageCaptureAction,
   runExportFileAction,
+  runExportArchiveAction,
+  runImportMountAction,
+  safeUnmountImportMounts,
   resolveReferences,
 }: CreateStagedFolderActionCoreRunnerDependenciesInput): StagedFolderActionRunnerDependencies {
   return {
@@ -52,6 +58,9 @@ function createStagedFolderActionCoreRunnerDependencies({
     runBuildAction,
     runMapImageCaptureAction,
     runExportFileAction,
+    runExportArchiveAction,
+    runImportMountAction,
+    safeUnmountImportMounts,
     resolveReferences,
     cleanup: async ({ config, stagingRootNodeId }) => {
       if (config.staging.mode !== 'temporary-copy') {
