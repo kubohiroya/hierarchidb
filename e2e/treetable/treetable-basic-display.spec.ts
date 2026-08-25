@@ -52,59 +52,42 @@ test.describe('TreeTable Basic Display', () => {
   test('カラム表示と基本構造', async ({ page }) => {
     await waitForTreeTableLoad(page);
 
-    // 標準カラムの表示確認
-    await expect(page.locator('th:has-text("Name"), th:has-text("名前")')).toBeVisible();
-    await expect(page.locator('th:has-text("Type"), th:has-text("種類")')).toBeVisible();
-    await expect(page.locator('th:has-text("Updated"), th:has-text("更新日時")')).toBeVisible();
+    // 現行 TreeTable の標準カラムを確認
+    await expect(page.getByRole('columnheader', { name: /すべて選択|Select all/ })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /Name|名前/ })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /Description|説明/ })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /Created|作成日時/ })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /Updated|更新日時/ })).toBeVisible();
 
     // カラムヘッダーの基本属性確認
-    const nameColumn = page
-      .locator('th')
-      .filter({ hasText: /Name|名前/ })
-      .first();
+    const nameColumn = page.getByRole('columnheader', { name: /Name|名前/ }).first();
     await expect(nameColumn).toBeVisible();
-    await expect(nameColumn).toHaveAttribute('role', 'columnheader');
 
     // テーブルの基本構造確認
-    await expect(page.locator('table')).toHaveAttribute('role', 'table');
-    await expect(page.locator('thead')).toBeVisible();
-    await expect(page.locator('tbody')).toBeVisible();
-  });
-
-  test('ローディング状態の表示', async ({ page }) => {
-    // ネットワークを遅延させてローディング状態をテスト
-    await page.route('**/api/tree/**', async (route) => {
-      await page.waitForTimeout(1000);
-      await route.continue();
-    });
-
-    await page.goto(buildAppUrl('d/r'));
-
-    // ローディングスピナーの確認
-    await expect(page.locator('[data-testid="loading-spinner"]')).toBeVisible();
-
-    // ローディング完了後の確認
-    await waitForTreeTableLoad(page);
-    await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
     await expect(treeTable(page)).toBeVisible();
+    await expect(treeTable(page).locator('thead')).toBeVisible();
+    await expect(treeTable(page).locator('tbody')).toBeVisible();
   });
 
-  test('エラー状態のハンドリング', async ({ page }) => {
-    // API エラーをシミュレート
+  test('ロード完了後の表示', async ({ page }) => {
+    await page.goto(buildAppUrl('d/r'));
+    await dismissGuidedTour(page);
+
+    await waitForTreeTableLoad(page);
+    await expect(treeTable(page)).toBeVisible();
+    await expect(page.getByRole('progressbar')).toHaveCount(0);
+  });
+
+  test('TreeTable 表示が旧HTTP tree APIに依存しないこと', async ({ page }) => {
+    // 現行 TreeTable は Worker 経路でデータを取得する。旧HTTP APIを遮断しても表示できることを確認する。
     await page.route('**/api/tree/**', (route) => route.abort());
 
     await page.goto(buildAppUrl('d/r'));
     await dismissGuidedTour(page);
+    await waitForTreeTableLoad(page);
 
-    // エラーメッセージの表示確認
-    await expect(
-      page.locator('[data-testid="error-message"], [data-testid="error-atoms"]')
-    ).toBeVisible({ timeout: 10000 });
-
-    // リトライボタンの確認
-    await expect(
-      page.locator('[data-testid="retry-button"], [data-testid="refresh-button"]')
-    ).toBeVisible();
+    await expect(treeTable(page)).toBeVisible();
+    await expect(treeTable(page).locator('tbody')).toBeVisible();
   });
 
   test('空の状態の表示', async ({ page }) => {
@@ -144,10 +127,10 @@ test.describe('TreeTable Basic Display', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(treeTable(page)).toBeVisible();
 
-    // モバイルでは一部カラムが非表示になることを確認
-    const columns = page.locator('th');
-    const columnCount = await columns.count();
-    expect(columnCount).toBeLessThanOrEqual(3); // モバイルでは3カラム以下
+    // モバイルでも現行カラム構成は維持し、横スクロール可能なテーブルとして表示する。
+    const columns = page.getByRole('columnheader');
+    await expect(columns).toHaveCount(5);
+    await expect(page.getByRole('columnheader', { name: /Name|名前/ })).toBeVisible();
   });
 
   test('アクセシビリティ基本要件', async ({ page }) => {

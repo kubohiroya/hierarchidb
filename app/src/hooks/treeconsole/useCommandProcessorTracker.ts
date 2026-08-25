@@ -20,12 +20,35 @@ interface Params {
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
 }
 
+type HistoryCapabilityAPI = {
+  canUndo?: () => boolean;
+  canRedo?: () => boolean;
+};
+
+const resolveHistoryCapabilityAPI = async (
+  client: Remote<BuildWorkerAPI> | undefined
+): Promise<HistoryCapabilityAPI | undefined> => {
+  const mutationAPI = await (
+    client as
+      | {
+          getMutationAPI?: () => Promise<HistoryCapabilityAPI>;
+        }
+      | undefined
+  )?.getMutationAPI?.();
+  if (
+    mutationAPI &&
+    (typeof mutationAPI.canUndo === 'function' || typeof mutationAPI.canRedo === 'function')
+  ) {
+    return mutationAPI;
+  }
+
+  return await (client as MaybeCP | undefined)?.getCommandProcessor?.();
+};
+
 export function useCommandProcessorTracker({ client, setState, setSSOT }: Params) {
   const refreshUndoRedo = useCallback(async () => {
     try {
-      const getCP = (client as MaybeCP | undefined)?.getCommandProcessor;
-      if (typeof getCP !== 'function') return;
-      const cp = await getCP();
+      const cp = await resolveHistoryCapabilityAPI(client);
       if (!cp) return;
       const canUndo = typeof cp.canUndo === 'function' ? Boolean(cp.canUndo()) : false;
       const canRedo = typeof cp.canRedo === 'function' ? Boolean(cp.canRedo()) : false;
@@ -97,9 +120,7 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
 
     const tick = async () => {
       try {
-        const getCP = (client as MaybeCP | undefined)?.getCommandProcessor;
-        if (typeof getCP !== 'function') return;
-        cp = cp || (await getCP());
+        cp = cp || (await resolveHistoryCapabilityAPI(client));
         if (!cp) return;
         const typed = cp as { canUndo?: () => boolean; canRedo?: () => boolean };
         const canUndo = typeof typed.canUndo === 'function' ? Boolean(typed.canUndo()) : false;

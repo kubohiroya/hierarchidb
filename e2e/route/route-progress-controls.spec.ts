@@ -120,10 +120,8 @@ test.describe('Route build controls', () => {
         routeMode: 'airway',
         startLocationId: 'location-start',
         endLocationId: 'location-end',
-        lineGeometry: [
-          [139.6917, 35.6895],
-          [135.5023, 34.6937],
-        ],
+        startCoordinates: [139.6917, 35.6895],
+        endCoordinates: [135.5023, 34.6937],
         buildConfig,
         processingStatus: 'idle',
       };

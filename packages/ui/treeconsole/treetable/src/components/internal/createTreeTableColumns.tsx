@@ -310,7 +310,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const isBuildRequired = isBuildRequiredForNode || hasBuildRequiredDescendant;
 
       return (
-        <NameCell>
+        <NameCell
+          data-testid="tree-node"
+          data-node-id={node.id}
+          data-parent-id={node.parentId ?? ''}
+          data-node-type={node.nodeType}
+          data-has-children={hasChildren ? 'true' : 'false'}
+        >
           {!hideDragHandler && !disableDragAndDrop && (
             <IconButton
               size="small"
@@ -326,6 +332,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
           <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {hasChildren ? (
               <IconButton
+                data-testid="expand-button"
                 size="small"
                 sx={{
                   p: 0.25,
@@ -348,9 +355,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 }}
               >
                 {isExpanded ? (
-                  <ExpandMoreIcon fontSize="small" />
+                  <ExpandMoreIcon data-testid="expand-icon" data-expanded="true" fontSize="small" />
                 ) : (
-                  <ChevronRightIcon fontSize="small" />
+                  <ChevronRightIcon
+                    data-testid="expand-icon"
+                    data-expanded="false"
+                    fontSize="small"
+                  />
                 )}
               </IconButton>
             ) : null}

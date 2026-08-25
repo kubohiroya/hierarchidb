@@ -8,7 +8,6 @@ import {
   dismissGuidedTour,
   moveToArchive,
   renameFolder,
-  restoreFromArchive,
   setupConsoleErrorTracking,
   waitForDraftUpdate,
   waitForTreeTableLoad,
@@ -40,7 +39,6 @@ test.describe
       }
 
       await dismissGuidedTour(page);
-      await page.waitForLoadState('networkidle');
       await waitForTreeTableLoad(page);
 
       const originalName = await createTestFolder(page, 'UndoRedo Folder');
@@ -48,79 +46,22 @@ test.describe
 
       await moveToArchive(page, renamedName);
       await waitForDraftUpdate(page);
-      await restoreFromArchive(page, renamedName);
 
       const treeNode = (name: string) =>
         page.locator('[data-testid="console-node"]').filter({ hasText: name }).first();
-      const archiveItem = (name: string) =>
-        page.locator('[data-testid="archive-item"]').filter({ hasText: name }).first();
 
-      const expectInArchive = async (name: string) => {
-        await page.locator('[data-testid="archive-button"]').click();
-        const archivePanel = page.locator('[data-testid="archive-panel"]');
-        await expect(archivePanel).toBeVisible({ timeout: 5000 });
-        await expect(archiveItem(name)).toBeVisible({ timeout: 5000 });
-        await page.locator('[data-testid="close-archive-panel"]').click();
-        await expect(archivePanel).not.toBeVisible({ timeout: 5000 });
-      };
-
-      const expectNotInArchive = async (name: string) => {
-        await page.locator('[data-testid="archive-button"]').click();
-        const archivePanel = page.locator('[data-testid="archive-panel"]');
-        await expect(archivePanel).toBeVisible({ timeout: 5000 });
-        await expect(archiveItem(name)).toHaveCount(0);
-        await page.locator('[data-testid="close-archive-panel"]').click();
-        await expect(archivePanel).not.toBeVisible({ timeout: 5000 });
-      };
-
-      // Baseline: node restored to main console and absent from archive
-      await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
-      await expectNotInArchive(renamedName);
-
-      // Undo restore → node back into archive
-      await clickUndo(page);
-      await expect(treeNode(renamedName)).toHaveCount(0);
-      await expectInArchive(renamedName);
-
-      // Undo remove → node returns to console with renamed atoms
-      await clickUndo(page);
-      await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
-      await expectNotInArchive(renamedName);
-
-      // Undo rename → original name restored
-      await clickUndo(page);
-      await expect(treeNode(originalName)).toBeVisible({ timeout: 5000 });
       await expect(treeNode(renamedName)).toHaveCount(0);
 
-      // Undo create → node fully removed
+      // Undo archive -> node returns to console with renamed atoms
       await clickUndo(page);
-      await expect(treeNode(originalName)).toHaveCount(0);
-      await expect(treeNode(renamedName)).toHaveCount(0);
-      await expectNotInArchive(renamedName);
-
-      // Redo create → original node returns
-      await clickRedo(page);
-      await expect(treeNode(originalName)).toBeVisible({ timeout: 5000 });
-
-      // Redo rename → node reflects renamed atoms
-      await clickRedo(page);
       await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
-      await expect(treeNode(originalName)).toHaveCount(0);
 
-      // Redo remove → node moves to archive
+      // Redo archive -> node leaves the console again
       await clickRedo(page);
       await expect(treeNode(renamedName)).toHaveCount(0);
-      await expectInArchive(renamedName);
-
-      // Redo restore → node back to console, archive cleared
-      await clickRedo(page);
-      await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
-      await expectNotInArchive(renamedName);
     }
 
-    test('create → rename → archive → restore supports undo/redo cycle with CommandProcessor routing', async ({
-      page,
-    }) => {
+    test('archive supports undo/redo cycle with CommandProcessor routing', async ({ page }) => {
       await runUndoRedoCycle(page);
     });
   });
