@@ -7,6 +7,10 @@ import type {
   StagedFolderActionPendingReference,
   StagedFolderActionReferenceWarning,
   StagedFolderActionResult,
+  StagedFolderExportArchiveActionResult,
+  StagedFolderExportCsvActionResult,
+  StagedFolderExportXlsxActionResult,
+  StagedFolderImportMountActionResult,
 } from '@hierarchidb/staged-folder-action';
 import { createMapImageCaptureIntent } from '@hierarchidb/staged-folder-action';
 import type { StagedFolderActionProgressStore } from './stagedFolderActionProgressStore.js';
@@ -88,7 +92,27 @@ export interface StagedFolderActionRunnerDependencies {
     config: StagedFolderActionConfig;
     stagingRootNodeId: NodeId;
     runId: NodeId;
-  }): Promise<StagedFolderActionResult>;
+  }): Promise<StagedFolderExportCsvActionResult | StagedFolderExportXlsxActionResult>;
+  runExportArchiveAction?(input: {
+    action: Extract<StagedFolderAction, { type: 'export-archive' }>;
+    actionIndex: number;
+    config: StagedFolderActionConfig;
+    stagingRootNodeId: NodeId;
+    runId: NodeId;
+  }): Promise<StagedFolderExportArchiveActionResult>;
+  runImportMountAction?(input: {
+    action: Extract<StagedFolderAction, { type: 'import-mount' }>;
+    actionIndex: number;
+    config: StagedFolderActionConfig;
+    stagingRootNodeId: NodeId;
+    runId: NodeId;
+  }): Promise<StagedFolderImportMountActionResult>;
+  safeUnmountImportMounts?(input: {
+    config: StagedFolderActionConfig;
+    stagingRootNodeId: NodeId;
+    runId: NodeId;
+    mounts: readonly StagedFolderImportMountActionResult[];
+  }): Promise<void>;
   cleanup?(input: {
     config: StagedFolderActionConfig;
     stagingRootNodeId: NodeId;
@@ -112,6 +136,8 @@ const runStagedFolderAction = async (
   });
 
   let stagingRootNodeId: NodeId | undefined;
+  const runLifetimeMounts: StagedFolderImportMountActionResult[] = [];
+  let terminalSafeUnmountStarted = false;
   try {
     await progressStore.updateRun(input.runId, {
       status: 'running',
@@ -143,13 +169,30 @@ const runStagedFolderAction = async (
         action,
         actionIndex,
       });
-      await runAction(dependencies, input, stagingRootNodeId, action, actionIndex);
+      const actionResult = await runAction(
+        dependencies,
+        input,
+        stagingRootNodeId,
+        action,
+        actionIndex
+      );
+      if (
+        actionResult !== undefined &&
+        actionResult.type === 'import-mount' &&
+        actionResult.lifetime === 'run'
+      ) {
+        runLifetimeMounts.push(actionResult);
+      }
       await resolveAndPersistReferences(dependencies, input, stagingRootNodeId, {
         phase: 'after-action',
         action,
         actionIndex,
       });
     }
+
+    terminalSafeUnmountStarted = true;
+    await safeUnmountRunLifetimeMounts(dependencies, input, stagingRootNodeId, runLifetimeMounts);
+    runLifetimeMounts.length = 0;
 
     if (dependencies.cleanup && shouldCleanupAfterSuccess(input.config.staging.cleanup)) {
       await progressStore.updateRun(input.runId, {
@@ -176,8 +219,26 @@ const runStagedFolderAction = async (
   } catch (error) {
     const failureError = error instanceof Error ? error : new Error(String(error));
     let failureMessage = failureError.message;
+    let safeUnmountFailed = terminalSafeUnmountStarted && runLifetimeMounts.length > 0;
+    if (stagingRootNodeId !== undefined && !terminalSafeUnmountStarted) {
+      try {
+        await safeUnmountRunLifetimeMounts(
+          dependencies,
+          input,
+          stagingRootNodeId,
+          runLifetimeMounts
+        );
+        runLifetimeMounts.length = 0;
+      } catch (cleanupError) {
+        const cleanupMessage =
+          cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+        failureMessage = `${failureMessage}; cleanup failed: ${cleanupMessage}`;
+        safeUnmountFailed = true;
+      }
+    }
     if (
       stagingRootNodeId !== undefined &&
+      !safeUnmountFailed &&
       dependencies.cleanup &&
       shouldCleanupAfterFailure(input.config.staging.cleanup)
     ) {
@@ -274,6 +335,32 @@ const resolveAndPersistReferences = async (
   });
 };
 
+const safeUnmountRunLifetimeMounts = async (
+  dependencies: StagedFolderActionRunnerDependencies,
+  input: StagedFolderActionRunnerInput,
+  stagingRootNodeId: NodeId,
+  mounts: readonly StagedFolderImportMountActionResult[]
+): Promise<void> => {
+  if (mounts.length === 0) {
+    return;
+  }
+  if (!dependencies.safeUnmountImportMounts) {
+    throw new Error('import-mount safe unmount runner is not configured');
+  }
+  await dependencies.progressStore.updateRun(input.runId, {
+    status: 'running',
+    phase: 'cleanup',
+    currentAction: undefined,
+    updatedAt: dependencies.now(),
+  });
+  await dependencies.safeUnmountImportMounts({
+    config: input.config,
+    stagingRootNodeId,
+    runId: input.runId,
+    mounts: [...mounts],
+  });
+};
+
 const shouldCleanupAfterSuccess = (cleanup: StagedFolderActionConfig['staging']['cleanup']) =>
   cleanup === 'delete-on-success' || cleanup === 'delete-always';
 
@@ -286,7 +373,7 @@ const runAction = async (
   stagingRootNodeId: NodeId,
   action: StagedFolderAction,
   actionIndex: number
-): Promise<void> => {
+): Promise<StagedFolderActionResult | undefined> => {
   const progressStore = dependencies.progressStore;
   await progressStore.updateRun(input.runId, {
     status: 'running',
@@ -395,10 +482,75 @@ const runAction = async (
       progress: progressFor(input.config.actions.length, actionIndex + 1),
       updatedAt: dependencies.now(),
     });
-    return;
+    return actionResult;
   }
 
-  throw new Error(`staged-folder-action runner for ${action.type} is not configured`);
+  if (action.type === 'export-archive') {
+    if (!dependencies.runExportArchiveAction) {
+      throw new Error('export-archive action runner is not configured');
+    }
+    const current = await progressStore.getRun(input.runId);
+    if (current === null) {
+      throw new Error(`staged-folder-action run ${String(input.runId)} was not found`);
+    }
+    const actionResult = await dependencies.runExportArchiveAction({
+      action,
+      actionIndex,
+      config: input.config,
+      stagingRootNodeId,
+      runId: input.runId,
+    });
+    assertExportArchiveActionResultMatchesAction(actionResult, action);
+    await progressStore.updateRun(input.runId, {
+      status: 'running',
+      phase: 'running-action',
+      currentAction: {
+        actionIndex,
+        actionType: action.type,
+        phase: 'completed',
+        percentage: 100,
+      },
+      actionResults: [...(current.actionResults ?? []), actionResult],
+      progress: progressFor(input.config.actions.length, actionIndex + 1),
+      updatedAt: dependencies.now(),
+    });
+    return actionResult;
+  }
+
+  if (action.type === 'import-mount') {
+    if (!dependencies.runImportMountAction) {
+      throw new Error('import-mount action runner is not configured');
+    }
+    const current = await progressStore.getRun(input.runId);
+    if (current === null) {
+      throw new Error(`staged-folder-action run ${String(input.runId)} was not found`);
+    }
+    const actionResult = await dependencies.runImportMountAction({
+      action,
+      actionIndex,
+      config: input.config,
+      stagingRootNodeId,
+      runId: input.runId,
+    });
+    assertImportMountActionResultMatchesAction(actionResult, action);
+    await progressStore.updateRun(input.runId, {
+      status: 'running',
+      phase: 'running-action',
+      currentAction: {
+        actionIndex,
+        actionType: action.type,
+        phase: 'completed',
+        percentage: 100,
+      },
+      actionResults: [...(current.actionResults ?? []), actionResult],
+      progress: progressFor(input.config.actions.length, actionIndex + 1),
+      updatedAt: dependencies.now(),
+    });
+    return actionResult;
+  }
+
+  const unsupportedAction = action as { type: string };
+  throw new Error(`staged-folder-action runner for ${unsupportedAction.type} is not configured`);
 };
 
 const updateCurrentActionProgress = async (
@@ -423,7 +575,7 @@ const updateCurrentActionProgress = async (
 };
 
 const assertExportActionResultMatchesAction = (
-  result: StagedFolderActionResult,
+  result: StagedFolderExportCsvActionResult | StagedFolderExportXlsxActionResult,
   action: Extract<StagedFolderAction, { type: 'export-csv' | 'export-xlsx' }>
 ): void => {
   if (result.type !== action.type) {
@@ -434,6 +586,38 @@ const assertExportActionResultMatchesAction = (
   if (result.entityType !== action.entityType) {
     throw new Error(
       `export action result entityType ${result.entityType} does not match action entityType ${action.entityType}`
+    );
+  }
+};
+
+const assertExportArchiveActionResultMatchesAction = (
+  result: StagedFolderExportArchiveActionResult,
+  action: Extract<StagedFolderAction, { type: 'export-archive' }>
+): void => {
+  if (result.type !== action.type) {
+    throw new Error(
+      `export archive action result type ${result.type} does not match action type ${action.type}`
+    );
+  }
+  if (result.format !== action.format) {
+    throw new Error(
+      `export archive action result format ${result.format} does not match action format ${action.format}`
+    );
+  }
+};
+
+const assertImportMountActionResultMatchesAction = (
+  result: StagedFolderImportMountActionResult,
+  action: Extract<StagedFolderAction, { type: 'import-mount' }>
+): void => {
+  if (result.type !== action.type) {
+    throw new Error(
+      `import mount action result type ${result.type} does not match action type ${action.type}`
+    );
+  }
+  if (result.lifetime !== action.mount.lifetime) {
+    throw new Error(
+      `import mount action result lifetime ${result.lifetime} does not match action lifetime ${action.mount.lifetime}`
     );
   }
 };

@@ -106,7 +106,12 @@ function toActionResults(
 ): StagedFolderActionCliActionResult[] {
   const recordedActionResults = [...(record.actionResults ?? [])];
   return config.actions.flatMap((action): StagedFolderActionCliActionResult[] => {
-    if (action.type === 'export-csv' || action.type === 'export-xlsx') {
+    if (
+      action.type === 'export-csv' ||
+      action.type === 'export-xlsx' ||
+      action.type === 'export-archive' ||
+      action.type === 'import-mount'
+    ) {
       const resultIndex = recordedActionResults.findIndex((result) => result.type === action.type);
       if (resultIndex === -1) {
         return [];

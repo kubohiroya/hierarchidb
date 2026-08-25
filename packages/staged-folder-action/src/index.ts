@@ -97,8 +97,10 @@ export type {
   StagedFolderActionRunRecord,
   StagedFolderActionRunRecordPatch,
   StagedFolderActionRunStatus,
+  StagedFolderExportArchiveActionResult,
   StagedFolderExportCsvActionResult,
   StagedFolderExportXlsxActionResult,
+  StagedFolderImportMountActionResult,
 } from './StagedFolderActionProgressTypes.js';
 export {
   assertStagedFolderActionRunRecord,
