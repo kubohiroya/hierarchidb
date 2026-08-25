@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
 import { createStagedFolderActionCliExecutionHost } from '../createStagedFolderActionCliExecutionHost.js';
@@ -567,6 +568,103 @@ describe('runStagedFolderActionBundledCli', () => {
       runId: 'run-relative-host',
       sourceNodeId: 'source-1',
     });
+  });
+
+  it('runs a representative build flow through the host module factory with JSON stdout only', async () => {
+    const previousHostModule = process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE;
+    const previousCwd = process.cwd();
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'hdb-staged-folder-action-cli-'));
+    try {
+      process.chdir(tempDir);
+      process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE = './build-host.mjs';
+      const adapterModuleUrl = pathToFileURL(
+        path.resolve(previousCwd, 'src/createStagedFolderActionCliExecutionHost.ts')
+      ).href;
+      await writeFile(
+        path.join(tempDir, 'build-host.mjs'),
+        `import { createStagedFolderActionCliExecutionHost as createAdapter } from ${JSON.stringify(adapterModuleUrl)};
+
+        export function createStagedFolderActionCliExecutionHost() {
+          return createAdapter({
+            createRunId: () => 'run-build-host',
+            now: () => 103,
+            runStagedFolderAction: async (input) => {
+              if (
+                input.runId !== 'run-build-host' ||
+                input.sourceNodeId !== 'source-1' ||
+                input.outputParentNodeId !== 'output-parent' ||
+                input.config.actions[0]?.type !== 'build'
+              ) {
+                throw new Error('unexpected WorkerAPI runner input');
+              }
+              return {
+                runId: input.runId,
+                sourceNodeId: input.sourceNodeId,
+                stagingRootNodeId: 'stage-build',
+                status: 'completed',
+                phase: 'completed',
+                progress: { total: 1, completed: 1, failed: 0, skipped: 0, percentage: 100 },
+                buildSession: {
+                  nodeType: 'shape',
+                  nodeId: 'build-node',
+                  status: 'completed'
+                },
+                warnings: [],
+                pendingReferences: [],
+                dependencyChanges: [],
+                actionResults: [],
+                startedAt: 100,
+                completedAt: 103,
+                updatedAt: 103,
+                revision: 1
+              };
+            }
+          });
+        }`
+      );
+      const io = createIo({ 'config.json': JSON.stringify(buildConfig) });
+
+      const exitCode = await runStagedFolderActionBundledCli(
+        [
+          '--json',
+          '--config',
+          'config.json',
+          '--source-node-id',
+          'source-1',
+          '--output-parent-node-id',
+          'output-parent',
+        ],
+        io
+      );
+      const result = JSON.parse(io.stdout.join('')) as {
+        ok: boolean;
+        runId: string;
+        profileName: string;
+        stagingRootNodeId: string;
+        buildQueueId: string;
+        actionResults: Array<{ type: string; buildQueueId: string }>;
+      };
+
+      expect(exitCode).toBe(0);
+      expect(io.stdout).toHaveLength(1);
+      expect(io.stderr).toEqual([]);
+      expect(result).toMatchObject({
+        ok: true,
+        runId: 'run-build-host',
+        profileName: 'default',
+        stagingRootNodeId: 'stage-build',
+        buildQueueId: 'build-node',
+        actionResults: [{ type: 'build', buildQueueId: 'build-node' }],
+      });
+    } finally {
+      process.chdir(previousCwd);
+      if (previousHostModule === undefined) {
+        delete process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE;
+      } else {
+        process.env.HDB_STAGED_FOLDER_ACTION_CLI_HOST_MODULE = previousHostModule;
+      }
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('reports host module import failures as profile JSON errors', async () => {
