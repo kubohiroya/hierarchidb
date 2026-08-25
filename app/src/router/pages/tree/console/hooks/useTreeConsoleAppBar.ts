@@ -1,5 +1,6 @@
 import type { BuildSessionRuntimeRecord, CanonicalBuildInputSource } from '@hierarchidb/build-api';
 import { type NodeType, toNodeType } from '@hierarchidb/core-types';
+import { STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE } from '@hierarchidb/staged-folder-action';
 import { type BuildWorkerBridge, getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -29,6 +30,9 @@ export const RESUME_SESSION_NODE_TYPE = toNodeType('shape');
 export type TreeConsoleAppBarState = {
   resumeSessionNodeType: NodeType;
   resumeDialogRows: BuildSessionQueueEntry[];
+  stagedFolderActionDialogRows: BuildSessionQueueEntry[];
+  resumeDialogSessionCount: number;
+  canResumeDialogQueue: boolean;
   isResumeDialogOpen: boolean;
   isQueueAutoStartEnabled: boolean;
   isDeletingQueue: boolean;
@@ -43,6 +47,7 @@ export type TreeConsoleAppBarState = {
     options?: { openInNewTab?: boolean }
   ) => void;
   handleResumeDialogEntriesChange: (entries: BuildSessionQueueEntry[]) => void;
+  handleStagedFolderActionDialogEntriesChange: (entries: BuildSessionQueueEntry[]) => void;
   handleResumeQueue: () => Promise<void>;
   handleDeleteQueue: () => Promise<void>;
   handleSkipResumeDialog: () => void;
@@ -58,6 +63,9 @@ export function useTreeConsoleAppBar({
   const buildWorkerBridgeRef = useRef<BuildWorkerBridge>(getBuildWorkerBridge());
   const location = useRouterState({ select: (state) => state.location });
   const [resumeDialogRows, setResumeDialogRows] = useState<BuildSessionQueueEntry[]>([]);
+  const [stagedFolderActionDialogRows, setStagedFolderActionDialogRows] = useState<
+    BuildSessionQueueEntry[]
+  >([]);
   const [isResumeDialogOpen, setIsResumeDialogOpen] = useState(false);
   const [isQueueAutoStartEnabled, setIsQueueAutoStartEnabled] = useState(true);
   const [isDeletingQueue, setIsDeletingQueue] = useState(false);
@@ -118,9 +126,20 @@ export function useTreeConsoleAppBar({
     setResumeDialogRows(entries);
   }, []);
 
+  const handleStagedFolderActionDialogEntriesChange = useCallback(
+    (entries: BuildSessionQueueEntry[]) => {
+      setStagedFolderActionDialogRows(entries);
+    },
+    []
+  );
+
+  const resumeDialogSessionCount = resumeDialogRows.length + stagedFolderActionDialogRows.length;
+  const canResumeDialogQueue = resumeDialogRows.length > 0;
+
   useEffect(() => {
-    const hasAnySession = resumeDialogRows.length > 0;
-    const hasActiveSession = resumeDialogRows.some((entry) => isActiveQueueSession(entry.session));
+    const allRows = [...resumeDialogRows, ...stagedFolderActionDialogRows];
+    const hasAnySession = allRows.length > 0;
+    const hasActiveSession = allRows.some((entry) => isActiveQueueSession(entry.session));
 
     if (
       hasAnySession &&
@@ -138,7 +157,7 @@ export function useTreeConsoleAppBar({
       setIsQueueAutoStartEnabled(true);
       setIsResumeDialogOpen(false);
     }
-  }, [resumeDialogRows, isResumeDialogOpen]);
+  }, [resumeDialogRows, stagedFolderActionDialogRows, isResumeDialogOpen]);
 
   const handleResumeQueue = useCallback(async () => {
     const first = resumeDialogRows[0];
@@ -166,7 +185,7 @@ export function useTreeConsoleAppBar({
   }, [resumeDialogRows]);
 
   const handleDeleteQueue = useCallback(async () => {
-    if (resumeDialogRows.length === 0) {
+    if (resumeDialogSessionCount === 0) {
       setIsResumeDialogOpen(false);
       return;
     }
@@ -176,9 +195,16 @@ export function useTreeConsoleAppBar({
       const bridge = buildWorkerBridgeRef.current;
       await bridge.initialize();
       await Promise.all(
-        resumeDialogRows.map((entry) =>
-          bridge.deleteBuildSession(RESUME_SESSION_NODE_TYPE, entry.session.nodeId)
-        )
+        [
+          ...resumeDialogRows.map((entry) => ({
+            nodeType: RESUME_SESSION_NODE_TYPE,
+            nodeId: entry.session.nodeId,
+          })),
+          ...stagedFolderActionDialogRows.map((entry) => ({
+            nodeType: STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE,
+            nodeId: entry.session.nodeId,
+          })),
+        ].map((entry) => bridge.deleteBuildSession(entry.nodeType, entry.nodeId))
       );
       setIsQueueAutoStartEnabled(false);
       setIsResumeDialogOpen(false);
@@ -187,7 +213,7 @@ export function useTreeConsoleAppBar({
     } finally {
       setIsDeletingQueue(false);
     }
-  }, [resumeDialogRows]);
+  }, [resumeDialogRows, resumeDialogSessionCount, stagedFolderActionDialogRows]);
 
   const handleSkipResumeDialog = useCallback(() => {
     setIsResumeDialogOpen(false);
@@ -196,6 +222,9 @@ export function useTreeConsoleAppBar({
   return {
     resumeSessionNodeType: RESUME_SESSION_NODE_TYPE,
     resumeDialogRows,
+    stagedFolderActionDialogRows,
+    resumeDialogSessionCount,
+    canResumeDialogQueue,
     isResumeDialogOpen,
     isQueueAutoStartEnabled,
     isDeletingQueue,
@@ -203,6 +232,7 @@ export function useTreeConsoleAppBar({
     handleNavigateToBuild,
     handleNavigateToBuildJobEntry,
     handleResumeDialogEntriesChange,
+    handleStagedFolderActionDialogEntriesChange,
     handleResumeQueue,
     handleDeleteQueue,
     handleSkipResumeDialog,
