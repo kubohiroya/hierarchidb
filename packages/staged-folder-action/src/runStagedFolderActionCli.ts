@@ -17,6 +17,21 @@ import type {
 
 export { runStagedFolderActionCli };
 
+type StagedFolderActionNodeProcess = {
+  argv?: string[];
+  stdout?: { write(text: string): unknown };
+  stderr?: { write(text: string): unknown };
+  exitCode?: number;
+};
+
+const readNodeProcess = (): StagedFolderActionNodeProcess | undefined => {
+  if (typeof globalThis === 'undefined') {
+    return undefined;
+  }
+  const candidate = (globalThis as { process?: StagedFolderActionNodeProcess }).process;
+  return candidate && typeof candidate === 'object' ? candidate : undefined;
+};
+
 export type StagedFolderActionCliErrorCategory =
   | 'cli'
   | 'manifest'
@@ -578,15 +593,24 @@ function cliError(code: string, message: string, path?: string): StagedFolderAct
 const nodeIo: StagedFolderActionCliIo = {
   readTextFile: (filePath) => readFile(filePath, 'utf8'),
   writeStdout: (text) => {
-    process.stdout.write(text);
+    const nodeProcess = readNodeProcess();
+    if (!nodeProcess?.stdout?.write) {
+      throw new Error('staged-folder-action CLI stdout is not available');
+    }
+    nodeProcess.stdout.write(text);
   },
   writeStderr: (text) => {
-    process.stderr.write(text);
+    const nodeProcess = readNodeProcess();
+    if (!nodeProcess?.stderr?.write) {
+      throw new Error('staged-folder-action CLI stderr is not available');
+    }
+    nodeProcess.stderr.write(text);
   },
 };
 
-if (process.argv[1] && import.meta.url === new URL(process.argv[1], 'file:').href) {
-  runStagedFolderActionCli(process.argv.slice(2)).then((exitCode) => {
-    process.exitCode = exitCode;
+const nodeProcess = readNodeProcess();
+if (nodeProcess?.argv?.[1] && import.meta.url === new URL(nodeProcess.argv[1], 'file:').href) {
+  runStagedFolderActionCli(nodeProcess.argv.slice(2)).then((exitCode) => {
+    nodeProcess.exitCode = exitCode;
   });
 }

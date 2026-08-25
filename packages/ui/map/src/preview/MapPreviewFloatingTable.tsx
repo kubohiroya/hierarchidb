@@ -1,6 +1,7 @@
 import {
   type GridCellEditCommitResult,
   type GridCellEditParams,
+  type GridCellEditStateChange,
   type GridColumn,
   type GridGroupingState,
   type GridSortingState,
@@ -90,6 +91,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   toolbarActions?: React.ReactNode;
   onCellClick?: (params: { row: Row; columnId: string }) => void;
   featureTableEdit?: FeatureTableEditConfig<Row>;
+  onCellEditStateChange?: (state: GridCellEditStateChange<Row>) => void;
   containerSx?: Record<string, unknown>;
   rowFilterConfig?: {
     mode: 'all' | 'viewport';
@@ -173,6 +175,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     toolbarActions,
     onCellClick,
     featureTableEdit,
+    onCellEditStateChange,
     containerSx,
     rowFilterConfig,
   } = props;
@@ -322,6 +325,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             onSelectionChange={onSelectionChange}
             onCellClick={onCellClick}
             onCellEdit={featureTableEdit ? handleFeatureCellEdit : undefined}
+            onCellEditStateChange={onCellEditStateChange}
             sorting={sorting}
             onSortingChange={setSorting}
             grouping={resolvedGrouping}

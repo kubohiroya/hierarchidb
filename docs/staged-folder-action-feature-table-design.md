@@ -117,6 +117,8 @@ Preview table、Map UI floating table、map feature popover は同じ source map
 
 #1656 の map feature popover integration は、`MapFeatureEditPopover` と `commitMapFeaturePopoverEdit()` を `ui-map` から公開し、table と同じ `FeatureTableEditConfig` / `FeatureCellEditRequest` flow を利用する。popover は `editOrigin: 'map-feature-popover'` を設定して request を emit し、plugin-owned Dexie/IndexedDB store や独自 write service を呼ばない。editable metadata が未指定または空の場合は read-only 表示に留め、source mapping のない column は request を emit せず typed failure / rollback lifecycle として扱う。
 
+#1657 の end-to-end UI coverage は、Preview table / Map UI floating table / map feature popover が同じ edit request と lifecycle contract を使うことを unit interaction test と chromium-scoped Playwright fixture test で固定する。Playwright fixture は browser scope、timeout、network-free deterministic fixture、retry policy を明示し、実データ作成や plugin-owned storage への直接 write は行わない。active artifact-input edit の stale propagation と incremental rebuild enqueue は `FeatureDependencyEditService` の service-level test で固定し、UI test はその request origin と refresh/rollback contract を検証する。
+
 ## Implementation Issue Split
 
 | Issue | Scope | DoD | Rollback |

@@ -117,6 +117,40 @@ describe('FeatureDependencyEditService', () => {
     await expect(store.listEdgesByStatus('stale')).resolves.toHaveLength(2);
   });
 
+  it('applies map feature popover requests through the same stale propagation and rebuild enqueue path', async () => {
+    await store.recordActiveEdges([createEdge('edge-1')], 100);
+
+    const result = await createService().applyFeatureCellEdit(
+      createRequest({
+        editOrigin: 'map-feature-popover',
+      })
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        impact: expect.objectContaining({
+          dependencyStatus: 'stale',
+          affectedDependencyEdgeIds: ['edge-1'],
+          rebuildRequired: true,
+          rebuildPlan: {
+            planId: 'rebuild-plan:edge-1',
+            rebuildTargetIds: ['route-edge-1'],
+            staleEdgeIds: ['edge-1'],
+          },
+        }),
+      })
+    );
+    expect(sourceUpdates).toEqual([
+      expect.objectContaining({
+        editOrigin: 'map-feature-popover',
+        featureNodeId: 'location-1',
+        fieldPath: 'data.coordinates',
+      }),
+    ]);
+    expect(enqueuedPlans).toEqual(['rebuild-plan:edge-1']);
+  });
+
   it('does not mark active edges stale when the owning plugin source write fails', async () => {
     await store.recordActiveEdges([createEdge('edge-1')], 100);
     sourceUpdater = {
