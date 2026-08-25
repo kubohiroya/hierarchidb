@@ -22,14 +22,15 @@ export type RouteBuildRouteInput = {
 };
 
 export type RouteBuildStartInput =
-  | { kind: 'direct-route' }
+  | { kind: 'direct-route'; routes: [RouteBuildRouteInput] }
   | { kind: 'selection-driven'; routes: RouteBuildRouteInput[] };
 
 export type RouteDirectBuildExternalInput = {
   routeBuildInput?: { kind: 'direct-route' };
   startLocationId?: NodeId;
   endLocationId?: NodeId;
-  lineGeometry?: unknown;
+  startCoordinates?: [number, number];
+  endCoordinates?: [number, number];
   routeMode?: RouteMode;
 };
 

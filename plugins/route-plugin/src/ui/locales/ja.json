@@ -179,7 +179,7 @@
     "endLocation": "終点:",
     "notConfigured": "未設定",
     "missing": "ビルド前に国ごとの交通経路を選択してください。",
-    "missingCanonicalInput": "ビルド設定、ルートモード、始点・終点、および2点以上のライン形状が必要です。",
+    "missingCanonicalInput": "ビルド設定、ルートモード、始点・終点、および始点・終点座標が必要です。",
     "unknownStage": "不明なステージ",
     "crashHint": "前回のビルドは {{stage}} で停止しました。再開前に canonical タスクの失敗内容を確認してください。",
     "crashMemoryHint": "前回のビルドは {{stage}} で停止し、ピークメモリ使用率は {{ratio}} に達しました。再開前に canonical タスクの失敗内容を確認してください。",

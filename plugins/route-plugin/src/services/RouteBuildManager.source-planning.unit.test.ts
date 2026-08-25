@@ -63,6 +63,9 @@ describe('materializeSourcePlannedRouteGenerationMethod', () => {
     expect(() => materializeMethod(ROUTE_MODES.WATERWAY, 'great_circle')).toThrow(
       'routeMode waterway requires generation method searoute'
     );
+    expect(() => materializeMethod(ROUTE_MODES.WATERWAY, 'direct')).toThrow(
+      'routeMode waterway requires generation method searoute'
+    );
   });
 
   it('rejects configured land methods outside direct or network routing', () => {

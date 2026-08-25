@@ -239,7 +239,7 @@ export const useRouteBuildStepState = ({
       ? null
       : translate(
           'build.missingCanonicalInput',
-          'Build config, route mode, start/end locations, and line geometry are required.'
+          'Build config, route mode, start/end locations, and start/end coordinates are required.'
         ),
     visibleError,
     progressTitle: translate('build.title', 'Build routes'),

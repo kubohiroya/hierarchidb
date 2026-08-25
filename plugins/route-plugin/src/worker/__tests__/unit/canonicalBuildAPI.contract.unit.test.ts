@@ -110,11 +110,8 @@ describe('route canonicalBuildAPI contract', () => {
       routeMode: ROUTE_MODES.ROAD,
       startLocationId: 'location-start',
       endLocationId: 'location-end',
-      lineGeometry: [
-        [139, 35],
-        [139.5, 35.5],
-        [140, 36],
-      ],
+      startCoordinates: [139, 35],
+      endCoordinates: [140, 36],
     };
 
     await expect(
@@ -146,7 +143,7 @@ describe('route canonicalBuildAPI contract', () => {
     expect(canonicalBuildAPI.subscribeWorkerLog(nodeId, callback)).toBe(unsubscribe);
   });
 
-  it('rejects invalid persisted direct-route coordinates', async () => {
+  it('rejects precomputed direct-route line geometry at the canonical boundary', async () => {
     await expect(
       canonicalBuildAPI.startBuildSession(
         startRequest('route-contract-node', {
@@ -156,12 +153,28 @@ describe('route canonicalBuildAPI contract', () => {
           startLocationId: 'location-start',
           endLocationId: 'location-end',
           lineGeometry: [
-            [181, 35],
+            [139, 35],
             [140, 36],
           ],
         })
       )
-    ).rejects.toThrow('payload.lineGeometry[0] contains invalid coordinates');
+    ).rejects.toThrow('must not include precomputed lineGeometry');
+  });
+
+  it('rejects invalid persisted direct-route coordinates', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession(
+        startRequest('route-contract-node', {
+          buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
+          routeBuildInput: { kind: 'direct-route' },
+          routeMode: ROUTE_MODES.ROAD,
+          startLocationId: 'location-start',
+          endLocationId: 'location-end',
+          startCoordinates: [181, 35],
+          endCoordinates: [140, 36],
+        })
+      )
+    ).rejects.toThrow('direct-route startCoordinates contains invalid coordinates');
   });
 
   it('rejects a build config with missing required leaf values', async () => {
@@ -178,10 +191,8 @@ describe('route canonicalBuildAPI contract', () => {
           routeMode: ROUTE_MODES.ROAD,
           startLocationId: 'location-start',
           endLocationId: 'location-end',
-          lineGeometry: [
-            [139, 35],
-            [140, 36],
-          ],
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
         })
       )
     ).rejects.toThrow('payload.buildConfig.sourceConfig.maxConcurrent must be a positive integer');
@@ -195,13 +206,11 @@ describe('route canonicalBuildAPI contract', () => {
           routeBuildInput: { kind: 'direct-route' },
           startLocationId: 'location-start',
           endLocationId: 'location-end',
-          lineGeometry: [
-            [139, 35],
-            [140, 36],
-          ],
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
         })
       )
-    ).rejects.toThrow('payload.routeMode is unsupported');
+    ).rejects.toThrow('direct-route routeMode is unsupported');
   });
 
   it('accepts selection-driven route inputs through the canonical resolver', async () => {
@@ -318,10 +327,8 @@ describe('route canonicalBuildAPI contract', () => {
           routeMode: ROUTE_MODES.ROAD,
           startLocationId: 'location-start',
           endLocationId: 'location-end',
-          lineGeometry: [
-            [139, 35],
-            [140, 36],
-          ],
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
           routeBuildInput: {
             kind: 'selection-driven',
             routes: [

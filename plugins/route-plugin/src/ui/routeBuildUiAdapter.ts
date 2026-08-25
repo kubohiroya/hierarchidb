@@ -138,8 +138,8 @@ const hasDirectRouteFields = (draft: Partial<RouteEntity>): boolean =>
     draft.routeMode &&
       draft.startLocationId &&
       draft.endLocationId &&
-      Array.isArray(draft.lineGeometry) &&
-      draft.lineGeometry.length >= 2
+      isCoordinatePair(draft.startCoordinates) &&
+      isCoordinatePair(draft.endCoordinates)
   );
 
 const isCoordinatePair = (value: unknown): value is readonly [number, number] =>

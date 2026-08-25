@@ -103,6 +103,8 @@ export interface RouteEntityPayload {
   routeMode?: RouteMode;
   startLocationId?: NodeId;
   endLocationId?: NodeId;
+  startCoordinates?: [number, number];
+  endCoordinates?: [number, number];
   lineGeometry?: [number, number][];
   buildConfig?: RouteBuildConfig;
   routeStyleConfig?: RouteStyleConfig;

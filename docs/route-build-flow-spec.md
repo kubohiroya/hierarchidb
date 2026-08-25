@@ -141,12 +141,12 @@ cache identity の正規仕様（SSOT）とする。
   completed internal input を渡す。
 - external payload は次のいずれか1つだけを表す:
   - direct-route: `routeBuildInput.kind='direct-route'` と direct route fields
-    (`startLocationId` / `endLocationId` / `lineGeometry` / `routeMode`)。
+    (`startLocationId` / `endLocationId` / `startCoordinates` / `endCoordinates` / `routeMode`)。
   - selection-driven: `routeBuildInput.kind='selection-driven'`、`tabularSourceId`、
     `selectedArrayByCountries`、任意の `locationNodeIds`。
 - direct-route fields と selection-driven fields の混在、どちらも存在しない payload、
   空selection、5-cell legacy row、非boolean cell、不正国コード、空tabular source、
-  endpoint未解決、unsupported routeMode、解決後route 0件は task 生成前に失敗する。
+  endpoint未解決、unsupported routeMode、precomputed `lineGeometry`、解決後route 0件は task 生成前に失敗する。
   どちらかの形式へ寄せる、空成果物として成功させる、別sourceへfallbackすることは禁止する。
 - `routeBuildInput.routes` は resolver 通過後の completed internal input 専用であり、
   external payload に含めて start してはならない。resolved input は
@@ -330,8 +330,10 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
   payloadをopaqueに渡す。route固有入力の判定と解決はroute pluginの
   `RouteCanonicalBuildInputResolver` が所有する。
 - `routeBuildInput.kind = "direct-route"` は`RouteEntityPayload.buildConfig / routeMode /
-  startLocationId / endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を
-  始点・終点座標として使う。
+  startLocationId / endLocationId / startCoordinates / endCoordinates`を必須とする。
+  precomputed `lineGeometry` は canonical direct-route 外部入力として受け取らず、存在する場合は
+  契約違反としてstartを失敗させる。LineStringはsource planningでmaterializeされたmethodと
+  resolved endpointから生成する。
 - `routeBuildInput.kind = "selection-driven"` は`tabularSourceId`とstrict
   `selectedArrayByCountries`をexternal payloadとして受け取り、route pluginのcanonical
   resolverがtabular rowと関連locationを解決して内部用`RouteBuildRouteInput[]`を生成する。
