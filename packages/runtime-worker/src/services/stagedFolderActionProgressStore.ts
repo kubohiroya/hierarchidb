@@ -125,7 +125,7 @@ export class StagedFolderActionProgressStore extends Dexie {
 }
 
 export const isStagedFolderActionRunActive = (record: StagedFolderActionRunRecord): boolean =>
-  record.status === 'starting' || record.status === 'running';
+  isRuntimeStatusActive(toRuntimeStatus(record));
 
 export const createStagedFolderActionBuildRuntimeAdapter = (
   store: StagedFolderActionProgressStore
@@ -181,6 +181,7 @@ export const toBuildSessionRuntimeRecord = (
     status,
     isActive: isRuntimeStatusActive(status),
     progress: toBuildProgress(record),
+    currentAction: record.currentAction,
     startedAt: record.startedAt,
     completedAt: record.completedAt,
     updatedAt: record.updatedAt,

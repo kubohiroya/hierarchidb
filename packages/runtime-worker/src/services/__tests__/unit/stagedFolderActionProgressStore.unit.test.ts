@@ -60,6 +60,12 @@ describe('StagedFolderActionProgressStore', () => {
         skipped: 0,
         percentage: 40,
       },
+      currentAction: {
+        actionIndex: 0,
+        actionType: 'build',
+        phase: 'build-session-running',
+        percentage: 40,
+      },
       revision: 1,
     });
   });
@@ -214,6 +220,37 @@ describe('StagedFolderActionProgressStore', () => {
 
     await store.deleteRun(run.runId);
     await expect(store.getRun(run.runId)).resolves.toBeNull();
+  });
+
+  it('treats cleanup and output writing phases as active finalizing runtime records', async () => {
+    const run = await store.createRun({
+      runId: 'run-finalizing' as NodeId,
+      sourceNodeId: 'source-finalizing' as NodeId,
+      now: 100,
+    });
+    await store.updateRun(run.runId, {
+      status: 'completed',
+      phase: 'cleanup',
+      progress: {
+        total: 1,
+        completed: 1,
+        failed: 0,
+        skipped: 0,
+        percentage: 100,
+      },
+      updatedAt: 120,
+    });
+
+    const adapter = createStagedFolderActionBuildRuntimeAdapter(store);
+
+    await expect(adapter.getSession(run.runId)).resolves.toMatchObject({
+      status: 'finalizing',
+      isActive: true,
+    });
+    await expect(adapter.listSessions({ activeOnly: true })).resolves.toEqual([
+      expect.objectContaining({ nodeId: run.runId, status: 'finalizing' }),
+    ]);
+    await expect(store.deleteRun(run.runId)).rejects.toThrow(/Cannot delete active/);
   });
 
   it('stores map image capture intents and removes them with the terminal run', async () => {

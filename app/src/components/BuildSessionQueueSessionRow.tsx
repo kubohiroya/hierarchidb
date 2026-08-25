@@ -126,6 +126,16 @@ const resolveStatusCaptionText = (
   session: BuildSessionRuntimeRecord,
   isRunning: boolean
 ): string => {
+  if (isRunning && session.currentAction) {
+    return formatTemplate(
+      t('buildSessionQueue.currentActionStatus', '{{actionType}} - {{phase}}'),
+      {
+        actionType: session.currentAction.actionType,
+        phase: session.currentAction.phase,
+      }
+    );
+  }
+
   if (isRunning) {
     return t('buildSessionQueue.statusRunning', 'Running');
   }
@@ -187,7 +197,7 @@ const BuildSessionQueueSessionRowInner = ({
   const canRestart = isPaused || isFailed || isCompleted;
   const stageIcon = resolveStageIcon(session.progress?.stage);
   const percentageText = isRunning
-    ? `${Math.round(session.progress?.percentage ?? 0)}%`
+    ? `${Math.round(session.currentAction?.percentage ?? session.progress?.percentage ?? 0)}%`
     : undefined;
   const statusLine = isRunning
     ? resolveStatusText(t, session, {

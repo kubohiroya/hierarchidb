@@ -93,6 +93,7 @@ export function TreeConsoleAppBar({
                 treeId={data.tree.id}
                 nodeType={STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE}
                 autoStartTopSession={false}
+                includeBuildJobQueues={false}
               />
             </>
           ) : null}
@@ -106,15 +107,24 @@ export function TreeConsoleAppBar({
           })}
         </DialogTitle>
         <DialogContent dividers>
-          <BuildSessionQueuePanel
-            treeId={data.tree?.id}
-            nodeType={resumeSessionNodeType}
-            onNavigateToBuild={handleNavigateToBuild}
-            onNavigateToBuildJobEntry={handleNavigateToBuildJobEntry}
-            onEntriesChange={handleResumeDialogEntriesChange}
-            autoStartTopSession={isQueueAutoStartEnabled}
-            compact={false}
-          />
+          <Stack spacing={2}>
+            <BuildSessionQueuePanel
+              treeId={data.tree?.id}
+              nodeType={resumeSessionNodeType}
+              onNavigateToBuild={handleNavigateToBuild}
+              onNavigateToBuildJobEntry={handleNavigateToBuildJobEntry}
+              onEntriesChange={handleResumeDialogEntriesChange}
+              autoStartTopSession={isQueueAutoStartEnabled}
+              compact={false}
+            />
+            <BuildSessionQueuePanel
+              treeId={data.tree?.id}
+              nodeType={STAGED_FOLDER_ACTION_RUNTIME_NODE_TYPE}
+              autoStartTopSession={false}
+              includeBuildJobQueues={false}
+              compact={false}
+            />
+          </Stack>
         </DialogContent>
         <DialogActions sx={{ width: '100%', justifyContent: 'flex-end' }}>
           <Button
