@@ -37,15 +37,20 @@ route pipelineは次の3ステージを、この順序で実行する。
 - Step3 `selectedArrayByCountries`
 - canonical route input resolver が解決したlocation参照と始点/終点Point
 - `RouteBuildConfig.sourceConfig`
-- route generation method/options
+- route generation method/options。`method` が route 入力に明示されていない場合は、source planning
+  段階で routeMode に基づく既定 method を materialize する。
 
 ### 処理
 
 1. data-source strategyからroute metadataを取得する。
 2. data-source strategy / adapter境界で始点/終点のlocationを解決し、session入力では
    location IDと座標を厳格検証する。
-3. `direct / great_circle / osm_route / searoute / custom` の明示されたengineで
-   LineStringを生成する。
+3. `direct / great_circle / osm_route / searoute / custom` の source-planned engineで
+   LineStringを生成する。`airway` は `great_circle`、`waterway` は `searoute` を正規methodとし、
+   明示された `RouteBuildRouteInput.method` がこれと矛盾する場合は source planning の
+   契約違反として失敗させる。`railway / high-speed-railway / road / highway` は `direct` または
+   network/custom routing method を許容し、route入力で明示されたmethod、または
+   nodeごとの明示設定/システム既定methodを materialize する。
    engine registryはmethodごとのcapabilityを必須とし、engine id/version、method、
    任意のaccepted route modes、network requirement、waypoint対応を検証する。
    source planningで確定した`routeMode`はgeneration requestへ渡し、engine capabilityの
@@ -60,7 +65,8 @@ route pipelineは次の3ステージを、この順序で実行する。
 5. geometry taskを、永続化に成功したsource artifactから生成する。
 
 engine、location、routeMode、座標、generation設定が欠落・不正な場合はtaskを失敗させる。
-別engine、直線、大圏航路、cacheへの暗黙fallbackは行わない。
+materialize 済み method の engine が失敗しても、別engine、直線、大圏航路、cacheへの
+暗黙fallbackは行わない。
 session内では曖昧なlocation検索を行わず、admin name/codeは正規`RouteFeature`をSSOTとして
 source cache metadataへ重複保存しない。
 

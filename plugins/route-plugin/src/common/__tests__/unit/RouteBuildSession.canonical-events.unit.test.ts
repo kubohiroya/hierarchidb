@@ -435,6 +435,7 @@ describe('RouteBuildSession canonical events', () => {
           startCoordinates: [0, 0],
           endCoordinates: [1, 1],
           routeMode: ROUTE_MODES.ROAD,
+          method: 'osm_route',
         },
       ],
     });
@@ -524,6 +525,7 @@ describe('RouteBuildSession canonical events', () => {
           startCoordinates: [0, 0],
           endCoordinates: [1, 1],
           routeMode: ROUTE_MODES.ROAD,
+          method: 'osm_route',
         },
       ],
     });
