@@ -128,4 +128,29 @@ describe('resolveBreadcrumbContextMenuBuildState', () => {
       buildDiagnosticsLabel: 'Build diagnostics',
     });
   });
+
+  it('uses dependency availability diagnostics for breadcrumb build state', () => {
+    const state = resolveBreadcrumbContextMenuBuildState(
+      {
+        id: 'shape-1',
+        nodeType: 'shape',
+      },
+      undefined,
+      [],
+      {
+        dependencySummary: {
+          edgeCounts: { orphaned: 1 },
+        },
+      }
+    );
+
+    expect(state).toEqual({
+      buildRequired: false,
+      canBuild: false,
+      buildAvailabilitySummary: 'Orphaned dependency',
+      buildAvailabilityTooltip:
+        'Build unavailable\nOne or more dependency edges are orphaned and require diagnostics.',
+      buildDiagnosticsLabel: 'Build diagnostics',
+    });
+  });
 });

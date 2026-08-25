@@ -2953,6 +2953,9 @@ importers:
 
   packages/ui/treeconsole/base:
     dependencies:
+      '@hierarchidb/build-api':
+        specifier: workspace:*
+        version: link:../../../build-api
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../../components

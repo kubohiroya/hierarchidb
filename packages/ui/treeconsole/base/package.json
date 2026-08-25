@@ -24,6 +24,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
@@ -31,6 +32,7 @@
   "peerDependencies": {
     "comlink": "^4.4.2",
     "@dnd-kit/modifiers": "^9.0.0",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",

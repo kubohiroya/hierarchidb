@@ -1,3 +1,7 @@
+import type {
+  BuildDependencyAvailabilitySummary,
+  BuildPluginPrerequisiteFailure,
+} from '@hierarchidb/build-api';
 import { type NodeId, type NodeType, toNodeId, toNodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type {
@@ -78,6 +82,8 @@ export interface TreeConsolePanelLogicArgs {
   ) => void;
   readonly breadcrumbRenderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
   readonly buildSessionIndicator?: BuildSessionIndicator;
+  readonly dependencySummary?: BuildDependencyAvailabilitySummary;
+  readonly pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
   readonly leftSlot?: ReactElement;
 }
 
@@ -114,6 +120,8 @@ export function useTreeConsolePanel({
   onBreadcrumbContextAction,
   breadcrumbRenderer,
   buildSessionIndicator,
+  dependencySummary,
+  pluginPrerequisiteFailures,
   leftSlot,
 }: TreeConsolePanelLogicArgs): TreeConsolePanelLogicResult {
   const theme = useTheme();
@@ -263,6 +271,8 @@ export function useTreeConsolePanel({
         ? (node: TreeNodeInUI) =>
             resolveOpenSteps(String(node.id ?? ''), String(node.nodeType || 'folder'))
         : undefined,
+      dependencySummary,
+      pluginPrerequisiteFailures,
       onContextAction: (
         action: string,
         node: TreeNodeInUI,
@@ -289,6 +299,8 @@ export function useTreeConsolePanel({
     resolvePreviewGuardState,
     rootNodeId,
     selectedIds,
+    dependencySummary,
+    pluginPrerequisiteFailures,
     useArchiveColumns,
   ]);
 
@@ -350,6 +362,8 @@ export function useTreeConsolePanel({
       resolveOpenSteps,
       archiveDisabledNodeIds,
       activeBuildNodeIds,
+      dependencySummary,
+      pluginPrerequisiteFailures,
       collectDescendantNodes: collectBreadcrumbDescendantNodes,
       leftSlot,
     }),
@@ -362,6 +376,8 @@ export function useTreeConsolePanel({
       resolveOpenSteps,
       archiveDisabledNodeIds,
       activeBuildNodeIds,
+      dependencySummary,
+      pluginPrerequisiteFailures,
       collectBreadcrumbDescendantNodes,
       treeId,
       archiveAction,

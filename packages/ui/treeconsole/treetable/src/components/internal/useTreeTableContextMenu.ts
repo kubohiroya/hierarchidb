@@ -103,11 +103,15 @@ export function useTreeTableContextMenu({
           canBuildNodeType: (candidateNodeType) =>
             buildActionNodeTypes.has(String(candidateNodeType).trim().toLowerCase()),
           activeNodeIds,
+          dependencySummary: controller?.dependencySummary,
+          pluginPrerequisiteFailures: controller?.pluginPrerequisiteFailures,
         })
       : node && canBuildNodeType
         ? resolveBuildAvailability({
             candidates: [node],
             activeNodeIds,
+            dependencySummary: controller?.dependencySummary,
+            pluginPrerequisiteFailures: controller?.pluginPrerequisiteFailures,
           })
         : null;
 
