@@ -323,11 +323,11 @@ slot の意味:
 | --- | --- |
 | `committed` | node の committed `data`。copy-on-write node では `copyOnWriteOf.data + patchData` を返す |
 | `draft` | dialog / working copy が対象とする draft view。draftData が存在する場合は committed/effective base に draftData を重ねる |
-| `effective-staged` | staged-folder-action が action input として読む view。copy-on-write、`patchData`、`import-mount`、`patch-source` の結果を反映する |
+| `effective-staged` | staged-folder-action が action input として読む view。Phase 3 時点では copy-on-write と `patchData` を反映する。`patch-source` と `import-mount` の mount record 適用は Phase 4 の workflow hardening で resolver input へ接続する |
 
 resolver は strict merge rules を `Overlay Contract` と共有する。object は再帰 merge、scalar と array は replace、未知の patch 操作は contract violation とする。resolver の利用者が独自 merge、fallback、default 補完、近似 node 探索、slot 間 fallback を実装してはならない。
 
-Phase 3 完了後の resolver 境界では、`effective-staged` は copy-on-write、`patchData`、`patch-source`、および `import-mount` action が作成した mount record を staging context として扱う。mount record が存在しない、参照先が欠落する、または safe unmount 後の mount を参照する場合は typed error とし、呼び出し側で独自に mount record を混ぜたり `mountedContentApplied: false` を成功扱いにしたりしてはならない。
+Phase 3 完了後の resolver 実装では、`effective-staged` は copy-on-write と `patchData` を反映し、metadata の `mountedContentApplied` は `false` のままである。`import-mount` action result と safe unmount boundary は runner 側で接続済みだが、mount record を resolver input として適用する処理は Phase 4 対象である。それまでは呼び出し側で独自に mount record を混ぜたり、`mountedContentApplied: false` を mounted content 適用済みとして扱ったりしてはならない。
 
 Phase 0 では `TreeQueryService` が `copyOnWriteOf` または `patchData` を持つ node を返す場合、共通 resolver を通して `data` を effective staged data に差し替える。これにより、既存 Map UI / capture が通常の `getNode` / `listChildren` / `listDescendants` 経路を使っても CoW overlay 後の値を読む。通常 node は resolver を通さず従来通り返す。`patchData` が `copyOnWriteOf` なしに存在する場合は contract violation として失敗させ、空 object や raw `data` への fallback は行わない。
 
@@ -958,7 +958,7 @@ CLI は manifest parse、staging 作成、overlay、artifact/output write、clea
 - `BuildJobQueue.mode = 'export'` は今後も利用候補だが、専用 route のためではなく staging folder build を表す mode として再定義する。
 - `StagedFolderActionProgressStore` は canonical build runtime adapter として登録され、TreeConsole AppBar の session manager surface から staged-folder-action run を確認できる。Phase 3 child #1609 / #1627 で staged run count、current action projection、cleanup/output finalizing 表示境界を hardening 済みである。
 - TreeNode hierarchy の複製は `CoreDB.duplicateSubtreeWithMap()` 相当を基礎にできるが、copy-on-write node として `copyOnWriteOf` / `patchData` を持たせ、effective data 解決を build / Map UI / capture の読み取り経路に接続する必要がある。
-- temporary-copy / permanent-copy について CoW subtree 作成、Map UI/capture の TreeQueryService 経由 effective data 読み取り、canonical build session 開始時の CoW effective committed data 読み取りを接続済みである。Phase 3 child #1607 で CSV/XLSX export adapter も canonical columns / primitive row cell contract / effective data resolver 境界に接続済みである。
+- temporary-copy / permanent-copy について CoW subtree 作成、Map UI/capture の TreeQueryService 経由 effective data 読み取り、canonical build session 開始時の CoW effective committed data 読み取りを接続済みである。Phase 3 child #1607 で CSV/XLSX export adapter も canonical columns / primitive row cell contract / effective data resolver 境界に接続済みである。`import-mount` の mount record を resolver input に適用する処理は Phase 4 対象である。
 - runtime-worker は staged-folder-action runner 用の core dependency adapter を提供する。この adapter は `temporary-copy` の CoW staging、`permanent-copy` の output parent 配下 CoW staging、`patch-source` の source node staging、overlay 適用、temporary-copy cleanup policy を CoreDB 上で実行する。
 - WorkerAPI に `runStagedFolderAction(input)` を追加済みであり、WebUI または CLI host module bridge から同一 application profile の Worker 内 runner を起動できる。WebUI 側の標準入口として `@hierarchidb/ui-worker-client` の `BuildWorkerBridge.runStagedFolderAction(input)` も同じ WorkerAPI method に転送する。WorkerAPI execution host は staging/overlay/action/cleanup の状態を `StagedFolderActionProgressStore` に記録する。`build` action では、staging root 自身が canonical build API を持つ場合は root を build candidate とし、folder など直接 build できない場合は配下 descendants から canonical build API を持つ node を candidate として収集する。candidate のうち `buildRequired` な node だけを build target とし、candidate がない場合は fail-fast、candidate はあるが target がない場合は no-op completed とする。各 build target は既存 canonical build session を開始し、terminal state まで待つ。`completed` 以外の terminal state は action failure として扱う。
 - `@hierarchidb/build-api` の build availability resolver は dependency lifecycle と plugin prerequisite diagnostics を受け取る境界まで拡張済みである。TreeTable / Breadcrumb / dialog / CLI result は dependency/schema/orphan/plugin prerequisite failure を `build-not-required` と混同せず、runtime-worker / build-api の summary 境界を表示入力として扱う。
@@ -974,7 +974,7 @@ Phase 3 までに完了済み:
 
 1. staging/overlay manifest parser。
 2. temporary folder または output parent 配下への CoW staging copy。
-3. effective data resolver と Map UI/capture/build/export 境界への接続。
+3. effective data resolver と Map UI/capture/build/export 境界への CoW / `patchData` 接続。
 4. overlay の strict merge。
 5. pending reference resolver と warning/result persistence。
 6. artifact dependency index と `active/stale/rebuilding/resolved/orphaned` lifecycle。
@@ -991,7 +991,7 @@ Phase 4 対象:
 1. docs reconciliation により、Phase 0/1/2/3 の stale future-tense を実装済み / Phase 4 対象 / out-of-scope に分類する。
 2. CLI non-dry-run、browser capture、CSV/XLSX round-trip、dependency diagnostics、multi-action cleanup を production-like workflow smoke として強化する。
 3. Preview / Map UI feature table design split を editable implementation Issue に分解し、write target / dependency lifecycle contract を実装単位へ落とす。
-4. import-mount -> patch/overlay -> export/capture/build の multi-action sequence で resume/retry、primary failure、cleanup failure、safe unmount failure を検証する。
+4. import-mount -> patch/overlay -> export/capture/build の multi-action sequence で、mount record の resolver input 接続、resume/retry、primary failure、cleanup failure、safe unmount failure を検証する。
 5. CI coverage を実行時間と安定性の両面で調整する。
 
 Out-of-scope / 別仕様:
