@@ -28,9 +28,8 @@ import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { type FeatureTableSearchConfig, FeatureTableToolbar } from './FeatureTableToolbar.js';
 import {
-  buildFeatureCellEditRequest,
+  commitFeatureTableCellEdit,
   type FeatureTableEditConfig,
-  findFeatureTableEditableColumn,
 } from './featureTableEditContract.js';
 import { useMapPreviewFloatingTable } from './useMapPreviewFloatingTable.js';
 import { useMapPreviewFloatingTableView } from './useMapPreviewFloatingTableView.js';
@@ -251,28 +250,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
 
   const handleFeatureCellEdit = useCallback(
     async (params: GridCellEditParams<Row>): Promise<void | GridCellEditCommitResult> => {
-      if (!featureTableEdit) {
-        return {
-          ok: false,
-          error: 'Feature table edit config is required for editable cell commits.',
-        };
-      }
-      const editableColumn = findFeatureTableEditableColumn(
-        featureTableEdit.editableColumns,
-        params.columnId
-      );
-      if (!editableColumn) {
-        return {
-          ok: false,
-          error: `Column "${params.columnId}" does not define a feature source mapping.`,
-        };
-      }
-      const request = buildFeatureCellEditRequest(
-        params,
-        featureTableEdit.editOrigin,
-        editableColumn
-      );
-      return featureTableEdit.onCellEditRequest(request);
+      return commitFeatureTableCellEdit(params, featureTableEdit);
     },
     [featureTableEdit]
   );

@@ -115,6 +115,8 @@ Preview table、Map UI floating table、map feature popover は同じ source map
 
 #1655 の plugin preview adapters は、shape/location/route それぞれの `common` export から `create*FeatureTableEditAdapter()` を公開する。adapter は `editableColumns`、`getEditableColumn()`、`parseCellValue()`、`validateCellValue()` を返し、許可列以外は `not-editable-column` typed failure とする。初期許可列は shape: `countryName` / `adminName` / `adminCode` / `dataSource`、location: `name` / `longitude` / `latitude` / `admin0Name` / `admin1Name` / `admin2Name`、route: `routeName` / `routeMode` / `startName` / `endName` だけである。`bbox`、`area`、`vertexCount`、`polygonCount`、`distanceMeters`、`waypointCount`、centroid/resolved endpoint label などの derived columns には source mapping を付けない。
 
+#1656 の map feature popover integration は、`MapFeatureEditPopover` と `commitMapFeaturePopoverEdit()` を `ui-map` から公開し、table と同じ `FeatureTableEditConfig` / `FeatureCellEditRequest` flow を利用する。popover は `editOrigin: 'map-feature-popover'` を設定して request を emit し、plugin-owned Dexie/IndexedDB store や独自 write service を呼ばない。editable metadata が未指定または空の場合は read-only 表示に留め、source mapping のない column は request を emit せず typed failure / rollback lifecycle として扱う。
+
 ## Implementation Issue Split
 
 | Issue | Scope | DoD | Rollback |
