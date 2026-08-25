@@ -14,7 +14,7 @@ import type {
 import { getLocationRenderClassification } from './locationTypes.js';
 import { buildTileIdByZoom } from './morton.js';
 
-const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
+const getDefaultCsvUrl = (): string => resolveIso3166CsvUrl();
 
 export type IdeGsmParseResult = {
   points: LocationFeatureProperties[];
@@ -87,7 +87,7 @@ const getCountryByName = async (
   if (raw) {
     const alias = COUNTRY_CODE_ALIASES.get(raw) ?? COUNTRY_CODE_ALIASES.get(raw.toLowerCase());
     if (alias) {
-      await ensureIso3166Data({ csvUrl: DEFAULT_CSV_URL });
+      await ensureIso3166Data({ csvUrl: getDefaultCsvUrl() });
       const { country } = await getCountry(alias);
       if (country) {
         return { alpha2: country.alpha2, countryEn: country.countryEn };
@@ -96,7 +96,7 @@ const getCountryByName = async (
     }
   }
   if (!countryNameToCode) {
-    await ensureIso3166Data({ csvUrl: DEFAULT_CSV_URL });
+    await ensureIso3166Data({ csvUrl: getDefaultCsvUrl() });
     const countries = (await getAllCountries()) as CountryEntry[];
     countryNameToCode = new Map(
       countries.flatMap((country: CountryEntry) => {

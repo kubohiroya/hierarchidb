@@ -48,7 +48,7 @@ const normalizeBasePath = (value: string): string => {
 };
 
 const getViteBaseUrl = (): string | null => {
-  const baseUrl = import.meta.env.BASE_URL;
+  const baseUrl = (import.meta as ImportMeta & { env?: { BASE_URL?: unknown } }).env?.BASE_URL;
   if (typeof baseUrl !== 'string' || baseUrl.length === 0 || baseUrl === 'undefined') {
     return null;
   }

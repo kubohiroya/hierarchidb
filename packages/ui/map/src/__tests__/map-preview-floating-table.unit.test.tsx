@@ -1,4 +1,4 @@
-import type { GridCellEditParams, GridColumn } from '@hierarchidb/ui-grid';
+import type { GridCellEditParams, GridCellEditStateChange, GridColumn } from '@hierarchidb/ui-grid';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FeatureTableEditConfig } from '../preview/featureTableEditContract.js';
@@ -75,7 +75,14 @@ describe('MapPreviewFloatingTable', () => {
   });
 
   it('emits a FeatureCellEditRequest without mutating row data', async () => {
-    const onCellEditRequest = vi.fn(async () => ({ ok: true as const }));
+    const onCellEditRequest = vi.fn(async () => ({
+      ok: true as const,
+      refreshHint: {
+        entityId: 'location-1',
+        fieldPath: 'name',
+        dependencyEdgeIds: ['edge-1'],
+      },
+    }));
     render(
       <MapPreviewFloatingTable
         title="Test"
@@ -96,7 +103,14 @@ describe('MapPreviewFloatingTable', () => {
       value: 'Beta',
     });
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({
+      ok: true,
+      refreshHint: {
+        entityId: 'location-1',
+        fieldPath: 'name',
+        dependencyEdgeIds: ['edge-1'],
+      },
+    });
     expect(onCellEditRequest).toHaveBeenCalledWith({
       stagingRootNodeId: 'root-1',
       featureNodeId: 'feature-1',
@@ -107,6 +121,74 @@ describe('MapPreviewFloatingTable', () => {
       nextValue: 'Beta',
       dependencyStatus: 'active',
       editOrigin: 'preview-table',
+    });
+    expect(rows[0].name).toBe('Alpha');
+  });
+
+  it('passes edit lifecycle events through to the table host', () => {
+    const onCellEditStateChange = vi.fn<(state: GridCellEditStateChange<TestRow>) => void>();
+    render(
+      <MapPreviewFloatingTable
+        title="Test"
+        rows={rows}
+        columns={columns}
+        featureTableEdit={editableConfig()}
+        onCellEditStateChange={onCellEditStateChange}
+      />
+    );
+
+    const props = gridProps[0] as {
+      onCellEditStateChange?: (state: GridCellEditStateChange<TestRow>) => void;
+    };
+    props.onCellEditStateChange?.({
+      row: rows[0],
+      rowId: 1,
+      columnId: 'name',
+      previousValue: 'Alpha',
+      value: 'Rejected',
+      phase: 'rollback',
+      error: 'typed failure',
+    });
+
+    expect(onCellEditStateChange).toHaveBeenCalledWith({
+      row: rows[0],
+      rowId: 1,
+      columnId: 'name',
+      previousValue: 'Alpha',
+      value: 'Rejected',
+      phase: 'rollback',
+      error: 'typed failure',
+    });
+  });
+
+  it('returns typed failures so the grid keeps the displayed source value authoritative', async () => {
+    const onCellEditRequest = vi.fn(async () => ({
+      ok: false as const,
+      error: 'dependency-status-mismatch',
+    }));
+    render(
+      <MapPreviewFloatingTable
+        title="Map UI"
+        rows={rows}
+        columns={columns}
+        featureTableEdit={editableConfig(onCellEditRequest)}
+      />
+    );
+
+    const props = gridProps[0] as {
+      onCellEdit: (params: GridCellEditParams<TestRow>) => Promise<unknown>;
+    };
+    const result = await props.onCellEdit({
+      row: rows[0],
+      rowId: 1,
+      columnId: 'name',
+      previousValue: 'Alpha',
+      value: 'Rejected',
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'dependency-status-mismatch',
     });
     expect(rows[0].name).toBe('Alpha');
   });
