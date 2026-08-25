@@ -25,7 +25,11 @@ export {
 } from './storage/gridStateStorage.js';
 export type {
   GridCellClickParams,
+  GridCellEditCommitResult,
   GridCellEditParams,
+  GridCellEditPhase,
+  GridCellEditState,
+  GridCellEditStateChange,
   GridColumnSizingState,
   GridColumnVisibilityState,
   GridGroupingState,

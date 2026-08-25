@@ -107,6 +107,8 @@ Preview table、Map UI floating table、map feature popover は同じ source map
 
 `TanstackDataGrid` の `column.editable` / `onCellEdit` は input lifecycle のみ担当する。dependency status の解決、approval requirement、transactional write、stale propagation、incremental rebuild enqueue は Worker/plugin service 側で行う。
 
+#1652 の DataGrid edit substrate は、`onCellEdit` の async result と `onCellEditStateChange` の lifecycle event だけを公開する。grid が区別する lifecycle は edit start、dirty、pending commit、success、failure、cancel、rollback である。failed commit では source row value を authoritative として表示し、typed failure state を host へ通知する。grid は dependency status、plugin write target、Dexie/IndexedDB transaction、rebuild enqueue を推測または実行しない。
+
 ## Implementation Issue Split
 
 | Issue | Scope | DoD | Rollback |

@@ -1,6 +1,7 @@
 import {
   Box,
   Checkbox,
+  CircularProgress,
   Paper,
   Table,
   TableBody,
@@ -8,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -20,7 +20,7 @@ import {
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { GridColumn } from './GenericDataGrid.js';
 import { useTanstackDataGridView } from './useTanstackDataGridView.js';
 
@@ -33,8 +33,43 @@ export type GridColumnVisibilityState = VisibilityState;
 
 export type GridCellEditParams<T extends RowRecord> = {
   row: T;
+  rowId: string | number;
   columnId: string;
+  previousValue: unknown;
   value: string;
+};
+
+export type GridCellEditCommitResult =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+export type GridCellEditPhase =
+  | 'start'
+  | 'dirty'
+  | 'pending'
+  | 'success'
+  | 'failure'
+  | 'cancel'
+  | 'rollback';
+
+export type GridCellEditState = {
+  phase: 'editing' | 'dirty' | 'pending' | 'failure';
+  error?: string;
+};
+
+export type GridCellEditStateChange<T extends RowRecord> = {
+  row: T;
+  rowId: string | number;
+  columnId: string;
+  phase: GridCellEditPhase;
+  previousValue: unknown;
+  value: string;
+  error?: string;
 };
 
 export type GridCellClickParams<T extends RowRecord> = {
@@ -80,10 +115,21 @@ export type TanstackDataGridProps<T extends RowRecord> = {
   onColumnSizingChange?: (sizing: GridColumnSizingState) => void;
   globalFilter?: string;
   onGlobalFilterChange?: (value: string) => void;
-  onCellEdit?: (params: GridCellEditParams<T>) => void;
+  onCellEdit?: (
+    params: GridCellEditParams<T>
+  ) => void | GridCellEditCommitResult | Promise<void | GridCellEditCommitResult>;
+  onCellEditStateChange?: (state: GridCellEditStateChange<T>) => void;
   loading?: boolean;
   error?: string;
   emptyComponent?: React.ReactNode;
+};
+
+type EditingCell<T extends RowRecord> = {
+  rowId: string | number;
+  columnId: string;
+  value: string;
+  previousValue: unknown;
+  row: T;
 };
 
 const getCellValue = <T extends RowRecord>(row: T, columnId: GridColumn<T>['id']): unknown => {
@@ -115,6 +161,14 @@ const renderDefaultCell = (value: unknown): React.ReactNode => {
   }
   return String(value);
 };
+
+const toCellKey = (rowId: string | number, columnId: string): string =>
+  `${String(rowId)}\u0000${columnId}`;
+
+const isFailedEditResult = (
+  result: void | GridCellEditCommitResult
+): result is Extract<GridCellEditCommitResult, { ok: false }> =>
+  typeof result === 'object' && result !== null && result.ok === false;
 
 export function TanstackDataGrid<T extends RowRecord>(
   props: TanstackDataGridProps<T>
@@ -151,16 +205,181 @@ export function TanstackDataGrid<T extends RowRecord>(
     globalFilter,
     onGlobalFilterChange,
     onCellEdit,
+    onCellEditStateChange,
     loading,
     error,
     emptyComponent,
   } = props;
 
-  const [editingCell, setEditingCell] = useState<{
-    rowId: string | number;
-    columnId: string;
-    value: string;
-  } | null>(null);
+  const [editingCell, setEditingCell] = useState<EditingCell<T> | null>(null);
+  const editingCellRef = useRef<EditingCell<T> | null>(null);
+  const [cellEditStates, setCellEditStates] = useState<Record<string, GridCellEditState>>({});
+  const closedEditCellRef = useRef<string | null>(null);
+
+  const hasPendingEdit = useMemo(
+    () => Object.values(cellEditStates).some((state) => state.phase === 'pending'),
+    [cellEditStates]
+  );
+
+  const emitCellEditStateChange = useCallback(
+    (state: GridCellEditStateChange<T>) => {
+      onCellEditStateChange?.(state);
+    },
+    [onCellEditStateChange]
+  );
+
+  const clearCellEditState = useCallback((cellKey: string) => {
+    setCellEditStates((prev) => {
+      if (!Object.hasOwn(prev, cellKey)) return prev;
+      const { [cellKey]: _removed, ...next } = prev;
+      return next;
+    });
+  }, []);
+
+  const beginCellEdit = useCallback(
+    (row: T, rowId: string | number, columnId: string, value: unknown) => {
+      if (editingCell || hasPendingEdit) return;
+      const initialValue = value == null ? '' : String(value);
+      const cellKey = toCellKey(rowId, columnId);
+      closedEditCellRef.current = null;
+      const nextEditingCell: EditingCell<T> = {
+        rowId,
+        columnId,
+        value: initialValue,
+        previousValue: value,
+        row,
+      };
+      editingCellRef.current = nextEditingCell;
+      setEditingCell(nextEditingCell);
+      setCellEditStates((prev) => ({
+        ...prev,
+        [cellKey]: { phase: 'editing' },
+      }));
+      emitCellEditStateChange({
+        row,
+        rowId,
+        columnId,
+        phase: 'start',
+        previousValue: value,
+        value: initialValue,
+      });
+    },
+    [editingCell, emitCellEditStateChange, hasPendingEdit]
+  );
+
+  const updateEditingCellValue = useCallback(
+    (value: string) => {
+      setEditingCell((prev) => {
+        if (!prev) return prev;
+        const cellKey = toCellKey(prev.rowId, prev.columnId);
+        const nextPhase = value === String(prev.previousValue ?? '') ? 'editing' : 'dirty';
+        setCellEditStates((states) => ({
+          ...states,
+          [cellKey]: { phase: nextPhase },
+        }));
+        emitCellEditStateChange({
+          row: prev.row,
+          rowId: prev.rowId,
+          columnId: prev.columnId,
+          phase: 'dirty',
+          previousValue: prev.previousValue,
+          value,
+        });
+        const next = { ...prev, value };
+        editingCellRef.current = next;
+        return next;
+      });
+    },
+    [emitCellEditStateChange]
+  );
+
+  const cancelCellEdit = useCallback(() => {
+    const current = editingCellRef.current;
+    if (!current) return;
+    const cellKey = toCellKey(current.rowId, current.columnId);
+    closedEditCellRef.current = cellKey;
+    emitCellEditStateChange({
+      row: current.row,
+      rowId: current.rowId,
+      columnId: current.columnId,
+      phase: 'cancel',
+      previousValue: current.previousValue,
+      value: current.value,
+    });
+    editingCellRef.current = null;
+    clearCellEditState(cellKey);
+    setEditingCell(null);
+  }, [clearCellEditState, emitCellEditStateChange]);
+
+  const commitCellEdit = useCallback(async () => {
+    const current = editingCellRef.current;
+    if (!current || !onCellEdit) return;
+    const cellKey = toCellKey(current.rowId, current.columnId);
+    if (closedEditCellRef.current === cellKey) {
+      closedEditCellRef.current = null;
+      return;
+    }
+    closedEditCellRef.current = cellKey;
+    editingCellRef.current = null;
+    setEditingCell(null);
+    setCellEditStates((prev) => ({
+      ...prev,
+      [cellKey]: { phase: 'pending' },
+    }));
+    emitCellEditStateChange({
+      row: current.row,
+      rowId: current.rowId,
+      columnId: current.columnId,
+      phase: 'pending',
+      previousValue: current.previousValue,
+      value: current.value,
+    });
+
+    const result = await onCellEdit({
+      row: current.row,
+      rowId: current.rowId,
+      columnId: current.columnId,
+      previousValue: current.previousValue,
+      value: current.value,
+    });
+
+    if (isFailedEditResult(result)) {
+      setCellEditStates((prev) => ({
+        ...prev,
+        [cellKey]: { phase: 'failure', error: result.error },
+      }));
+      emitCellEditStateChange({
+        row: current.row,
+        rowId: current.rowId,
+        columnId: current.columnId,
+        phase: 'failure',
+        previousValue: current.previousValue,
+        value: current.value,
+        error: result.error,
+      });
+      emitCellEditStateChange({
+        row: current.row,
+        rowId: current.rowId,
+        columnId: current.columnId,
+        phase: 'rollback',
+        previousValue: current.previousValue,
+        value: String(current.previousValue ?? ''),
+        error: result.error,
+      });
+      return;
+    }
+
+    emitCellEditStateChange({
+      row: current.row,
+      rowId: current.rowId,
+      columnId: current.columnId,
+      phase: 'success',
+      previousValue: current.previousValue,
+      value: current.value,
+    });
+    clearCellEditState(cellKey);
+  }, [clearCellEditState, emitCellEditStateChange, onCellEdit]);
+
   const columnDefs = useMemo<ColumnDef<T>[]>(() => {
     const baseColumns = columns.map((column): ColumnDef<T> => {
       const id = String(column.id);
@@ -178,35 +397,42 @@ export function TanstackDataGrid<T extends RowRecord>(
           const row = info.row.original;
           const value = info.getValue();
           const isEditing = editingCell?.rowId === info.row.id && editingCell?.columnId === id;
+          const cellKey = toCellKey(info.row.id, id);
+          const editState = cellEditStates[cellKey];
           if (column.editable && onCellEdit) {
             if (isEditing) {
               return (
-                <TextField
+                <input
                   value={editingCell?.value ?? ''}
-                  size="small"
                   onChange={(event) => {
-                    setEditingCell((prev) =>
-                      prev ? { ...prev, value: event.target.value } : prev
-                    );
+                    updateEditingCellValue(event.target.value);
                   }}
                   onBlur={() => {
-                    if (!editingCell) return;
-                    onCellEdit({
-                      row,
-                      columnId: id,
-                      value: editingCell.value,
-                    });
-                    setEditingCell(null);
+                    void commitCellEdit();
                   }}
                   onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      cancelCellEdit();
+                      return;
+                    }
                     if (event.key !== 'Enter') return;
                     event.preventDefault();
-                    onCellEdit({
-                      row,
-                      columnId: id,
-                      value: editingCell?.value ?? '',
-                    });
-                    setEditingCell(null);
+                    void commitCellEdit();
+                  }}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    minWidth: 96,
+                    height: 30,
+                    boxSizing: 'border-box',
+                    border: `1px solid ${theme.palette.primary.main}`,
+                    borderRadius: 4,
+                    padding: '0 8px',
+                    font: 'inherit',
+                    color: 'inherit',
+                    backgroundColor: theme.palette.background.paper,
+                    outline: 'none',
                   }}
                 />
               );
@@ -214,14 +440,20 @@ export function TanstackDataGrid<T extends RowRecord>(
             return (
               <Box
                 onDoubleClick={() => {
-                  setEditingCell({
-                    rowId: info.row.id,
-                    columnId: id,
-                    value: value == null ? '' : String(value),
-                  });
+                  beginCellEdit(row, info.row.id, id, value);
                 }}
-                sx={{ cursor: 'text' }}
+                data-edit-state={editState?.phase}
+                title={editState?.error}
+                sx={{
+                  cursor: hasPendingEdit ? 'default' : 'text',
+                  color: editState?.phase === 'failure' ? 'error.main' : undefined,
+                  fontStyle: editState?.phase === 'dirty' ? 'italic' : undefined,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
               >
+                {editState?.phase === 'pending' ? <CircularProgress size={12} /> : null}
                 {column.format ? column.format(value, row) : renderDefaultCell(value)}
               </Box>
             );
@@ -261,7 +493,21 @@ export function TanstackDataGrid<T extends RowRecord>(
       size: 48,
     };
     return [selectionColumn, ...baseColumns];
-  }, [columns, editingCell, onCellEdit, selectable, selectionMode]);
+  }, [
+    beginCellEdit,
+    cancelCellEdit,
+    cellEditStates,
+    columns,
+    commitCellEdit,
+    editingCell,
+    hasPendingEdit,
+    onCellEdit,
+    selectable,
+    selectionMode,
+    theme.palette.background.paper,
+    theme.palette.primary.main,
+    updateEditingCellValue,
+  ]);
 
   const {
     bodyContainerRef,
