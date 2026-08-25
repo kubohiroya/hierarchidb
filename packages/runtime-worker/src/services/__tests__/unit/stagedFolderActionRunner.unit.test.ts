@@ -204,6 +204,57 @@ describe('runStagedFolderAction', () => {
     });
   });
 
+  it('preserves typed dependency resolver failure metadata in the runner record', async () => {
+    const dependencies = createDependencies({
+      resolveReferences: vi.fn(async () => {
+        const error = new Error('Dependency schema is invalid.') as Error & {
+          category: 'dependency';
+          code: string;
+          nodeId: NodeId;
+          dependentNodeId: NodeId;
+          referencePath: string;
+          expectedTargetType: string;
+          actualTargetType: string;
+          pluginId: string;
+        };
+        error.category = 'dependency';
+        error.code = 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR';
+        error.nodeId = 'shape-1' as NodeId;
+        error.dependentNodeId = 'route-1' as NodeId;
+        error.referencePath = 'metadata.dependencies[0]';
+        error.expectedTargetType = 'location';
+        error.actualTargetType = 'folder';
+        error.pluginId = 'route';
+        throw error;
+      }),
+    });
+
+    await expect(
+      runStagedFolderAction(dependencies, {
+        runId: 'run-dependency-schema-failure' as NodeId,
+        sourceNodeId: 'source-dependency-schema-failure' as NodeId,
+        config: createConfig({ actions: [] }),
+      })
+    ).rejects.toThrow(/Dependency schema is invalid/);
+    await expect(store.getRun('run-dependency-schema-failure' as NodeId)).resolves.toMatchObject({
+      status: 'failed',
+      phase: 'failed',
+      failure: {
+        category: 'dependency',
+        code: 'STAGED_FOLDER_ACTION_DEPENDENCY_SCHEMA_ERROR',
+        message: 'Dependency schema is invalid.',
+        nodeId: 'shape-1',
+        dependentNodeId: 'route-1',
+        referencePath: 'metadata.dependencies[0]',
+        expectedTargetType: 'location',
+        actualTargetType: 'folder',
+        pluginId: 'route',
+      },
+      warnings: [],
+      pendingReferences: [],
+    });
+  });
+
   it('runs map image capture only after the preceding build action completes', async () => {
     const order: string[] = [];
     const dependencies = createDependencies({

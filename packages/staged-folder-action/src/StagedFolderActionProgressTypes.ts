@@ -95,6 +95,13 @@ export type StagedFolderActionFailure = {
   category: StagedFolderActionFailureCategory;
   code: string;
   message: string;
+  nodeId?: NodeId;
+  dependentNodeId?: NodeId;
+  referencePath?: string;
+  expectedTargetType?: string;
+  actualTargetType?: string;
+  mountId?: string;
+  pluginId?: string;
 };
 
 export type StagedFolderExportCsvActionResult = {
@@ -331,6 +338,13 @@ const assertFailure = (failure: StagedFolderActionFailure): void => {
   }
   assertNonEmptyString(failure.code, 'failure.code');
   assertNonEmptyString(failure.message, 'failure.message');
+  assertOptionalNonEmptyString(failure.nodeId, 'failure.nodeId');
+  assertOptionalNonEmptyString(failure.dependentNodeId, 'failure.dependentNodeId');
+  assertOptionalNonEmptyString(failure.referencePath, 'failure.referencePath');
+  assertOptionalNonEmptyString(failure.expectedTargetType, 'failure.expectedTargetType');
+  assertOptionalNonEmptyString(failure.actualTargetType, 'failure.actualTargetType');
+  assertOptionalNonEmptyString(failure.mountId, 'failure.mountId');
+  assertOptionalNonEmptyString(failure.pluginId, 'failure.pluginId');
 };
 
 const assertActionResult = (result: StagedFolderActionResult, index: number): void => {
