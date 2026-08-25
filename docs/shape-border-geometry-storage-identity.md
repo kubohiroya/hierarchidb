@@ -160,6 +160,8 @@ Storage implementation は default-off feature flag 配下で導入する。flag
 
 #1486 の初期 pipeline integration は、既存 `source` / `geometry` / `tileEmit` stage の cache identity を置き換えず、`validateShapeBorderGeometryPipeline` を default-off の検証境界として追加する。Step4 の `borderGeometryConfig.enabled=false` では storage、extractor、simplifier、reconstructor を呼ばない。`borderGeometryConfig.enabled=true` で storage flag が無効な場合は、呼び出し元が可視な build error として扱い、通常 geometry path への silent fallback で成功扱いしない。flag on の場合のみ、同一 dataset で次の順序を実行する。再実行時の置換削除は `datasetId` 境界に限定し、同一 node の別 `sourceKey` / `adminLevel` / `borderGeometryConfigHash` / `schemaVersion` の artifact を削除しない。
 
+#1647 時点の Shape dialog は、この実験的 pipeline を利用可能な VT 生成方法として公開しない。Step4 の shared-arc switch と arc simplify tolerance input は常に disabled とし、UI は保存済み `borderGeometryConfig` を自動変更しない。`enabled=true` は headless/API/worker から明示された場合だけ上記 validation boundary へ到達できる。reconstructed polygon artifact は通常の `geometryCache` / `tileEmit` 入力を置き換えない。
+
 ```text
 source FeatureCollection
   -> border geometry dataset

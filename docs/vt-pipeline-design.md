@@ -655,6 +655,8 @@ vt-orchestratorはsource処理を実行しない。
 - shape の tolerance は `docs/spec/shape4-geometry-tolerance-bisection-spec.md`、invalid geometry は `docs/spec/shape-step4-invalid-geometry-filter-tileemit-spec-and-plan.md` をSSOTとする。
 - shape の `tileEmitConfig.invalidGeometryFilter` は必須の5 boolean fieldを持ち、Source/Geometry stageでは参照しない。
 - shape の `borderGeometryConfig` は必須 config であり、`enabled=false` を既定値とする。`enabled=true` の場合は Source artifact 保存後に `validateShapeBorderGeometryPipeline` を呼び、`HDB_SHAPE_BORDER_GEOMETRY_STORAGE` が有効なときだけ shared-border arc extraction、arc simplification、polygon reconstruction、ShapeDB border geometry table 保存を実行する。storage gate が無効で `enabled=true` の場合は可視な build error とし、通常 geometry path への silent fallback で成功扱いしない。
+- #1647 時点の Shape dialog は shared-arc を利用可能な VT 生成方法として公開しない。Step4 の `Build shared-arc topology artifacts` switch と `Arc simplify tolerance` input は、dialog 全体の状態や保存済み `borderGeometryConfig` の値にかかわらず常に disabled とする。UI は render、draft commit、build config merge のいずれでも既存値を `false` または別値へ書き換えない。
+- `borderGeometryConfig.enabled=true` は headless/API/worker から明示入力される実験的 runtime 契約としてのみ維持する。reconstructed polygon artifact が正規の `geometryCache` / `tileEmit` 入力へ接続されるまで、Shape dialog から有効化する経路を追加しない。
 - `borderGeometryConfig.simplifyTolerance` は finite かつ `>= 0` の必須値とする。UI は非負値入力を支援するが、runtime で丸め、clamp、既定補完を行わない。
 
 ## Step4 入力仕様（履歴資料・非規範）

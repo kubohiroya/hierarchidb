@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../../../common/types/constants';
 import { useGeometryConfigSectionState } from '../../../components/build-config/useGeometryConfigSectionState';
@@ -10,35 +10,27 @@ vi.mock('@hierarchidb/ui-i18n', () => ({
 }));
 
 describe('useGeometryConfigSectionState', () => {
-  it('propagates border geometry config updates through build config patching', () => {
+  it('exposes persisted border geometry config without a UI mutation callback', () => {
     const onChange = vi.fn();
+    const config = {
+      ...DEFAULT_BUILD_CONFIG,
+      borderGeometryConfig: {
+        enabled: true,
+        simplifyTolerance: 0.0001,
+      },
+    };
     const { result } = renderHook(() =>
       useGeometryConfigSectionState({
-        config: DEFAULT_BUILD_CONFIG,
+        config,
         onChange,
       })
     );
 
     expect(result.current.borderGeometryConfig).toEqual({
-      enabled: false,
-      simplifyTolerance: 0,
-    });
-
-    act(() => {
-      result.current.onBorderGeometryUpdate({
-        enabled: true,
-        simplifyTolerance: 0.0001,
-      });
-    });
-
-    expect(onChange).toHaveBeenCalledTimes(1);
-    const updater = onChange.mock.calls[0]?.[0];
-    expect(updater).toEqual(expect.any(Function));
-
-    const nextConfig = updater(DEFAULT_BUILD_CONFIG);
-    expect(nextConfig.borderGeometryConfig).toEqual({
       enabled: true,
       simplifyTolerance: 0.0001,
     });
+    expect(Object.hasOwn(result.current, 'onBorderGeometryUpdate')).toBe(false);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

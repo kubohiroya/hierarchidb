@@ -132,6 +132,7 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 - 入力 FeatureCollection が空の場合は、抽出対象の polygon が存在しないため no-op completed とする。この場合は storage gate、extractor、simplifier、reconstructor を呼ばず、arc/ring/reconstruction count は 0 として task metadata に記録する。
 - `HDB_SHAPE_BORDER_GEOMETRY_STORAGE` が無効な状態で `borderGeometryConfig.enabled=true` の build を開始した場合、要求された shared-arc pipeline は実行できないため可視な build error とする。通常 geometry path へ silent fallback して成功扱いしない。
 - 現行統合は border geometry artifact の生成・保存・検証を行う境界であり、通常の geometryCache / tileEmit 入力を reconstructed polygon artifact へ置換しない。置換を導入する場合は、source → borderGeometry → reconstructed geometry → tileEmit の cache identity と cleanup lineage を別途仕様化してから実装する。
+- #1647 時点では、Step4 の shared-arc switch と arc simplify tolerance input を常に disabled とし、Shape dialog から `borderGeometryConfig` を変更しない。保存済み値を render または draft commit で自動修正せず、`enabled=true` の runtime 契約は headless/API/worker の明示入力に限定して維持する。
 
 ## Cache identity 契約（shape）
 
