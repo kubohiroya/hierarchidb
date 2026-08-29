@@ -398,6 +398,7 @@ export const useFolderLayers = ({
           bindings: resolverStyleBindings,
           styleSources: parsedStylers,
           targetNodeTypesById: nodeTypesById,
+          targetNodesById: nodeById,
         });
 
         const resolvedShapeLayerById = new Map<string, string | undefined>();

@@ -9,11 +9,13 @@ export {
 } from './ResolverDB.js';
 export type {
   ResolverFeatureTargetKind,
+  ResolverFolderScopeMode,
   ResolverStyleBinding,
   ResolverStyleBindingTargetKind,
   ResolverStyleBindingValidationCode,
   ResolverStyleBindingValidationIssue,
   ResolverStyleBindingValidationResult,
+  ResolverStyleBindingValidationWarningCode,
   ResolverStyleProperty,
 } from './styleBindingTypes.js';
 export {

@@ -4,6 +4,7 @@ export const RESOLVER_STYLE_BINDING_VERSION = 1 as const;
 
 export type ResolverFeatureTargetKind = 'shape' | 'location' | 'route';
 export type ResolverStyleBindingTargetKind = ResolverFeatureTargetKind | 'folder';
+export type ResolverFolderScopeMode = 'direct-children' | 'recursive-descendants';
 
 export type ResolverStyleProperty =
   | 'fillColor'
@@ -18,6 +19,7 @@ export interface ResolverStyleBinding {
   readonly stylerNodeId: NodeId;
   readonly targetNodeId: NodeId;
   readonly targetKind: ResolverStyleBindingTargetKind;
+  readonly scopeMode?: ResolverFolderScopeMode;
   readonly sourceKeyColumn: string;
   readonly targetKeyProperty: string;
   readonly styleProperties: readonly ResolverStyleProperty[];
@@ -35,16 +37,25 @@ export type ResolverStyleBindingValidationCode =
   | 'STYLE_BINDING_MISSING_TARGET_KEY'
   | 'STYLE_BINDING_INVALID_STYLE_PROPERTY'
   | 'STYLE_BINDING_CONFLICT'
-  | 'STYLE_BINDING_FORBIDDEN_PUBLIC_FIELD';
+  | 'STYLE_BINDING_FORBIDDEN_PUBLIC_FIELD'
+  | 'STYLE_BINDING_MISSING_FOLDER_SCOPE_MODE'
+  | 'STYLE_BINDING_UNSUPPORTED_FOLDER_SCOPE_MODE'
+  | 'MOUNTED_FOLDER_ENUMERATION_UNAVAILABLE';
+
+export type ResolverStyleBindingValidationWarningCode =
+  | 'STYLE_BINDING_EMPTY_FOLDER_SCOPE'
+  | 'STYLE_BINDING_UNSUPPORTED_DESCENDANT_SKIPPED'
+  | 'STYLE_BINDING_ARCHIVED_DESCENDANT_SKIPPED';
 
 export interface ResolverStyleBindingValidationIssue {
-  readonly code: ResolverStyleBindingValidationCode;
+  readonly code: ResolverStyleBindingValidationCode | ResolverStyleBindingValidationWarningCode;
   readonly bindingId?: string;
 }
 
 export type ResolverStyleBindingValidationResult = Readonly<{
   readonly ok: boolean;
   readonly errors: readonly ResolverStyleBindingValidationIssue[];
+  readonly warnings: readonly ResolverStyleBindingValidationIssue[];
 }>;
 
 export const RESOLVER_STYLE_PROPERTIES_BY_TARGET_KIND: Readonly<
