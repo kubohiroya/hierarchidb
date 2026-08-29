@@ -26,6 +26,14 @@ export default defineConfig({
         'packages/ui/tabular-extract/src/index.ts'
       ),
       '@hierarchidb/ui-i18n': path.resolve(workspaceRoot, 'packages/ui/i18n/src/index.ts'),
+      '@hierarchidb/tabular-store': path.resolve(
+        workspaceRoot,
+        'packages/tabular-store/src/index.ts'
+      ),
+      '@hierarchidb/styler-store': path.resolve(
+        workspaceRoot,
+        'packages/styler-store/src/index.ts'
+      ),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
     },
   },

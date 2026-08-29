@@ -1,3 +1,16 @@
+export type {
+  MountedIdeGsmCsvSourceKind,
+  MountedIdeGsmCsvSourceReference,
+  MountedIdeGsmCsvSourceValidationCode,
+  MountedIdeGsmCsvSourceValidationResult,
+  StylerSourceReference,
+} from './mountedIdeGsmCsvSourceTypes.js';
+export {
+  isMountedIdeGsmCsvSourceReference,
+  MOUNTED_IDE_GSM_CSV_SOURCE_KIND,
+  MOUNTED_IDE_GSM_CSV_SOURCE_VERSION,
+  validateMountedIdeGsmCsvSourceReference,
+} from './mountedIdeGsmCsvSourceTypes.js';
 export { StylerDB } from './StylerDB.js';
 export {
   type ColorAlgorithm,
