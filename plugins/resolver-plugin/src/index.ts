@@ -1,4 +1,21 @@
-export type { DataTransformation, DuplicateResolutionStrategy, MappingPreviewResult, MappingValidationResult, PropertyInfo, PropertyMappingRule, ResolverEntity, ResolverUpdaterPayload, SchemaInfo, StylerIntegration, ValidationRule } from './common/entities/ResolverEntity.js';
+export type {
+  DataTransformation,
+  DuplicateResolutionStrategy,
+  MappingPreviewResult,
+  MappingValidationResult,
+  PropertyInfo,
+  PropertyMappingRule,
+  ResolverEntity,
+  ResolverUpdaterPayload,
+  SchemaInfo,
+  StylerIntegration,
+  ValidationRule,
+} from './common/entities/ResolverEntity.js';
+export type {
+  DirectStyleBindingNodeResolver,
+  DirectStyleBindingValidationNode,
+} from './services/validateStyleBindings.js';
+export { validateDirectStyleBindings } from './services/validateStyleBindings.js';
 
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');

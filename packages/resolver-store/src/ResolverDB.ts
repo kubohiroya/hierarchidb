@@ -1,9 +1,11 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import { Dexie, type Table } from 'dexie';
+import type { ResolverStyleBinding } from './styleBindingTypes.js';
 
 export interface ResolverEntityPayload {
   nodeId: NodeId;
   name?: string;
+  styleBindings?: readonly ResolverStyleBinding[];
   [key: string]: unknown;
 }
 
