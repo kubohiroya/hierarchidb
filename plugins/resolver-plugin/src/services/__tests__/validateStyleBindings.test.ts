@@ -3,6 +3,7 @@ import type { ResolverStyleBinding } from '@hierarchidb/resolver-store';
 import { describe, expect, it } from 'vitest';
 import {
   type DirectStyleBindingNodeResolver,
+  type DirectStyleBindingValidationNode,
   validateDirectStyleBindings,
 } from '../validateStyleBindings.js';
 
@@ -11,6 +12,8 @@ const shapeNodeId = 'shape-1' as NodeId;
 const locationNodeId = 'location-1' as NodeId;
 const routeNodeId = 'route-1' as NodeId;
 const folderNodeId = 'folder-1' as NodeId;
+const nestedFolderNodeId = 'folder-2' as NodeId;
+const siblingFolderNodeId = 'folder-3' as NodeId;
 
 const resolver: DirectStyleBindingNodeResolver = {
   resolveStylerNode: (nodeId) =>
@@ -19,8 +22,29 @@ const resolver: DirectStyleBindingNodeResolver = {
     if (nodeId === shapeNodeId) return { id: shapeNodeId, nodeType: 'shape' };
     if (nodeId === locationNodeId) return { id: locationNodeId, nodeType: 'location' };
     if (nodeId === routeNodeId) return { id: routeNodeId, nodeType: 'route' };
-    if (nodeId === folderNodeId) return { id: folderNodeId, nodeType: 'folder' };
+    if (nodeId === folderNodeId) return { id: folderNodeId, nodeType: 'folder', depth: 1 };
+    if (nodeId === nestedFolderNodeId) {
+      return { id: nestedFolderNodeId, nodeType: 'folder', depth: 2 };
+    }
+    if (nodeId === siblingFolderNodeId) {
+      return { id: siblingFolderNodeId, nodeType: 'folder', depth: 2 };
+    }
     return null;
+  },
+};
+
+const resolverWithDescendants: DirectStyleBindingNodeResolver = {
+  ...resolver,
+  resolveTargetDescendants: (nodeId, scopeMode) => {
+    if (nodeId !== folderNodeId) return null;
+    const directChildren: DirectStyleBindingValidationNode[] = [
+      { id: shapeNodeId, nodeType: 'shape' },
+      { id: locationNodeId, nodeType: 'location' },
+      { id: 'unsupported-1' as NodeId, nodeType: 'basemap' },
+      { id: 'archived-route' as NodeId, nodeType: 'route', removedAt: 1 },
+    ];
+    if (scopeMode === 'direct-children') return directChildren;
+    return [...directChildren, { id: routeNodeId, nodeType: 'route' }];
   },
 };
 
@@ -60,11 +84,15 @@ describe('validateDirectStyleBindings', () => {
       resolver
     );
 
-    expect(result).toEqual({ ok: true, errors: [] });
+    expect(result).toEqual({ ok: true, errors: [], warnings: [] });
   });
 
   it('treats missing styleBindings as legacy no-op', () => {
-    expect(validateDirectStyleBindings(undefined, resolver)).toEqual({ ok: true, errors: [] });
+    expect(validateDirectStyleBindings(undefined, resolver)).toEqual({
+      ok: true,
+      errors: [],
+      warnings: [],
+    });
   });
 
   it('rejects missing Styler and missing target references', () => {
@@ -84,7 +112,26 @@ describe('validateDirectStyleBindings', () => {
     ]);
   });
 
-  it('rejects Folder targets in the direct binding issue scope', () => {
+  it('accepts Folder targets with an explicit scope mode', () => {
+    const result = validateDirectStyleBindings(
+      [
+        binding({
+          targetKind: 'folder',
+          targetNodeId: folderNodeId,
+          scopeMode: 'direct-children',
+        }),
+      ],
+      resolverWithDescendants
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.map((warning) => warning.code)).toEqual([
+      'STYLE_BINDING_UNSUPPORTED_DESCENDANT_SKIPPED',
+      'STYLE_BINDING_ARCHIVED_DESCENDANT_SKIPPED',
+    ]);
+  });
+
+  it('rejects Folder targets without an explicit scope mode', () => {
     const result = validateDirectStyleBindings(
       [
         binding({
@@ -92,11 +139,149 @@ describe('validateDirectStyleBindings', () => {
           targetNodeId: folderNodeId,
         }),
       ],
-      resolver
+      resolverWithDescendants
     );
 
     expect(result.errors).toEqual([
-      { code: 'STYLE_BINDING_UNSUPPORTED_TARGET_KIND', bindingId: 'binding-1' },
+      { code: 'STYLE_BINDING_MISSING_FOLDER_SCOPE_MODE', bindingId: 'binding-1' },
+    ]);
+  });
+
+  it('rejects unsupported Folder scope modes', () => {
+    const result = validateDirectStyleBindings(
+      [
+        {
+          ...binding({
+            targetKind: 'folder',
+            targetNodeId: folderNodeId,
+          }),
+          scopeMode: 'all-descendants',
+        } as unknown as ResolverStyleBinding,
+      ],
+      resolverWithDescendants
+    );
+
+    expect(result.errors).toEqual([
+      { code: 'STYLE_BINDING_UNSUPPORTED_FOLDER_SCOPE_MODE', bindingId: 'binding-1' },
+    ]);
+  });
+
+  it('reports unavailable mounted Folder enumeration', () => {
+    const result = validateDirectStyleBindings(
+      [
+        binding({
+          targetKind: 'folder',
+          targetNodeId: folderNodeId,
+          scopeMode: 'recursive-descendants',
+        }),
+      ],
+      resolver
+    );
+
+    expect(result.errors).toEqual([]);
+
+    const unavailableResult = validateDirectStyleBindings(
+      [
+        binding({
+          targetKind: 'folder',
+          targetNodeId: folderNodeId,
+          scopeMode: 'recursive-descendants',
+        }),
+      ],
+      {
+        ...resolver,
+        resolveTargetDescendants: () => null,
+      }
+    );
+
+    expect(unavailableResult.errors).toEqual([
+      { code: 'MOUNTED_FOLDER_ENUMERATION_UNAVAILABLE', bindingId: 'binding-1' },
+    ]);
+  });
+
+  it('warns when Folder scope has no supported descendants', () => {
+    const result = validateDirectStyleBindings(
+      [
+        binding({
+          targetKind: 'folder',
+          targetNodeId: folderNodeId,
+          scopeMode: 'direct-children',
+        }),
+      ],
+      {
+        ...resolver,
+        resolveTargetDescendants: () => [{ id: 'basemap-1' as NodeId, nodeType: 'basemap' }],
+      }
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.map((warning) => warning.code)).toEqual([
+      'STYLE_BINDING_UNSUPPORTED_DESCENDANT_SKIPPED',
+      'STYLE_BINDING_EMPTY_FOLDER_SCOPE',
+    ]);
+  });
+
+  it('allows deeper Folder scope bindings to override shallower Folder scope bindings', () => {
+    const result = validateDirectStyleBindings(
+      [
+        binding({
+          bindingId: 'folder-binding-1',
+          targetKind: 'folder',
+          targetNodeId: folderNodeId,
+          scopeMode: 'recursive-descendants',
+          styleProperties: ['strokeColor'],
+        }),
+        binding({
+          bindingId: 'folder-binding-2',
+          targetKind: 'folder',
+          targetNodeId: nestedFolderNodeId,
+          scopeMode: 'recursive-descendants',
+          styleProperties: ['strokeColor'],
+        }),
+      ],
+      {
+        ...resolver,
+        resolveTargetDescendants: (nodeId) => {
+          if (nodeId === folderNodeId) return [{ id: routeNodeId, nodeType: 'route' }];
+          if (nodeId === nestedFolderNodeId) return [{ id: routeNodeId, nodeType: 'route' }];
+          return null;
+        },
+      }
+    );
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('rejects same-depth Folder scope conflicts for the same target property', () => {
+    const result = validateDirectStyleBindings(
+      [
+        binding({
+          bindingId: 'folder-binding-1',
+          targetKind: 'folder',
+          targetNodeId: nestedFolderNodeId,
+          scopeMode: 'recursive-descendants',
+          styleProperties: ['strokeColor'],
+        }),
+        binding({
+          bindingId: 'folder-binding-2',
+          targetKind: 'folder',
+          targetNodeId: siblingFolderNodeId,
+          scopeMode: 'recursive-descendants',
+          styleProperties: ['strokeColor'],
+        }),
+      ],
+      {
+        ...resolver,
+        resolveTargetDescendants: (nodeId) => {
+          if (nodeId === nestedFolderNodeId) return [{ id: routeNodeId, nodeType: 'route' }];
+          if (nodeId === siblingFolderNodeId) return [{ id: routeNodeId, nodeType: 'route' }];
+          return null;
+        },
+      }
+    );
+
+    expect(result.errors).toEqual([
+      { code: 'STYLE_BINDING_CONFLICT', bindingId: 'folder-binding-2' },
     ]);
   });
 
