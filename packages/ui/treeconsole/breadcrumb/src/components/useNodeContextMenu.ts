@@ -74,6 +74,7 @@ export type UseNodeContextMenuResult = {
   handlePreviewClick: (event?: MouseEvent<HTMLElement>) => void;
   handleBuildClick: (event?: MouseEvent<HTMLElement>) => void;
   handleBuildDiagnosticsClick: () => void;
+  handleCommandActionClick: (actionId: string) => void;
   handleToggleVisible: () => void;
   handleCreateSubmenuClose: () => void;
 };
@@ -453,6 +454,18 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     }, 0);
   }, [blurActive, handleMainMenuClose]);
 
+  const handleCommandActionClick = useCallback(
+    (actionId: string) => {
+      const onCommandAction = propsRef.current.onCommandAction;
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onCommandAction?.(actionId);
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose]
+  );
+
   const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
     const nextVisible = !effectiveVisible;
@@ -567,6 +580,7 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     handlePreviewClick,
     handleBuildClick,
     handleBuildDiagnosticsClick,
+    handleCommandActionClick,
     handleToggleVisible,
     handleCreateSubmenuClose,
   };

@@ -6,6 +6,7 @@ import { type NodeId, type NodeType, toNodeId, toNodeType } from '@hierarchidb/c
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type {
   BreadcrumbNode,
+  NodeContextMenuCommandAction,
   OpenStepOption,
   TreeConsoleBreadcrumbProps,
   TreeConsoleBreadcrumbRendererProps,
@@ -68,6 +69,9 @@ export interface TreeConsolePanelLogicArgs {
     node: HierarchicalTreeNode
   ) => Promise<{ canOpen: boolean; finalStepIndex?: number }>;
   readonly resolveOpenSteps?: (nodeId: string, nodeType: string) => Promise<OpenStepOption[]>;
+  readonly resolveContextMenuCommandActions?: (
+    node: HierarchicalTreeNode
+  ) => readonly NodeContextMenuCommandAction[];
   readonly onBreadcrumbNavigate: (nodeId: string, node?: PanelBreadcrumbNode) => void;
   readonly onBreadcrumbContextAction?: (
     action: string,
@@ -116,6 +120,7 @@ export function useTreeConsolePanel({
   onContextMenuAction,
   resolvePreviewGuardState,
   resolveOpenSteps,
+  resolveContextMenuCommandActions,
   onBreadcrumbNavigate,
   onBreadcrumbContextAction,
   breadcrumbRenderer,
@@ -271,6 +276,9 @@ export function useTreeConsolePanel({
         ? (node: TreeNodeInUI) =>
             resolveOpenSteps(String(node.id ?? ''), String(node.nodeType || 'folder'))
         : undefined,
+      resolveContextMenuCommandActions: resolveContextMenuCommandActions
+        ? (node: TreeNodeInUI) => resolveContextMenuCommandActions(node as HierarchicalTreeNode)
+        : undefined,
       dependencySummary,
       pluginPrerequisiteFailures,
       onContextAction: (
@@ -296,6 +304,7 @@ export function useTreeConsolePanel({
     onNodeSelect,
     onNodeExpand,
     resolveOpenSteps,
+    resolveContextMenuCommandActions,
     resolvePreviewGuardState,
     rootNodeId,
     selectedIds,

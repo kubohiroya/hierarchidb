@@ -6,6 +6,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type {
   TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps,
+  NodeContextMenuCommandAction,
   OpenStepOption,
 } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { NodeContextMenu, TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -124,6 +125,9 @@ export interface TreeConsolePanelProps {
     }
   ) => void;
   readonly resolveOpenSteps?: (nodeId: string, nodeType: string) => Promise<OpenStepOption[]>;
+  readonly resolveContextMenuCommandActions?: (
+    node: HierarchicalTreeNode
+  ) => readonly NodeContextMenuCommandAction[];
   readonly onStartTour?: () => void;
   readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
   /** Optional: For column-width persistence, provide treeId to scope keys */
@@ -195,6 +199,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     onContextMenuAction: props.onContextMenuAction,
     resolvePreviewGuardState: props.resolvePreviewGuardState,
     resolveOpenSteps: props.resolveOpenSteps,
+    resolveContextMenuCommandActions: props.resolveContextMenuCommandActions,
     onBreadcrumbNavigate: props.onBreadcrumbNavigate,
     onBreadcrumbContextAction: props.onBreadcrumbContextAction,
     breadcrumbRenderer: props.breadcrumbRenderer,
@@ -530,6 +535,13 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           }}
           onExport={() => {
             controller.onContextAction?.('export', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          commandActions={props.resolveContextMenuCommandActions?.(
+            iconContextMenu.node as HierarchicalTreeNode
+          )}
+          onCommandAction={(actionId) => {
+            controller.onContextAction?.(actionId, iconContextMenu.node);
             handleIconContextMenuClose();
           }}
         />

@@ -35,6 +35,12 @@ import { type ReactElement } from 'react';
 import { useNodeContextMenu } from './useNodeContextMenu';
 
 export type OpenStepOption = { step: number; label?: string; disabled?: boolean };
+export type NodeContextMenuCommandAction = {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  tooltip?: string;
+};
 
 export interface NodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -69,6 +75,8 @@ export interface NodeContextMenuProps {
   onPreview?: (options?: { openInNewTab?: boolean }) => void;
   onBuild?: (options?: { openInNewTab?: boolean }) => void;
   onBuildDiagnostics?: () => void;
+  commandActions?: readonly NodeContextMenuCommandAction[];
+  onCommandAction?: (actionId: string) => void;
   onEdit?: (options?: { openInNewTab?: boolean }) => void;
   onCreate?: (type: string, options?: { openInNewTab?: boolean }) => void;
   onDuplicate?: () => void;
@@ -187,6 +195,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     handlePreviewClick,
     handleBuildClick,
     handleBuildDiagnosticsClick,
+    handleCommandActionClick,
     handleToggleVisible,
     handleCreateSubmenuClose,
   } = useNodeContextMenu(props);
@@ -439,6 +448,33 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               <ListItemText primary={buildDiagnosticsLabel} />
             </MenuItem>
           ) : null,
+          ...(props.commandActions ?? []).map((action) => {
+            const item = (
+              <MenuItem
+                key={`menuitem-command-${action.id}`}
+                onClick={() => handleCommandActionClick(action.id)}
+                aria-label={action.label}
+                disabled={action.disabled}
+              >
+                <ListItemIcon>
+                  <PlayArrowIcon />
+                </ListItemIcon>
+                <ListItemText primary={action.label} />
+              </MenuItem>
+            );
+            if (!action.tooltip) return item;
+            return (
+              <Tooltip
+                key={`menuitem-command-tooltip-${action.id}`}
+                title={action.tooltip}
+                placement="right"
+                enterDelay={300}
+                arrow
+              >
+                <span style={{ display: 'block' }}>{item}</span>
+              </Tooltip>
+            );
+          }),
           <MenuItem
             key="menuitem-preview"
             onClick={(event) => handlePreviewClick(event)}
