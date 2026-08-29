@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import * as path from 'path';
-import type { Plugin } from 'vite';
+import type { Alias, Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { collectWorkspacePackages } from '../config/dev-alias-config.js';
 import { collectAliasEntries } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias';
 
 const rootDir = __dirname;
@@ -22,7 +23,7 @@ export default defineConfig({
   },
 });
 
-function createAliasMap(): Record<string, string> {
+function createAliasMap(): Alias[] {
   const baseEntries: Record<string, string> = {
     '#app': path.resolve(rootDir, 'src'),
     'node-fetch': path.resolve(rootDir, 'src/virtual/node-fetch.ts'),
@@ -175,10 +176,133 @@ function createAliasMap(): Record<string, string> {
     ),
   };
 
-  return {
-    ...baseEntries,
-    ...createPluginAliasMap(),
-  };
+  return createExactAliasEntries(
+    createOrderedAliasMap(createPluginAliasMap(), baseEntries, createWorkspacePackageAliasMap())
+  );
+}
+
+function createWorkspacePackageAliasMap(): Record<string, string> {
+  const repoRoot = path.resolve(rootDir, '..');
+  const aliases = new Map<string, string>();
+  const workspacePackages = [
+    ...collectWorkspacePackages(repoRoot),
+    ...collectExtraWorkspacePackages(repoRoot),
+  ];
+
+  for (const entry of workspacePackages) {
+    if (entry.srcEntry !== null) {
+      aliases.set(entry.name, entry.srcEntry);
+    }
+    for (const [specifier, replacement] of collectPackageExportAliases(entry)) {
+      aliases.set(specifier, replacement);
+    }
+  }
+
+  return Object.fromEntries(
+    [...aliases.entries()].sort(([left], [right]) => right.length - left.length)
+  );
+}
+
+interface WorkspaceAliasPackage {
+  name: string;
+  dir: string;
+  srcEntry: string | null;
+}
+
+function collectExtraWorkspacePackages(repoRoot: string): WorkspaceAliasPackage[] {
+  return ['packages/build', 'packages/tools/gen-iso3166-2']
+    .map((relativeDir) => {
+      const dir = path.resolve(repoRoot, relativeDir);
+      const packageJson = readPackageJson(path.join(dir, 'package.json'));
+      if (!packageJson || typeof packageJson.name !== 'string') return null;
+      const srcEntry = resolveExistingPath(dir, ['src/index.tsx', 'src/index.ts', 'src/index.js']);
+      return { name: packageJson.name, dir, srcEntry };
+    })
+    .filter((entry): entry is WorkspaceAliasPackage => entry !== null);
+}
+
+function collectPackageExportAliases(entry: WorkspaceAliasPackage): [string, string][] {
+  const packageJson = readPackageJson(path.join(entry.dir, 'package.json'));
+  const exportsField = packageJson?.exports;
+  if (!exportsField || typeof exportsField !== 'object' || Array.isArray(exportsField)) {
+    return [];
+  }
+
+  const aliases: [string, string][] = [];
+  for (const [exportKey, exportValue] of Object.entries(exportsField)) {
+    const importTarget = extractImportTarget(exportValue);
+    if (!importTarget?.startsWith('./dist/')) continue;
+    const sourceTarget = resolveSourceTarget(entry.dir, importTarget);
+    if (!sourceTarget) continue;
+    const specifier =
+      exportKey === '.' ? entry.name : `${entry.name}/${exportKey.replace(/^\.\//u, '')}`;
+    aliases.push([specifier, sourceTarget]);
+  }
+  return aliases;
+}
+
+function extractImportTarget(value: unknown): string | null {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  for (const key of ['import', 'default', 'module']) {
+    if (typeof record[key] === 'string') return record[key];
+  }
+  return null;
+}
+
+function resolveSourceTarget(packageDir: string, importTarget: string): string | null {
+  const withoutDist = importTarget.replace(/^\.\//u, '').replace(/^dist\//u, 'src/');
+  const withoutExtension = withoutDist.replace(/\.(?:mjs|js|cjs)$/u, '');
+  return resolveExistingPath(packageDir, [
+    `${withoutExtension}.ts`,
+    `${withoutExtension}.tsx`,
+    `${withoutExtension}.js`,
+    path.join(withoutExtension, 'index.ts'),
+    path.join(withoutExtension, 'index.tsx'),
+    path.join(withoutExtension, 'index.js'),
+  ]);
+}
+
+function resolveExistingPath(baseDir: string, candidates: string[]): string | null {
+  for (const candidate of candidates) {
+    const absolutePath = path.resolve(baseDir, candidate);
+    if (fs.existsSync(absolutePath)) return absolutePath;
+  }
+  return null;
+}
+
+function readPackageJson(filePath: string): { name?: unknown; exports?: unknown } | null {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as { name?: unknown; exports?: unknown };
+  } catch {
+    return null;
+  }
+}
+
+function createOrderedAliasMap(...maps: Record<string, string>[]): Record<string, string> {
+  const aliases = new Map<string, string>();
+  for (const map of maps) {
+    for (const [specifier, replacement] of Object.entries(map).sort(
+      ([left], [right]) => right.length - left.length
+    )) {
+      if (!aliases.has(specifier)) {
+        aliases.set(specifier, replacement);
+      }
+    }
+  }
+  return Object.fromEntries(aliases);
+}
+
+function createExactAliasEntries(entries: Record<string, string>): Alias[] {
+  return Object.entries(entries).map(([specifier, replacement]) => ({
+    find: new RegExp(`^${escapeRegExp(specifier)}$`, 'u'),
+    replacement,
+  }));
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function workspaceTildeAliasPlugin(): Plugin {
@@ -235,7 +359,11 @@ function createPluginAliasMap(): Record<string, string> {
     'icon',
     'root',
   ]);
-  const map = Object.fromEntries(entries.map(({ find, replacement }) => [find, replacement]));
+  const map = Object.fromEntries(
+    [...entries]
+      .sort((left, right) => right.find.length - left.find.length)
+      .map(({ find, replacement }) => [find, replacement])
+  );
   if (process.env.VITEST_ALIAS_DEBUG === '1') {
     console.log('[vitest] plugin alias entries', Object.keys(map));
   }
