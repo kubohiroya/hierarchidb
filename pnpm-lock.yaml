@@ -4117,6 +4117,9 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
+      '@hierarchidb/resolver-store':
+        specifier: workspace:*
+        version: link:../../packages/resolver-store
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider

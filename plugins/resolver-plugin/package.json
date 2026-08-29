@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/resolver-store": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "peerDependencies": {
@@ -66,6 +67,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/resolver-store": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
@@ -89,6 +91,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/resolver-store": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*"
   },
   "hierarchidb": {
