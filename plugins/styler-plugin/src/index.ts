@@ -59,6 +59,16 @@ export {
   rgbToHsv,
 } from './common/utils/colorUtils/colorConversion.js';
 export type { ColorVariationOptions, ColorVariations } from './common/utils/colorUtils/types.js';
+export type {
+  MountedIdeGsmCsvSourceLoadErrorCode,
+  MountedIdeGsmCsvSourceLoadResult,
+  MountedIdeGsmCsvSourceReader,
+} from './services/mountedIdeGsmCsvSourceService.js';
+export {
+  getMountedIdeGsmCsvSourceReference,
+  loadMountedIdeGsmCsvSource,
+  MountedIdeGsmCsvSourceLoadError,
+} from './services/mountedIdeGsmCsvSourceService.js';
 // Services
 export { StylerDataService } from './services/StylerDataService.js';
 
