@@ -1,4 +1,5 @@
 import type { PeerEntity } from '@hierarchidb/core-types';
+import type { ResolverStyleBinding } from '@hierarchidb/resolver-store';
 import type { DialogUIState, TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 export interface PropertyMappingRule {
@@ -75,6 +76,7 @@ export type ResolverEntityPayload = {
   compiledFunction?: string;
   compiledMetadata?: Record<string, unknown>;
   lastValidation?: MappingValidationResult | null;
+  styleBindings?: readonly ResolverStyleBinding[];
 };
 
 export type ResolverEntity = PeerEntity<ResolverEntityPayload>;
