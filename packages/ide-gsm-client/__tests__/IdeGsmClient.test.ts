@@ -4,6 +4,12 @@ import type { WsClientFactory } from '../src/IdeGsmClient.js';
 import { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from '../src/IdeGsmClient.js';
 import type { IdeGsmCommand, TaskStatus } from '../src/ideGsmTypes.js';
 import { IDE_GSM_COMMAND_IDS } from '../src/ideGsmTypes.js';
+import {
+  assertIdeGsmMountDescriptor,
+  decodeIdeGsmMountedNodeId,
+  encodeIdeGsmMountedNodeId,
+  isIdeGsmMountedNodeId,
+} from '../src/mount/IdeGsmMountTypes.js';
 
 type SinkLike = {
   next: (value: unknown) => void;
@@ -56,6 +62,30 @@ interface CommandCase {
 }
 
 const projectRelativePath = 'group/project';
+
+const directoryNode = {
+  name: 'src',
+  relativePath: 'src',
+  kind: 'DIRECTORY',
+  directory: true,
+  exists: true,
+  sizeBytes: 0,
+  updatedAt: null,
+  childCount: 1,
+  children: [
+    {
+      name: 'index.ts',
+      relativePath: 'src/index.ts',
+      kind: 'FILE',
+      directory: false,
+      exists: true,
+      sizeBytes: 42,
+      updatedAt: '2026-08-29T00:00:00Z',
+      childCount: 0,
+      children: [],
+    },
+  ],
+};
 
 const commandCases: CommandCase[] = [
   {
@@ -369,6 +399,166 @@ describe('input validation and optional variables', () => {
     const promise = client.init(projectRelativePath, 'github-token', 'https://example.test/repo');
     await expect(promise).rejects.toThrow('IDE-GSM GraphQL request failed');
     await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret|github-token/u);
+  });
+});
+
+describe('directory read and mounted filesystem contracts', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('dispatches typed FDM and project directory requests', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi
+      .spyOn(GraphQLClient.prototype, 'request')
+      .mockResolvedValueOnce({
+        fdmSpaces: { defaultSpaceId: 'default', spaces: [{ spaceId: 'default' }] },
+      })
+      .mockResolvedValueOnce({
+        fdmDirectoryTree: { selectedPath: 'runs', maxDepth: 1, root: directoryNode },
+      })
+      .mockResolvedValueOnce({
+        projectDirectoryInfo: {
+          projectRelativePath,
+          requestedPath: 'src',
+          descendantCount: 1,
+          node: directoryNode,
+        },
+      });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.fdmSpaces()).resolves.toEqual({
+      defaultSpaceId: 'default',
+      spaces: [{ spaceId: 'default' }],
+    });
+    await expect(
+      client.fdmDirectoryTree({ spaceId: 'default', path: 'runs', depth: 1 })
+    ).resolves.toMatchObject({ selectedPath: 'runs', root: { relativePath: 'src' } });
+    await expect(
+      client.projectDirectoryInfo({ projectRelativePath, path: 'src', depth: 0 })
+    ).resolves.toMatchObject({ projectRelativePath, requestedPath: 'src' });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('fdmSpaces');
+    expect(spy.mock.calls[0]?.[1]).toBeUndefined();
+    expect(String(spy.mock.calls[1]?.[0])).toContain('fdmDirectoryTree');
+    expect(spy.mock.calls[1]?.[1]).toEqual({ spaceId: 'default', path: 'runs', depth: 1 });
+    expect(String(spy.mock.calls[2]?.[0])).toContain('projectDirectoryInfo');
+    expect(spy.mock.calls[2]?.[1]).toEqual({ projectRelativePath, path: 'src', depth: 0 });
+  });
+
+  it('dispatches FDM remove through the explicit action mutation', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmDirectoryRemove: {
+        targetPath: 'runs/tmp',
+        apply: true,
+        existed: true,
+        deleted: true,
+        deletedFiles: 1,
+        deletedBytes: 42,
+        target: { ...directoryNode, relativePath: 'runs/tmp' },
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmDirectoryRemove({ spaceId: 'default', path: 'runs/tmp', apply: true })
+    ).resolves.toMatchObject({ targetPath: 'runs/tmp', deleted: true });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('fdmDirectoryRemove');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ spaceId: 'default', path: 'runs/tmp', apply: true });
+  });
+
+  it.each([
+    [
+      'project path',
+      () =>
+        new IdeGsmClient('https://endpoint.example', 'jwt-secret').projectDirectoryTree({
+          projectRelativePath: '../x',
+        }),
+    ],
+    [
+      'logical path',
+      () =>
+        new IdeGsmClient('https://endpoint.example', 'jwt-secret').fdmDirectoryTree({
+          path: '/absolute',
+        }),
+    ],
+    [
+      'depth',
+      () =>
+        new IdeGsmClient('https://endpoint.example', 'jwt-secret').fdmDirectoryInfo({ depth: -1 }),
+    ],
+    [
+      'remove apply',
+      () =>
+        new IdeGsmClient('https://endpoint.example', 'jwt-secret').fdmDirectoryRemove({
+          spaceId: 'default',
+          path: 'x',
+          apply: 'yes' as never,
+        }),
+    ],
+  ])('rejects invalid %s input before a network request', async (_label, run) => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request');
+
+    await expect(run()).rejects.toThrow();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed directory responses without exposing secrets', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      projectDirectoryTree: {
+        projectRelativePath,
+        selectedPath: '',
+        maxDepth: 1,
+        root: { name: 'x' },
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint-secret.example', 'jwt-secret');
+
+    const promise = client.projectDirectoryTree({ projectRelativePath });
+    await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
+    await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
+  });
+
+  it('validates mount descriptors without persisting endpoint or credential fields', () => {
+    expect(() =>
+      assertIdeGsmMountDescriptor({
+        mountKind: 'ide-gsm',
+        sourceKind: 'project-root',
+        mountId: 'project-a',
+        displayName: 'Project A',
+        rootPath: '',
+        capabilities: { read: true },
+        projectId: projectRelativePath,
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      assertIdeGsmMountDescriptor({
+        mountKind: 'ide-gsm',
+        sourceKind: 'fdm-space-root',
+        mountId: 'fdm-default',
+        displayName: 'FDM default',
+        rootPath: 'runs',
+        capabilities: { read: true, remove: true },
+        spaceId: 'default',
+        endpointUrl: 'https://endpoint-secret.example',
+      })
+    ).toThrow('endpointUrl');
+  });
+
+  it('encodes and decodes mounted node IDs deterministically', () => {
+    const nodeId = encodeIdeGsmMountedNodeId('mount one', 'src/index.ts');
+
+    expect(nodeId).toBe('ide-gsm:mount%20one:src%2Findex.ts');
+    expect(isIdeGsmMountedNodeId(nodeId)).toBe(true);
+    expect(decodeIdeGsmMountedNodeId(nodeId)).toEqual({
+      mountId: 'mount one',
+      relativePath: 'src/index.ts',
+    });
   });
 });
 

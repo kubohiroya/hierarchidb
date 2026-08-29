@@ -17,6 +17,23 @@ import type {
   TaskStatus,
   TaskStatusListener,
 } from './ideGsmTypes.js';
+import type {
+  IdeGsmDirectoryInfoReport,
+  IdeGsmDirectoryNode,
+  IdeGsmDirectoryTreeReport,
+  IdeGsmFdmDirectoryInfoInput,
+  IdeGsmFdmDirectoryRemoveInput,
+  IdeGsmFdmDirectoryRemoveReport,
+  IdeGsmFdmDirectoryTreeInput,
+  IdeGsmFdmSpacesReport,
+  IdeGsmProjectDirectoryInfoReport,
+  IdeGsmProjectDirectoryInput,
+  IdeGsmProjectDirectoryTreeReport,
+} from './mount/IdeGsmMountTypes.js';
+import {
+  assertLogicalPath,
+  assertProjectRelativePath as assertMountProjectRelativePath,
+} from './mount/IdeGsmMountTypes.js';
 
 /** Factory type for creating a graphql-ws client. Injected for testability. */
 export type WsClientFactory = (url: string, connectionParams: Record<string, string>) => WsClient;
@@ -33,7 +50,18 @@ const TASK_STATUSES: ReadonlySet<string> = new Set<TaskStatus>([
 
 const ACTIVE_TASK_STATUSES: ReadonlySet<TaskStatus> = new Set(['REGISTERED', 'READY', 'LEASED']);
 
-type MutationName = Exclude<keyof typeof ideGsmGraphqlDocuments, 'subscribeTask'>;
+type ReportDocumentName =
+  | 'fdmSpaces'
+  | 'fdmDirectoryTree'
+  | 'fdmDirectoryInfo'
+  | 'fdmDirectoryRemove'
+  | 'projectDirectoryTree'
+  | 'projectDirectoryInfo';
+
+type TaskMutationName = Exclude<
+  keyof typeof ideGsmGraphqlDocuments,
+  ReportDocumentName | 'subscribeTask'
+>;
 
 interface SubscribeTaskEvent {
   subscribeTaskOnFrontend?: unknown;
@@ -44,21 +72,7 @@ function buildAuthHeaders(authToken: string): Record<string, string> {
 }
 
 function assertProjectRelativePath(projectRelativePath: string): void {
-  const value = projectRelativePath.trim();
-  const segments = value.split(/[\\/]/u);
-  const isWindowsAbsolute = /^[A-Za-z]:[\\/]/u.test(value);
-
-  if (
-    value.length === 0 ||
-    value.startsWith('/') ||
-    value.startsWith('\\') ||
-    isWindowsAbsolute ||
-    segments.includes('..')
-  ) {
-    throw new Error(
-      'projectRelativePath must be a non-empty relative path without parent traversal'
-    );
-  }
+  assertMountProjectRelativePath(projectRelativePath);
 }
 
 function assertConnectionType(
@@ -79,6 +93,55 @@ function addDefined(variables: Record<string, unknown>, key: string, value: unkn
   if (value !== undefined) {
     variables[key] = value;
   }
+}
+
+function assertOptionalNonNegativeInteger(value: number | undefined, fieldName: string): void {
+  if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+    throw new Error(`${fieldName} must be a non-negative integer`);
+  }
+}
+
+function fdmDirectoryVariables(
+  input?: IdeGsmFdmDirectoryTreeInput | IdeGsmFdmDirectoryInfoInput
+): Record<string, unknown> {
+  const variables: Record<string, unknown> = {};
+  if (input?.spaceId !== undefined) {
+    assertNonEmpty(input.spaceId, 'spaceId');
+    variables.spaceId = input.spaceId;
+  }
+  if (input?.path !== undefined) {
+    assertLogicalPath(input.path, 'path', true);
+    variables.path = input.path;
+  }
+  assertOptionalNonNegativeInteger(input?.depth, 'depth');
+  addDefined(variables, 'depth', input?.depth);
+  return variables;
+}
+
+function projectDirectoryVariables(input: IdeGsmProjectDirectoryInput): Record<string, unknown> {
+  const variables = projectVariables(input.projectRelativePath);
+  if (input.path !== undefined) {
+    assertLogicalPath(input.path, 'path', true);
+    variables.path = input.path;
+  }
+  assertOptionalNonNegativeInteger(input.depth, 'depth');
+  addDefined(variables, 'depth', input.depth);
+  return variables;
+}
+
+function fdmDirectoryRemoveVariables(
+  input: IdeGsmFdmDirectoryRemoveInput
+): Record<string, unknown> {
+  assertNonEmpty(input.spaceId, 'spaceId');
+  assertLogicalPath(input.path, 'path', false);
+  if (typeof input.apply !== 'boolean') {
+    throw new Error('apply must be a boolean');
+  }
+  return {
+    spaceId: input.spaceId,
+    path: input.path,
+    apply: input.apply,
+  };
 }
 
 function projectVariables(projectRelativePath: string): Record<string, unknown> {
@@ -154,6 +217,126 @@ function parseTaskResult(value: unknown): TaskResult {
   };
 }
 
+function assertRecord(value: unknown, message: string): asserts value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(message);
+  }
+}
+
+function readString(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  if (typeof value !== 'string') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readNullableString(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  if (value !== null && typeof value !== 'string') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readBoolean(record: Record<string, unknown>, key: string): boolean {
+  const value = record[key];
+  if (typeof value !== 'boolean') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readFiniteNumber(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function parseDirectoryNode(value: unknown): IdeGsmDirectoryNode {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const rawChildren = value.children;
+  if (!Array.isArray(rawChildren)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    name: readString(value, 'name'),
+    relativePath: readString(value, 'relativePath'),
+    kind: readString(value, 'kind'),
+    directory: readBoolean(value, 'directory'),
+    exists: readBoolean(value, 'exists'),
+    sizeBytes: readFiniteNumber(value, 'sizeBytes'),
+    updatedAt: readNullableString(value, 'updatedAt'),
+    childCount: readFiniteNumber(value, 'childCount'),
+    children: rawChildren.map(parseDirectoryNode),
+  };
+}
+
+function parseDirectoryTreeReport(value: unknown): IdeGsmDirectoryTreeReport {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    selectedPath: readString(value, 'selectedPath'),
+    maxDepth: readFiniteNumber(value, 'maxDepth'),
+    root: parseDirectoryNode(value.root),
+  };
+}
+
+function parseDirectoryInfoReport(value: unknown): IdeGsmDirectoryInfoReport {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    requestedPath: readString(value, 'requestedPath'),
+    descendantCount: readFiniteNumber(value, 'descendantCount'),
+    node: parseDirectoryNode(value.node),
+  };
+}
+
+function parseFdmSpacesReport(value: unknown): IdeGsmFdmSpacesReport {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  if (!Array.isArray(value.spaces)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    defaultSpaceId: readString(value, 'defaultSpaceId'),
+    spaces: value.spaces.map((space) => {
+      assertRecord(space, 'IDE-GSM GraphQL response malformed');
+      return { spaceId: readString(space, 'spaceId') };
+    }),
+  };
+}
+
+function parseProjectDirectoryTreeReport(value: unknown): IdeGsmProjectDirectoryTreeReport {
+  const report = parseDirectoryTreeReport(value);
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    ...report,
+    projectRelativePath: readString(value, 'projectRelativePath'),
+  };
+}
+
+function parseProjectDirectoryInfoReport(value: unknown): IdeGsmProjectDirectoryInfoReport {
+  const report = parseDirectoryInfoReport(value);
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    ...report,
+    projectRelativePath: readString(value, 'projectRelativePath'),
+  };
+}
+
+function parseFdmDirectoryRemoveReport(value: unknown): IdeGsmFdmDirectoryRemoveReport {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    targetPath: readString(value, 'targetPath'),
+    apply: readBoolean(value, 'apply'),
+    existed: readBoolean(value, 'existed'),
+    deleted: readBoolean(value, 'deleted'),
+    deletedFiles: readFiniteNumber(value, 'deletedFiles'),
+    deletedBytes: readFiniteNumber(value, 'deletedBytes'),
+    target: parseDirectoryNode(value.target),
+  };
+}
+
 function assertNeverCommand(command: never): never {
   void command;
   throw new Error('Unsupported IDE-GSM command');
@@ -208,7 +391,7 @@ export class IdeGsmClient {
   }
 
   private async requestTask(
-    mutationName: MutationName,
+    mutationName: TaskMutationName,
     variables?: Record<string, unknown>
   ): Promise<string> {
     try {
@@ -224,6 +407,75 @@ export class IdeGsmClient {
     } catch {
       throw new Error('IDE-GSM GraphQL request failed');
     }
+  }
+
+  private async requestReport<T>(
+    documentName: ReportDocumentName,
+    variables: Record<string, unknown> | undefined,
+    parse: (value: unknown) => T
+  ): Promise<T> {
+    try {
+      const data = await this.createHttpClient().request<Record<string, unknown>>(
+        ideGsmGraphqlDocuments[documentName],
+        variables
+      );
+      return parse(data[documentName]);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'IDE-GSM GraphQL response malformed') {
+        throw error;
+      }
+      throw new Error('IDE-GSM GraphQL request failed');
+    }
+  }
+
+  async fdmSpaces(): Promise<IdeGsmFdmSpacesReport> {
+    return this.requestReport('fdmSpaces', undefined, parseFdmSpacesReport);
+  }
+
+  async fdmDirectoryTree(input?: IdeGsmFdmDirectoryTreeInput): Promise<IdeGsmDirectoryTreeReport> {
+    return this.requestReport(
+      'fdmDirectoryTree',
+      fdmDirectoryVariables(input),
+      parseDirectoryTreeReport
+    );
+  }
+
+  async fdmDirectoryInfo(input?: IdeGsmFdmDirectoryInfoInput): Promise<IdeGsmDirectoryInfoReport> {
+    return this.requestReport(
+      'fdmDirectoryInfo',
+      fdmDirectoryVariables(input),
+      parseDirectoryInfoReport
+    );
+  }
+
+  async fdmDirectoryRemove(
+    input: IdeGsmFdmDirectoryRemoveInput
+  ): Promise<IdeGsmFdmDirectoryRemoveReport> {
+    return this.requestReport(
+      'fdmDirectoryRemove',
+      fdmDirectoryRemoveVariables(input),
+      parseFdmDirectoryRemoveReport
+    );
+  }
+
+  async projectDirectoryTree(
+    input: IdeGsmProjectDirectoryInput
+  ): Promise<IdeGsmProjectDirectoryTreeReport> {
+    return this.requestReport(
+      'projectDirectoryTree',
+      projectDirectoryVariables(input),
+      parseProjectDirectoryTreeReport
+    );
+  }
+
+  async projectDirectoryInfo(
+    input: IdeGsmProjectDirectoryInput
+  ): Promise<IdeGsmProjectDirectoryInfoReport> {
+    return this.requestReport(
+      'projectDirectoryInfo',
+      projectDirectoryVariables(input),
+      parseProjectDirectoryInfoReport
+    );
   }
 
   async importProject(projectSnapshot: string, projectRelativePath: string): Promise<string> {

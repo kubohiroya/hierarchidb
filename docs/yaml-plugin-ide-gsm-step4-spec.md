@@ -198,6 +198,28 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - app は UI plugin import より前に `app/src/yaml-ide-gsm/configureYamlIdeGsmStep4Runtime.ts` で Step 4 runtime capability を1回注入する。YAML plugin はこの注入済み capability だけを読み、app config、environment variable、credential source、worker singletonを直接読まない。flag OFF または未注入では Step 4 configを生成せず、既存3 stepを維持する。
 - credential sourceが未接続の場合、UIはexecutorからのstable `CREDENTIALS_UNAVAILABLE` failureだけを表示し、endpoint、JWT、GitHub token、provider例外messageを表示またはlogへ出力しない。credential providerの実入力源をUI plugin、draft、TreeNode、IndexedDB、localStorageへ保存してはならない。
 
+## Mounted IDE-GSM filesystem projection
+
+IDE-GSM の FDM space root と project root は、CoreDB が所有する通常ノードではなく remote projection として扱う。mount root だけを CoreDB `TreeNode.data` に保存し、配下の file / directory entry は IDE-GSM GraphQL read API から都度 `TreeQueryAPI.getNode`、`listChildren`、`listDescendants` 互換の `TreeNode` 形状へ投影する。配下 entry を CoreDB へ materialize、archive、duplicate、move、delete しない。
+
+mount descriptor は次の安全な識別情報だけを保持できる。
+
+- `mountKind: "ide-gsm"`
+- `sourceKind: "fdm-space-root" | "project-root"`
+- `mountId`
+- `spaceId` または `projectId`
+- logical `rootPath`
+- `displayName`
+- read / remove / sim などの capability flag
+
+mount descriptor、mounted node reference、draft、TreeNode、IndexedDB、localStorage、URL、log には endpoint URL、GraphQL URL、JWT、token、raw credential、server absolute path、raw CSV / file content を保存しない。descriptor 検証はこれらの forbidden field を fail-closed にする。
+
+`@hierarchidb/ide-gsm-client` は IDE-GSM GraphQL の FDM/project directory read surface を型付き method として公開する。対象は `fdmSpaces`、`fdmDirectoryTree`、`fdmDirectoryInfo`、`projectDirectoryTree`、`projectDirectoryInfo`、および FDM destructive action 用の `fdmDirectoryRemove` である。project root の path は `projectRelativePath` と logical relative `path` を使用し、absolute path、Windows drive absolute path、`..` traversal を network request 前に拒否する。FDM path も同じ logical relative path として検証する。
+
+destructive operation は generic CoreDB `TreeMutationAPI` を通さず、明示的な `IdeGsmMountedFilesystemActionPort` を通す。初期対応は FDM `fdmDirectoryRemove` のみで、`spaceId`、logical `path`、`apply` を明示入力とする。project-root mount の remove / move / duplicate / archive は network request 前に unsupported として拒否する。
+
+mounted entry は deterministic order で返す。directory を file より先に置き、同種では `name`、次に `relativePath` で昇順にする。remote projection が CoreDB-owned node と同じ mutation path に入らないことを runtime-worker test で固定する。production composition と UI menu の接続、feature flag gate、表示 affordance は後続 issue で扱い、本節の adapter / action port は dormant implementation として導入できる。
+
 ## Migration と import
 
 ### Storage authority
