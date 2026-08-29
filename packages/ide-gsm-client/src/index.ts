@@ -19,3 +19,30 @@ export type {
   TaskStatusListener,
 } from './ideGsmTypes.js';
 export { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';
+export type {
+  IdeGsmDirectoryInfoReport,
+  IdeGsmDirectoryNode,
+  IdeGsmDirectoryTreeReport,
+  IdeGsmFdmDirectoryInfoInput,
+  IdeGsmFdmDirectoryRemoveInput,
+  IdeGsmFdmDirectoryRemoveReport,
+  IdeGsmFdmDirectoryTreeInput,
+  IdeGsmFdmSpace,
+  IdeGsmFdmSpacesReport,
+  IdeGsmMountCapabilities,
+  IdeGsmMountDescriptor,
+  IdeGsmMountedNodeReference,
+  IdeGsmMountSourceKind,
+  IdeGsmProjectDirectoryInfoReport,
+  IdeGsmProjectDirectoryInput,
+  IdeGsmProjectDirectoryTreeReport,
+} from './mount/IdeGsmMountTypes.js';
+export {
+  assertIdeGsmMountDescriptor,
+  assertLogicalPath,
+  assertProjectRelativePath,
+  decodeIdeGsmMountedNodeId,
+  encodeIdeGsmMountedNodeId,
+  IDE_GSM_MOUNT_NODE_ID_PREFIX,
+  isIdeGsmMountedNodeId,
+} from './mount/IdeGsmMountTypes.js';

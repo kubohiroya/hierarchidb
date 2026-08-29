@@ -18,6 +18,9 @@
     "clean": "pnpm -r --filter ./\\* --if-present run clean",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
+  "devDependencies": {
+    "@hierarchidb/tools-load-plugin-manifest": "workspace:*"
+  },
   "turbo": {
     "pipeline": {
       "build": {

@@ -42,6 +42,18 @@ export default defineConfig({
     alias: {
       '@hierarchidb/core-types': path.resolve(workspaceRoot, 'packages/core-types/src/index.ts'),
       '@hierarchidb/gis-sdk': path.resolve(workspaceRoot, 'packages/gis-sdk/src/index.ts'),
+      '@hierarchidb/gen-iso3166-2/browser': path.resolve(
+        workspaceRoot,
+        'packages/tools/gen-iso3166-2/src/browser.ts'
+      ),
+      '@hierarchidb/gen-iso3166-2': path.resolve(
+        workspaceRoot,
+        'packages/tools/gen-iso3166-2/src/index.ts'
+      ),
+      '@hierarchidb/ide-gsm-client': path.resolve(
+        workspaceRoot,
+        'packages/ide-gsm-client/src/index.ts'
+      ),
       '@hierarchidb/location-api': path.resolve(
         workspaceRoot,
         'packages/location-api/src/index.ts'
@@ -56,23 +68,43 @@ export default defineConfig({
         workspaceRoot,
         'packages/import-export/src/index.ts'
       ),
+      '@hierarchidb/import-export-api': path.resolve(
+        workspaceRoot,
+        'packages/import-export-api/src/index.ts'
+      ),
       '@hierarchidb/map-source': path.resolve(workspaceRoot, 'packages/map-source/src/index.ts'),
       '@hierarchidb/tabular-source': path.resolve(
         workspaceRoot,
         'packages/tabular-source/src/index.ts'
       ),
+      '@hierarchidb/tabular-store': path.resolve(
+        workspaceRoot,
+        'packages/tabular-store/src/index.ts'
+      ),
       '@hierarchidb/route-store': path.resolve(workspaceRoot, 'packages/route-store/src/index.ts'),
+      '@hierarchidb/shape-api': path.resolve(workspaceRoot, 'packages/shape-api/src/index.ts'),
       '@hierarchidb/shape-store': path.resolve(workspaceRoot, 'packages/shape-store/src/index.ts'),
       '@hierarchidb/chunk-store': path.resolve(workspaceRoot, 'packages/chunk-store/src/index.ts'),
       '@hierarchidb/location-store': path.resolve(
         workspaceRoot,
         'packages/location-store/src/index.ts'
       ),
+      '@hierarchidb/spreadsheet-store': path.resolve(
+        workspaceRoot,
+        'packages/spreadsheet-store/src/index.ts'
+      ),
+      '@hierarchidb/staged-folder-action': path.resolve(
+        workspaceRoot,
+        'packages/staged-folder-action/src/index.ts'
+      ),
+      '@hierarchidb/style-api': path.resolve(workspaceRoot, 'packages/style-api/src/index.ts'),
       '@hierarchidb/styler-store': path.resolve(
         workspaceRoot,
         'packages/styler-store/src/index.ts'
       ),
+      '@hierarchidb/tag-api': path.resolve(workspaceRoot, 'packages/tag-api/src/index.ts'),
       '@hierarchidb/tag': path.resolve(workspaceRoot, 'packages/tag/src/index.ts'),
+      '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/map-adapter': path.resolve(workspaceRoot, 'packages/map-adapter/src/index.ts'),
       '@hierarchidb/tabular-source-xlsx': path.resolve(
         workspaceRoot,
@@ -82,6 +114,11 @@ export default defineConfig({
         workspaceRoot,
         'packages/vt-orchestrator/src/index.ts'
       ),
+      '@hierarchidb/vectortile-store': path.resolve(
+        workspaceRoot,
+        'packages/vectortile-store/src/index.ts'
+      ),
+      '@hierarchidb/yaml-api': path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
     },
   },
   plugins: [tsconfigPaths()],

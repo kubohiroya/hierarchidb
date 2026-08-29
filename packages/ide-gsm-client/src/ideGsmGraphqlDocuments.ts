@@ -2,6 +2,206 @@ import { gql } from 'graphql-request';
 
 /** GraphQL documents for the pinned IDE-GSM frontend surface. */
 export const ideGsmGraphqlDocuments = {
+  fdmSpaces: gql`
+    query FdmSpaces {
+      fdmSpaces {
+        defaultSpaceId
+        spaces {
+          spaceId
+        }
+      }
+    }
+  `,
+  fdmDirectoryTree: gql`
+    query FdmDirectoryTree($spaceId: String, $path: String, $depth: Int) {
+      fdmDirectoryTree(input: { spaceId: $spaceId, path: $path, depth: $depth }) {
+        selectedPath
+        maxDepth
+        root {
+          name
+          relativePath
+          kind
+          directory
+          exists
+          sizeBytes
+          updatedAt
+          childCount
+          children {
+            name
+            relativePath
+            kind
+            directory
+            exists
+            sizeBytes
+            updatedAt
+            childCount
+            children {
+              name
+              relativePath
+              kind
+              directory
+              exists
+              sizeBytes
+              updatedAt
+              childCount
+              children {
+                name
+                relativePath
+                kind
+                directory
+                exists
+                sizeBytes
+                updatedAt
+                childCount
+              }
+            }
+          }
+        }
+      }
+    }
+  `,
+  fdmDirectoryInfo: gql`
+    query FdmDirectoryInfo($spaceId: String, $path: String, $depth: Int) {
+      fdmDirectoryInfo(input: { spaceId: $spaceId, path: $path, depth: $depth }) {
+        requestedPath
+        descendantCount
+        node {
+          name
+          relativePath
+          kind
+          directory
+          exists
+          sizeBytes
+          updatedAt
+          childCount
+          children {
+            name
+            relativePath
+            kind
+            directory
+            exists
+            sizeBytes
+            updatedAt
+            childCount
+          }
+        }
+      }
+    }
+  `,
+  fdmDirectoryRemove: gql`
+    mutation FdmDirectoryRemove($spaceId: String!, $path: String!, $apply: Boolean!) {
+      fdmDirectoryRemove(input: { spaceId: $spaceId, path: $path, apply: $apply }) {
+        targetPath
+        apply
+        existed
+        deleted
+        deletedFiles
+        deletedBytes
+        target {
+          name
+          relativePath
+          kind
+          directory
+          exists
+          sizeBytes
+          updatedAt
+          childCount
+          children {
+            name
+            relativePath
+            kind
+            directory
+            exists
+            sizeBytes
+            updatedAt
+            childCount
+          }
+        }
+      }
+    }
+  `,
+  projectDirectoryTree: gql`
+    query ProjectDirectoryTree($projectRelativePath: String!, $path: String, $depth: Int) {
+      projectDirectoryTree(
+        input: { projectRelativePath: $projectRelativePath, path: $path, depth: $depth }
+      ) {
+        projectRelativePath
+        selectedPath
+        maxDepth
+        root {
+          name
+          relativePath
+          kind
+          directory
+          exists
+          sizeBytes
+          updatedAt
+          childCount
+          children {
+            name
+            relativePath
+            kind
+            directory
+            exists
+            sizeBytes
+            updatedAt
+            childCount
+            children {
+              name
+              relativePath
+              kind
+              directory
+              exists
+              sizeBytes
+              updatedAt
+              childCount
+              children {
+                name
+                relativePath
+                kind
+                directory
+                exists
+                sizeBytes
+                updatedAt
+                childCount
+              }
+            }
+          }
+        }
+      }
+    }
+  `,
+  projectDirectoryInfo: gql`
+    query ProjectDirectoryInfo($projectRelativePath: String!, $path: String, $depth: Int) {
+      projectDirectoryInfo(
+        input: { projectRelativePath: $projectRelativePath, path: $path, depth: $depth }
+      ) {
+        projectRelativePath
+        requestedPath
+        descendantCount
+        node {
+          name
+          relativePath
+          kind
+          directory
+          exists
+          sizeBytes
+          updatedAt
+          childCount
+          children {
+            name
+            relativePath
+            kind
+            directory
+            exists
+            sizeBytes
+            updatedAt
+            childCount
+          }
+        }
+      }
+    }
+  `,
   importProject: gql`
     mutation ImportProject($projectSnapshot: String!, $projectRelativePath: String!) {
       importProject(
