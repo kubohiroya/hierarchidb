@@ -1,5 +1,6 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { notify } from '@hierarchidb/components';
 import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build-sessions';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type {
@@ -13,8 +14,16 @@ import { createElement, useCallback, useEffect, useMemo, useRef, useState } from
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenStepUtils';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
+import {
+  createMountedIdeGsmCommandExecutor,
+  MOUNTED_IDE_GSM_SIM_ACTION,
+  resolveMountedIdeGsmCommandActions,
+} from '~/ide-gsm-mounted/mountedIdeGsmCommandUi';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveDeveloperMode } from '~/utils/developerModeUtils';
+import { createDefaultYamlIdeGsmClient } from '~/yaml-ide-gsm/createDefaultYamlIdeGsmClient';
+import { YAML_IDE_GSM_APP_CONFIG } from '~/yaml-ide-gsm/YamlIdeGsmAppConfig';
+import { createRuntimeYamlIdeGsmCredentialProvider } from '~/yaml-ide-gsm/yamlIdeGsmCredentialProvider';
 import { useIndexedDbReset } from './useIndexedDbReset';
 import { useTreeConsoleArchiveWatcher } from './useTreeConsoleArchiveWatcher';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog';
@@ -27,6 +36,10 @@ type TreeConsoleBreadcrumbProps = React.ComponentProps<
 type TreeNodeInfoPanelProps = React.ComponentProps<
   typeof import('../TreeNodeInfoPanel').TreeNodeInfoPanel
 >;
+
+function missingIdeGsmCredential(): string {
+  throw new Error('mounted-ide-gsm-credential-source-unavailable');
+}
 
 export type UseTreeConsoleIntegrationInnerArgs = {
   client?: Remote<BuildWorkerAPI>;
@@ -197,12 +210,44 @@ export function useTreeConsoleIntegrationInner({
     },
   });
 
+  const mountedIdeGsmCommandExecutor = useMemo(
+    () =>
+      createMountedIdeGsmCommandExecutor({
+        config: YAML_IDE_GSM_APP_CONFIG,
+        credentialProvider: createRuntimeYamlIdeGsmCredentialProvider({
+          getEndpointUrl: missingIdeGsmCredential,
+          getAuthToken: missingIdeGsmCredential,
+          getGitHubToken: missingIdeGsmCredential,
+        }),
+        createClient: createDefaultYamlIdeGsmClient,
+      }),
+    []
+  );
+
+  const resolveMountedIdeGsmActions = useCallback(
+    (node: HierarchicalTreeNode) =>
+      resolveMountedIdeGsmCommandActions(node, YAML_IDE_GSM_APP_CONFIG),
+    []
+  );
+
   const handleContextMenuAction = useCallback(
     (
       action: string,
       node: HierarchicalTreeNode,
       options?: { navigateToParent?: boolean; nextVisible?: boolean }
     ) => {
+      if (action === MOUNTED_IDE_GSM_SIM_ACTION) {
+        void (async () => {
+          notify.info('IDE-GSM local sim started');
+          const result = await mountedIdeGsmCommandExecutor.executeSim(node);
+          if (result.ok) {
+            notify.success(`IDE-GSM local sim dispatched: ${result.commandTaskId}`);
+            return;
+          }
+          notify.error(`IDE-GSM local sim failed: ${result.code}`);
+        })();
+        return;
+      }
       if (action === 'edit') {
         void (async () => {
           await requestEdit(node.id as NodeId, node);
@@ -211,7 +256,7 @@ export function useTreeConsoleIntegrationInner({
       }
       actions.handleContextMenuAction(action, node, options);
     },
-    [actions, requestEdit]
+    [actions, mountedIdeGsmCommandExecutor, requestEdit]
   );
 
   const handleTagsNavigate = useCallback(() => {
@@ -447,6 +492,7 @@ export function useTreeConsoleIntegrationInner({
     resolvePreviewGuardState: resolvePreviewGuardStateForNode,
     resolveOpenSteps,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
+    resolveContextMenuCommandActions: resolveMountedIdeGsmActions,
     onMoveNodes: actions.handleMoveNodes,
     onIconPositionChange: async (
       nodeId: import('@hierarchidb/core-types').NodeId,

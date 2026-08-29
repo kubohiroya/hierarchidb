@@ -8,6 +8,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import {
   formatBuildAvailabilityView,
   isFolderNodeType,
+  type NodeContextMenuCommandAction,
   type OpenStepOption,
 } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -52,6 +53,7 @@ export interface UseTreeTableContextMenuResult {
   canPreview: boolean;
   openSteps: OpenStepOption[];
   openStepsLoading: boolean;
+  commandActions: readonly NodeContextMenuCommandAction[];
   handleClose: () => void;
   onToggleVisible: (nextVisible: boolean) => void;
   onCreate: (type: string, options?: { openInNewTab?: boolean }) => void;
@@ -69,6 +71,7 @@ export interface UseTreeTableContextMenuResult {
   onPreview: () => void;
   onBuild: () => void;
   onBuildDiagnostics: () => void;
+  onCommandAction: (actionId: string) => void;
 }
 
 export function useTreeTableContextMenu({
@@ -129,6 +132,11 @@ export function useTreeTableContextMenu({
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
   const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
   const [openStepsLoading, setOpenStepsLoading] = useState(false);
+  const commandActions = useMemo(
+    () =>
+      node ? (controller?.resolveContextMenuCommandActions?.(node as TreeNodeInUI) ?? []) : [],
+    [controller, node]
+  );
 
   useEffect(() => {
     if (!open || !node) {
@@ -325,6 +333,16 @@ export function useTreeTableContextMenu({
     handleClose();
   }, [handleClose, node, triggerContextAction]);
 
+  const onCommandAction = useCallback(
+    (actionId: string) => {
+      if (node) {
+        triggerContextAction(actionId, { source: 'treetable' });
+      }
+      handleClose();
+    },
+    [handleClose, node, triggerContextAction]
+  );
+
   const canPreview = useMemo(
     () => (previewGuardState?.canOpen ?? true) && !previewGuardLoading,
     [previewGuardLoading, previewGuardState?.canOpen]
@@ -345,6 +363,7 @@ export function useTreeTableContextMenu({
     canPreview,
     openSteps,
     openStepsLoading,
+    commandActions,
     handleClose,
     onToggleVisible,
     onCreate,
@@ -362,5 +381,6 @@ export function useTreeTableContextMenu({
     onPreview,
     onBuild,
     onBuildDiagnostics,
+    onCommandAction,
   };
 }

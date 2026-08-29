@@ -47,6 +47,7 @@ export function TreeTableContextMenu({
     canPreview,
     openSteps,
     openStepsLoading,
+    commandActions,
     handleClose,
     onToggleVisible,
     onCreate,
@@ -64,6 +65,7 @@ export function TreeTableContextMenu({
     onPreview,
     onBuild,
     onBuildDiagnostics,
+    onCommandAction,
   } = useTreeTableContextMenu({
     contextMenuState,
     onClose,
@@ -113,6 +115,8 @@ export function TreeTableContextMenu({
       onOpenStep={onOpenStep}
       openSteps={openSteps}
       openStepsLoading={openStepsLoading}
+      commandActions={commandActions}
+      onCommandAction={onCommandAction}
       onPreview={onPreview}
       onBuild={onBuild}
       onBuildDiagnostics={onBuildDiagnostics}

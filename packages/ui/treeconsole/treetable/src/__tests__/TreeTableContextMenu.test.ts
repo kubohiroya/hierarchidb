@@ -4,7 +4,7 @@ import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrum
 import { DualKeyMap } from '@hierarchidb/util';
 import { render } from '@testing-library/react';
 import React from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TreeTableContextMenu } from '../components/internal/TreeTableContextMenu';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
@@ -13,7 +13,7 @@ const asTimestamp = (value: number): Timestamp => value as Timestamp;
 
 const createNode = (
   id: string,
-  patch: Partial<Pick<TreeNode, 'nodeType' | 'parentId' | 'metadata' | 'depth'>> = {}
+  patch: Partial<Pick<TreeNode, 'nodeType' | 'parentId' | 'metadata' | 'depth' | 'data'>> = {}
 ): TreeNode => {
   const now = asTimestamp(Date.now());
   return {
@@ -352,5 +352,45 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
       'Route plugin authentication is required.'
     );
     expect(latestProps?.buildDiagnosticsLabel).toBe('Build diagnostics');
+  });
+
+  it('passes resolved command actions and dispatches them through context action', () => {
+    let latestProps: NodeContextMenuProps | null = null;
+    const ContextMenuComponent = (props: NodeContextMenuProps) => {
+      latestProps = props;
+      return React.createElement('div', { 'data-testid': 'context-menu-stub' });
+    };
+    const node = createNode('mounted-project', {
+      nodeType: asNodeType('folder'),
+      data: {
+        mountKind: 'ide-gsm',
+        sourceKind: 'project-root',
+        mountId: 'mount-1',
+        projectId: 'projects/demo',
+      },
+    });
+    const onContextAction = vi.fn();
+
+    render(
+      React.createElement(TreeTableContextMenu, {
+        contextMenuState: {
+          anchorEl: document.createElement('button'),
+          anchorPosition: null,
+          node,
+        },
+        onClose: () => {},
+        treeId: 'r',
+        controller: {
+          nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
+          onContextAction,
+          resolveContextMenuCommandActions: () => [{ id: 'ide-gsm:sim', label: 'Run local sim' }],
+        },
+        ContextMenuComponent,
+      })
+    );
+
+    expect(latestProps?.commandActions).toEqual([{ id: 'ide-gsm:sim', label: 'Run local sim' }]);
+    latestProps?.onCommandAction?.('ide-gsm:sim');
+    expect(onContextAction).toHaveBeenCalledWith('ide-gsm:sim', node, { source: 'treetable' });
   });
 });

@@ -10,7 +10,11 @@ export type { CreateMenuEntry, CreateMenuEntryInput } from './components/buildCr
 // Create menu items builder (shared by NodeContextMenu and BackgroundContextMenu)
 export { buildCreateMenuItems } from './components/buildCreateMenuItems.js';
 // Re-export the NodeContextMenuProps type for consumers
-export type { NodeContextMenuProps, OpenStepOption } from './components/NodeContextMenu.js';
+export type {
+  NodeContextMenuCommandAction,
+  NodeContextMenuProps,
+  OpenStepOption,
+} from './components/NodeContextMenu.js';
 export { NodeContextMenu } from './components/NodeContextMenu.js';
 // Main component
 export { TreeConsoleBreadcrumb } from './components/TreeConsoleBreadcrumb.js';

@@ -36,7 +36,7 @@ export interface YamlIdeGsmClientPort {
 }
 
 export interface YamlIdeGsmExecutorDependencies {
-  readonly config: YamlIdeGsmAppConfig;
+  readonly config: Pick<YamlIdeGsmAppConfig, 'yamlIdeGsmStep4Enabled'>;
   readonly credentialProvider: YamlIdeGsmCredentialProvider;
   readonly createClient: (credentials: YamlIdeGsmCredentials) => YamlIdeGsmClientPort;
   readonly getYamlCanonicalZipAPI: () => Promise<YamlCanonicalZipAPI>;
