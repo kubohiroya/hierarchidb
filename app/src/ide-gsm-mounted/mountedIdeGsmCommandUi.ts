@@ -1,6 +1,7 @@
 import {
   assertProjectRelativePath,
   type IdeGsmCommand,
+  type IdeGsmCommandId,
   type IdeGsmMountDescriptor,
   type IdeGsmMountedNodeReference,
 } from '@hierarchidb/ide-gsm-client';
@@ -8,11 +9,44 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import type { YamlIdeGsmAppConfig } from '~/yaml-ide-gsm/YamlIdeGsmAppConfig.js';
 
 export const MOUNTED_IDE_GSM_SIM_ACTION = 'ide-gsm:sim' as const;
+export const MOUNTED_IDE_GSM_CALIB_ACTION = 'ide-gsm:calib' as const;
+export const MOUNTED_IDE_GSM_CHECK_ACTION = 'ide-gsm:check' as const;
+export const MOUNTED_IDE_GSM_COMMAND_ACTIONS = [
+  MOUNTED_IDE_GSM_SIM_ACTION,
+  MOUNTED_IDE_GSM_CALIB_ACTION,
+  MOUNTED_IDE_GSM_CHECK_ACTION,
+] as const;
+
+export type MountedIdeGsmCommandActionId = (typeof MOUNTED_IDE_GSM_COMMAND_ACTIONS)[number];
+
+type MountedIdeGsmCommandDefinition = Readonly<{
+  readonly actionId: MountedIdeGsmCommandActionId;
+  readonly commandId: Extract<IdeGsmCommandId, 'sim' | 'calib' | 'check'>;
+  readonly label: string;
+}>;
+
+export const MOUNTED_IDE_GSM_COMMAND_DEFINITIONS = [
+  {
+    actionId: MOUNTED_IDE_GSM_SIM_ACTION,
+    commandId: 'sim',
+    label: 'Run local sim',
+  },
+  {
+    actionId: MOUNTED_IDE_GSM_CALIB_ACTION,
+    commandId: 'calib',
+    label: 'Run local calib',
+  },
+  {
+    actionId: MOUNTED_IDE_GSM_CHECK_ACTION,
+    commandId: 'check',
+    label: 'Run local check',
+  },
+] as const satisfies readonly MountedIdeGsmCommandDefinition[];
 
 type RecordValue = Readonly<Record<string, unknown>>;
 
 export type MountedIdeGsmCommandAction = Readonly<{
-  readonly id: typeof MOUNTED_IDE_GSM_SIM_ACTION;
+  readonly id: MountedIdeGsmCommandActionId;
   readonly label: string;
   readonly disabled?: boolean;
   readonly tooltip?: string;
@@ -68,6 +102,21 @@ function hasForbiddenPublicField(data: RecordValue): boolean {
   ].some((key) => Object.hasOwn(data, key));
 }
 
+export function isMountedIdeGsmCommandActionId(
+  actionId: string
+): actionId is MountedIdeGsmCommandActionId {
+  return MOUNTED_IDE_GSM_COMMAND_ACTIONS.includes(actionId as MountedIdeGsmCommandActionId);
+}
+
+function getMountedIdeGsmCommandDefinition(
+  actionId: MountedIdeGsmCommandActionId
+): MountedIdeGsmCommandDefinition | null {
+  return (
+    MOUNTED_IDE_GSM_COMMAND_DEFINITIONS.find((definition) => definition.actionId === actionId) ??
+    null
+  );
+}
+
 export function resolveMountedIdeGsmProjectRelativePath(
   node: Pick<TreeNode, 'data'>
 ): string | null {
@@ -91,57 +140,85 @@ export function isMountedIdeGsmProjectCommandTarget(
   return resolveMountedIdeGsmProjectRelativePath(node) !== null;
 }
 
-export function buildMountedIdeGsmSimCommand(node: Pick<TreeNode, 'data'>): IdeGsmCommand | null {
+function createProjectCommand(
+  commandId: MountedIdeGsmCommandDefinition['commandId'],
+  projectRelativePath: string
+): IdeGsmCommand {
+  switch (commandId) {
+    case 'sim':
+      return { id: 'sim', input: { projectRelativePath } };
+    case 'calib':
+      return { id: 'calib', input: { projectRelativePath } };
+    case 'check':
+      return { id: 'check', input: { projectRelativePath } };
+  }
+}
+
+export function buildMountedIdeGsmCommand(
+  actionId: MountedIdeGsmCommandActionId,
+  node: Pick<TreeNode, 'data'>
+): IdeGsmCommand | null {
   const projectRelativePath = resolveMountedIdeGsmProjectRelativePath(node);
   if (!projectRelativePath) return null;
-  return { id: 'sim', input: { projectRelativePath } };
+  const definition = getMountedIdeGsmCommandDefinition(actionId);
+  if (!definition) return null;
+  return createProjectCommand(definition.commandId, projectRelativePath);
+}
+
+export function buildMountedIdeGsmSimCommand(node: Pick<TreeNode, 'data'>): IdeGsmCommand | null {
+  return buildMountedIdeGsmCommand(MOUNTED_IDE_GSM_SIM_ACTION, node);
 }
 
 export function resolveMountedIdeGsmCommandActions(
   node: Pick<TreeNode, 'data'>,
   config: Pick<YamlIdeGsmAppConfig, 'mountedIdeGsmCommandUiEnabled'>
 ): readonly MountedIdeGsmCommandAction[] {
-  const command = buildMountedIdeGsmSimCommand(node);
-  if (!command) return [];
-  return [
-    {
-      id: MOUNTED_IDE_GSM_SIM_ACTION,
-      label: 'Run local sim',
-      disabled: !config.mountedIdeGsmCommandUiEnabled,
-      tooltip: config.mountedIdeGsmCommandUiEnabled
-        ? undefined
-        : 'Mounted IDE-GSM command UI is disabled',
-    },
-  ];
+  if (!resolveMountedIdeGsmProjectRelativePath(node)) return [];
+  return MOUNTED_IDE_GSM_COMMAND_DEFINITIONS.map((definition) => ({
+    id: definition.actionId,
+    label: definition.label,
+    disabled: !config.mountedIdeGsmCommandUiEnabled,
+    tooltip: config.mountedIdeGsmCommandUiEnabled
+      ? undefined
+      : 'Mounted IDE-GSM command UI is disabled',
+  }));
 }
 
 export function createMountedIdeGsmCommandExecutor(
   dependencies: MountedIdeGsmCommandExecutorDependencies
 ) {
+  const execute = async (
+    actionId: MountedIdeGsmCommandActionId,
+    node: Pick<TreeNode, 'data'>
+  ): Promise<MountedIdeGsmCommandResult> => {
+    if (!dependencies.config.mountedIdeGsmCommandUiEnabled) {
+      return { ok: false, code: 'FEATURE_DISABLED' };
+    }
+    const command = buildMountedIdeGsmCommand(actionId, node);
+    if (!command) {
+      return { ok: false, code: 'UNSUPPORTED_TARGET' };
+    }
+    let credentials: {
+      readonly endpointUrl: string;
+      readonly authToken: string;
+    };
+    try {
+      credentials = await dependencies.credentialProvider.getIdeGsmCredentials();
+    } catch {
+      return { ok: false, code: 'CREDENTIALS_UNAVAILABLE' };
+    }
+    try {
+      const taskId = await dependencies.createClient(credentials).executeCommand(command);
+      return { ok: true, commandTaskId: taskId };
+    } catch {
+      return { ok: false, code: 'COMMAND_FAILED' };
+    }
+  };
+
   return Object.freeze({
+    execute,
     async executeSim(node: Pick<TreeNode, 'data'>): Promise<MountedIdeGsmCommandResult> {
-      if (!dependencies.config.mountedIdeGsmCommandUiEnabled) {
-        return { ok: false, code: 'FEATURE_DISABLED' };
-      }
-      const command = buildMountedIdeGsmSimCommand(node);
-      if (!command) {
-        return { ok: false, code: 'UNSUPPORTED_TARGET' };
-      }
-      let credentials: {
-        readonly endpointUrl: string;
-        readonly authToken: string;
-      };
-      try {
-        credentials = await dependencies.credentialProvider.getIdeGsmCredentials();
-      } catch {
-        return { ok: false, code: 'CREDENTIALS_UNAVAILABLE' };
-      }
-      try {
-        const taskId = await dependencies.createClient(credentials).executeCommand(command);
-        return { ok: true, commandTaskId: taskId };
-      } catch {
-        return { ok: false, code: 'COMMAND_FAILED' };
-      }
+      return execute(MOUNTED_IDE_GSM_SIM_ACTION, node);
     },
   });
 }

@@ -1,4 +1,4 @@
-import type { TaskStage } from '../../../../build-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 
 export type TaskCountSummary = {
   total: number;

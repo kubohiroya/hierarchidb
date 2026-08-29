@@ -1,8 +1,8 @@
+import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { useMemo } from 'react';
 import { buildTaskCountSummary } from '~/utils/taskProgressSummary';
-import type { BuildTaskSummary } from '../../../../build-api';
 
 const resolveTaskMetadataMessage = (
   metadata: Record<string, unknown> | undefined

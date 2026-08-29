@@ -2,8 +2,12 @@ import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildMountedIdeGsmCommand,
   buildMountedIdeGsmSimCommand,
   createMountedIdeGsmCommandExecutor,
+  MOUNTED_IDE_GSM_CALIB_ACTION,
+  MOUNTED_IDE_GSM_CHECK_ACTION,
+  MOUNTED_IDE_GSM_COMMAND_DEFINITIONS,
   MOUNTED_IDE_GSM_SIM_ACTION,
   resolveMountedIdeGsmCommandActions,
 } from '../mountedIdeGsmCommandUi.js';
@@ -45,6 +49,18 @@ describe('mounted IDE-GSM command UI', () => {
         disabled: false,
         tooltip: undefined,
       },
+      {
+        id: MOUNTED_IDE_GSM_CALIB_ACTION,
+        label: 'Run local calib',
+        disabled: false,
+        tooltip: undefined,
+      },
+      {
+        id: MOUNTED_IDE_GSM_CHECK_ACTION,
+        label: 'Run local check',
+        disabled: false,
+        tooltip: undefined,
+      },
     ]);
     expect(
       resolveMountedIdeGsmCommandActions(createNode({}), { mountedIdeGsmCommandUiEnabled: true })
@@ -69,10 +85,22 @@ describe('mounted IDE-GSM command UI', () => {
         disabled: true,
         tooltip: 'Mounted IDE-GSM command UI is disabled',
       },
+      {
+        id: MOUNTED_IDE_GSM_CALIB_ACTION,
+        label: 'Run local calib',
+        disabled: true,
+        tooltip: 'Mounted IDE-GSM command UI is disabled',
+      },
+      {
+        id: MOUNTED_IDE_GSM_CHECK_ACTION,
+        label: 'Run local check',
+        disabled: true,
+        tooltip: 'Mounted IDE-GSM command UI is disabled',
+      },
     ]);
   });
 
-  it('builds the canonical executeCommand payload for local sim', () => {
+  it('builds canonical executeCommand payloads for local project commands', () => {
     const node = createNode({
       mountKind: 'ide-gsm',
       sourceKind: 'project-root',
@@ -85,6 +113,36 @@ describe('mounted IDE-GSM command UI', () => {
       id: 'sim',
       input: { projectRelativePath: 'projects/demo' },
     });
+    expect(buildMountedIdeGsmCommand(MOUNTED_IDE_GSM_CALIB_ACTION, node)).toEqual({
+      id: 'calib',
+      input: { projectRelativePath: 'projects/demo' },
+    });
+    expect(buildMountedIdeGsmCommand(MOUNTED_IDE_GSM_CHECK_ACTION, node)).toEqual({
+      id: 'check',
+      input: { projectRelativePath: 'projects/demo' },
+    });
+  });
+
+  it('keeps broader command families out of the mounted project registry', () => {
+    expect(MOUNTED_IDE_GSM_COMMAND_DEFINITIONS.map((definition) => definition.commandId)).toEqual([
+      'sim',
+      'calib',
+      'check',
+    ]);
+    expect(
+      MOUNTED_IDE_GSM_COMMAND_DEFINITIONS.some((definition) =>
+        [
+          'sim-remote',
+          'calib-remote',
+          'sim-ssh',
+          'calib-ssh',
+          'rsync-push',
+          'rsync-pull',
+          'start-container-remote',
+          'stop-container-remote',
+        ].includes(definition.commandId)
+      )
+    ).toBe(false);
   });
 
   it('rejects unsupported nodes and public credential fields before network', async () => {
@@ -101,7 +159,8 @@ describe('mounted IDE-GSM command UI', () => {
       code: 'UNSUPPORTED_TARGET',
     });
     await expect(
-      executor.executeSim(
+      executor.execute(
+        MOUNTED_IDE_GSM_CALIB_ACTION,
         createNode({
           mountKind: 'ide-gsm',
           sourceKind: 'project-root',
@@ -125,7 +184,8 @@ describe('mounted IDE-GSM command UI', () => {
     });
 
     await expect(
-      executor.executeSim(
+      executor.execute(
+        MOUNTED_IDE_GSM_CALIB_ACTION,
         createNode({
           mountKind: 'ide-gsm',
           sourceKind: 'project-root',
@@ -149,7 +209,8 @@ describe('mounted IDE-GSM command UI', () => {
     });
 
     await expect(
-      executor.executeSim(
+      executor.execute(
+        MOUNTED_IDE_GSM_CALIB_ACTION,
         createNode({
           mountKind: 'ide-gsm',
           sourceKind: 'project-root',
@@ -161,7 +222,7 @@ describe('mounted IDE-GSM command UI', () => {
     expect(executeCommand).not.toHaveBeenCalled();
   });
 
-  it('dispatches local sim through executeCommand', async () => {
+  it('dispatches a registered local command through executeCommand', async () => {
     const executeCommand = vi.fn().mockResolvedValue('task-sim');
     const executor = createMountedIdeGsmCommandExecutor({
       config: { mountedIdeGsmCommandUiEnabled: true },
@@ -175,7 +236,8 @@ describe('mounted IDE-GSM command UI', () => {
     });
 
     await expect(
-      executor.executeSim(
+      executor.execute(
+        MOUNTED_IDE_GSM_CALIB_ACTION,
         createNode({
           mountKind: 'ide-gsm',
           sourceKind: 'project-root',
@@ -185,7 +247,7 @@ describe('mounted IDE-GSM command UI', () => {
       )
     ).resolves.toEqual({ ok: true, commandTaskId: 'task-sim' });
     expect(executeCommand).toHaveBeenCalledWith({
-      id: 'sim',
+      id: 'calib',
       input: { projectRelativePath: 'projects/demo' },
     });
   });

@@ -1,12 +1,12 @@
+import {
+  activeBuildSessionRuntimeStatuses,
+  type BuildSessionRuntimeRecord,
+} from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
 import { proxy } from 'comlink';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  activeBuildSessionRuntimeStatuses,
-  type BuildSessionRuntimeRecord,
-} from '../../../../build-api';
 import { sanitizeForComlink } from '../utils/comlinkSanitizer.js';
 import { useWorkerQueryAPI } from './useWorkerQueryAPI.js';
 
