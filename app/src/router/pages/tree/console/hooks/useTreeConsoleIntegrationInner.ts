@@ -1,6 +1,6 @@
+import { notify } from '@hierarchidb/components';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { notify } from '@hierarchidb/components';
 import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build-sessions';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type {
@@ -16,7 +16,7 @@ import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenStepUtil
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
 import {
   createMountedIdeGsmCommandExecutor,
-  MOUNTED_IDE_GSM_SIM_ACTION,
+  isMountedIdeGsmCommandActionId,
   resolveMountedIdeGsmCommandActions,
 } from '~/ide-gsm-mounted/mountedIdeGsmCommandUi';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
@@ -236,15 +236,15 @@ export function useTreeConsoleIntegrationInner({
       node: HierarchicalTreeNode,
       options?: { navigateToParent?: boolean; nextVisible?: boolean }
     ) => {
-      if (action === MOUNTED_IDE_GSM_SIM_ACTION) {
+      if (isMountedIdeGsmCommandActionId(action)) {
         void (async () => {
-          notify.info('IDE-GSM local sim started');
-          const result = await mountedIdeGsmCommandExecutor.executeSim(node);
+          notify.info('IDE-GSM command started');
+          const result = await mountedIdeGsmCommandExecutor.execute(action, node);
           if (result.ok) {
-            notify.success(`IDE-GSM local sim dispatched: ${result.commandTaskId}`);
+            notify.success(`IDE-GSM command dispatched: ${result.commandTaskId}`);
             return;
           }
-          notify.error(`IDE-GSM local sim failed: ${result.code}`);
+          notify.error(`IDE-GSM command failed: ${result.code}`);
         })();
         return;
       }
