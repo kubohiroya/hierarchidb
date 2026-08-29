@@ -422,6 +422,7 @@ export function BuildSessionQueuePanel({
         <IconButton
           ref={buttonRef}
           aria-label={t('buildSessionQueue.openQueueList', 'Open build session queue')}
+          data-testid={`build-session-queue-button-${String(nodeType)}`}
           onClick={handleOpenAll}
           size="small"
           disabled={totalQueueItems === 0}
@@ -477,6 +478,7 @@ export function BuildSessionQueuePanel({
       >
         <ClickAwayListener onClickAway={handleCloseAll}>
           <Paper
+            data-testid={`build-session-queue-popper-${String(nodeType)}`}
             sx={{
               mt: 1,
               minWidth: 520,
