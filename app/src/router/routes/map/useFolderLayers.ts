@@ -29,6 +29,11 @@ import {
   buildLocationMvtLayerStyles,
   LOCATION_MVT_PROMOTE_ID,
 } from './buildLocationMvtLayerStyles.js';
+import {
+  applyDirectStyleBindingPaint,
+  type DirectStyleBindingTarget,
+  resolveDirectStyleBindingTargets,
+} from './resolveDirectStyleBindings.js';
 import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
 import type {
   BasemapStyleEntry,
@@ -138,6 +143,7 @@ export type LocationLayerEntry = {
   absolutePath?: string;
   layerId: string;
   sourceId: string;
+  directStyleBinding?: DirectStyleBindingTarget;
 };
 
 export type UseFolderLayersParams = {
@@ -380,6 +386,19 @@ export const useFolderLayers = ({
           current.push(styler);
           choroplethStylersByParentId.set(styler.parentId, current);
         });
+        const resolverStyleBindings = captureFilteredNodes.flatMap((node) => {
+          if (node.nodeType !== 'resolver') return [];
+          const data = node.data as { styleBindings?: unknown } | null;
+          return Array.isArray(data?.styleBindings) ? data.styleBindings : [];
+        });
+        const nodeTypesById = new Map(
+          captureFilteredNodes.map((node) => [String(node.id), String(node.nodeType)])
+        );
+        const directStyleBindingTargets = resolveDirectStyleBindingTargets({
+          bindings: resolverStyleBindings,
+          styleSources: parsedStylers,
+          targetNodeTypesById: nodeTypesById,
+        });
 
         const resolvedShapeLayerById = new Map<string, string | undefined>();
         const pickPreferredShapeLayer = (names: string[]): string | undefined => {
@@ -542,6 +561,12 @@ export const useFolderLayers = ({
             );
             const layerType = sourceLayerIsBoundary ? 'line' : 'fill';
             const relatedPaintOverrides = relatedStyler?.paintOverrides?.[layerType];
+            const directStyleBinding = directStyleBindingTargets.get(String(node.id));
+            const paint = applyDirectStyleBindingPaint(
+              layerType,
+              relatedPaintOverrides,
+              directStyleBinding
+            );
             shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
@@ -563,7 +588,7 @@ export const useFolderLayers = ({
                 sourceLayer: canonicalSourceLayer,
                 layerId,
                 sourceId,
-                ...(relatedPaintOverrides ? { paint: relatedPaintOverrides } : {}),
+                ...(paint ? { paint } : {}),
               },
               promoteId: relatedStyler?.featureIdProperty,
               featureState: relatedStyler?.featureStateEntries,
@@ -576,9 +601,15 @@ export const useFolderLayers = ({
             const dataSourceName = data?.dataSource;
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;
+            const directStyleBinding = directStyleBindingTargets.get(String(node.id));
             if (canonicalBuildFeatureFlags.locationMvt) {
               const layerStyles = buildLocationMvtLayerStyles(layerId, sourceId, true);
               layerStyles.forEach(({ kind, layerPriority, layerConfig }) => {
+                const paint = applyDirectStyleBindingPaint(
+                  layerConfig.layerType ?? 'fill',
+                  layerConfig.paint,
+                  directStyleBinding
+                );
                 locationVectorEntries.push({
                   nodeId: String(node.id),
                   nodeType: 'location',
@@ -602,7 +633,10 @@ export const useFolderLayers = ({
                   onTileError: (error) => {
                     console.warn('[MapPage] Location MVT tile request failed', error);
                   },
-                  layerConfig,
+                  layerConfig: {
+                    ...layerConfig,
+                    ...(paint ? { paint } : {}),
+                  },
                   promoteId: LOCATION_MVT_PROMOTE_ID,
                 });
               });
@@ -615,6 +649,7 @@ export const useFolderLayers = ({
               absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
               layerId,
               sourceId,
+              directStyleBinding,
             });
           }
 
@@ -625,6 +660,14 @@ export const useFolderLayers = ({
               const featureState = featureStateByStyleType.lines;
               const layerId = `resource-layer-${node.id}`;
               const sourceId = `resource-source-${node.id}`;
+              const directStyleBinding = directStyleBindingTargets.get(String(node.id));
+              const basePaint = {
+                'line-color': '#f24c3d',
+                'line-width': 2,
+                'line-opacity': 0.9,
+                ...(styleOverrides.line ?? {}),
+              };
+              const paint = applyDirectStyleBindingPaint('line', basePaint, directStyleBinding);
               routeEntries.push({
                 nodeId: String(node.id),
                 nodeType: 'route',
@@ -643,12 +686,7 @@ export const useFolderLayers = ({
                   sourceLayer: buildRouteSourceLayerName(),
                   layerId,
                   sourceId,
-                  paint: {
-                    'line-color': '#f24c3d',
-                    'line-width': 2,
-                    'line-opacity': 0.9,
-                    ...(styleOverrides.line ?? {}),
-                  },
+                  paint,
                 },
                 promoteId: featureState?.featureIdProperty,
                 featureState: featureState?.entries,
