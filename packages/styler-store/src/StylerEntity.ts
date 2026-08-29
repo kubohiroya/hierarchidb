@@ -5,6 +5,7 @@ import type {
   SpreadsheetEntityPayload,
 } from '@hierarchidb/spreadsheet-store';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
+import type { StylerSourceReference } from './mountedIdeGsmCsvSourceTypes.js';
 
 export type { SpreadSheetDataSourceType };
 
@@ -319,6 +320,7 @@ export interface StylerEntityPayload extends SpreadsheetEntityPayload {
 
   mapping: StylerMapping;
   config: StylerConfig;
+  source?: StylerSourceReference;
   styleKeyValues?: {
     colors?: ColorStyleKeyValue[];
     scalars?: ScalarStyleKeyValue[];
