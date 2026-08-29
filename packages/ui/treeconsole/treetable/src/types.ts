@@ -8,7 +8,11 @@ import type {
 } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type {
+  NodeContextMenuCommandAction,
+  NodeContextMenuProps,
+  OpenStepOption,
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { MouseEvent, ReactNode } from 'react';
@@ -69,6 +73,9 @@ export interface TreeTableController {
     node: TreeNodeInUI
   ) => Promise<{ canOpen: boolean; finalStepIndex?: number }>;
   resolveOpenSteps?: (node: TreeNodeInUI) => Promise<OpenStepOption[]>;
+  resolveContextMenuCommandActions?: (
+    node: TreeNodeInUI
+  ) => readonly NodeContextMenuCommandAction[];
   dependencySummary?: BuildDependencyAvailabilitySummary;
   pluginPrerequisiteFailures?: readonly BuildPluginPrerequisiteFailure[];
 }

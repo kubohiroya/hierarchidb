@@ -205,10 +205,13 @@ export const runAffectedFastTests = async ({
     }
     runnableSelections.push(selection);
   }
-  const exitCodes = await Promise.all(
-    runnableSelections.map((selection) => runPackageFastTests({ command, cwd, selection }))
-  );
-  return exitCodes.find((exitCode) => exitCode !== 0) ?? 0;
+  for (const selection of runnableSelections) {
+    const exitCode = await runPackageFastTests({ command, cwd, selection });
+    if (exitCode !== 0) {
+      return exitCode;
+    }
+  }
+  return 0;
 };
 
 const isCli =

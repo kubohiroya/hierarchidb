@@ -220,6 +220,14 @@ destructive operation は generic CoreDB `TreeMutationAPI` を通さず、明示
 
 mounted entry は deterministic order で返す。directory を file より先に置き、同種では `name`、次に `relativePath` で昇順にする。remote projection が CoreDB-owned node と同じ mutation path に入らないことを runtime-worker test で固定する。production composition と UI menu の接続、feature flag gate、表示 affordance は後続 issue で扱い、本節の adapter / action port は dormant implementation として導入できる。
 
+### Mounted project command UI
+
+mounted IDE-GSM project tree に対する初期 command UI は、project-root mount のみを対象とし、command は local `sim` だけを表示する。UI は `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` を startup-fixed flag として app-level config から1回だけ読み、既定値は `false` とする。flag が OFF の場合でも対象 node の認識は可能だが、menu action は disabled とし、executor は credential provider、client、network を呼ばず `FEATURE_DISABLED` を返す。
+
+command target は `TreeNode.data.mountKind === "ide-gsm"`、`sourceKind === "project-root"`、かつ `projectId` が logical relative project path として検証できる node に限定する。`fdm-space-root`、通常 CoreDB node、absolute path、`..` traversal、または endpoint/token/JWT/content/absolutePath などの forbidden public field を含む node は network request 前に unsupported として拒否する。
+
+`ide-gsm:sim` action は既存 `IdeGsmClient.executeCommand` 契約を使い、payload は `{ id: "sim", input: { projectRelativePath: <projectId> } }` とする。YAML snapshot import、CoreDB write、TreeNode data 更新、IndexedDB 永続化、result materialization は行わない。running/success/failure は UI-only notification として扱い、画面再読み込みや dialog close で失われてよい。credential source が未接続または失敗した場合は stable code `CREDENTIALS_UNAVAILABLE` だけを表示し、provider 例外 message、endpoint、JWT、token を public UI や log へ出さない。command 実行失敗も `COMMAND_FAILED` の stable code に丸める。
+
 ## Migration と import
 
 ### Storage authority
