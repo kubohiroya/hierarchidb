@@ -30,6 +30,7 @@ import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { LOCATION_TYPE_COLORS } from './constants.js';
 import { LocationViewportIcon, type LocationViewportIconProps } from './LocationViewportIcon.js';
+import { applyDirectStyleBindingPaint } from './resolveDirectStyleBindings.js';
 import type { LocationLayerEntry } from './useFolderLayers.js';
 
 const PREFETCH_MARGIN_PX = 64;
@@ -230,6 +231,9 @@ export const useLocationViewportLayers = (
   const buildLocationLayersForNode = useCallback(
     (layer: LocationLayerEntry, features: Array<Feature>): ResourceGeoJsonLayer[] => {
       const sourceId = layer.sourceId;
+      const circlePaint =
+        applyDirectStyleBindingPaint('circle', locationCirclePaint, layer.directStyleBinding) ??
+        locationCirclePaint;
       const base = {
         data: {
           type: 'FeatureCollection' as const,
@@ -243,7 +247,7 @@ export const useLocationViewportLayers = (
           layerId: `${layer.layerId}-circle`,
           sourceId,
           layerType: 'circle',
-          paint: locationCirclePaint,
+          paint: circlePaint,
           layerSetId: 'location',
           layerPriority: resolveLayerSetEntryPriority('location', LOCATION_POINTS_ENTRY_ID),
           layerLabel: layer.absolutePath ?? layer.layerId,

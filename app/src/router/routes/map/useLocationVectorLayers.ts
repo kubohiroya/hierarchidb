@@ -15,6 +15,7 @@ import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { useMemo } from 'react';
 import { LOCATION_TYPE_COLORS, LOCATION_TYPE_OPTIONS } from './constants.js';
+import { applyDirectStyleBindingPaint } from './resolveDirectStyleBindings.js';
 import type { LocationLayerEntry } from './useFolderLayers.js';
 
 type UseLocationVectorLayersArgs = {
@@ -113,6 +114,20 @@ export const useLocationVectorLayers = ({
         visible: true,
         absolutePath: layer.absolutePath,
         layerLabel: layer.absolutePath ?? layer.layerId,
+      }).map((vectorLayer) => {
+        const layerConfig = vectorLayer.layerConfig ?? {};
+        const paint = applyDirectStyleBindingPaint(
+          layerConfig.layerType ?? 'fill',
+          layerConfig.paint,
+          layer.directStyleBinding
+        );
+        return {
+          ...vectorLayer,
+          layerConfig: {
+            ...layerConfig,
+            ...(paint ? { paint } : {}),
+          },
+        };
       })
     );
   }, [enabled, enabledLocationKinds, layerSetVisibility.location, locationLayers, maxZoom]);
