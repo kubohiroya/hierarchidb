@@ -15,6 +15,8 @@
 
 styler-plugin は spreadsheet-plugin を継承する。spreadsheet-plugin はさらに folder-plugin を継承しているため、継承チェーンは `folder → spreadsheet → styler` となる。データの読み込み・チャンク保存は spreadsheet-plugin の `SpreadsheetTabularApiDriver` / `SpreadsheetStorePort` に委譲し、styler-plugin はスタイル定義・色マッピング・MapLibre スタイル生成に専念する。
 
+mounted IDE-GSM result CSV を Styler source として扱い、Resolver 経由で Shape / Location / Route / Folder scope へ適用する場合の正規仕様は `docs/styler-resolver-style-binding-spec.md` を参照する。
+
 ## UI 層
 
 ### ダイアログ

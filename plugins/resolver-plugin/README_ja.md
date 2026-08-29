@@ -15,6 +15,8 @@
 
 resolver-plugin は folder-plugin を継承し、異種スキーマ間のプロパティマッピング機能を提供する。Styler プラグインと連携することで、異なるプロパティ名を持つデータセットを統一的にスタイリングできる。
 
+Styler の mounted IDE-GSM result CSV source と Shape / Location / Route / Folder scope を結びつける style binding の正規仕様は `docs/styler-resolver-style-binding-spec.md` を参照する。
+
 ## UI 層
 
 ### ダイアログ
