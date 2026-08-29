@@ -549,6 +549,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "1.0.0",
     dependencies: [
         "@hierarchidb/plugin-base",
+        "@hierarchidb/resolver-store",
         "@hierarchidb/ui-worker-provider",
         "@emotion/react",
         "@emotion/styled",
@@ -567,6 +568,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-i18n",
         "@hierarchidb/util",
         "@hierarchidb/runtime-worker",
+        "@hierarchidb/resolver-store",
         "@hierarchidb/plugin-base"
       ],
     exports: ["","icon","ui"],
@@ -582,6 +584,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 60,
         "dependencies": [
           "@hierarchidb/plugin-base",
+          "@hierarchidb/resolver-store",
           "@hierarchidb/ui-worker-provider",
           "@emotion/react",
           "@emotion/styled",
@@ -600,6 +603,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-i18n",
           "@hierarchidb/util",
           "@hierarchidb/runtime-worker",
+          "@hierarchidb/resolver-store",
           "@hierarchidb/plugin-base"
         ],
         "stepTitleKeys": {

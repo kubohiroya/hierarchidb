@@ -21,6 +21,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src'),
+      '@hierarchidb/resolver-store': path.resolve(
+        __dirname,
+        '../../packages/resolver-store/src/index.ts'
+      ),
       '@hierarchidb/util': path.resolve(__dirname, '../../packages/util/src/index.ts'),
       '@hierarchidb/download': path.resolve(__dirname, '../../packages//src/index.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(
