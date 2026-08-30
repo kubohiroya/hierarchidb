@@ -6,6 +6,7 @@ export type { BuildStage } from './components/BuildStage.js';
 export * from './components/BuildStepPanel.js';
 export * from './components/BuildStepStageFilterContext.js';
 export * from './components/BuildStepStagePanel.js';
+export * from './components/VirtualizedTextLogDialog.js';
 export * from './hooks/executePauseBuildFlow.js';
 
 // Hooks
