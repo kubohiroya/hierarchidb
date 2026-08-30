@@ -3927,6 +3927,9 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-ide-gsm-connection':
         specifier: workspace:*
         version: link:../../packages/ui/ide-gsm-connection

@@ -8,14 +8,19 @@ export {
   type IdeGsmProjectDirectoryRequest,
   type IdeGsmProjectIdentity,
   type IdeGsmProjectRootNodeData,
+  type IdeGsmProjectSnapshot,
+  type IdeGsmProjectSnapshotEntry,
+  type IdeGsmProjectSnapshotManifest,
   type IdeGsmProjectSyncState,
 } from './ideGsmProjectTypes.js';
 export {
   assertIdeGsmProjectChildMetadata,
   assertIdeGsmProjectRootNodeData,
+  assertIdeGsmProjectSnapshotEntry,
   assertProjectRelativePath,
   createIdeGsmProjectChildMetadata,
   createIdeGsmProjectDirectoryRequest,
   createIdeGsmProjectRootNodeData,
+  createIdeGsmProjectSnapshotManifest,
   sameIdeGsmProjectIdentity,
 } from './ideGsmProjectValidators.js';

@@ -6,6 +6,9 @@ import {
   type IdeGsmProjectDirectoryRequest,
   type IdeGsmProjectIdentity,
   type IdeGsmProjectRootNodeData,
+  type IdeGsmProjectSnapshot,
+  type IdeGsmProjectSnapshotEntry,
+  type IdeGsmProjectSnapshotManifest,
   type IdeGsmProjectSyncState,
 } from './ideGsmProjectTypes.js';
 
@@ -142,6 +145,61 @@ export function createIdeGsmProjectChildMetadata(input: {
   };
   assertIdeGsmProjectChildMetadata(metadata);
   return metadata;
+}
+
+export function createIdeGsmProjectSnapshotManifest(
+  snapshot: IdeGsmProjectSnapshot
+): IdeGsmProjectSnapshotManifest {
+  assertNonEmptyString(snapshot.connectionName, 'connectionName');
+  assertProjectRelativePath(snapshot.projectRelativePath, 'projectRelativePath');
+  if (!Array.isArray(snapshot.entries)) {
+    throw new IdeGsmProjectContractError('entries must be an array');
+  }
+  let folderCount = 0;
+  let yamlCount = 0;
+  let csvCount = 0;
+  for (const entry of snapshot.entries) {
+    assertIdeGsmProjectSnapshotEntry(entry);
+    if (entry.kind === 'folder') folderCount += 1;
+    if (entry.kind === 'yaml-file') yamlCount += 1;
+    if (entry.kind === 'csv-file') csvCount += 1;
+  }
+  return {
+    connectionName: snapshot.connectionName,
+    projectRelativePath: snapshot.projectRelativePath,
+    entryCount: snapshot.entries.length,
+    yamlCount,
+    csvCount,
+    folderCount,
+  };
+}
+
+export function assertIdeGsmProjectSnapshotEntry(
+  value: unknown
+): asserts value is IdeGsmProjectSnapshotEntry {
+  const record = assertRecord(value, 'IDE-GSM project snapshot entry');
+  rejectForbiddenKeys(record, FORBIDDEN_ROOT_KEYS, 'IDE-GSM project snapshot entry');
+  assertProjectRelativePath(record.relativePath, 'relativePath');
+  if (record.kind !== 'folder' && record.kind !== 'yaml-file' && record.kind !== 'csv-file') {
+    throw new IdeGsmProjectContractError('kind is invalid');
+  }
+  assertStringOrNull(record.digest ?? null, 'digest');
+  assertStringOrNull(record.updatedAt ?? null, 'updatedAt');
+  if (
+    record.sizeBytes !== undefined &&
+    record.sizeBytes !== null &&
+    (typeof record.sizeBytes !== 'number' ||
+      !Number.isFinite(record.sizeBytes) ||
+      record.sizeBytes < 0)
+  ) {
+    throw new IdeGsmProjectContractError('sizeBytes must be a finite non-negative number or null');
+  }
+  if (record.kind === 'yaml-file' && typeof record.yamlContent !== 'string') {
+    throw new IdeGsmProjectContractError('yamlContent must be present for yaml-file entries');
+  }
+  if (record.kind !== 'yaml-file' && record.yamlContent !== undefined) {
+    throw new IdeGsmProjectContractError('yamlContent is only allowed for yaml-file entries');
+  }
 }
 
 function assertRecord(value: unknown, label: string): Record<string, unknown> {

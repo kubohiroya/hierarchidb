@@ -6,6 +6,7 @@ import {
   createIdeGsmProjectChildMetadata,
   createIdeGsmProjectDirectoryRequest,
   createIdeGsmProjectRootNodeData,
+  createIdeGsmProjectSnapshotManifest,
   sameIdeGsmProjectIdentity,
 } from '../index.js';
 
@@ -91,5 +92,39 @@ describe('IDE-GSM project contracts', () => {
         mountId: 'legacy',
       })
     ).toThrow('mountId');
+  });
+
+  it('builds a complete snapshot manifest and keeps CSV entries metadata-only', () => {
+    const manifest = createIdeGsmProjectSnapshotManifest({
+      connectionName: 'local',
+      projectRelativePath: 'project/a',
+      entries: [
+        { relativePath: 'dir', kind: 'folder' },
+        { relativePath: 'dir/config.yaml', kind: 'yaml-file', yamlContent: 'a: 1\n' },
+        { relativePath: 'dir/table.csv', kind: 'csv-file', digest: 'sha256:abc' },
+      ],
+    });
+
+    expect(manifest).toEqual({
+      connectionName: 'local',
+      projectRelativePath: 'project/a',
+      entryCount: 3,
+      yamlCount: 1,
+      csvCount: 1,
+      folderCount: 1,
+    });
+    expect(() =>
+      createIdeGsmProjectSnapshotManifest({
+        connectionName: 'local',
+        projectRelativePath: 'project/a',
+        entries: [
+          {
+            relativePath: 'dir/table.csv',
+            kind: 'csv-file',
+            yamlContent: 'raw,csv\n',
+          },
+        ],
+      })
+    ).toThrow('yamlContent');
   });
 });
