@@ -1,28 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
-  IdeGsmConnectionHealthResult,
-  IdeGsmConnectionInput,
-  IdeGsmConnectionRuntimeProvider,
-} from './ideGsmConnectionTypes.js';
+  ExternalServiceHealthChecker,
+  ExternalServiceHealthResult,
+} from './externalServiceHealthTypes.js';
 
-const INCOMPLETE_HEALTH: IdeGsmConnectionHealthResult = { status: 'incomplete' };
+export const INCOMPLETE_EXTERNAL_SERVICE_HEALTH: ExternalServiceHealthResult = {
+  status: 'incomplete',
+};
 
-export function useIdeGsmConnectionHealth({
-  provider,
+export function useExternalServiceHealth<TInput>({
+  checker,
   value,
   debounceMs = 300,
+  unavailableCode = 'SERVICE_UNAVAILABLE',
 }: {
-  readonly provider: IdeGsmConnectionRuntimeProvider;
-  readonly value: IdeGsmConnectionInput | null;
+  readonly checker: ExternalServiceHealthChecker<TInput>;
+  readonly value: TInput | null;
   readonly debounceMs?: number;
-}): IdeGsmConnectionHealthResult {
-  const [health, setHealth] = useState<IdeGsmConnectionHealthResult>(INCOMPLETE_HEALTH);
+  readonly unavailableCode?: string;
+}): ExternalServiceHealthResult {
+  const [health, setHealth] = useState<ExternalServiceHealthResult>(
+    INCOMPLETE_EXTERNAL_SERVICE_HEALTH
+  );
   const sequenceRef = useRef(0);
 
   useEffect(() => {
-    if (!value || value.connectionName.length === 0) {
+    if (value === null) {
       sequenceRef.current += 1;
-      setHealth(INCOMPLETE_HEALTH);
+      setHealth(INCOMPLETE_EXTERNAL_SERVICE_HEALTH);
       return;
     }
 
@@ -31,7 +36,7 @@ export function useIdeGsmConnectionHealth({
     const controller = new AbortController();
     const timerId = window.setTimeout(() => {
       setHealth({ status: 'checking' });
-      provider
+      checker
         .checkHealth(value, controller.signal)
         .then((result) => {
           if (sequenceRef.current !== sequence || controller.signal.aborted) return;
@@ -43,7 +48,7 @@ export function useIdeGsmConnectionHealth({
         })
         .catch(() => {
           if (sequenceRef.current !== sequence || controller.signal.aborted) return;
-          setHealth({ status: 'unhealthy', checkedAt: Date.now(), code: 'CONNECTION_UNAVAILABLE' });
+          setHealth({ status: 'unhealthy', checkedAt: Date.now(), code: unavailableCode });
         });
     }, debounceMs);
 
@@ -51,7 +56,7 @@ export function useIdeGsmConnectionHealth({
       window.clearTimeout(timerId);
       controller.abort();
     };
-  }, [debounceMs, provider, value]);
+  }, [checker, debounceMs, unavailableCode, value]);
 
   return health;
 }

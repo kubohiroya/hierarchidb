@@ -82,7 +82,7 @@ Selecting either entry starts the standard `idegsm-project` plugin create flow f
 
 ## Dialog Step 2: Connection (`接続先`)
 
-Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `idegsm-project` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and health state model as the `fdm` plugin; it must not fork or copy this code.
+Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `idegsm-project` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and external-service health state model as the `fdm` plugin; it must not fork or copy this code. The health state/check lifecycle is the generic `@hierarchidb/ui-external-service-health` contract described in `docs/external-service-health-spec.md`, not an IDE-GSM-owned model.
 
 The step provides either:
 
@@ -103,7 +103,7 @@ The node's committed `data` and editing `draftData` store only the following con
 
 The CORS proxy checkbox and manually entered target values must be resolved to a named runtime connection before node commit. They must not be copied into `data`, `draftData`, TreeNode metadata, IndexedDB, localStorage, URL parameters, public errors, or logs. Resolving an unknown or unavailable `connectionName` fails closed with a stable error such as `CONNECTION_UNAVAILABLE`.
 
-After the connection input is complete, the shared step performs a debounced health check through the runtime provider and shows a health area with at least `incomplete`, `checking`, `healthy`, and `unhealthy` states plus the last checked time. Authentication failure may be shown as a stable `authentication-required` state. Raw endpoint values, credentials, provider exception text, and server response bodies must not appear in the health UI or logs. Stale or out-of-order health responses must not replace the result for the latest connection input.
+After the connection input is complete, the shared step performs a debounced health check through the runtime provider and shows a health area with at least `incomplete`, `checking`, `healthy`, `unhealthy`, `authentication-required`, and `incompatible` states plus the last checked time where available. Raw endpoint values, credentials, provider exception text, and server response bodies must not appear in the health UI or logs. Stale or out-of-order health responses must not replace the result for the latest connection input.
 
 The health port uses IDE-GSM `ideGsmServerInfo` for network liveness, contract version, required capabilities, and advertised limits, then performs authenticated access checks. It must distinguish `authentication-required` and `incompatible` from generic network failure. A connection is not `healthy` until both HTTP GraphQL and `graphql-transport-ws` subscription transport work; a cors-proxy configuration that cannot proxy WebSocket traffic fails health validation.
 

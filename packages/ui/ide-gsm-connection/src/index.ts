@@ -14,5 +14,4 @@ export type {
   IdeGsmConnectionValidationResult,
   IdeGsmNamedConnectionSummary,
 } from './ideGsmConnectionTypes.js';
-export { useIdeGsmConnectionHealth } from './useIdeGsmConnectionHealth.js';
 export { validateIdeGsmConnectionDraft } from './validateIdeGsmConnectionDraft.js';

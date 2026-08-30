@@ -1,11 +1,11 @@
+import type {
+  ExternalServiceHealthChecker,
+  ExternalServiceHealthResult,
+  ExternalServiceHealthStatus,
+} from '@hierarchidb/ui-external-service-health';
 import type { ReactNode } from 'react';
 
-export type IdeGsmConnectionHealthStatus =
-  | 'incomplete'
-  | 'checking'
-  | 'healthy'
-  | 'unhealthy'
-  | 'authentication-required';
+export type IdeGsmConnectionHealthStatus = ExternalServiceHealthStatus;
 
 export interface IdeGsmNamedConnectionSummary {
   readonly name: string;
@@ -25,21 +25,14 @@ export interface IdeGsmConnectionDraft extends IdeGsmConnectionInput {
   readonly useCorsProxy: boolean;
 }
 
-export interface IdeGsmConnectionHealthResult {
-  readonly status: IdeGsmConnectionHealthStatus;
-  readonly checkedAt?: number;
-  readonly code?: string;
-}
+export type IdeGsmConnectionHealthResult = ExternalServiceHealthResult;
 
-export interface IdeGsmConnectionRuntimeProvider {
+export interface IdeGsmConnectionRuntimeProvider
+  extends ExternalServiceHealthChecker<IdeGsmConnectionInput> {
   readonly listConnections: () => Promise<ReadonlyArray<IdeGsmNamedConnectionSummary>>;
   readonly resolveManualTarget?: (
     input: Pick<IdeGsmConnectionDraft, 'manualHost' | 'manualPort' | 'useCorsProxy'>
   ) => Promise<IdeGsmConnectionInput>;
-  readonly checkHealth: (
-    input: IdeGsmConnectionInput,
-    signal: AbortSignal
-  ) => Promise<IdeGsmConnectionHealthResult>;
 }
 
 export interface IdeGsmConnectionStepLabels {

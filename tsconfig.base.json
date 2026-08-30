@@ -154,6 +154,10 @@
       "@hierarchidb/ui-datasource/*": ["./packages/ui/datasource/dist/*"],
       "@hierarchidb/ui-dynamic-speed-dial": ["./packages/ui/dynamic-speed-dial/dist/index.d.ts"],
       "@hierarchidb/ui-dynamic-speed-dial/*": ["./packages/ui/dynamic-speed-dial/dist/*"],
+      "@hierarchidb/ui-external-service-health": [
+        "./packages/ui/external-service-health/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-external-service-health/*": ["./packages/ui/external-service-health/dist/*"],
       "@hierarchidb/ui-build-progress": ["./packages/ui/build-progress/dist/index.d.ts"],
       "@hierarchidb/ui-build-progress/*": ["./packages/ui/build-progress/dist/*"],
       "@hierarchidb/ui-build-sessions": ["./packages/ui/build-sessions/dist/index.d.ts"],

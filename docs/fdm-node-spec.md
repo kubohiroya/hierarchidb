@@ -128,7 +128,7 @@ Creating an `fdm` node must allow selection of an accessible existing FDM space.
 
 ## Dialog Step 2: Connection (`接続先`)
 
-Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `fdm` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and health state model as the `idegsm-project` plugin; it must not fork or copy this code.
+Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `fdm` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and external-service health state model as the `idegsm-project` plugin; it must not fork or copy this code. The health state/check lifecycle is the generic `@hierarchidb/ui-external-service-health` contract described in `docs/external-service-health-spec.md`, not an IDE-GSM-owned model.
 
 The step provides either:
 
@@ -141,7 +141,7 @@ The step includes a `Connect through cors-proxy` (`cors-proxyを介しての接�
 
 Only `connectionName` is written to committed `data` or editing `draftData`. The CORS proxy checkbox and manually entered target values must be resolved to a named runtime connection before node commit. They must not be copied into TreeNode metadata, IndexedDB, localStorage, URL parameters, public errors, or logs. Resolving an unknown or unavailable name fails closed with a stable error such as `CONNECTION_UNAVAILABLE`.
 
-After the connection input is complete, the shared step performs a debounced health check through the runtime provider and shows a health area with at least `incomplete`, `checking`, `healthy`, and `unhealthy` states plus the last checked time. Authentication failure may be shown as a stable `authentication-required` state. Raw endpoint values, credentials, provider exception text, and server response bodies must not appear in the health UI or logs. Stale or out-of-order health responses must not replace the result for the latest connection input.
+After the connection input is complete, the shared step performs a debounced health check through the runtime provider and shows a health area with at least `incomplete`, `checking`, `healthy`, `unhealthy`, `authentication-required`, and `incompatible` states plus the last checked time where available. Raw endpoint values, credentials, provider exception text, and server response bodies must not appear in the health UI or logs. Stale or out-of-order health responses must not replace the result for the latest connection input.
 
 Below the shared connection controls, the `fdm` plugin adds an FDM space selector backed by `fdmSpaces` for the healthy named connection. The user may select an accessible existing space or explicitly create a new server-side space through `fdmSpaceCreate`. A canonical `spaceId` must be available before Step 2 can complete. Space selection/creation is plugin-specific UI composed around the shared `IdeGsmConnectionStep`; it must not fork the shared connection implementation. The selected space must not be deferred to Step 3 or any later step.
 

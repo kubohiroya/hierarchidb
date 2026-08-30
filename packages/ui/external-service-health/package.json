@@ -1,8 +1,8 @@
 {
-  "name": "@hierarchidb/ui-ide-gsm-connection",
+  "name": "@hierarchidb/ui-external-service-health",
   "version": "0.1.0",
   "type": "module",
-  "description": "Shared IDE-GSM connection step UI for plugin dialogs",
+  "description": "Shared external service health state and checking utilities for HierarchiDB UI",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -19,16 +19,12 @@
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
-    "@hierarchidb/ui-external-service-health": "workspace:*",
-    "@mui/material": "^7.3.6",
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@hierarchidb/ui-external-service-health": "workspace:*",
-    "@mui/material": "^7.3.6",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.1",
     "react": "^19.0.0",

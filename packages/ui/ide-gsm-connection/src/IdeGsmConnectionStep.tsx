@@ -1,3 +1,4 @@
+import { useExternalServiceHealth } from '@hierarchidb/ui-external-service-health';
 import {
   Box,
   Checkbox,
@@ -16,7 +17,6 @@ import type {
   IdeGsmConnectionInput,
   IdeGsmConnectionStepProps,
 } from './ideGsmConnectionTypes.js';
-import { useIdeGsmConnectionHealth } from './useIdeGsmConnectionHealth.js';
 import { validateIdeGsmConnectionDraft } from './validateIdeGsmConnectionDraft.js';
 
 const DEFAULT_LABELS = {
@@ -91,10 +91,11 @@ export function IdeGsmConnectionStep({
     () => connections.find((connection) => connection.name === value.connectionName),
     [connections, value.connectionName]
   );
-  const health = useIdeGsmConnectionHealth({
-    provider,
+  const health = useExternalServiceHealth({
+    checker: provider,
     value: persistedValue,
     debounceMs: healthDebounceMs,
+    unavailableCode: 'CONNECTION_UNAVAILABLE',
   });
 
   useEffect(() => {
