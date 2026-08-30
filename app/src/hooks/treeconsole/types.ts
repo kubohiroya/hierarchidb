@@ -22,7 +22,6 @@ export type ContextAction =
   | 'openFolder'
   | 'preview'
   | 'build'
-  | 'ide-gsm:sim'
   | 'edit'
   | 'rename-inline'
   | 'update-desc-inline'

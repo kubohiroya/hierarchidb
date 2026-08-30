@@ -24,7 +24,18 @@ export interface IdeGsmProjectChildMetadata extends Record<string, unknown> {
   readonly digest: string | null;
   readonly sizeBytes: number | null;
   readonly updatedAt: string | null;
+  readonly tabularContent?: IdeGsmProjectTabularContent;
 }
+
+export type IdeGsmProjectTabularContent =
+  | {
+      readonly policy: 'metadata-only';
+    }
+  | {
+      readonly policy: 'tracked';
+      readonly snapshotId: string;
+      readonly contentGenerationId: string;
+    };
 
 export interface IdeGsmProjectIdentity extends Record<string, unknown> {
   readonly connectionName: string;

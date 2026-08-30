@@ -15,7 +15,13 @@ export type StopReason =
 
 export type BuildStage = 'source' | 'geometry' | 'tileEmit';
 
-export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
+export type BuildTaskStatus =
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'canceled'
+  | 'recycled';
 
 export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
 

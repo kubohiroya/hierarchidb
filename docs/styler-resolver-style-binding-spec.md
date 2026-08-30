@@ -4,17 +4,11 @@ This document is the normative contract for applying style data produced by Styl
 
 It covers direct Shape, Location, and Route targets for #1684, and Folder target scope semantics for #1687. Runtime source loading, Resolver persistence, and map rendering are implemented by follow-up issues.
 
-Related node specifications:
-
-- [idegsm-project-node-spec.md](./idegsm-project-node-spec.md)
-- [fdm-node-spec.md](./fdm-node-spec.md)
-
 ## Scope
 
 In scope:
 
-- Explicitly synced read-only IDE-GSM tabular snapshots under an `idegsm-project` sync root that remain usable when the IDE-GSM server is disconnected.
-- Path-based selection of CSV source nodes under an `idegsm-project`, with on-demand browser-local content acquisition before the Styler source is committed.
+- IDE-GSM tracked Tabular snapshots materialized on demand from synchronized `idegsm-project` CSV nodes.
 - Styler output represented as a table of key/value style rows.
 - Resolver bindings from one Styler node to Shape, Location, and Route feature-producing target nodes.
 - Folder targets as explicit scopes over supported descendant feature-producing nodes.
@@ -22,8 +16,9 @@ In scope:
 
 Out of scope:
 
+- Copying raw CSV files into CoreDB as local spreadsheet data.
 - Inferring join keys from column names or feature properties.
-- Editing disconnected synced files. Connected server-authoritative writes are governed by the `idegsm-project` sync root contract.
+- Editing IDE-GSM CSV files.
 - Storing endpoint URLs, tokens, absolute server paths, raw credentials, or raw CSV bodies in TreeNode payloads, Styler payloads, or Resolver payloads.
 - Rendering unsupported target kinds.
 
@@ -31,30 +26,28 @@ Out of scope:
 
 The supported flow is:
 
-1. Project creation materializes an `idegsm-project` hierarchy containing metadata-only CSV source nodes; it does not download all CSV bodies.
-2. The Styler source picker browses that local hierarchy and selects a CSV by its `projectNodeId` plus logical path below the project root.
-3. The project sync service fetches, parses, stages, and publishes that CSV as a read-only Tabular snapshot, then marks the CSV source as tracked.
-4. Only after publication succeeds does the Styler node persist a reference to the committed snapshot.
-5. The Styler node produces a style table with an explicit source key column and one or more style property columns.
-6. A Resolver binding references the Styler node, a target node or Folder scope, a source key column, a target key property, and selected style properties.
-7. The map rendering path applies resolved style values to supported Shape, Location, and Route features.
+1. The synchronized `idegsm-project` hierarchy exposes CSV source nodes as metadata-only entries.
+2. Selecting a CSV as a Styler source acquires an immutable paged transfer, parses it into a committed Tabular snapshot, and marks that child as tracked.
+3. A Styler node stores a validated tracked Tabular source reference and reads rows only through the committed snapshot identity.
+4. The Styler node produces a style table with an explicit source key column and one or more style property columns.
+5. A Resolver binding references the Styler node, a target node or Folder scope, a source key column, a target key property, and selected style properties.
+6. The map rendering path applies resolved style values to supported Shape, Location, and Route features.
 
-No step may bypass the synchronized Tabular boundary by using an absolute path, endpoint URL, token, or string-only directory traversal. No disconnected step may require the IDE-GSM endpoint, JWT, token, server absolute path, or raw remote file content to be stored in Styler or Resolver payloads.
-
-The path selected by the picker is a validated logical `relativePath` resolved from the current CSV child node. It is not a free-form server path field. Selection fails before persistence when the source is outside the chosen `idegsm-project`, is no longer a current CSV child, or is metadata-only while the server is disconnected.
+No step may bypass the synchronized node and Tabular snapshot boundary by using a mounted node ID, absolute path, endpoint URL, token, or legacy string-only directory traversal.
 
 ## Source Reference
 
-The IDE-GSM source variant is a versioned record owned by `@hierarchidb/styler-store`. It must reference an explicit read-only Tabular snapshot created under an `idegsm-project` sync root and include:
+IDE-GSM Tabular source references are versioned records owned by `@hierarchidb/styler-store`.
 
-- `version`: source schema version.
-- `kind`: `ide-gsm-synced-tabular`.
-- `snapshotId`: local Tabular snapshot identifier.
-- `originProjectNodeId`: local `idegsm-project` sync root node identifier.
-- `originContentGenerationId`: committed content generation that published the snapshot.
-- `originRelativePath`: logical CSV path below the `idegsm-project` root at sync time.
-- `syncedAt`: timestamp recorded by the sync operation.
-- `contentDigest`: digest of the synced CSV content.
+The source variant must include:
+
+- `version`: source schema version. Initial value is `1`.
+- `kind`: `ide-gsm-tracked-tabular`.
+- `projectNodeId`: local synchronized `idegsm-project` root node ID.
+- `generationId`: synchronized project generation containing the selected child.
+- `relativePath`: logical CSV path below the project root.
+- `snapshotId`: committed Tabular snapshot ID.
+- `contentGenerationId`: content generation ID published when the CSV became tracked.
 
 The source reference must not include:
 
@@ -63,22 +56,16 @@ The source reference must not include:
 - Absolute filesystem paths on the IDE-GSM host.
 - Raw CSV content.
 - SSH, EC2, rsync, or container lifecycle configuration.
+- `mountKind`, `mountId`, `sourceKind`, `originMountId`, `originSourceKind`, scalar `projectId`, or `spaceId`.
 
-This is the only IDE-GSM source variant in the Styler contract. Existing Styler records without it remain unchanged and continue through their existing local/spreadsheet flow; readers must not backfill an IDE-GSM source implicitly.
-
-Synced Tabular snapshots are local read-only data with an IDE-GSM server-authoritative origin. They may be used while the IDE-GSM server is unavailable, but they are not proof that the remote CSV is still current. After first materialization, reconnection or a relevant authenticated server notification may compare `contentDigest` and publish a new synchronized generation. CSV nodes that have never been selected remain metadata-only and are not content-synchronized. Readers must not silently replace the local snapshot, infer freshness from path equality, or fall back to a remote read when a committed snapshot was requested. There is no manual refresh/resync source action in the initial contract.
-
-Initial materialization and tracked refresh consume the IDE-GSM CSV through one short-lived immutable transfer session. Each decoded page contains at most 16 KiB of raw bytes and pages are stream-parsed in cursor order; page boundaries are not CSV row or UTF-8 character boundaries. Raw chunks, transfer IDs, and cursors are runtime-only and must not be persisted in Styler source records or Tabular snapshot metadata.
-
-When IDE-GSM server-side CSV write support is added in a later issue, the write must go to the server first. Styler must observe the refreshed local snapshot after sync and must not mutate the synced Tabular data directly. Initial disconnected support is read-only CSV sync and visualization.
+Existing Styler records without this source variant remain unchanged. Readers must treat the missing source field as the legacy local/spreadsheet flow and must not backfill or inject an IDE-GSM source variant implicitly. Existing records that contain the removed mounted source variant are migration/removal input only and must not be loaded as valid sources.
 
 ## CSV Schema
 
-A synchronized CSV source is valid for style binding only when all of these rules pass:
+A tracked Tabular CSV source is valid for style binding only when all of these rules pass:
 
-- The selected path resolves to a current CSV source node under the specified `idegsm-project`.
-- On-demand materialization has successfully published an explicit read-only Tabular snapshot reference.
-- The parser can read the file as delimited text with a header row.
+- The source reference points to a committed tracked Tabular snapshot for the selected `idegsm-project` child.
+- The snapshot schema contains a header row produced by the on-demand CSV acquisition contract.
 - Header names are unique after exact string comparison.
 - The configured source key column exists.
 - Each enabled style property references an existing column.
@@ -150,9 +137,8 @@ Resolution behavior:
 
 - Missing Styler node: error.
 - Missing target node: error.
-- Missing source CSV: error.
-- Metadata-only IDE-GSM CSV while disconnected: error; source selection is not committed.
-- On-demand CSV acquisition or publication failure: error; the previous Styler source remains unchanged.
+- Missing source snapshot: error.
+- Unsupported IDE-GSM source kind: error.
 - Missing source key column: error.
 - Missing target key property: error.
 - Duplicate source key: error.
@@ -189,6 +175,12 @@ Unsupported descendants:
 - Archived or deleted nodes are excluded and counted as warnings when visible to the resolver boundary.
 - Empty Folder scopes produce a warning and resolve to no style overrides.
 
+Synchronized remote Folders:
+
+- A synchronized IDE-GSM Folder is valid only when the committed local generation can enumerate the requested scope.
+- If descendants cannot be enumerated through the synchronized node boundary, validation fails with `FOLDER_ENUMERATION_UNAVAILABLE`.
+- The resolver must not fallback to mounted nodes, absolute paths, or direct IDE-GSM filesystem traversal.
+
 Precedence:
 
 1. Direct Shape, Location, or Route target binding.
@@ -204,12 +196,7 @@ Errors:
 - `STYLER_SOURCE_MISSING`
 - `STYLER_SOURCE_UNSUPPORTED`
 - `STYLER_SOURCE_CREDENTIALS_UNAVAILABLE`
-- `STYLER_SOURCE_CONNECTION_UNAVAILABLE`
-- `STYLER_SOURCE_PATH_INVALID`
-- `STYLER_SOURCE_NOT_MATERIALIZED`
-- `STYLER_SOURCE_ACQUISITION_FAILED`
-- `STYLER_SOURCE_PUBLICATION_FAILED`
-- `STYLER_SOURCE_CSV_MISSING`
+- `STYLER_SOURCE_SNAPSHOT_MISSING`
 - `STYLER_SOURCE_CSV_MALFORMED`
 - `STYLER_SOURCE_FORBIDDEN_PUBLIC_FIELD`
 - `STYLE_BINDING_MISSING_STYLER`
@@ -224,6 +211,7 @@ Errors:
 - `STYLE_BINDING_INVALID_STYLE_VALUE`
 - `STYLE_BINDING_MISSING_FOLDER_SCOPE_MODE`
 - `STYLE_BINDING_UNSUPPORTED_FOLDER_SCOPE_MODE`
+- `FOLDER_ENUMERATION_UNAVAILABLE`
 
 Warnings:
 
@@ -234,11 +222,11 @@ Warnings:
 - `STYLE_BINDING_UNSUPPORTED_DESCENDANT_SKIPPED`
 - `STYLE_BINDING_ARCHIVED_DESCENDANT_SKIPPED`
 
-Messages for these codes may include local node IDs, snapshot IDs, content generation IDs, and logical relative paths. They must not include raw CSV rows, endpoint URLs, tokens, absolute server paths, raw credential material, or raw remote file contents.
+Messages for these codes may include node IDs, snapshot IDs, generation IDs, and logical relative paths. They must not include raw CSV rows, endpoint URLs, tokens, absolute server paths, raw credential material, mounted node IDs, or raw file contents.
 
 ## Implementation Boundaries
 
-#1683 owns `idegsm-project` CSV path selection, on-demand content materialization, and synchronized snapshot references in Styler.
+#1683 owns tracked Tabular source references and loading in Styler.
 
 #1685 owns Resolver persistence and validation for direct Shape, Location, and Route targets.
 

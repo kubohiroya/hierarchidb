@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.package.local-alias.base.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}

@@ -6,15 +6,19 @@
 
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildProgressSummary } from '@hierarchidb/shape-api';
+import type { ShapeBuildProgressSummary, ShapeBuildStage } from '@hierarchidb/shape-api';
 import type { BuildTask } from '~/common/types/BuildTaskResult';
 import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
 import { getStagePlan } from '~/services/vt/shapeProgressPlanUtils';
 import { resolveQueueRecordMetadataMessage } from './taskMetadataProcessingConstants.js';
-import { resolveEffectiveTaskStatus, toCanonicalStageId } from './taskQueueManagement.js';
+import {
+  requireShapeTaskStage,
+  resolveEffectiveTaskStatus,
+  toCanonicalStageId,
+} from './taskQueueManagement.js';
 
 // Task queue analysis and progress calculation
-const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
+const resolveTaskType = (tasks: TaskQueueRecord[]): ShapeBuildStage | undefined => {
   const stageOrder = ['source-stage', 'geometry-stage', 'tile-emit-stage'] as const;
   const matchedStageId = stageOrder.find((stageId) =>
     tasks.some((task) => {
@@ -68,10 +72,10 @@ const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
 const summarizeTaskQueueProgress = async (
   nodeId: NodeId,
   tasks: TaskQueueRecord[],
-  stage?: TaskQueueRecord['stage']
+  stage?: ShapeBuildStage
 ): Promise<ShapeBuildProgressSummary> => {
   const stageCounts: Record<
-    TaskQueueRecord['stage'],
+    ShapeBuildStage,
     {
       total: number;
       completed: number;
@@ -86,7 +90,7 @@ const summarizeTaskQueueProgress = async (
   };
 
   tasks.forEach((task) => {
-    const bucket = stageCounts[task.stage];
+    const bucket = stageCounts[requireShapeTaskStage(task.stage)];
     const status = resolveEffectiveTaskStatus(task);
     if (status === 'recycled') {
       bucket.recycled += 1;
