@@ -29,11 +29,13 @@
     "format": "biome check --write src",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@tanstack/react-virtual": "^3.13.20"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
@@ -54,10 +56,14 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@types/react": "^19.1.1",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0"
   },
   "license": "MIT",
   "module": "dist/index.js"

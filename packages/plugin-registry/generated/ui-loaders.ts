@@ -3,7 +3,9 @@
 
 export const pluginUiLoaders: Record<string, () => Promise<unknown>> = {
   "basemap": async () => import("@hierarchidb/basemap-plugin/ui"),
+  "fdm": async () => import("@hierarchidb/fdm-plugin/ui"),
   "folder": async () => import("@hierarchidb/folder-plugin/ui"),
+  "idegsm-project": async () => import("@hierarchidb/idegsm-project-plugin/ui"),
   "linker": async () => import("@hierarchidb/linker-plugin/ui"),
   "location": async () => import("@hierarchidb/location-plugin/ui"),
   "resolver": async () => import("@hierarchidb/resolver-plugin/ui"),
@@ -16,7 +18,9 @@ export const pluginUiLoaders: Record<string, () => Promise<unknown>> = {
 };
 export const pluginUiModuleMap: Record<string, string> = {
   "basemap": "@hierarchidb/basemap-plugin/ui",
+  "fdm": "@hierarchidb/fdm-plugin/ui",
   "folder": "@hierarchidb/folder-plugin/ui",
+  "idegsm-project": "@hierarchidb/idegsm-project-plugin/ui",
   "linker": "@hierarchidb/linker-plugin/ui",
   "location": "@hierarchidb/location-plugin/ui",
   "resolver": "@hierarchidb/resolver-plugin/ui",

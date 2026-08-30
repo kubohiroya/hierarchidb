@@ -138,6 +138,19 @@ IDE-GSM Project は committed project root だけを build boundary の入力と
 - `subscribeTaskLog(taskId)` は live-only stream とする。cursor、replay、history、pagination、server-side search を要求しない。再接続時は新しい subscription とし、切断中の欠落行は取得不能な gap marker として UI に明示する。
 - log 本文は認可済み subscriber の runtime buffer だけに保持する。diagnostics、public logs、analytics、URL、永続 state、task metadata へ本文を出してはならない。
 
+### Runtime text log dialog contract
+
+Build log dialog は runtime subscriber が保持する既存の append buffer を描画する presentation component とし、task ownership、subscription ownership、cancel command、永続化、transport retry を持ってはならない。component は渡された row 配列だけを入力とし、row の生成、replay、server paging、server search、history fetch を要求してはならない。
+
+- 各 runtime log row は `rowId`、`taskId`、`connectionEpoch`、`ordinal`、`sequence`、`timestamp`、`stream`、`text` を持つ。`rowId` は UI selection と search focus の安定 identity とし、append や再描画で作り直してはならない。
+- gap marker は切断中に取得不能だった row 範囲を表し、本文を補完してはならない。limit marker は runtime buffer 上限による破棄を表し、破棄済み本文を復元可能に見せてはならない。
+- 表示 DOM row は virtualization により bounded とする。大量ログを全 row mount してはならない。
+- Tail follow は初期状態で有効とし、ユーザーが末尾から離れた場合または過去 row を選択した場合は suspend する。append 中も選択済み row identity と表示 ordinal を維持し、明示的な tail action の後だけ末尾追従を再開する。
+- search は component 内の buffered row に対する local literal search だけを提供する。regex、server-side search、永続 index、未取得 row の検索は行わない。
+- search result navigation は cyclic とし、current / total、全 match highlight、current match highlight、virtualization 範囲外 row への focus scroll を提供する。
+- UI control は close、search、previous / next match、tail action に限定する。task cancellation は build session command surface の責務であり、log dialog に second cancellation path を追加してはならない。
+- log row text は text-only rendering とし、HTML として解釈しない。
+
 ### Step 5 task progress bar のフィルター契約
 
 - Shape の Step 5 は `failedMode=false / skippedMode=false / completedMode=false` を stage filter の初期値として共有 Panel へ明示的に渡す。共有 Panel の他 consumer に対する既定値から推測してはならない。

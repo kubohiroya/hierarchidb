@@ -10,6 +10,7 @@ import {
   type IdeGsmProjectSnapshotEntry,
   type IdeGsmProjectSnapshotManifest,
   type IdeGsmProjectSyncState,
+  type IdeGsmProjectTabularContent,
 } from './ideGsmProjectTypes.js';
 
 const FORBIDDEN_ROOT_KEYS = [
@@ -77,6 +78,11 @@ export function assertIdeGsmProjectChildMetadata(
     throw new IdeGsmProjectContractError('sizeBytes must be a finite non-negative number or null');
   }
   assertStringOrNull(record.updatedAt, 'updatedAt');
+  if (record.kind === 'csv-file') {
+    assertTabularContent(record.tabularContent, 'tabularContent');
+  } else if (record.tabularContent !== undefined) {
+    throw new IdeGsmProjectContractError('tabularContent is only allowed for csv-file entries');
+  }
 }
 
 export function createIdeGsmProjectRootNodeData(
@@ -142,9 +148,44 @@ export function createIdeGsmProjectChildMetadata(input: {
     digest: input.digest ?? null,
     sizeBytes: input.sizeBytes ?? null,
     updatedAt: input.updatedAt ?? null,
+    ...(input.kind === 'csv-file' ? { tabularContent: { policy: 'metadata-only' } } : {}),
   };
   assertIdeGsmProjectChildMetadata(metadata);
   return metadata;
+}
+
+export function createTrackedIdeGsmProjectChildMetadata(
+  metadata: IdeGsmProjectChildMetadata,
+  input: {
+    readonly snapshotId: string;
+    readonly contentGenerationId: string;
+    readonly digest: string;
+    readonly sizeBytes: number;
+    readonly updatedAt: string;
+  }
+): IdeGsmProjectChildMetadata {
+  assertIdeGsmProjectChildMetadata(metadata);
+  if (metadata.kind !== 'csv-file') {
+    throw new IdeGsmProjectContractError('tracked tabular content requires a csv-file entry');
+  }
+  assertNonEmptyString(input.snapshotId, 'snapshotId');
+  assertNonEmptyString(input.contentGenerationId, 'contentGenerationId');
+  assertNonEmptyString(input.digest, 'digest');
+  assertNonNegativeFiniteNumber(input.sizeBytes, 'sizeBytes');
+  assertNonEmptyString(input.updatedAt, 'updatedAt');
+  const next = {
+    ...metadata,
+    digest: input.digest,
+    sizeBytes: input.sizeBytes,
+    updatedAt: input.updatedAt,
+    tabularContent: {
+      policy: 'tracked',
+      snapshotId: input.snapshotId,
+      contentGenerationId: input.contentGenerationId,
+    },
+  };
+  assertIdeGsmProjectChildMetadata(next);
+  return next;
 }
 
 export function createIdeGsmProjectSnapshotManifest(
@@ -230,6 +271,33 @@ function assertNonEmptyString(value: unknown, fieldName: string): asserts value 
 function assertStringOrNull(value: unknown, fieldName: string): asserts value is string | null {
   if (value !== null && typeof value !== 'string') {
     throw new IdeGsmProjectContractError(`${fieldName} must be a string or null`);
+  }
+}
+
+function assertTabularContent(
+  value: unknown,
+  fieldName: string
+): asserts value is IdeGsmProjectTabularContent {
+  const record = assertRecord(value, fieldName);
+  if (record.policy === 'metadata-only') {
+    if (Object.keys(record).length !== 1) {
+      throw new IdeGsmProjectContractError(
+        'metadata-only tabularContent must not contain snapshot fields'
+      );
+    }
+    return;
+  }
+  if (record.policy === 'tracked') {
+    assertNonEmptyString(record.snapshotId, 'tabularContent.snapshotId');
+    assertNonEmptyString(record.contentGenerationId, 'tabularContent.contentGenerationId');
+    return;
+  }
+  throw new IdeGsmProjectContractError('tabularContent.policy is invalid');
+}
+
+function assertNonNegativeFiniteNumber(value: unknown, fieldName: string): asserts value is number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new IdeGsmProjectContractError(`${fieldName} must be a finite non-negative number`);
   }
 }
 

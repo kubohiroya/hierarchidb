@@ -8,10 +8,22 @@ export const pluginIconLoaders: Record<string, () => Promise<unknown>> = {
     if (!componentExport) { throw new Error('Plugin icon component export not found for basemap'); }
     return componentExport;
   },
+  "fdm": async () => {
+    const mod = await import('@hierarchidb/fdm-plugin/icon');
+    const componentExport = (mod as Record<string, unknown>)["FdmPluginIcon"];
+    if (!componentExport) { throw new Error('Plugin icon component export not found for fdm'); }
+    return componentExport;
+  },
   "folder": async () => {
     const mod = await import('@hierarchidb/folder-plugin/icon');
     const componentExport = (mod as Record<string, unknown>)["FolderPluginIcon"];
     if (!componentExport) { throw new Error('Plugin icon component export not found for folder'); }
+    return componentExport;
+  },
+  "idegsm-project": async () => {
+    const mod = await import('@hierarchidb/idegsm-project-plugin/icon');
+    const componentExport = (mod as Record<string, unknown>)["IdeGsmProjectPluginIcon"];
+    if (!componentExport) { throw new Error('Plugin icon component export not found for idegsm-project'); }
     return componentExport;
   },
   "linker": async () => {

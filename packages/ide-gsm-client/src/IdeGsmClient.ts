@@ -1,6 +1,23 @@
 import { GraphQLClient } from 'graphql-request';
 import type { Client as WsClient } from 'graphql-ws';
 import { createClient } from 'graphql-ws';
+import type {
+  IdeGsmDirectoryInfoReport,
+  IdeGsmDirectoryNode,
+  IdeGsmDirectoryTreeReport,
+  IdeGsmFdmDirectoryInfoInput,
+  IdeGsmFdmDirectoryRemoveInput,
+  IdeGsmFdmDirectoryRemoveReport,
+  IdeGsmFdmDirectoryTreeInput,
+  IdeGsmFdmSpacesReport,
+  IdeGsmProjectDirectoryInfoReport,
+  IdeGsmProjectDirectoryInput,
+  IdeGsmProjectDirectoryTreeReport,
+} from './ideGsmDirectoryTypes.js';
+import {
+  assertLogicalPath,
+  assertProjectRelativePath as assertMountProjectRelativePath,
+} from './ideGsmDirectoryTypes.js';
 import { ideGsmGraphqlDocuments } from './ideGsmGraphqlDocuments.js';
 import type {
   ActiveProjectTask,
@@ -12,6 +29,10 @@ import type {
   IdeGsmCommand,
   InstallCommandInput,
   PreviewEventsCommandInput,
+  ProjectFileContentPage,
+  ProjectFileContentPageInput,
+  ProjectFileContentTransfer,
+  ProjectFileContentTransferInput,
   ProjectYamlFileContent,
   ProjectYamlFileContentInput,
   ProjectYamlWriteStatus,
@@ -28,23 +49,6 @@ import type {
   TaskStatusListener,
 } from './ideGsmTypes.js';
 import { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';
-import type {
-  IdeGsmDirectoryInfoReport,
-  IdeGsmDirectoryNode,
-  IdeGsmDirectoryTreeReport,
-  IdeGsmFdmDirectoryInfoInput,
-  IdeGsmFdmDirectoryRemoveInput,
-  IdeGsmFdmDirectoryRemoveReport,
-  IdeGsmFdmDirectoryTreeInput,
-  IdeGsmFdmSpacesReport,
-  IdeGsmProjectDirectoryInfoReport,
-  IdeGsmProjectDirectoryInput,
-  IdeGsmProjectDirectoryTreeReport,
-} from './mount/IdeGsmMountTypes.js';
-import {
-  assertLogicalPath,
-  assertProjectRelativePath as assertMountProjectRelativePath,
-} from './mount/IdeGsmMountTypes.js';
 
 /** Factory type for creating a graphql-ws client. Injected for testability. */
 export type WsClientFactory = (url: string, connectionParams: Record<string, string>) => WsClient;
@@ -78,6 +82,8 @@ const PROJECT_YAML_WRITE_STATUSES: ReadonlySet<string> = new Set<ProjectYamlWrit
 ]);
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/u;
 const YAML_PATH_PATTERN = /\.ya?ml$/u;
+const CSV_PATH_PATTERN = /\.csv$/u;
+const CSV_TRANSFER_CHUNK_SIZE_BYTES = 16_384;
 
 type ReportDocumentName =
   | 'fdmSpaces'
@@ -87,6 +93,9 @@ type ReportDocumentName =
   | 'projectDirectoryTree'
   | 'projectDirectoryInfo'
   | 'projectYamlFileContent'
+  | 'beginProjectFileContentTransfer'
+  | 'projectFileContentPage'
+  | 'closeProjectFileContentTransfer'
   | 'conditionalProjectYamlWrite'
   | 'activeProjectTasks'
   | 'cancelTask';
@@ -173,6 +182,13 @@ function assertProjectYamlFilePath(relativePath: string): void {
   }
 }
 
+function assertProjectCsvFilePath(relativePath: string): void {
+  assertMountProjectRelativePath(relativePath);
+  if (!CSV_PATH_PATTERN.test(relativePath)) {
+    throw new Error('relativePath must point to a CSV file');
+  }
+}
+
 function assertSha256Digest(expectedDigest: string): void {
   if (!SHA256_HEX_PATTERN.test(expectedDigest)) {
     throw new Error('expectedDigest must be a 64-character lowercase SHA-256 hex string');
@@ -183,6 +199,25 @@ function projectYamlFileVariables(input: ProjectYamlFileContentInput): Record<st
   const variables = projectVariables(input.projectRelativePath);
   assertProjectYamlFilePath(input.relativePath);
   variables.relativePath = input.relativePath;
+  return variables;
+}
+
+function projectCsvFileVariables(input: ProjectFileContentTransferInput): Record<string, unknown> {
+  const variables = projectVariables(input.projectRelativePath);
+  assertProjectCsvFilePath(input.relativePath);
+  variables.relativePath = input.relativePath;
+  return variables;
+}
+
+function projectFileContentPageVariables(
+  input: ProjectFileContentPageInput
+): Record<string, unknown> {
+  assertNonEmpty(input.transferId, 'transferId');
+  const variables: Record<string, unknown> = { transferId: input.transferId };
+  if (input.cursor !== undefined) {
+    assertNonEmpty(input.cursor, 'cursor');
+    variables.cursor = input.cursor;
+  }
   return variables;
 }
 
@@ -333,6 +368,11 @@ function readDigest(record: Record<string, unknown>, key: string): string {
   return digest;
 }
 
+function readSha256Digest(record: Record<string, unknown>, key: string): string {
+  const digest = readDigest(record, key);
+  return digest;
+}
+
 function readNonNegativeNumber(record: Record<string, unknown>, key: string): number {
   const value = readFiniteNumber(record, key);
   if (value < 0) {
@@ -464,6 +504,64 @@ function parseConditionalProjectYamlWriteResult(value: unknown): ConditionalProj
     updatedAt: readNullableString(value, 'updatedAt'),
     byteCount: readNullableNonNegativeNumber(value, 'byteCount'),
     resyncRequired: readBoolean(value, 'resyncRequired'),
+  };
+}
+
+function decodeBase64Bytes(value: string): Uint8Array {
+  if (typeof globalThis.atob !== 'function') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  try {
+    const binary = globalThis.atob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
+  } catch {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+}
+
+function parseProjectFileContentTransfer(value: unknown): ProjectFileContentTransfer {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const transfer = {
+    transferId: readString(value, 'transferId'),
+    contentDigest: readSha256Digest(value, 'contentDigest'),
+    updatedAt: readString(value, 'updatedAt'),
+    byteCount: readNonNegativeNumber(value, 'byteCount'),
+    chunkSizeBytes: readNonNegativeNumber(value, 'chunkSizeBytes'),
+    expiresAt: readString(value, 'expiresAt'),
+  };
+  if (
+    transfer.transferId.length === 0 ||
+    transfer.chunkSizeBytes !== CSV_TRANSFER_CHUNK_SIZE_BYTES
+  ) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return transfer;
+}
+
+function parseProjectFileContentPage(value: unknown): ProjectFileContentPage {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const contentChunkBase64 = readString(value, 'contentChunkBase64');
+  const rawByteCount = readNonNegativeNumber(value, 'rawByteCount');
+  const nextCursor = readNullableString(value, 'nextCursor');
+  const hasNext = readBoolean(value, 'hasNext');
+  const bytes = decodeBase64Bytes(contentChunkBase64);
+  if (
+    rawByteCount > CSV_TRANSFER_CHUNK_SIZE_BYTES ||
+    bytes.byteLength !== rawByteCount ||
+    (hasNext && nextCursor === null) ||
+    (!hasNext && nextCursor !== null)
+  ) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    contentChunkBase64,
+    rawByteCount,
+    nextCursor,
+    hasNext,
   };
 }
 
@@ -695,6 +793,40 @@ export class IdeGsmClient {
       'conditionalProjectYamlWrite',
       conditionalProjectYamlWriteVariables(input),
       parseConditionalProjectYamlWriteResult
+    );
+  }
+
+  async beginProjectFileContentTransfer(
+    input: ProjectFileContentTransferInput
+  ): Promise<ProjectFileContentTransfer> {
+    return this.requestReport(
+      'beginProjectFileContentTransfer',
+      projectCsvFileVariables(input),
+      parseProjectFileContentTransfer
+    );
+  }
+
+  async projectFileContentPage(
+    input: ProjectFileContentPageInput
+  ): Promise<ProjectFileContentPage> {
+    return this.requestReport(
+      'projectFileContentPage',
+      projectFileContentPageVariables(input),
+      parseProjectFileContentPage
+    );
+  }
+
+  async closeProjectFileContentTransfer(transferId: string): Promise<boolean> {
+    assertNonEmpty(transferId, 'transferId');
+    return this.requestReport(
+      'closeProjectFileContentTransfer',
+      { transferId },
+      (value): boolean => {
+        if (typeof value !== 'boolean') {
+          throw new Error('IDE-GSM GraphQL response malformed');
+        }
+        return value;
+      }
     );
   }
 

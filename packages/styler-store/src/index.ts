@@ -1,16 +1,15 @@
 export type {
-  MountedIdeGsmCsvSourceKind,
-  MountedIdeGsmCsvSourceReference,
-  MountedIdeGsmCsvSourceValidationCode,
-  MountedIdeGsmCsvSourceValidationResult,
+  IdeGsmTrackedTabularSourceReference,
+  IdeGsmTrackedTabularSourceValidationCode,
+  IdeGsmTrackedTabularSourceValidationResult,
   StylerSourceReference,
-} from './mountedIdeGsmCsvSourceTypes.js';
+} from './ideGsmTrackedTabularSourceTypes.js';
 export {
-  isMountedIdeGsmCsvSourceReference,
-  MOUNTED_IDE_GSM_CSV_SOURCE_KIND,
-  MOUNTED_IDE_GSM_CSV_SOURCE_VERSION,
-  validateMountedIdeGsmCsvSourceReference,
-} from './mountedIdeGsmCsvSourceTypes.js';
+  IDE_GSM_TRACKED_TABULAR_SOURCE_KIND,
+  IDE_GSM_TRACKED_TABULAR_SOURCE_VERSION,
+  isIdeGsmTrackedTabularSourceReference,
+  validateIdeGsmTrackedTabularSourceReference,
+} from './ideGsmTrackedTabularSourceTypes.js';
 export { StylerDB } from './StylerDB.js';
 export {
   type ColorAlgorithm,

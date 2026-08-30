@@ -61,7 +61,9 @@
   "dependencies": {
     "maplibre-gl": "^5.19.0",
     "@hierarchidb/basemap-plugin": "workspace:*",
+    "@hierarchidb/fdm-plugin": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/idegsm-project-plugin": "workspace:*",
     "@hierarchidb/linker-plugin": "workspace:*",
     "@hierarchidb/location-plugin": "workspace:*",
     "@hierarchidb/resolver-plugin": "workspace:*",
@@ -84,7 +86,9 @@
       "build": {
         "dependsOn": [
           "@hierarchidb/basemap-plugin#build",
+          "@hierarchidb/fdm-plugin#build",
           "@hierarchidb/folder-plugin#build",
+          "@hierarchidb/idegsm-project-plugin#build",
           "@hierarchidb/linker-plugin#build",
           "@hierarchidb/location-plugin#build",
           "@hierarchidb/resolver-plugin#build",
