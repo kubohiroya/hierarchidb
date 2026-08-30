@@ -1,4 +1,27 @@
 export {
+  FDM_AXIS_TO_COLLECTION,
+  FDM_CELL_STATUSES,
+  type FdmCellStatus,
+  type FdmDashboardActionInput,
+  type FdmDashboardCell,
+  type FdmDashboardConnectionState,
+  type FdmDashboardDimensions,
+  type FdmDashboardPort,
+  type FdmDashboardQuery,
+  type FdmDashboardResponse,
+  type FdmDashboardSummary,
+  type FdmDimensionValue,
+  type FdmDirectoryEntry,
+  type FdmResultLocation,
+  type FdmRuntimeEvent,
+} from './fdmDashboardTypes.js';
+export {
+  assertFdmDashboardResponse,
+  filterFdmCells,
+  projectFdmCellAxisKey,
+  summarizeFdmCells,
+} from './fdmDashboardValidators.js';
+export {
   FDM_NODE_DATA_VERSION,
   FDM_NODE_TYPE,
   type FdmAxisDimension,

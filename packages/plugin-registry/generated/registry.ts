@@ -118,6 +118,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/fdm-plugin",
     version: "0.1.0",
     dependencies: [
+        "three",
         "@emotion/react",
         "@emotion/styled",
         "@hierarchidb/core-types",
@@ -141,6 +142,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "folder",
         "priority": 530,
         "dependencies": [
+          "three",
           "@emotion/react",
           "@emotion/styled",
           "@hierarchidb/core-types",
@@ -357,6 +359,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@emotion/styled",
         "@hierarchidb/build-api",
         "@hierarchidb/core-types",
+        "@hierarchidb/external-content-transfer",
         "@hierarchidb/ide-gsm-client",
         "@hierarchidb/idegsm-project-api",
         "@hierarchidb/plugin-base",
@@ -383,6 +386,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@emotion/styled",
           "@hierarchidb/build-api",
           "@hierarchidb/core-types",
+          "@hierarchidb/external-content-transfer",
           "@hierarchidb/ide-gsm-client",
           "@hierarchidb/idegsm-project-api",
           "@hierarchidb/plugin-base",

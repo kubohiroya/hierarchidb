@@ -2091,6 +2091,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         'topojson-server',
         'topojson-simplify',
         'shpjs',
+        'three',
 
         // --- Data / IO ---
         'dexie',

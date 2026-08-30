@@ -13,6 +13,7 @@ import {
 import { createElement } from 'react';
 import { FDM_PLUGIN_NODE_TYPE } from '../../common/constants.js';
 import type { FdmPluginDialogData, FdmPluginRuntime } from './fdmStepProviderTypes.js';
+import { FdmDashboardStep } from './steps/FdmDashboardStep.js';
 import { FdmSpaceSelectionStep } from './steps/FdmSpaceSelectionStep.js';
 
 const hasConnectionName = (data?: FdmPluginDialogData): boolean =>
@@ -33,7 +34,8 @@ export function createFdmStepConfigProvider(runtime: FdmPluginRuntime) {
       if (!runtime.enabled) return [];
       const connectionRuntime = runtime.connectionRuntime;
       const fdmRuntime = runtime.fdmRuntime;
-      if (!connectionRuntime || !fdmRuntime) return [];
+      const dashboardRuntime = runtime.dashboardRuntime;
+      if (!connectionRuntime || !fdmRuntime || !dashboardRuntime) return [];
       return [
         {
           id: 'connection',
@@ -123,6 +125,42 @@ export function createFdmStepConfigProvider(runtime: FdmPluginRuntime) {
                 nodeVersion: promoted.nodeVersion,
                 canonicalData: promoted.data as FdmNodeData & StepData,
               };
+            },
+          },
+        },
+        {
+          id: 'dashboard',
+          label: 'Dashboard',
+          componentFactory: (props: PluginStepProps<FdmPluginDialogData>) =>
+            createElement(FdmDashboardStep, {
+              ...props,
+              runtime,
+            }),
+          validate: (data?: FdmPluginDialogData) => {
+            if (!data) return false;
+            try {
+              assertFdmNodeData(data);
+              return true;
+            } catch {
+              return false;
+            }
+          },
+          capabilities: {
+            canNavigateTo: async (_fromStep, data) => {
+              try {
+                assertFdmNodeData(data);
+                return true;
+              } catch {
+                return false;
+              }
+            },
+            canProceedToNext: (data) => {
+              try {
+                assertFdmNodeData(data);
+                return true;
+              } catch {
+                return false;
+              }
             },
           },
         },
