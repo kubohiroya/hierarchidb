@@ -16,6 +16,10 @@ export const resolveRuntimeStatusFromBuildSession = (
       return 'pausing';
     case 'paused':
       return 'paused';
+    case 'canceling':
+      return 'canceling';
+    case 'canceled':
+      return 'canceled';
     case 'completed':
       return 'completed';
     case 'failed':

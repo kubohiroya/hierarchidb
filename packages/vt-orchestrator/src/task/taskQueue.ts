@@ -8,14 +8,23 @@ import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '~/t
 export type StoredTaskRecord = EphemeralBuildTaskRecord & { version?: number };
 
 const TASK_STAGES = ['source', 'geometry', 'tileEmit'] as const;
-const TASK_STAGE_TO_STAGE_ID: Record<TaskStage, string> = {
+type VtTaskStage = (typeof TASK_STAGES)[number];
+
+const TASK_STAGE_TO_STAGE_ID: Record<VtTaskStage, string> = {
   source: 'source-stage',
   geometry: 'geometry-stage',
   tileEmit: 'tile-emit-stage',
 };
 
-const isTaskStage = (value: unknown): value is TaskStage =>
-  typeof value === 'string' && TASK_STAGES.includes(value as TaskStage);
+const isTaskStage = (value: unknown): value is VtTaskStage =>
+  typeof value === 'string' && TASK_STAGES.includes(value as VtTaskStage);
+
+const requireTaskStage = (value: unknown, label: string): VtTaskStage => {
+  if (!isTaskStage(value)) {
+    throw new Error(`${label} has unsupported stage: ${String(value)}`);
+  }
+  return value;
+};
 
 export const toTaskQueueRecord = (task: StoredTaskRecord): TaskQueueRecord => {
   const { stage } = task;
@@ -114,9 +123,11 @@ export async function putTasks(db: VtTaskQueueDb, tasks: Array<TaskQueueRecord>)
   const now = Date.now();
   const payload: StoredTaskRecord[] = tasks.map((task) => {
     const normalizedVersion = normalizeTaskVersion(task.version);
+    const stage = requireTaskStage(task.stage, `Task ${task.taskId}`);
     return {
       ...task,
       version: normalizedVersion ?? 1,
+      stage,
       progress: Number.isFinite(task.progress) ? task.progress : 0,
       status: task.status ?? 'queued',
       createdAt: task.createdAt ?? now,
@@ -146,7 +157,10 @@ export async function updateTask(
     ? { ...(currentMetadata ?? {}), ...updatesMetadata }
     : currentMetadata;
   const lockedStatus =
-    (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled') &&
+    (currentStatus === 'completed' ||
+      currentStatus === 'failed' ||
+      currentStatus === 'canceled' ||
+      currentStatus === 'recycled') &&
     !options?.allowTerminalStatusTransition;
   const blocksStatusRegression =
     lockedStatus && nextStatusCandidate !== undefined && nextStatusCandidate !== currentStatus;

@@ -140,6 +140,7 @@ describe('materializeIdeGsmProjectSnapshot', () => {
         digest: 'sha256:csv',
         sizeBytes: null,
         updatedAt: null,
+        tabularContent: { policy: 'metadata-only' },
       },
     });
     expect(JSON.stringify(csvNode)).not.toContain('content');

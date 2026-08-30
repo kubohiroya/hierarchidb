@@ -1,5 +1,25 @@
 export { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from './IdeGsmClient.js';
 export type {
+  IdeGsmDirectoryInfoReport,
+  IdeGsmDirectoryNode,
+  IdeGsmDirectoryTreeReport,
+  IdeGsmFdmDirectoryInfoInput,
+  IdeGsmFdmDirectoryRemoveInput,
+  IdeGsmFdmDirectoryRemoveReport,
+  IdeGsmFdmDirectoryTreeInput,
+  IdeGsmFdmSpace,
+  IdeGsmFdmSpacesReport,
+  IdeGsmProjectDirectoryInfoReport,
+  IdeGsmProjectDirectoryInput,
+  IdeGsmProjectDirectoryTreeReport,
+} from './ideGsmDirectoryTypes.js';
+export {
+  assertLogicalPath,
+  assertProjectRelativePath,
+} from './ideGsmDirectoryTypes.js';
+export type {
+  ActiveProjectTask,
+  ActiveProjectTaskStatus,
   CalibrateCommandInput,
   ConditionalProjectYamlWriteInput,
   ConditionalProjectYamlWriteResult,
@@ -10,6 +30,10 @@ export type {
   InstallCommandInput,
   PreviewEventsCommandInput,
   ProjectCommandInput,
+  ProjectFileContentPage,
+  ProjectFileContentPageInput,
+  ProjectFileContentTransfer,
+  ProjectFileContentTransferInput,
   ProjectFileInput,
   ProjectYamlFileContent,
   ProjectYamlFileContentInput,
@@ -20,35 +44,11 @@ export type {
   RsyncConnectionType,
   RsyncFilter,
   SimulateCommandInput,
+  TaskCancelResult,
+  TaskLogEvent,
+  TaskLogListener,
   TaskResult,
   TaskStatus,
   TaskStatusListener,
 } from './ideGsmTypes.js';
 export { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';
-export type {
-  IdeGsmDirectoryInfoReport,
-  IdeGsmDirectoryNode,
-  IdeGsmDirectoryTreeReport,
-  IdeGsmFdmDirectoryInfoInput,
-  IdeGsmFdmDirectoryRemoveInput,
-  IdeGsmFdmDirectoryRemoveReport,
-  IdeGsmFdmDirectoryTreeInput,
-  IdeGsmFdmSpace,
-  IdeGsmFdmSpacesReport,
-  IdeGsmMountCapabilities,
-  IdeGsmMountDescriptor,
-  IdeGsmMountedNodeReference,
-  IdeGsmMountSourceKind,
-  IdeGsmProjectDirectoryInfoReport,
-  IdeGsmProjectDirectoryInput,
-  IdeGsmProjectDirectoryTreeReport,
-} from './mount/IdeGsmMountTypes.js';
-export {
-  assertIdeGsmMountDescriptor,
-  assertLogicalPath,
-  assertProjectRelativePath,
-  decodeIdeGsmMountedNodeId,
-  encodeIdeGsmMountedNodeId,
-  IDE_GSM_MOUNT_NODE_ID_PREFIX,
-  isIdeGsmMountedNodeId,
-} from './mount/IdeGsmMountTypes.js';

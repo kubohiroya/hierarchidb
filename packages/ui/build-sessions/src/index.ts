@@ -10,6 +10,7 @@ export * from './hooks/useCanonicalBuildSessionSubscription.js';
 export * from './hooks/useTargetNodeFieldEditLock.js';
 export * from './hooks/useWorkerQueryAPI.js';
 export * from './kernel/createCanonicalBuildSessionSubscriptionKernel.js';
+export * from './log-buffer/index.js';
 export * from './progressTypes.js';
 export * from './state/createBuildSessionStateAtoms.js';
 export * from './state/createBuildSessionWorkerEventAdapter.js';

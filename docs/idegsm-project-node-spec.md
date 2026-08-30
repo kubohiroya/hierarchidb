@@ -8,9 +8,9 @@ The `idegsm-project` node represents an IDE-GSM server-side project directory as
 
 ## Current And Target Architecture
 
-The current codebase contains a mounted IDE-GSM filesystem projection that reads remote entries on demand and exposes TreeNode-compatible values without materializing child nodes in CoreDB. That implementation may be incomplete and is scheduled for removal. It is historical implementation context, not the target behavior or a compatibility requirement.
+The removed mounted IDE-GSM filesystem projection read remote entries on demand and exposed TreeNode-compatible values without materializing child nodes in CoreDB. That implementation was historical context, not the target behavior or a compatibility requirement.
 
-The normative target is the `idegsm-project` synchronization model defined by this document. The user-facing project tree must consist of CoreDB / Dexie-backed synchronized nodes. The old mount adapter, mounted-node reference flow, mounted-tree UI route, legacy feature flags, and projection-specific composition must be removed after the synchronized replacement is available.
+The normative target is the `idegsm-project` synchronization model defined by this document. The user-facing project tree must consist of CoreDB / Dexie-backed synchronized nodes. The old mount adapter, mounted-node reference flow, mounted-tree UI route, legacy feature flags, and projection-specific composition are not production surfaces.
 
 Reusable low-level parts may be extracted before removal when they have an independent contract, including authenticated GraphQL transport, DTO parsing, logical-path validation, and redaction. The old projection adapter itself must not remain as the synchronization engine or as an alternative user-facing project tree.
 
@@ -42,8 +42,11 @@ The implementation should be split as follows:
 
 - `plugins/idegsm-project-plugin`: UI node plugin, context menu integration, YAML editor integration, run panel / notification UI.
 - `packages/idegsm-project-api`: public types, sync metadata contract, service ports, command/run API contracts.
-- `packages/ide-gsm-client`: reusable GraphQL client boundary, named-connection resolution contract, and health-check port for IDE-GSM server access.
-- `packages/ui/ide-gsm-connection`: shared React Step 2 component and presentation/controller hooks used by both `idegsm-project` and `fdm` dialogs.
+- `packages/ide-gsm-client`: reusable IDE-GSM GraphQL client boundary and typed service operations.
+- `packages/ui/external-service-health`: canonical external-service health state and health-check lifecycle.
+- `packages/ui/external-service-connection`: generic named-connection/manual-target Step 2 component, validation, and runtime-provider contract.
+- `packages/ui/ide-gsm-connection`: IDE-GSM compatibility wrapper around the generic external-service connection package, used by both `idegsm-project` and `fdm` dialogs.
+- `packages/external-content-transfer`: generic immutable paged content-transfer and streaming CSV acquisition helpers.
 - `packages/build-api` and `packages/ui/build-sessions`: canonical external-session projection and shared AppBar Build Session presentation used for IDE-GSM tasks.
 - `app/src/ide-gsm-connection/`: app-level runtime provider that owns raw host, port, endpoint, CORS proxy, and credential values.
 
@@ -82,7 +85,7 @@ Selecting either entry starts the standard `idegsm-project` plugin create flow f
 
 ## Dialog Step 2: Connection (`接続先`)
 
-Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `idegsm-project` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and external-service health state model as the `fdm` plugin; it must not fork or copy this code. The health state/check lifecycle is the generic `@hierarchidb/ui-external-service-health` contract described in `docs/external-service-health-spec.md`, not an IDE-GSM-owned model.
+Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `idegsm-project` plugin must use the same `IdeGsmConnectionStep` compatibility wrapper as the `fdm` plugin; that wrapper delegates to the generic `@hierarchidb/ui-external-service-connection` component, validation, runtime-provider contract, and `@hierarchidb/ui-external-service-health` health model. These shared contracts are described in `docs/external-service-integration-spec.md` and `docs/external-service-health-spec.md`; IDE-GSM packages must not fork or copy them.
 
 The step provides either:
 
@@ -177,7 +180,7 @@ Use startup-fixed flags:
 
 Both default to `false`.
 
-The older `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` flag belongs to the projection implementation and must be removed with that implementation. It is not a canonical flag or a long-term alias for the synchronized node UI.
+The older `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` flag belonged to the removed projection implementation and is not a canonical flag or alias for the synchronized node UI.
 
 ## Sync Model
 
@@ -476,7 +479,9 @@ mutation CloseProjectFileContentTransfer($transferId: String!) {
 }
 ```
 
-`chunkSizeBytes` is exactly 16,384 and each page's decoded `rawByteCount` is in `0..16384`; JSON and Base64 transport overhead is not included in this raw-byte limit. The cursor is opaque, scoped to the transfer, and advances monotonically. Pages may split a UTF-8 code point, quoted field, or CSV record, so `packages/ide-gsm-client` must decode and parse them as one ordered byte stream rather than independently parsing page strings.
+`chunkSizeBytes` is exactly 16,384 and each page's decoded `rawByteCount` is in `0..16384`; JSON and Base64 transport overhead is not included in this raw-byte limit. The cursor is opaque, scoped to the transfer, and advances monotonically. Pages may split a UTF-8 code point, quoted field, or CSV record, so the `idegsm-project` worker adapter must pass the ordered byte stream through the generic `@hierarchidb/external-content-transfer` acquisition helper rather than independently parsing page strings.
+
+The client boundary validates transfer metadata before exposing it to plugin services: `contentDigest` is lowercase SHA-256 hex, `chunkSizeBytes` is exactly 16,384, every page decodes from Base64 to the declared raw byte count, and continuation/final cursor flags are internally consistent. The generic `@hierarchidb/external-content-transfer` helper treats the transfer as a byte stream, updates the digest incrementally, streams UTF-8 decoding and CSV parsing across page boundaries, and returns a committed local table only after the final byte count and digest match the immutable transfer metadata. The `idegsm-project` worker acquisition service then publishes IDE-GSM tracked snapshot metadata. Any mismatch, parser error, storage error, or publication error keeps the previous metadata-only or tracked child state authoritative and still closes the transfer. A close failure after a local table has already committed is reported only as sanitized cleanup telemetry and does not invert the successful acquisition result.
 
 The server validates the authenticated user's project access and both logical relative paths, rejects absolute/traversal paths, symlinks, non-file targets, and non-CSV targets, and creates a short-lived immutable transfer snapshot while streaming the source rather than loading it into memory. It then performs a second streaming source digest verification and accepts the transfer only when source identity, size, `updatedAt`, and both full-byte digests agree. Otherwise begin removes the temporary snapshot and fails with `CONTENT_CHANGED_DURING_TRANSFER`. The returned digest is SHA-256 over the exact immutable raw bytes and every page comes from that same transfer snapshot.
 
@@ -529,4 +534,4 @@ Credential failures should surface stable public error codes such as `CREDENTIAL
 - Asynchronous IDE-GSM commands appear in the AppBar Build Session list, open a shared progress screen, and support server-side cancellation from that screen.
 - IDE-GSM `CANCELED` is represented as `canceled`, not `failed` or `paused`, in the common Build Session model.
 - Normalized CSV-derived rows are persisted only in the dedicated Tabular store; no forbidden endpoint, credential, absolute path, original CSV text, or duplicated row data is persisted elsewhere.
-- The old mounted filesystem projection implementation and its UI/flag integration are removed after the synchronized replacement is available.
+- The old mounted filesystem projection implementation and its UI/flag integration remain absent after the synchronized replacement is available.

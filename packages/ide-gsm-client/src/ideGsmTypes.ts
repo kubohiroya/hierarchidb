@@ -19,6 +19,35 @@ export interface TaskResult {
 /** Receives validated task status updates, including active statuses. */
 export type TaskStatusListener = (result: TaskResult) => void;
 
+export type ActiveProjectTaskStatus = Exclude<TaskStatus, 'DELETED'>;
+
+export interface ActiveProjectTask {
+  taskId: string;
+  commandId: IdeGsmCommandId;
+  status: ActiveProjectTaskStatus;
+  projectRelativePath: string;
+  progress: number | null;
+  phase: string | null;
+  registeredAt: string;
+  startedAt: string | null;
+  updatedAt: string;
+}
+
+export interface TaskCancelResult {
+  taskId: string;
+  accepted: boolean;
+}
+
+export interface TaskLogEvent {
+  taskId: string;
+  sequence: number;
+  timestamp: string;
+  stream: 'stdout' | 'stderr' | 'system';
+  text: string;
+}
+
+export type TaskLogListener = (event: TaskLogEvent) => void;
+
 /** Optional file-glob filter for exportProject. */
 export interface ExportFilter {
   include?: string[];
@@ -51,6 +80,29 @@ export interface ProjectYamlFileContent {
   contentDigest: string;
   updatedAt: string;
   byteCount: number;
+}
+
+export interface ProjectFileContentTransferInput extends ProjectFileInput {}
+
+export interface ProjectFileContentTransfer {
+  transferId: string;
+  contentDigest: string;
+  updatedAt: string;
+  byteCount: number;
+  chunkSizeBytes: number;
+  expiresAt: string;
+}
+
+export interface ProjectFileContentPageInput {
+  transferId: string;
+  cursor?: string;
+}
+
+export interface ProjectFileContentPage {
+  contentChunkBase64: string;
+  rawByteCount: number;
+  nextCursor: string | null;
+  hasNext: boolean;
 }
 
 export type ProjectYamlWriteStatus =

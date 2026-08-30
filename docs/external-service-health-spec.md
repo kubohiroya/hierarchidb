@@ -2,7 +2,7 @@
 
 ## Scope
 
-HierarchiDB features may connect to external services such as IDE-GSM, catalog APIs, hosted processing runtimes, or future remote plugin backends. Their connection health state is a shared application contract, not a domain-specific IDE-GSM model.
+HierarchiDB features may connect to external services such as IDE-GSM, catalog APIs, hosted processing runtimes, or future remote plugin backends. Their connection health state is a shared application contract, not a domain-specific IDE-GSM model. This document defines the health-specific subset of the broader external-service primitive rules in `docs/external-service-integration-spec.md`.
 
 The canonical UI health contract lives in `@hierarchidb/ui-external-service-health`. Domain-specific connection packages may compose it, but they must not define their own incompatible health state unions or debounced health-check lifecycle.
 
@@ -15,7 +15,7 @@ The canonical UI health contract lives in `@hierarchidb/ui-external-service-heal
 - the generic `ExternalServiceHealthChecker<TInput>` port;
 - the debounced `useExternalServiceHealth` hook, including stale-response suppression and abort handling.
 
-Plugin-specific packages own only their input shape and service-specific checker implementation. For example, `@hierarchidb/ui-ide-gsm-connection` owns IDE-GSM named connection input and manual target resolution, then delegates health state and check lifecycle to `@hierarchidb/ui-external-service-health`.
+`@hierarchidb/ui-external-service-connection` composes this package for the generic named-connection/manual-target step. Plugin-specific packages own only adapter labels, endpoint resolution, credentials, and service-specific checker implementation. For example, `@hierarchidb/ui-ide-gsm-connection` delegates connection UI, validation, health state, and check lifecycle to service-neutral packages.
 
 ## Canonical States
 
