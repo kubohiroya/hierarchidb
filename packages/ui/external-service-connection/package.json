@@ -1,8 +1,8 @@
 {
-  "name": "@hierarchidb/ui-ide-gsm-connection",
+  "name": "@hierarchidb/ui-external-service-connection",
   "version": "0.1.0",
   "type": "module",
-  "description": "Shared IDE-GSM connection step UI for plugin dialogs",
+  "description": "Shared external service connection step UI for plugin dialogs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -22,13 +22,11 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "@hierarchidb/ui-external-service-connection": "workspace:*",
     "@hierarchidb/ui-external-service-health": "workspace:*",
     "@mui/material": "^7.3.6",
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@hierarchidb/ui-external-service-connection": "workspace:*",
     "@hierarchidb/ui-external-service-health": "workspace:*",
     "@mui/material": "^7.3.6",
     "@testing-library/react": "^16.3.0",

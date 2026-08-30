@@ -30,8 +30,10 @@ The implementation should be split as follows:
 
 - `plugins/fdm-plugin`: `fdm` TreeNode plugin, node create/edit UI, React dashboard UI, FDM visualization UI, dashboard-specific state and components.
 - `packages/fdm-api`: public `fdm` node data types plus FDM-specific client services and DTOs for IDE-GSM GraphQL APIs.
-- `packages/ide-gsm-client`: reusable low-level IDE-GSM GraphQL client, named-connection resolution contract, and health-check port.
-- `packages/ui/ide-gsm-connection`: shared React Step 2 component and presentation/controller hooks used without duplication by both `fdm` and `idegsm-project` dialogs.
+- `packages/ide-gsm-client`: reusable low-level IDE-GSM GraphQL client and typed service operations.
+- `packages/ui/external-service-health`: canonical external-service health state and health-check lifecycle.
+- `packages/ui/external-service-connection`: generic named-connection/manual-target Step 2 component, validation, and runtime-provider contract.
+- `packages/ui/ide-gsm-connection`: IDE-GSM compatibility wrapper around the generic external-service connection package, used without duplication by both `fdm` and `idegsm-project` dialogs.
 - `app/src/ide-gsm-connection/`: app-level runtime provider that owns raw host, port, endpoint, CORS proxy, and credential values.
 - `plugins/idegsm-project-plugin` and `packages/idegsm-project-api`: separate owner of IDE-GSM project sync roots, YAML editing, command execution, run subscription, and cancellation.
 
@@ -128,7 +130,7 @@ Creating an `fdm` node must allow selection of an accessible existing FDM space.
 
 ## Dialog Step 2: Connection (`接続先`)
 
-Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `fdm` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and external-service health state model as the `idegsm-project` plugin; it must not fork or copy this code. The health state/check lifecycle is the generic `@hierarchidb/ui-external-service-health` contract described in `docs/external-service-health-spec.md`, not an IDE-GSM-owned model.
+Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `fdm` plugin must use the same `IdeGsmConnectionStep` compatibility wrapper as the `idegsm-project` plugin; that wrapper delegates to the generic `@hierarchidb/ui-external-service-connection` component, validation, runtime-provider contract, and `@hierarchidb/ui-external-service-health` health model. These shared contracts are described in `docs/external-service-integration-spec.md` and `docs/external-service-health-spec.md`; FDM and IDE-GSM packages must not fork or copy them.
 
 The step provides either:
 
