@@ -6,6 +6,8 @@ HierarchiDB plugins may connect to external services such as IDE-GSM, catalog AP
 
 Service-specific packages may provide adapters, labels, DTO mappings, and runtime providers, but they must not become the owner of reusable connection, health, transfer, or session-presentation contracts.
 
+Health checks describe whether a configured external-service connection is currently usable. They do not imply ownership of the remote resource lifecycle. For externally managed execution targets, such as an SSH simulation container, an unhealthy result must prevent the requested operation without provisioning, starting, stopping, retrying through another target type, or performing any other lifecycle fallback.
+
 ## Shared Packages
 
 The current shared external-service primitives are:
