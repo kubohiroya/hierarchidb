@@ -3,6 +3,11 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
+const src = (target: string): string => path.resolve(workspaceRoot, target);
+const alias = (find: string, target: string): { find: string; replacement: string } => ({
+  find,
+  replacement: src(target),
+});
 
 export default defineConfig({
   test: {
@@ -39,87 +44,60 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@hierarchidb/core-types': path.resolve(workspaceRoot, 'packages/core-types/src/index.ts'),
-      '@hierarchidb/gis-sdk': path.resolve(workspaceRoot, 'packages/gis-sdk/src/index.ts'),
-      '@hierarchidb/gen-iso3166-2/browser': path.resolve(
-        workspaceRoot,
-        'packages/tools/gen-iso3166-2/src/browser.ts'
+    alias: [
+      alias(
+        '@hierarchidb/yaml-api/inverse-migration',
+        'packages/yaml-api/src/inverse-migration/index.ts'
       ),
-      '@hierarchidb/gen-iso3166-2': path.resolve(
-        workspaceRoot,
-        'packages/tools/gen-iso3166-2/src/index.ts'
+      alias('@hierarchidb/yaml-api/migration', 'packages/yaml-api/src/migration/index.ts'),
+      alias('@hierarchidb/yaml-api/validation', 'packages/yaml-api/src/validation/index.ts'),
+      alias(
+        '@hierarchidb/staged-folder-action/map-image-capture-browser-host',
+        'packages/staged-folder-action/src/createMapImageCaptureBrowserActionRunner.ts'
       ),
-      '@hierarchidb/ide-gsm-client': path.resolve(
-        workspaceRoot,
-        'packages/ide-gsm-client/src/index.ts'
+      alias(
+        '@hierarchidb/staged-folder-action/export-file-host',
+        'packages/staged-folder-action/src/createExportFileActionRunner.ts'
       ),
-      '@hierarchidb/location-api': path.resolve(
-        workspaceRoot,
-        'packages/location-api/src/index.ts'
+      alias(
+        '@hierarchidb/staged-folder-action/cli',
+        'packages/staged-folder-action/src/runStagedFolderActionCli.ts'
       ),
-      '@hierarchidb/route-api': path.resolve(workspaceRoot, 'packages/route-api/src/index.ts'),
-      '@hierarchidb/build-api': path.resolve(workspaceRoot, '@hierarchidb/build-api/src/index.ts'),
-      '@hierarchidb/tree-api': path.resolve(workspaceRoot, 'packages/tree-api/src/index.ts'),
-      '@hierarchidb/worker-api': path.resolve(workspaceRoot, 'packages/worker-api/src/index.ts'),
-      '@hierarchidb/auth': path.resolve(workspaceRoot, 'packages/auth/src/index.ts'),
-      '@hierarchidb/download': path.resolve(workspaceRoot, 'packages/download/src/index.ts'),
-      '@hierarchidb/import-export': path.resolve(
-        workspaceRoot,
-        'packages/import-export/src/index.ts'
-      ),
-      '@hierarchidb/import-export-api': path.resolve(
-        workspaceRoot,
-        'packages/import-export-api/src/index.ts'
-      ),
-      '@hierarchidb/map-source': path.resolve(workspaceRoot, 'packages/map-source/src/index.ts'),
-      '@hierarchidb/tabular-source': path.resolve(
-        workspaceRoot,
-        'packages/tabular-source/src/index.ts'
-      ),
-      '@hierarchidb/tabular-store': path.resolve(
-        workspaceRoot,
-        'packages/tabular-store/src/index.ts'
-      ),
-      '@hierarchidb/route-store': path.resolve(workspaceRoot, 'packages/route-store/src/index.ts'),
-      '@hierarchidb/shape-api': path.resolve(workspaceRoot, 'packages/shape-api/src/index.ts'),
-      '@hierarchidb/shape-store': path.resolve(workspaceRoot, 'packages/shape-store/src/index.ts'),
-      '@hierarchidb/chunk-store': path.resolve(workspaceRoot, 'packages/chunk-store/src/index.ts'),
-      '@hierarchidb/location-store': path.resolve(
-        workspaceRoot,
-        'packages/location-store/src/index.ts'
-      ),
-      '@hierarchidb/spreadsheet-store': path.resolve(
-        workspaceRoot,
-        'packages/spreadsheet-store/src/index.ts'
-      ),
-      '@hierarchidb/staged-folder-action': path.resolve(
-        workspaceRoot,
-        'packages/staged-folder-action/src/index.ts'
-      ),
-      '@hierarchidb/style-api': path.resolve(workspaceRoot, 'packages/style-api/src/index.ts'),
-      '@hierarchidb/styler-store': path.resolve(
-        workspaceRoot,
-        'packages/styler-store/src/index.ts'
-      ),
-      '@hierarchidb/tag-api': path.resolve(workspaceRoot, 'packages/tag-api/src/index.ts'),
-      '@hierarchidb/tag': path.resolve(workspaceRoot, 'packages/tag/src/index.ts'),
-      '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
-      '@hierarchidb/map-adapter': path.resolve(workspaceRoot, 'packages/map-adapter/src/index.ts'),
-      '@hierarchidb/tabular-source-xlsx': path.resolve(
-        workspaceRoot,
-        'packages/tabular-source-xlsx/src/index.ts'
-      ),
-      '@hierarchidb/vt-orchestrator': path.resolve(
-        workspaceRoot,
-        'packages/vt-orchestrator/src/index.ts'
-      ),
-      '@hierarchidb/vectortile-store': path.resolve(
-        workspaceRoot,
-        'packages/vectortile-store/src/index.ts'
-      ),
-      '@hierarchidb/yaml-api': path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
-    },
+      alias('@hierarchidb/core-types', 'packages/core-types/src/index.ts'),
+      alias('@hierarchidb/gis-sdk', 'packages/gis-sdk/src/index.ts'),
+      alias('@hierarchidb/gen-iso3166-2/browser', 'packages/tools/gen-iso3166-2/src/browser.ts'),
+      alias('@hierarchidb/gen-iso3166-2', 'packages/tools/gen-iso3166-2/src/index.ts'),
+      alias('@hierarchidb/ide-gsm-client', 'packages/ide-gsm-client/src/index.ts'),
+      alias('@hierarchidb/location-api', 'packages/location-api/src/index.ts'),
+      alias('@hierarchidb/route-api', 'packages/route-api/src/index.ts'),
+      alias('@hierarchidb/build-api', '@hierarchidb/build-api/src/index.ts'),
+      alias('@hierarchidb/tree-api', 'packages/tree-api/src/index.ts'),
+      alias('@hierarchidb/worker-api', 'packages/worker-api/src/index.ts'),
+      alias('@hierarchidb/auth', 'packages/auth/src/index.ts'),
+      alias('@hierarchidb/download', 'packages/download/src/index.ts'),
+      alias('@hierarchidb/import-export', 'packages/import-export/src/index.ts'),
+      alias('@hierarchidb/import-export-api', 'packages/import-export-api/src/index.ts'),
+      alias('@hierarchidb/map-source', 'packages/map-source/src/index.ts'),
+      alias('@hierarchidb/tabular-source', 'packages/tabular-source/src/index.ts'),
+      alias('@hierarchidb/tabular-store', 'packages/tabular-store/src/index.ts'),
+      alias('@hierarchidb/route-store', 'packages/route-store/src/index.ts'),
+      alias('@hierarchidb/shape-api', 'packages/shape-api/src/index.ts'),
+      alias('@hierarchidb/shape-store', 'packages/shape-store/src/index.ts'),
+      alias('@hierarchidb/chunk-store', 'packages/chunk-store/src/index.ts'),
+      alias('@hierarchidb/location-store', 'packages/location-store/src/index.ts'),
+      alias('@hierarchidb/spreadsheet-store', 'packages/spreadsheet-store/src/index.ts'),
+      alias('@hierarchidb/staged-folder-action', 'packages/staged-folder-action/src/index.ts'),
+      alias('@hierarchidb/style-api', 'packages/style-api/src/index.ts'),
+      alias('@hierarchidb/styler-store', 'packages/styler-store/src/index.ts'),
+      alias('@hierarchidb/tag-api', 'packages/tag-api/src/index.ts'),
+      alias('@hierarchidb/tag', 'packages/tag/src/index.ts'),
+      alias('@hierarchidb/util', 'packages/util/src/index.ts'),
+      alias('@hierarchidb/map-adapter', 'packages/map-adapter/src/index.ts'),
+      alias('@hierarchidb/tabular-source-xlsx', 'packages/tabular-source-xlsx/src/index.ts'),
+      alias('@hierarchidb/vt-orchestrator', 'packages/vt-orchestrator/src/index.ts'),
+      alias('@hierarchidb/vectortile-store', 'packages/vectortile-store/src/index.ts'),
+      alias('@hierarchidb/yaml-api', 'packages/yaml-api/src/index.ts'),
+    ],
   },
   plugins: [tsconfigPaths()],
 });

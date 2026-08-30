@@ -5,7 +5,7 @@ import type {
   SpreadsheetEntityPayload,
 } from '@hierarchidb/spreadsheet-store';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
-import type { StylerSourceReference } from './mountedIdeGsmCsvSourceTypes.js';
+import type { StylerSourceReference } from './ideGsmTrackedTabularSourceTypes.js';
 
 export type { SpreadSheetDataSourceType };
 

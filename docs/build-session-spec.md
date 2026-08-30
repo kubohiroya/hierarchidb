@@ -49,10 +49,10 @@ persisted `ShapeQueryService` record と transient command state を合成し、
 `BuildSessionRuntimeRecord` は `nodeType`、`nodeId`、canonical runtime `status`、
 `isActive`、単調増加する `revision` を必須とする。`nodeType` は registry key と
 一致しなければならない。`status` は `idle / starting / running / pausing / paused /
-resuming / finalizing / completed / failed / deleting` のみを許可する。`revision` は
+canceling / canceled / resuming / finalizing / completed / failed / deleting` のみを許可する。`revision` は
 node type + nodeId 単位で非負整数として進め、同じ runtime surface 内で status
 や transient command state の変化を観測可能にする。`isActive` は runtime status
-から導出し、`starting / running / pausing / resuming / finalizing` だけを
+から導出し、`starting / running / pausing / canceling / resuming / finalizing` だけを
 active とする。`completed` や `failed` を active として補完してはならない。
 `currentAction` を公開する場合、`actionIndex` は非負整数、`actionType` と `phase`
 は空でない文字列、`percentage` は有限かつ `0..100` の数値でなければならない。
@@ -70,12 +70,14 @@ active とする。`completed` や `failed` を active として補完しては�
 | `running` | ステージ実行中 |
 | `pausing` | 一時停止命令を送信済み、Worker の応答待ち |
 | `paused` | 一時停止中（再開可能） |
+| `canceling` | キャンセル命令を送信済み、外部/内部 task の終端応答待ち |
+| `canceled` | キャンセル完了（終端状態） |
 | `resuming` | 再開命令を送信済み、Worker の応答待ち |
 | `finalizing` | 全ステージ完了後の後処理中 |
 | `completed` | 正常完了（終端状態） |
 | `failed` | エラー終了（終端状態） |
 
-`isActive` は `starting / running / pausing / resuming / finalizing` のいずれかのとき `true` となる。
+`isActive` は `starting / running / pausing / canceling / resuming / finalizing` のいずれかのとき `true` となる。
 
 ### 停止理由（規範）
 
@@ -118,10 +120,36 @@ Shape の正規停止理由は `route-leave / user-pause / auth-required / faile
 | `running` | 処理中 | 分母に含める |
 | `completed` | 処理成功（成果物あり） | `done` に含める |
 | `failed` | 処理失敗（エラー） | `done` に含める |
+| `canceled` | ユーザーまたは外部 runner によりキャンセル済み | `done` に含める |
 | `skipped` | 処理実行・成果物なし（エラーではない） | `done` に含める |
 | `recycled` | 有効なキャッシュが存在するため処理実行なし | 経過時間計算の分母から除外 |
 
 残り時間の推定において、`recycled` タスクは平均処理時間の分母から除外する。`skipped` タスクは `done` カウントに含める。
+
+## IDE-GSM external Build Session contract
+
+IDE-GSM Project は committed project root だけを build boundary の入力とし、外部 IDE-GSM runner の active task を canonical build session として投影する。外部 task の識別は `activeProjectTasks(projectRelativePath)` が返す typed metadata の `taskId / commandId / status / progress / registeredAt / startedAt / updatedAt` に限定し、`paramsJson` や legacy `args` から project identity や command identity を推測してはならない。
+
+- 開始前に `TreeNode.version`、`TreeNode.nodeType`、completed project root payload、`syncState='synced'`、`activeSyncGenerationId` を検証する。不正または未同期 root では外部 command を dispatch しない。
+- 同一 project root で同時に許可する外部 build task は1件だけとする。`check / sim / calib` の active task が複数見つかった場合は、どれかを選択せず契約違反として失敗させる。
+- `progress` は finite number かつ `0..100` の値だけを受理する。`null`、範囲外、非数値を `0` や直前値へ補完してはならない。
+- `registeredAt / startedAt / updatedAt` は parse 可能な時刻だけを受理する。`updatedAt` が外部 task から省略された場合のみ、発見時の runtime 時刻を session revision として使う。parse 不能な値を現在時刻へ丸めてはならない。
+- `cancelTask(taskId)` の `accepted=true` は終端状態ではない。UI/session は `canceling` を維持し、`awaitTask` または active task event が `CANCELED` を返した時点で `canceled` に遷移する。`CANCELED` は task summary でも `canceled` として公開し、`recycled` や `failed` へ読み替えない。
+- `subscribeTaskLog(taskId)` は live-only stream とする。cursor、replay、history、pagination、server-side search を要求しない。再接続時は新しい subscription とし、切断中の欠落行は取得不能な gap marker として UI に明示する。
+- log 本文は認可済み subscriber の runtime buffer だけに保持する。diagnostics、public logs、analytics、URL、永続 state、task metadata へ本文を出してはならない。
+
+### Runtime text log dialog contract
+
+Build log dialog は runtime subscriber が保持する既存の append buffer を描画する presentation component とし、task ownership、subscription ownership、cancel command、永続化、transport retry を持ってはならない。component は渡された row 配列だけを入力とし、row の生成、replay、server paging、server search、history fetch を要求してはならない。
+
+- 各 runtime log row は `rowId`、`taskId`、`connectionEpoch`、`ordinal`、`sequence`、`timestamp`、`stream`、`text` を持つ。`rowId` は UI selection と search focus の安定 identity とし、append や再描画で作り直してはならない。
+- gap marker は切断中に取得不能だった row 範囲を表し、本文を補完してはならない。limit marker は runtime buffer 上限による破棄を表し、破棄済み本文を復元可能に見せてはならない。
+- 表示 DOM row は virtualization により bounded とする。大量ログを全 row mount してはならない。
+- Tail follow は初期状態で有効とし、ユーザーが末尾から離れた場合または過去 row を選択した場合は suspend する。append 中も選択済み row identity と表示 ordinal を維持し、明示的な tail action の後だけ末尾追従を再開する。
+- search は component 内の buffered row に対する local literal search だけを提供する。regex、server-side search、永続 index、未取得 row の検索は行わない。
+- search result navigation は cyclic とし、current / total、全 match highlight、current match highlight、virtualization 範囲外 row への focus scroll を提供する。
+- UI control は close、search、previous / next match、tail action に限定する。task cancellation は build session command surface の責務であり、log dialog に second cancellation path を追加してはならない。
+- log row text は text-only rendering とし、HTML として解釈しない。
 
 ### Step 5 task progress bar のフィルター契約
 

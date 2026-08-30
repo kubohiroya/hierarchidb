@@ -12,6 +12,8 @@ export type BuildSessionStateTreeLifecyclePhase =
   | 'running'
   | 'pausing'
   | 'paused'
+  | 'canceling'
+  | 'canceled'
   | 'resuming'
   | 'finalizing'
   | 'completed'
@@ -80,6 +82,7 @@ export type BuildSessionStageCounts = {
   running: number;
   completed: number;
   failed: number;
+  canceled: number;
   recycled: number;
   skipped: number;
 };
@@ -548,6 +551,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
           running: 0,
           completed: 0,
           failed: 0,
+          canceled: 0,
           recycled: 0,
           skipped: 0,
         };
@@ -565,6 +569,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       running: 0,
       completed: 0,
       failed: 0,
+      canceled: 0,
       recycled: 0,
       skipped: 0,
     };
@@ -575,6 +580,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       counts.running += stageCounts.running;
       counts.completed += stageCounts.completed;
       counts.failed += stageCounts.failed;
+      counts.canceled += stageCounts.canceled;
       counts.recycled += stageCounts.recycled;
       counts.skipped += stageCounts.skipped;
     }

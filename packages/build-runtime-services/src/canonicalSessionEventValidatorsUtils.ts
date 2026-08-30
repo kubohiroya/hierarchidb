@@ -122,6 +122,7 @@ const isActiveSessionPhase = (phase: SessionPhase): boolean =>
   phase === 'starting' ||
   phase === 'running' ||
   phase === 'pausing' ||
+  phase === 'canceling' ||
   phase === 'resuming' ||
   phase === 'finalizing';
 

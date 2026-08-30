@@ -17,6 +17,8 @@ export type SessionPhase =
   | 'running'
   | 'pausing'
   | 'paused'
+  | 'canceling'
+  | 'canceled'
   | 'resuming'
   | 'finalizing'
   | 'completed'

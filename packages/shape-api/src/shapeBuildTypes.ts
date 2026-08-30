@@ -7,7 +7,13 @@ export type ShapeDataSourceName =
   | 'gadm'
   | 'openstreetmap';
 export type ShapeBuildStage = 'source' | 'geometry' | 'tileEmit';
-export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
+export type ShapeBuildTaskStatus =
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'canceled'
+  | 'recycled';
 
 export type ShapeSourceTaskPayload = {
   url?: string;

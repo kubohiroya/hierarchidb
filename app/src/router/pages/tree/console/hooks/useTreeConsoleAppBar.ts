@@ -17,6 +17,7 @@ const runningSessionStatuses = new Set<BuildSessionRuntimeRecord['status']>([
   'resuming',
   'finalizing',
   'pausing',
+  'canceling',
 ]);
 
 const isActiveQueueSession = (session: BuildSessionRuntimeRecord): boolean =>

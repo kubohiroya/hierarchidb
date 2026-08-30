@@ -3,6 +3,7 @@
 
 export const pluginWorkerLoaders: Record<string, () => Promise<unknown>> = {
   "folder": async () => import("@hierarchidb/folder-plugin/worker"),
+  "idegsm-project": async () => import("@hierarchidb/idegsm-project-plugin/worker"),
   "linker": async () => import("@hierarchidb/linker-plugin/worker"),
   "location": async () => import("@hierarchidb/location-plugin/worker"),
   "route": async () => import("@hierarchidb/route-plugin/worker"),
