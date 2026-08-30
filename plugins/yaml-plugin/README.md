@@ -33,7 +33,8 @@ IDE-GSM command step.
 The schema editor uses `@rjsf/core` + `@rjsf/mui` to dynamically generate a form UI based on the selected schema.
 Step 4 reads only the app-injected runtime capability. It does not read app config, environment
 variables, credentials, IndexedDB, or localStorage. Editor-only subtypes render no executable
-commands, and upstream-blocked SSH lifecycle commands are absent from the canonical registry.
+commands, and SSH lifecycle commands are absent from the canonical registry because SSH target
+container lifecycle management is outside the application server's responsibility.
 
 ### Icon
 
