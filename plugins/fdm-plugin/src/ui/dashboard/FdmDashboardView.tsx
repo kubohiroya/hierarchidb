@@ -30,7 +30,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import { buildFdmMatrixRows } from './fdmDashboardLayout.js';
 import type { FdmDashboardViewProps } from './fdmDashboardViewTypes.js';
 import { buildFdmLatticePoints } from './fdmThreeLatticeModel.js';
@@ -434,12 +435,82 @@ function FdmLatticeView({
   readonly selectedCellId?: string;
   readonly onSelectCell: (cellId: string) => void;
 }) {
+  const sceneHostRef = useRef<HTMLDivElement | null>(null);
   const points = useMemo(
     () => buildFdmLatticePoints({ cells, dimensions, filters, axisMap, selectedCellId }),
     [axisMap, cells, dimensions, filters, selectedCellId]
   );
   const maxX = Math.max(1, ...points.map((point) => point.position.x));
   const maxY = Math.max(1, ...points.map((point) => point.position.y));
+  const maxZ = Math.max(1, ...points.map((point) => point.position.z));
+
+  useEffect(() => {
+    const host = sceneHostRef.current;
+    if (!host) return;
+    host.replaceChildren();
+    if (points.length === 0) return;
+    if (typeof window.WebGLRenderingContext === 'undefined') return;
+
+    let renderer: THREE.WebGLRenderer | null = null;
+    let frameId: number | null = null;
+    try {
+      const width = host.clientWidth || 720;
+      const height = host.clientHeight || 360;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      const group = new THREE.Group();
+      const spacing = 1.8;
+      const center = new THREE.Vector3(
+        maxX * spacing * 0.5,
+        maxY * spacing * 0.5,
+        maxZ * spacing * 0.5
+      );
+
+      for (const point of points) {
+        const geometry = new THREE.SphereGeometry(point.isSelected ? 0.18 : 0.13, 18, 12);
+        const material = new THREE.MeshBasicMaterial({ color: STATUS_COLORS[point.cell.status] });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(
+          point.position.x * spacing - center.x,
+          point.position.y * spacing - center.y,
+          point.position.z * spacing - center.z
+        );
+        group.add(mesh);
+      }
+
+      const box = new THREE.Box3().setFromObject(group);
+      const size = box.getSize(new THREE.Vector3());
+      const largestAxis = Math.max(size.x, size.y, size.z, 1);
+      camera.position.set(largestAxis * 0.9, largestAxis * 0.7, largestAxis * 1.8);
+      camera.lookAt(0, 0, 0);
+      scene.add(group);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(width, height, false);
+      renderer.domElement.setAttribute('aria-hidden', 'true');
+      renderer.domElement.style.width = '100%';
+      renderer.domElement.style.height = '100%';
+      renderer.domElement.style.display = 'block';
+      host.appendChild(renderer.domElement);
+
+      const render = () => {
+        group.rotation.y += 0.003;
+        renderer?.render(scene, camera);
+        frameId = window.requestAnimationFrame(render);
+      };
+      render();
+    } catch {
+      host.replaceChildren();
+    }
+
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      renderer?.dispose();
+      host.replaceChildren();
+    };
+  }, [maxX, maxY, maxZ, points]);
+
   return (
     <Box
       role="img"
@@ -454,6 +525,14 @@ function FdmLatticeView({
         background: 'linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%)',
       }}
     >
+      <Box
+        ref={sceneHostRef}
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+        }}
+      />
       {points.map((point) => {
         const left = `${10 + (point.position.x / maxX) * 78}%`;
         const top = `${12 + (point.position.y / maxY) * 70 - point.position.z * 4}%`;

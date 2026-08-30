@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FdmDashboardView } from '../FdmDashboardView.js';
 import { buildFdmLatticePoints } from '../fdmThreeLatticeModel.js';
+import { replaceFdmAxisDimension } from '../useFdmDashboardController.js';
 
 const response: FdmDashboardResponse = {
   node: {
@@ -144,5 +145,14 @@ describe('FdmDashboardView', () => {
       ['cell-a', 0, 0, 0, false],
       ['cell-b', 4, 0, 0, true],
     ]);
+  });
+
+  it('swaps axis dimensions so every axis update remains a valid permutation', () => {
+    expect(replaceFdmAxisDimension(response.node.axisMap, 'xOuter', 'dataset')).toEqual({
+      xOuter: 'dataset',
+      xInner: 'profile',
+      y: 'checkpoint',
+      z: 'compute',
+    });
   });
 });

@@ -136,10 +136,7 @@ export function useFdmDashboardController({
 
   const setAxis = useCallback(
     (slot: keyof FdmAxisMap, dimension: FdmAxisDimension) => {
-      const nextAxisMap = {
-        ...axisMap,
-        [slot]: dimension,
-      };
+      const nextAxisMap = replaceFdmAxisDimension(axisMap, slot, dimension);
       setAxisMap(nextAxisMap);
       updateNodePresentation({ viewMode: selectedViewMode, filters, axisMap: nextAxisMap });
     },
@@ -171,5 +168,25 @@ export function useFdmDashboardController({
       error,
     },
     actions,
+  };
+}
+
+export function replaceFdmAxisDimension(
+  axisMap: FdmAxisMap,
+  slot: keyof FdmAxisMap,
+  dimension: FdmAxisDimension
+): FdmAxisMap {
+  const previousDimension = axisMap[slot];
+  if (previousDimension === dimension) return axisMap;
+  const occupiedSlot = (
+    Object.entries(axisMap) as Array<[keyof FdmAxisMap, FdmAxisDimension]>
+  ).find(([, value]) => value === dimension)?.[0];
+  if (occupiedSlot === undefined) {
+    throw new Error(`FDM axis dimension is not present in the current map: ${dimension}`);
+  }
+  return {
+    ...axisMap,
+    [slot]: dimension,
+    [occupiedSlot]: previousDimension,
   };
 }
