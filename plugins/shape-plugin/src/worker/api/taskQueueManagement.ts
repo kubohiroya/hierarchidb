@@ -7,7 +7,11 @@
 import type { TaskDisplayPayload, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { type EphemeralBuildTaskRecord, ephemeralDB } from '@hierarchidb/gis-sdk';
-import type { ShapeBuildStopReason, ShapeBuildTaskRecord } from '@hierarchidb/shape-api';
+import type {
+  ShapeBuildStage,
+  ShapeBuildStopReason,
+  ShapeBuildTaskRecord,
+} from '@hierarchidb/shape-api';
 import { deleteTasksByIds, putTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { Dexie } from 'dexie';
 
@@ -22,10 +26,20 @@ export type TaskQueueStatusCounts = {
 };
 
 export type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
+export type ShapeTaskStage = ShapeBuildStage;
+
+export const isShapeTaskStage = (stage: unknown): stage is ShapeTaskStage =>
+  stage === 'source' || stage === 'geometry' || stage === 'tileEmit';
+
+export const requireShapeTaskStage = (stage: TaskQueueRecord['stage']): ShapeTaskStage => {
+  if (isShapeTaskStage(stage)) return stage;
+  throw new Error(`[taskQueueManagement] unsupported shape task stage: ${String(stage)}`);
+};
 
 export const toCanonicalStageId = (stage: TaskQueueRecord['stage']): CanonicalStageId => {
-  if (stage === 'source') return 'source-stage';
-  if (stage === 'geometry') return 'geometry-stage';
+  const shapeStage = requireShapeTaskStage(stage);
+  if (shapeStage === 'source') return 'source-stage';
+  if (shapeStage === 'geometry') return 'geometry-stage';
   return 'tile-emit-stage';
 };
 

@@ -32,6 +32,12 @@
       "@hierarchidb/cors-proxy/*": ["./packages/backend/cors-proxy/dist/*"],
       "@hierarchidb/download": ["./packages/download/dist/index.d.ts"],
       "@hierarchidb/download/*": ["./packages/download/dist/*"],
+      "@hierarchidb/external-content-transfer": [
+        "./packages/external-content-transfer/dist/index.d.ts"
+      ],
+      "@hierarchidb/external-content-transfer/*": [
+        "./packages/external-content-transfer/dist/*"
+      ],
       "@hierarchidb/chunk-store": ["./packages/chunk-store/dist/index.d.ts"],
       "@hierarchidb/chunk-store/*": ["./packages/chunk-store/dist/*"],
       "@hierarchidb/location-store": ["./packages/location-store/dist/index.d.ts"],
@@ -154,6 +160,16 @@
       "@hierarchidb/ui-datasource/*": ["./packages/ui/datasource/dist/*"],
       "@hierarchidb/ui-dynamic-speed-dial": ["./packages/ui/dynamic-speed-dial/dist/index.d.ts"],
       "@hierarchidb/ui-dynamic-speed-dial/*": ["./packages/ui/dynamic-speed-dial/dist/*"],
+      "@hierarchidb/ui-external-service-connection": [
+        "./packages/ui/external-service-connection/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-external-service-connection/*": [
+        "./packages/ui/external-service-connection/dist/*"
+      ],
+      "@hierarchidb/ui-external-service-health": [
+        "./packages/ui/external-service-health/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-external-service-health/*": ["./packages/ui/external-service-health/dist/*"],
       "@hierarchidb/ui-build-progress": ["./packages/ui/build-progress/dist/index.d.ts"],
       "@hierarchidb/ui-build-progress/*": ["./packages/ui/build-progress/dist/*"],
       "@hierarchidb/ui-build-sessions": ["./packages/ui/build-sessions/dist/index.d.ts"],

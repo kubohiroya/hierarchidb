@@ -46,6 +46,7 @@ import type {
 import { toRecord } from './controller/step-guards.js';
 import type { PluginDialogConflictDialogProps } from './PluginDialogControllerElements.js';
 import { createPluginDialogContentComponent } from './PluginDialogControllerElements.js';
+import type { StepTransitionDialogState } from './types.js';
 import type {
   TreeNodeUpdaterPatch,
   TreeNodeUpdaterPayload,
@@ -126,6 +127,7 @@ export interface PluginDialogControllerState {
     message: string;
   };
   conflictDialog?: PluginDialogConflictDialogProps;
+  stepTransitionDialog?: StepTransitionDialogState | null;
 }
 
 const PlaceholderStep: React.FC = () => null;
@@ -715,6 +717,7 @@ export function usePluginDialogController(
       });
     }
     updateTreeNodeUpdater(nextPatch);
+    return nextPatch;
   }, [
     basicInfo.description,
     basicInfo.name,
@@ -735,6 +738,8 @@ export function usePluginDialogController(
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
   const disableDraftButton = nodeType === 'folder';
   const { pendingAction, pendingActionRef, runWithPending } = usePendingAction(open);
+  const [stepTransitionDialog, setStepTransitionDialog] =
+    useState<StepTransitionDialogState | null>(null);
   const [isStartingBuild, setIsStartingBuild] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const dialogDirtyRef = useRef(dialogDirty);
@@ -768,8 +773,17 @@ export function usePluginDialogController(
     updateLocalDraft,
     updateDialogUIState,
     getPersistableDialogUIState,
+    setStepTransitionDialog,
     commitTreeNodeUpdater: commitTreeNodeUpdater ?? undefined,
+    activeStepConfig,
+    stepDescriptors: safeStepDescriptors,
+    dialogData,
+    uiState: {},
+    mode: stepMode,
+    treeId,
+    currentNodeVersion: draft?.version,
     nodeId,
+    parentId: pageNodeId,
     nodeType,
     treeUpdaterTreeNodeId: treeUpdater?.treeNodeId,
     treeUpdaterDraftMetadata: treeUpdater?.draftMetadata ?? null,
@@ -1311,6 +1325,7 @@ export function usePluginDialogController(
     dialogState: dialogStateSnapshot,
     updateDialogState,
     conflictDialog: conflictDialogProps,
+    stepTransitionDialog,
     unsavedChangeDialog: {
       open: discardDialogOpen,
       onDiscard: handleConfirmDiscard,

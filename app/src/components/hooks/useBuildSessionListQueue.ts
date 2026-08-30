@@ -39,6 +39,7 @@ const SESSION_SORT_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status']
   'running',
   'resuming',
   'finalizing',
+  'canceling',
 ]);
 
 const SESSION_TIMER_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status']>([
@@ -47,6 +48,7 @@ const SESSION_TIMER_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status'
   'resuming',
   'finalizing',
   'pausing',
+  'canceling',
 ]);
 
 const QUEUE_STATUSES: BuildSessionRuntimeRecord['status'][] = [
@@ -55,13 +57,18 @@ const QUEUE_STATUSES: BuildSessionRuntimeRecord['status'][] = [
   'resuming',
   'finalizing',
   'pausing',
+  'canceling',
   'paused',
   'failed',
   'completed',
+  'canceled',
 ];
 
 const isSessionStoppedByStatus = (session: BuildSessionRuntimeRecord): boolean =>
-  session.status === 'paused' || session.status === 'failed' || session.status === 'completed';
+  session.status === 'paused' ||
+  session.status === 'failed' ||
+  session.status === 'completed' ||
+  session.status === 'canceled';
 
 const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =>
   session.isActive || SESSION_SORT_ACTIVE_STATUSES.has(session.status);

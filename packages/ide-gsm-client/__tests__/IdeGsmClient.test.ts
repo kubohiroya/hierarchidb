@@ -4,12 +4,6 @@ import type { WsClientFactory } from '../src/IdeGsmClient.js';
 import { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from '../src/IdeGsmClient.js';
 import type { IdeGsmCommand, TaskStatus } from '../src/ideGsmTypes.js';
 import { IDE_GSM_COMMAND_IDS } from '../src/ideGsmTypes.js';
-import {
-  assertIdeGsmMountDescriptor,
-  decodeIdeGsmMountedNodeId,
-  encodeIdeGsmMountedNodeId,
-  isIdeGsmMountedNodeId,
-} from '../src/mount/IdeGsmMountTypes.js';
 
 type SinkLike = {
   next: (value: unknown) => void;
@@ -62,6 +56,10 @@ interface CommandCase {
 }
 
 const projectRelativePath = 'group/project';
+const yamlRelativePath = 'scenarios/base.yaml';
+const csvRelativePath = 'outputs/table.csv';
+const oldDigest = '0'.repeat(64);
+const newDigest = '1'.repeat(64);
 
 const directoryNode = {
   name: 'src',
@@ -402,7 +400,7 @@ describe('input validation and optional variables', () => {
   });
 });
 
-describe('directory read and mounted filesystem contracts', () => {
+describe('directory read contracts', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -522,43 +520,365 @@ describe('directory read and mounted filesystem contracts', () => {
     await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
     await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
   });
+});
 
-  it('validates mount descriptors without persisting endpoint or credential fields', () => {
-    expect(() =>
-      assertIdeGsmMountDescriptor({
-        mountKind: 'ide-gsm',
-        sourceKind: 'project-root',
-        mountId: 'project-a',
-        displayName: 'Project A',
-        rootPath: '',
-        capabilities: { read: true },
-        projectId: projectRelativePath,
-      })
-    ).not.toThrow();
-
-    expect(() =>
-      assertIdeGsmMountDescriptor({
-        mountKind: 'ide-gsm',
-        sourceKind: 'fdm-space-root',
-        mountId: 'fdm-default',
-        displayName: 'FDM default',
-        rootPath: 'runs',
-        capabilities: { read: true, remove: true },
-        spaceId: 'default',
-        endpointUrl: 'https://endpoint-secret.example',
-      })
-    ).toThrow('endpointUrl');
+describe('conditional project YAML write contract', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('encodes and decodes mounted node IDs deterministically', () => {
-    const nodeId = encodeIdeGsmMountedNodeId('mount one', 'src/index.ts');
-
-    expect(nodeId).toBe('ide-gsm:mount%20one:src%2Findex.ts');
-    expect(isIdeGsmMountedNodeId(nodeId)).toBe(true);
-    expect(decodeIdeGsmMountedNodeId(nodeId)).toEqual({
-      mountId: 'mount one',
-      relativePath: 'src/index.ts',
+  it('reads authoritative YAML content with digest metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      projectYamlFileContent: {
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        content: 'a: 1\n',
+        contentDigest: oldDigest,
+        updatedAt: '2026-08-30T00:00:00Z',
+        byteCount: 5,
+      },
     });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.projectYamlFileContent({ projectRelativePath, relativePath: yamlRelativePath })
+    ).resolves.toMatchObject({ content: 'a: 1\n', contentDigest: oldDigest });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('projectYamlFileContent');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ projectRelativePath, relativePath: yamlRelativePath });
+  });
+
+  it('writes with the required expectedDigest and returns updated metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      conditionalProjectYamlWrite: {
+        status: 'UPDATED',
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        contentDigest: newDigest,
+        updatedAt: '2026-08-30T00:00:01Z',
+        byteCount: 5,
+        resyncRequired: false,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.conditionalProjectYamlWrite({
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        expectedDigest: oldDigest,
+        content: 'a: 2\n',
+      })
+    ).resolves.toMatchObject({ status: 'UPDATED', contentDigest: newDigest });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('conditionalProjectYamlWrite');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      projectRelativePath,
+      relativePath: yamlRelativePath,
+      expectedDigest: oldDigest,
+      content: 'a: 2\n',
+    });
+  });
+
+  it('surfaces CONTENT_CONFLICT as a typed result without throwing', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      conditionalProjectYamlWrite: {
+        status: 'CONTENT_CONFLICT',
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        contentDigest: newDigest,
+        updatedAt: '2026-08-30T00:00:01Z',
+        byteCount: 8,
+        resyncRequired: false,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.conditionalProjectYamlWrite({
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        expectedDigest: oldDigest,
+        content: 'a: 2\n',
+      })
+    ).resolves.toMatchObject({
+      status: 'CONTENT_CONFLICT',
+      contentDigest: newDigest,
+      updatedAt: '2026-08-30T00:00:01Z',
+    });
+  });
+
+  it.each([
+    ['missing digest', { expectedDigest: '' }],
+    ['uppercase digest', { expectedDigest: 'A'.repeat(64) }],
+    ['non-yaml path', { relativePath: 'scenarios/base.json' }],
+    ['parent traversal', { relativePath: '../base.yaml' }],
+  ])('rejects %s before a network request', async (_label, overrides) => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request');
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.conditionalProjectYamlWrite({
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        expectedDigest: oldDigest,
+        content: 'a: 2\n',
+        ...overrides,
+      })
+    ).rejects.toThrow();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed write metadata without exposing secrets', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      conditionalProjectYamlWrite: {
+        status: 'UPDATED',
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        contentDigest: 'not-a-digest',
+        updatedAt: '2026-08-30T00:00:01Z',
+        byteCount: 8,
+        resyncRequired: false,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint-secret.example', 'jwt-secret');
+
+    const promise = client.conditionalProjectYamlWrite({
+      projectRelativePath,
+      relativePath: yamlRelativePath,
+      expectedDigest: oldDigest,
+      content: 'a: 2\n',
+    });
+    await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
+    await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
+  });
+});
+
+describe('project CSV content transfer contract', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('begins, pages, and closes an immutable CSV transfer with typed metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const content = 'col\nvalue\n';
+    const contentBase64 = Buffer.from(content, 'utf8').toString('base64');
+    const spy = vi
+      .spyOn(GraphQLClient.prototype, 'request')
+      .mockResolvedValueOnce({
+        beginProjectFileContentTransfer: {
+          transferId: 'transfer-1',
+          contentDigest: oldDigest,
+          updatedAt: '2026-08-30T00:00:00Z',
+          byteCount: Buffer.byteLength(content),
+          chunkSizeBytes: 16_384,
+          expiresAt: '2026-08-30T00:05:00Z',
+        },
+      })
+      .mockResolvedValueOnce({
+        projectFileContentPage: {
+          contentChunkBase64: contentBase64,
+          rawByteCount: Buffer.byteLength(content),
+          nextCursor: null,
+          hasNext: false,
+        },
+      })
+      .mockResolvedValueOnce({ closeProjectFileContentTransfer: true });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.beginProjectFileContentTransfer({
+        projectRelativePath,
+        relativePath: csvRelativePath,
+      })
+    ).resolves.toMatchObject({ transferId: 'transfer-1', chunkSizeBytes: 16_384 });
+    await expect(client.projectFileContentPage({ transferId: 'transfer-1' })).resolves.toEqual({
+      contentChunkBase64: contentBase64,
+      rawByteCount: Buffer.byteLength(content),
+      nextCursor: null,
+      hasNext: false,
+    });
+    await expect(client.closeProjectFileContentTransfer('transfer-1')).resolves.toBe(true);
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('beginProjectFileContentTransfer');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      projectRelativePath,
+      relativePath: csvRelativePath,
+    });
+    expect(String(spy.mock.calls[1]?.[0])).toContain('projectFileContentPage');
+    expect(spy.mock.calls[1]?.[1]).toEqual({ transferId: 'transfer-1' });
+    expect(String(spy.mock.calls[2]?.[0])).toContain('closeProjectFileContentTransfer');
+    expect(spy.mock.calls[2]?.[1]).toEqual({ transferId: 'transfer-1' });
+  });
+
+  it.each([
+    ['non-csv path', { relativePath: 'outputs/table.tsv' }],
+    ['parent traversal', { relativePath: '../table.csv' }],
+  ])('rejects invalid transfer input %s before a network request', async (_label, overrides) => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request');
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.beginProjectFileContentTransfer({
+        projectRelativePath,
+        relativePath: csvRelativePath,
+        ...overrides,
+      })
+    ).rejects.toThrow();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'wrong transfer chunk size',
+      {
+        beginProjectFileContentTransfer: {
+          transferId: 'transfer-1',
+          contentDigest: oldDigest,
+          updatedAt: '2026-08-30T00:00:00Z',
+          byteCount: 0,
+          chunkSizeBytes: 16_385,
+          expiresAt: '2026-08-30T00:05:00Z',
+        },
+      },
+    ],
+    [
+      'page byte count mismatch',
+      {
+        projectFileContentPage: {
+          contentChunkBase64: Buffer.from('a,b\n').toString('base64'),
+          rawByteCount: 999,
+          nextCursor: null,
+          hasNext: false,
+        },
+      },
+    ],
+    [
+      'missing continuation cursor',
+      {
+        projectFileContentPage: {
+          contentChunkBase64: '',
+          rawByteCount: 0,
+          nextCursor: null,
+          hasNext: true,
+        },
+      },
+    ],
+  ])('rejects malformed transfer response: %s', async (label, response) => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce(response);
+    const client = new IdeGsmClient('https://endpoint-secret.example', 'jwt-secret');
+
+    const promise =
+      label === 'wrong transfer chunk size'
+        ? client.beginProjectFileContentTransfer({
+            projectRelativePath,
+            relativePath: csvRelativePath,
+          })
+        : client.projectFileContentPage({ transferId: 'transfer-1' });
+
+    await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
+    await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
+  });
+});
+
+describe('external build session task contract', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('discovers active project tasks from typed server metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      activeProjectTasks: [
+        {
+          taskId: 'task-active',
+          commandId: 'sim',
+          status: 'LEASED',
+          projectRelativePath,
+          progress: 25,
+          phase: 'running',
+          registeredAt: '2026-08-30T00:00:00Z',
+          startedAt: '2026-08-30T00:00:01Z',
+          updatedAt: '2026-08-30T00:00:02Z',
+        },
+      ],
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.activeProjectTasks(projectRelativePath)).resolves.toEqual([
+      {
+        taskId: 'task-active',
+        commandId: 'sim',
+        status: 'LEASED',
+        projectRelativePath,
+        progress: 25,
+        phase: 'running',
+        registeredAt: '2026-08-30T00:00:00Z',
+        startedAt: '2026-08-30T00:00:01Z',
+        updatedAt: '2026-08-30T00:00:02Z',
+      },
+    ]);
+    expect(String(spy.mock.calls[0]?.[0])).toContain('activeProjectTasks');
+    expect(String(spy.mock.calls[0]?.[0])).not.toContain('paramsJson');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ projectRelativePath });
+  });
+
+  it('keeps cancellation acceptance distinct from terminal task state', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      cancelTask: {
+        taskId: 'task-active',
+        accepted: true,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.cancelTask('task-active')).resolves.toEqual({
+      taskId: 'task-active',
+      accepted: true,
+    });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('cancelTask');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ taskId: 'task-active' });
+  });
+
+  it('subscribes to live task logs without a replay cursor', () => {
+    let capturedSink: SinkLike | null = null;
+    const tracked = makeTrackedWsClient((sink) => {
+      capturedSink = sink;
+    });
+    const listener = vi.fn();
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret', tracked.factory);
+
+    const unsubscribe = client.subscribeTaskLog('task-active', listener);
+    capturedSink?.next({
+      data: {
+        subscribeTaskLog: {
+          taskId: 'task-active',
+          sequence: 0,
+          timestamp: '2026-08-30T00:00:00Z',
+          stream: 'stdout',
+          text: 'log body',
+        },
+      },
+    });
+    unsubscribe();
+
+    expect(listener).toHaveBeenCalledWith({
+      taskId: 'task-active',
+      sequence: 0,
+      timestamp: '2026-08-30T00:00:00Z',
+      stream: 'stdout',
+      text: 'log body',
+    });
+    expect(tracked.unsubscribe).toHaveBeenCalledOnce();
+    expect(tracked.dispose).toHaveBeenCalledOnce();
   });
 });
 

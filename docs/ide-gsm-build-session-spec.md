@@ -55,6 +55,8 @@ Responsibilities are divided as follows:
 - app-level composition: runtime-only IDE-GSM session registry, subscription lifetime, Build Session adapter registration, and AppBar aggregation.
 - `fdm-plugin`: optional shortcut only; it resolves and delegates to the owning `idegsm-project` and does not own a duplicate session.
 
+The generic portion of external async task presentation already lives in the Build Session packages listed above. `IdeGsmProjectExternalBuildSessions` remains an IDE-GSM adapter because it owns IDE-GSM task IDs, command IDs, event subscriptions, live-log epochs, reconnect behavior, and status translation. A new service-neutral task-projection module must be introduced only when another external backend needs the same lifecycle and validates a common adapter boundary; see `docs/external-service-integration-spec.md`.
+
 ## Session Identity And Concurrency
 
 The initial canonical session identity remains:

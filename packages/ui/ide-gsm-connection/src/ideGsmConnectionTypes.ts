@@ -1,0 +1,23 @@
+import type {
+  ExternalServiceConnectionDraft,
+  ExternalServiceConnectionHealthResult,
+  ExternalServiceConnectionHealthStatus,
+  ExternalServiceConnectionInput,
+  ExternalServiceConnectionRuntimeProvider,
+  ExternalServiceConnectionStepLabels,
+  ExternalServiceConnectionStepProps,
+  ExternalServiceConnectionValidationCode,
+  ExternalServiceConnectionValidationResult,
+  ExternalServiceNamedConnectionSummary,
+} from '@hierarchidb/ui-external-service-connection';
+
+export type IdeGsmConnectionHealthStatus = ExternalServiceConnectionHealthStatus;
+export type IdeGsmNamedConnectionSummary = ExternalServiceNamedConnectionSummary;
+export type IdeGsmConnectionInput = ExternalServiceConnectionInput;
+export type IdeGsmConnectionDraft = ExternalServiceConnectionDraft;
+export type IdeGsmConnectionHealthResult = ExternalServiceConnectionHealthResult;
+export type IdeGsmConnectionRuntimeProvider = ExternalServiceConnectionRuntimeProvider;
+export type IdeGsmConnectionStepLabels = ExternalServiceConnectionStepLabels;
+export type IdeGsmConnectionStepProps = ExternalServiceConnectionStepProps;
+export type IdeGsmConnectionValidationCode = ExternalServiceConnectionValidationCode;
+export type IdeGsmConnectionValidationResult = ExternalServiceConnectionValidationResult;

@@ -21,17 +21,17 @@ import type {
   StageSnapshotUpdatedEvent,
 } from '~/common/types/session-events';
 import { unconditionalEventStreamer } from './eventBuffering.js';
+import {
+  isShapeTaskStage,
+  requireShapeTaskStage,
+  type ShapeTaskStage,
+} from './taskQueueManagement.js';
 import { mapTaskQueueRecordToTaskSummary } from './taskSummaryMapping.js';
 
 export {
   emitHeartbeat,
   emitTaskProgressUpdated,
 } from '@hierarchidb/build-runtime-services';
-
-type ShapeTaskStage = TaskQueueRecord['stage'];
-
-const isShapeTaskStage = (value: unknown): value is ShapeTaskStage =>
-  value === 'source' || value === 'geometry' || value === 'tileEmit';
 
 const requireFiniteNonNegativeNumber = (value: unknown, label: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
@@ -66,6 +66,7 @@ const requireTaskStatus = (value: unknown, label: string): TaskStatus => {
     value === 'running' ||
     value === 'completed' ||
     value === 'failed' ||
+    value === 'canceled' ||
     value === 'recycled'
   ) {
     return value;
@@ -319,7 +320,8 @@ export const emitStageSnapshotUpdated = async (
 ): Promise<void> => {
   validateStageTimingContract(stageStartedAt, stageInactiveMs);
   const taskQueue = new VtTaskQueueDb();
-  const rawTasks = await readCanonicalStageTasks(taskQueue, nodeId, stage);
+  const resolvedStage = requireShapeTaskStage(stage);
+  const rawTasks = await readCanonicalStageTasks(taskQueue, nodeId, resolvedStage);
   if (shouldEmit?.() === false) return;
   const tasks = rawTasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
   const resolvedStageCompletedAt =
@@ -343,7 +345,7 @@ export const emitStageSnapshotUpdated = async (
   const event: StageSnapshotUpdatedEvent = {
     type: 'stageSnapshotUpdated',
     payload: {
-      stageId: stage,
+      stageId: resolvedStage,
       tasks,
       stageStartedAt,
       stageInactiveMs,

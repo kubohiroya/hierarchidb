@@ -4,9 +4,16 @@
  */
 
 import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
-import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
+import type {
+  TaskStage as BuildApiTaskStage,
+  BuildContinuationPolicy,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeBuildStage,
+  ShapeBuildStopReason,
+} from '@hierarchidb/shape-api';
 import type {
   ShapeBuildConfig,
   ShapeProcessingConfig,
@@ -38,6 +45,7 @@ import {
   emitStageSnapshotUpdated,
   readStartedStageTiming,
 } from './eventEmissionConstantsUtils.js';
+import { requireShapeTaskStage } from './taskQueueManagement.js';
 
 // Custom error types for better error classification
 class SourceTaskPayloadGenerationError extends Error {
@@ -349,7 +357,7 @@ const initializeAndReadStageTiming = async (
   };
 };
 
-type TaskStage = 'source' | 'geometry' | 'tileEmit';
+type TaskStage = ShapeBuildStage;
 
 const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSessionConfig => {
   const resolvedDataSource = requireDataSourceName(
@@ -1021,20 +1029,21 @@ const startBuildSessionInternal = async (
     };
     const emitStageTaskSnapshotBarrier = async (payload: {
       nodeId: NodeId;
-      stage: TaskStage;
+      stage: BuildApiTaskStage;
       taskCount: number;
     }): Promise<void> => {
       void payload.taskCount;
+      const stage = requireShapeTaskStage(payload.stage);
       // Initialize timing only at an actual stage transition, then read the
       // persisted values back before emitting the snapshot.
       const timing = await initializeAndReadStageTiming(
         payload.nodeId,
-        payload.stage,
+        stage,
         requireCurrentPipelineRun
       );
       await emitStageSnapshotUpdated(
         payload.nodeId,
-        payload.stage,
+        stage,
         timing.stageStartedAt,
         timing.stageInactiveMs,
         undefined,

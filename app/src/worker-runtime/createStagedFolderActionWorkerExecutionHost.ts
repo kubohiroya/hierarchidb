@@ -44,6 +44,7 @@ const STAGED_FOLDER_ACTION_BUILD_TERMINAL_STATUSES = new Set<BuildSessionStatusV
   'completed',
   'failed',
   'paused',
+  'canceled',
   'recycled',
 ]);
 

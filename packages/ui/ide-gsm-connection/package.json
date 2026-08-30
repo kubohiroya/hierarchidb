@@ -1,0 +1,44 @@
+{
+  "name": "@hierarchidb/ui-ide-gsm-connection",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Shared IDE-GSM connection step UI for plugin dialogs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@hierarchidb/ui-external-service-connection": "workspace:*",
+    "@hierarchidb/ui-external-service-health": "workspace:*",
+    "@mui/material": "^7.3.6",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/ui-external-service-connection": "workspace:*",
+    "@hierarchidb/ui-external-service-health": "workspace:*",
+    "@mui/material": "^7.3.6",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "5.8.2",
+    "vitest": "^4.1.0"
+  },
+  "keywords": [],
+  "author": "HierarchiDB Team",
+  "license": "MIT"
+}

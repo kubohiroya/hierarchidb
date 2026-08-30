@@ -9,6 +9,8 @@ describe('resolveRuntimeStatusFromBuildSession', () => {
     ['running', 'running'],
     ['pausing', 'pausing'],
     ['paused', 'paused'],
+    ['canceling', 'canceling'],
+    ['canceled', 'canceled'],
     ['completed', 'completed'],
     ['failed', 'failed'],
   ])('maps %s to %s', (status, expected) => {

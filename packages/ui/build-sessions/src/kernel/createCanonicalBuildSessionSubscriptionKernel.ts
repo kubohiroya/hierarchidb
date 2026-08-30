@@ -13,6 +13,7 @@ export type CanonicalBuildSessionTaskStatus =
   | 'running'
   | 'completed'
   | 'failed'
+  | 'canceled'
   | 'recycled'
   | 'skipped';
 
@@ -179,6 +180,8 @@ const resolveLifecyclePhase = (value: unknown): SessionPhase => {
     value === 'running' ||
     value === 'pausing' ||
     value === 'paused' ||
+    value === 'canceling' ||
+    value === 'canceled' ||
     value === 'resuming' ||
     value === 'finalizing' ||
     value === 'completed' ||
@@ -195,6 +198,7 @@ const resolveTaskStatus = (value: unknown): CanonicalBuildSessionTaskStatus => {
     value === 'running' ||
     value === 'completed' ||
     value === 'failed' ||
+    value === 'canceled' ||
     value === 'recycled' ||
     value === 'skipped'
   ) {
@@ -214,6 +218,7 @@ const validateSessionStatus = <StageId extends string>(
     phase === 'starting' ||
     phase === 'running' ||
     phase === 'pausing' ||
+    phase === 'canceling' ||
     phase === 'resuming' ||
     phase === 'finalizing';
   if (isActive !== expectedIsActive) {

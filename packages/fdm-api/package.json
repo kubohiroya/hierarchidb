@@ -1,0 +1,31 @@
+{
+  "name": "@hierarchidb/fdm-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/ide-gsm-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/ide-gsm-client": "workspace:*",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

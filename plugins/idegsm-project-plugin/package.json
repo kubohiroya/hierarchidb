@@ -1,0 +1,125 @@
+{
+  "name": "@hierarchidb/idegsm-project-plugin",
+  "version": "0.1.0",
+  "description": "IDE-GSM synchronized project node plugin",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js",
+      "default": "./dist/ui/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "icon": [
+        "dist/icon/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts src/worker/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@hierarchidb/build-api": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/external-content-transfer": "workspace:*",
+    "@hierarchidb/ide-gsm-client": "workspace:*",
+    "@hierarchidb/idegsm-project-api": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/ui-ide-gsm-connection": "workspace:*",
+    "@hierarchidb/yaml-api": "workspace:*",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
+    "@hierarchidb/external-content-transfer": "workspace:*",
+    "@hierarchidb/ide-gsm-client": "workspace:*",
+    "@hierarchidb/idegsm-project-api": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/ui-ide-gsm-connection": "workspace:*",
+    "@hierarchidb/yaml-api": "workspace:*",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@testing-library/react": "^16.3.2",
+    "react": "^19.0.0",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0"
+  },
+  "dependencies": {},
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "idegsm-project",
+      "name": "IDE-GSM Project Plugin",
+      "description": "Synchronized IDE-GSM project root node",
+      "i18nNamespace": "idegsm-project-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "connection",
+        "3": "projectPath"
+      },
+      "icon": {
+        "mui": "AccountTree",
+        "color": "#2f7d77",
+        "component": {
+          "specifier": "@hierarchidb/idegsm-project-plugin/icon",
+          "exportName": "IdeGsmProjectPluginIcon"
+        }
+      },
+      "priority": 520,
+      "category": "ide-gsm",
+      "dependencies": [
+        "folder"
+      ],
+      "visibility": {
+        "showInCreateMenu": false,
+        "showInPluginList": false
+      },
+      "capabilities": {
+        "canHaveChildren": true,
+        "canBeRoot": false,
+        "canBeDeleted": true,
+        "canBeRenamed": true,
+        "canBeMoved": true,
+        "canBeCopied": false
+      }
+    }
+  }
+}
