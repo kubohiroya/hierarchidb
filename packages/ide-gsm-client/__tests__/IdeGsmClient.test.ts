@@ -63,6 +63,7 @@ interface CommandCase {
 
 const projectRelativePath = 'group/project';
 const yamlRelativePath = 'scenarios/base.yaml';
+const csvRelativePath = 'outputs/table.csv';
 const oldDigest = '0'.repeat(64);
 const newDigest = '1'.repeat(64);
 
@@ -697,6 +698,135 @@ describe('conditional project YAML write contract', () => {
       expectedDigest: oldDigest,
       content: 'a: 2\n',
     });
+    await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
+    await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
+  });
+});
+
+describe('project CSV content transfer contract', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('begins, pages, and closes an immutable CSV transfer with typed metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const content = 'col\nvalue\n';
+    const contentBase64 = Buffer.from(content, 'utf8').toString('base64');
+    const spy = vi
+      .spyOn(GraphQLClient.prototype, 'request')
+      .mockResolvedValueOnce({
+        beginProjectFileContentTransfer: {
+          transferId: 'transfer-1',
+          contentDigest: oldDigest,
+          updatedAt: '2026-08-30T00:00:00Z',
+          byteCount: Buffer.byteLength(content),
+          chunkSizeBytes: 16_384,
+          expiresAt: '2026-08-30T00:05:00Z',
+        },
+      })
+      .mockResolvedValueOnce({
+        projectFileContentPage: {
+          contentChunkBase64: contentBase64,
+          rawByteCount: Buffer.byteLength(content),
+          nextCursor: null,
+          hasNext: false,
+        },
+      })
+      .mockResolvedValueOnce({ closeProjectFileContentTransfer: true });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.beginProjectFileContentTransfer({
+        projectRelativePath,
+        relativePath: csvRelativePath,
+      })
+    ).resolves.toMatchObject({ transferId: 'transfer-1', chunkSizeBytes: 16_384 });
+    await expect(client.projectFileContentPage({ transferId: 'transfer-1' })).resolves.toEqual({
+      contentChunkBase64: contentBase64,
+      rawByteCount: Buffer.byteLength(content),
+      nextCursor: null,
+      hasNext: false,
+    });
+    await expect(client.closeProjectFileContentTransfer('transfer-1')).resolves.toBe(true);
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('beginProjectFileContentTransfer');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      projectRelativePath,
+      relativePath: csvRelativePath,
+    });
+    expect(String(spy.mock.calls[1]?.[0])).toContain('projectFileContentPage');
+    expect(spy.mock.calls[1]?.[1]).toEqual({ transferId: 'transfer-1' });
+    expect(String(spy.mock.calls[2]?.[0])).toContain('closeProjectFileContentTransfer');
+    expect(spy.mock.calls[2]?.[1]).toEqual({ transferId: 'transfer-1' });
+  });
+
+  it.each([
+    ['non-csv path', { relativePath: 'outputs/table.tsv' }],
+    ['parent traversal', { relativePath: '../table.csv' }],
+  ])('rejects invalid transfer input %s before a network request', async (_label, overrides) => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request');
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.beginProjectFileContentTransfer({
+        projectRelativePath,
+        relativePath: csvRelativePath,
+        ...overrides,
+      })
+    ).rejects.toThrow();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'wrong transfer chunk size',
+      {
+        beginProjectFileContentTransfer: {
+          transferId: 'transfer-1',
+          contentDigest: oldDigest,
+          updatedAt: '2026-08-30T00:00:00Z',
+          byteCount: 0,
+          chunkSizeBytes: 16_385,
+          expiresAt: '2026-08-30T00:05:00Z',
+        },
+      },
+    ],
+    [
+      'page byte count mismatch',
+      {
+        projectFileContentPage: {
+          contentChunkBase64: Buffer.from('a,b\n').toString('base64'),
+          rawByteCount: 999,
+          nextCursor: null,
+          hasNext: false,
+        },
+      },
+    ],
+    [
+      'missing continuation cursor',
+      {
+        projectFileContentPage: {
+          contentChunkBase64: '',
+          rawByteCount: 0,
+          nextCursor: null,
+          hasNext: true,
+        },
+      },
+    ],
+  ])('rejects malformed transfer response: %s', async (label, response) => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce(response);
+    const client = new IdeGsmClient('https://endpoint-secret.example', 'jwt-secret');
+
+    const promise =
+      label === 'wrong transfer chunk size'
+        ? client.beginProjectFileContentTransfer({
+            projectRelativePath,
+            relativePath: csvRelativePath,
+          })
+        : client.projectFileContentPage({ transferId: 'transfer-1' });
+
     await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
     await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
   });

@@ -241,6 +241,38 @@ export const ideGsmGraphqlDocuments = {
       }
     }
   `,
+  beginProjectFileContentTransfer: gql`
+    mutation BeginProjectFileContentTransfer(
+      $projectRelativePath: String!
+      $relativePath: String!
+    ) {
+      beginProjectFileContentTransfer(
+        input: { projectRelativePath: $projectRelativePath, relativePath: $relativePath }
+      ) {
+        transferId
+        contentDigest
+        updatedAt
+        byteCount
+        chunkSizeBytes
+        expiresAt
+      }
+    }
+  `,
+  projectFileContentPage: gql`
+    query ProjectFileContentPage($transferId: String!, $cursor: String) {
+      projectFileContentPage(input: { transferId: $transferId, cursor: $cursor }) {
+        contentChunkBase64
+        rawByteCount
+        nextCursor
+        hasNext
+      }
+    }
+  `,
+  closeProjectFileContentTransfer: gql`
+    mutation CloseProjectFileContentTransfer($transferId: String!) {
+      closeProjectFileContentTransfer(transferId: $transferId)
+    }
+  `,
   activeProjectTasks: gql`
     query ActiveProjectTasks($projectRelativePath: String!) {
       activeProjectTasks(input: { projectRelativePath: $projectRelativePath }) {
