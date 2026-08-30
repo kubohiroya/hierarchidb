@@ -35,6 +35,7 @@ const mapLifecyclePhaseToBuildStatus = (
   if (phase === 'idle') return 'idle';
   if (phase === 'starting') return 'queued';
   if (phase === 'paused') return 'paused';
+  if (phase === 'canceled') return 'canceled';
   if (phase === 'completed') return 'completed';
   if (phase === 'failed') return 'failed';
   return 'running';

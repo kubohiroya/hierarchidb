@@ -122,7 +122,7 @@ export const isTerminalTask = (task: ShapeBuildTaskSummary | undefined): boolean
   isTaskSkipped(task?.display, task ? resolveTaskMetadataText(task) : null);
 
 const isTerminalTaskStatus = (status: ShapeBuildTaskSummary['status'] | undefined): boolean =>
-  status === 'completed' || status === 'failed';
+  status === 'completed' || status === 'failed' || status === 'canceled';
 
 const isTerminalStatus = (task: ShapeBuildTaskSummary | undefined): boolean => isTerminalTask(task);
 
@@ -182,6 +182,7 @@ const shouldApplyTaskUpdate = (
     running: 4,
     completed: 5,
     failed: 6,
+    canceled: 7,
   };
   const currentRank = statusRank[current.status] ?? 0;
   const nextRank = statusRank[next.status] ?? 0;
@@ -412,4 +413,4 @@ export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
 };
 
 export const isTaskStage = (value: unknown): value is TaskStage =>
-  typeof value === 'string' && taskStages.includes(value as TaskStage);
+  typeof value === 'string' && (taskStages as readonly string[]).includes(value);

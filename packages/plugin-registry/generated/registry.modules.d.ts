@@ -10,6 +10,16 @@ declare module '@hierarchidb/basemap-plugin/icon' {
   export default BasemapPluginIcon;
 }
 
+declare module '@hierarchidb/fdm-plugin/ui' {
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
+declare module '@hierarchidb/fdm-plugin/icon' {
+  export const FdmPluginIcon: unknown;
+  export default FdmPluginIcon;
+}
+
 declare module '@hierarchidb/folder-plugin/ui' {
   const mod: Record<string, unknown>;
   export default mod;
@@ -23,6 +33,21 @@ declare module '@hierarchidb/folder-plugin/worker' {
 declare module '@hierarchidb/folder-plugin/icon' {
   export const FolderPluginIcon: unknown;
   export default FolderPluginIcon;
+}
+
+declare module '@hierarchidb/idegsm-project-plugin/ui' {
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
+declare module '@hierarchidb/idegsm-project-plugin/worker' {
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
+declare module '@hierarchidb/idegsm-project-plugin/icon' {
+  export const IdeGsmProjectPluginIcon: unknown;
+  export default IdeGsmProjectPluginIcon;
 }
 
 declare module '@hierarchidb/linker-plugin/ui' {

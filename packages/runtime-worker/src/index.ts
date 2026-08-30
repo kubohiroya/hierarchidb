@@ -1,16 +1,4 @@
 export {
-  assertNodeIsNotIdeGsmMountedForTreeMutation,
-  type IdeGsmMountedFilesystemActionClient,
-  IdeGsmMountedFilesystemActionPort,
-  type IdeGsmMountedFilesystemRemoveInput,
-} from './adapters/ide-gsm/IdeGsmMountedFilesystemActionPort.js';
-export {
-  type IdeGsmMountRootReader,
-  type IdeGsmTreeQueryClient,
-  IdeGsmTreeQueryMountAdapter,
-  isIdeGsmMountRootNode,
-} from './adapters/ide-gsm/IdeGsmTreeQueryMountAdapter.js';
-export {
   configureWorkerContainer,
   getWorkerContainer,
   resetWorkerContainerForTesting,

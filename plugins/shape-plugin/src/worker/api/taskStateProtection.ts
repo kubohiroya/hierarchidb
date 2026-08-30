@@ -4,23 +4,23 @@
  * Ensures task state preservation during AbortController termination
  */
 
-import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { type EphemeralBuildTaskRecord, ephemeralDB } from '@hierarchidb/gis-sdk';
+import type { ShapeBuildTaskRecordUpdate } from '@hierarchidb/shape-api';
 
 export interface TaskStateSnapshot {
   taskId: string;
   nodeId: NodeId;
-  status: TaskQueueRecord['status'];
-  inputData: TaskQueueRecord['inputData'];
-  outputData: TaskQueueRecord['outputData'];
-  startedAt: TaskQueueRecord['startedAt'];
-  completedAt: TaskQueueRecord['completedAt'];
-  progress: TaskQueueRecord['progress'];
-  stage: TaskQueueRecord['stage'];
-  version: TaskQueueRecord['version'];
-  index: TaskQueueRecord['index'];
-  metadata: TaskQueueRecord['metadata'];
+  status: EphemeralBuildTaskRecord['status'];
+  inputData: EphemeralBuildTaskRecord['inputData'];
+  outputData: EphemeralBuildTaskRecord['outputData'];
+  startedAt: EphemeralBuildTaskRecord['startedAt'];
+  completedAt: EphemeralBuildTaskRecord['completedAt'];
+  progress: EphemeralBuildTaskRecord['progress'];
+  stage: EphemeralBuildTaskRecord['stage'];
+  version: EphemeralBuildTaskRecord['version'];
+  index: EphemeralBuildTaskRecord['index'];
+  metadata: EphemeralBuildTaskRecord['metadata'];
 }
 
 export interface TaskStateValidationResult {
@@ -141,7 +141,7 @@ export class TaskStateProtectionService {
   /**
    * Validate task state consistency
    */
-  validateTaskState(task: TaskQueueRecord): TaskStateValidationResult {
+  validateTaskState(task: EphemeralBuildTaskRecord): TaskStateValidationResult {
     const inconsistencies: string[] = [];
     const missingFields: string[] = [];
 
@@ -174,7 +174,7 @@ export class TaskStateProtectionService {
    */
   async atomicTaskUpdate(
     taskId: string,
-    updates: Partial<TaskQueueRecord>,
+    updates: ShapeBuildTaskRecordUpdate,
     abortSignal?: AbortSignal
   ): Promise<void> {
     // Create snapshot before update
