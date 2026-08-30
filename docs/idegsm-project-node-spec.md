@@ -42,8 +42,11 @@ The implementation should be split as follows:
 
 - `plugins/idegsm-project-plugin`: UI node plugin, context menu integration, YAML editor integration, run panel / notification UI.
 - `packages/idegsm-project-api`: public types, sync metadata contract, service ports, command/run API contracts.
-- `packages/ide-gsm-client`: reusable GraphQL client boundary, named-connection resolution contract, and health-check port for IDE-GSM server access.
-- `packages/ui/ide-gsm-connection`: shared React Step 2 component and presentation/controller hooks used by both `idegsm-project` and `fdm` dialogs.
+- `packages/ide-gsm-client`: reusable IDE-GSM GraphQL client boundary and typed service operations.
+- `packages/ui/external-service-health`: canonical external-service health state and health-check lifecycle.
+- `packages/ui/external-service-connection`: generic named-connection/manual-target Step 2 component, validation, and runtime-provider contract.
+- `packages/ui/ide-gsm-connection`: IDE-GSM compatibility wrapper around the generic external-service connection package, used by both `idegsm-project` and `fdm` dialogs.
+- `packages/external-content-transfer`: generic immutable paged content-transfer and streaming CSV acquisition helpers.
 - `packages/build-api` and `packages/ui/build-sessions`: canonical external-session projection and shared AppBar Build Session presentation used for IDE-GSM tasks.
 - `app/src/ide-gsm-connection/`: app-level runtime provider that owns raw host, port, endpoint, CORS proxy, and credential values.
 
@@ -82,7 +85,7 @@ Selecting either entry starts the standard `idegsm-project` plugin create flow f
 
 ## Dialog Step 2: Connection (`接続先`)
 
-Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `idegsm-project` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and external-service health state model as the `fdm` plugin; it must not fork or copy this code. The health state/check lifecycle is the generic `@hierarchidb/ui-external-service-health` contract described in `docs/external-service-health-spec.md`, not an IDE-GSM-owned model.
+Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `idegsm-project` plugin must use the same `IdeGsmConnectionStep` compatibility wrapper as the `fdm` plugin; that wrapper delegates to the generic `@hierarchidb/ui-external-service-connection` component, validation, runtime-provider contract, and `@hierarchidb/ui-external-service-health` health model. These shared contracts are described in `docs/external-service-integration-spec.md` and `docs/external-service-health-spec.md`; IDE-GSM packages must not fork or copy them.
 
 The step provides either:
 
@@ -476,9 +479,9 @@ mutation CloseProjectFileContentTransfer($transferId: String!) {
 }
 ```
 
-`chunkSizeBytes` is exactly 16,384 and each page's decoded `rawByteCount` is in `0..16384`; JSON and Base64 transport overhead is not included in this raw-byte limit. The cursor is opaque, scoped to the transfer, and advances monotonically. Pages may split a UTF-8 code point, quoted field, or CSV record, so `packages/ide-gsm-client` must decode and parse them as one ordered byte stream rather than independently parsing page strings.
+`chunkSizeBytes` is exactly 16,384 and each page's decoded `rawByteCount` is in `0..16384`; JSON and Base64 transport overhead is not included in this raw-byte limit. The cursor is opaque, scoped to the transfer, and advances monotonically. Pages may split a UTF-8 code point, quoted field, or CSV record, so the `idegsm-project` worker adapter must pass the ordered byte stream through the generic `@hierarchidb/external-content-transfer` acquisition helper rather than independently parsing page strings.
 
-The client boundary validates transfer metadata before exposing it to plugin services: `contentDigest` is lowercase SHA-256 hex, `chunkSizeBytes` is exactly 16,384, every page decodes from Base64 to the declared raw byte count, and continuation/final cursor flags are internally consistent. The `idegsm-project` worker acquisition service treats the transfer as a byte stream, updates the digest incrementally, streams UTF-8 decoding and CSV parsing across page boundaries, and publishes a tracked Tabular snapshot only after the final byte count and digest match the immutable transfer metadata. Any mismatch, parser error, storage error, or publication error keeps the previous metadata-only or tracked child state authoritative and still closes the transfer. A close failure after a local tracked snapshot has already committed is reported only as sanitized cleanup telemetry and does not invert the successful acquisition result.
+The client boundary validates transfer metadata before exposing it to plugin services: `contentDigest` is lowercase SHA-256 hex, `chunkSizeBytes` is exactly 16,384, every page decodes from Base64 to the declared raw byte count, and continuation/final cursor flags are internally consistent. The generic `@hierarchidb/external-content-transfer` helper treats the transfer as a byte stream, updates the digest incrementally, streams UTF-8 decoding and CSV parsing across page boundaries, and returns a committed local table only after the final byte count and digest match the immutable transfer metadata. The `idegsm-project` worker acquisition service then publishes IDE-GSM tracked snapshot metadata. Any mismatch, parser error, storage error, or publication error keeps the previous metadata-only or tracked child state authoritative and still closes the transfer. A close failure after a local table has already committed is reported only as sanitized cleanup telemetry and does not invert the successful acquisition result.
 
 The server validates the authenticated user's project access and both logical relative paths, rejects absolute/traversal paths, symlinks, non-file targets, and non-CSV targets, and creates a short-lived immutable transfer snapshot while streaming the source rather than loading it into memory. It then performs a second streaming source digest verification and accepts the transfer only when source identity, size, `updatedAt`, and both full-byte digests agree. Otherwise begin removes the temporary snapshot and fails with `CONTENT_CHANGED_DURING_TRANSFER`. The returned digest is SHA-256 over the exact immutable raw bytes and every page comes from that same transfer snapshot.
 

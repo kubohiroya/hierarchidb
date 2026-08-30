@@ -55,6 +55,7 @@
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/external-content-transfer": "workspace:*",
     "@hierarchidb/ide-gsm-client": "workspace:*",
     "@hierarchidb/idegsm-project-api": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
@@ -68,6 +69,7 @@
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/build-api": "workspace:*",
+    "@hierarchidb/external-content-transfer": "workspace:*",
     "@hierarchidb/ide-gsm-client": "workspace:*",
     "@hierarchidb/idegsm-project-api": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
