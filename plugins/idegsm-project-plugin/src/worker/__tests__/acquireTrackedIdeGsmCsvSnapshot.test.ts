@@ -169,6 +169,42 @@ describe('acquireTrackedIdeGsmCsvSnapshot', () => {
     expect(client.closeProjectFileContentTransfer).toHaveBeenCalledWith(transferId);
   });
 
+  it('keeps a committed snapshot successful when transfer close cleanup fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const client = makeClient('name\nalpha\n', []);
+    const close = client.closeProjectFileContentTransfer as ReturnType<typeof vi.fn>;
+    close.mockRejectedValueOnce(new Error('close failed'));
+    const publication = makePublication();
+
+    await expect(acquire(client, publication)).resolves.toMatchObject({
+      snapshotId: 'snapshot-1',
+      tableId: 'table-1',
+      rowCount: 1,
+    });
+
+    expect(publication.commitTrackedCsvSnapshot).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledWith(transferId);
+    expect(warn).toHaveBeenCalledWith('[idegsm-project] failed to close CSV content transfer');
+    warn.mockRestore();
+  });
+
+  it('preserves the primary acquisition failure when transfer close also fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const client = makeClient('a\nb\n', []);
+    const begin = client.beginProjectFileContentTransfer as ReturnType<typeof vi.fn>;
+    begin.mockResolvedValueOnce(transfer('0'.repeat(64), 999));
+    const close = client.closeProjectFileContentTransfer as ReturnType<typeof vi.fn>;
+    close.mockRejectedValueOnce(new Error('close failed'));
+    const publication = makePublication();
+
+    await expect(acquire(client, publication)).rejects.toThrow('metadata');
+
+    expect(publication.commitTrackedCsvSnapshot).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledWith(transferId);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('closes the transfer and skips publication when received bytes do not match metadata', async () => {
     const client = makeClient('a\nb\n', []);
     const begin = client.beginProjectFileContentTransfer as ReturnType<typeof vi.fn>;

@@ -80,6 +80,7 @@ export async function acquireTrackedIdeGsmCsvSnapshot(
 ): Promise<AcquireTrackedIdeGsmCsvSnapshotResult> {
   assertAcquisitionInput(input);
   let transfer: ProjectFileContentTransfer | null = null;
+  let primaryError: unknown;
   try {
     transfer = await client.beginProjectFileContentTransfer(input);
     const hasher = publication.createHasher();
@@ -168,9 +169,19 @@ export async function acquireTrackedIdeGsmCsvSnapshot(
       rowCount: commit.totalRows,
       columnNames: parser.headers,
     };
+  } catch (error) {
+    primaryError = error;
+    throw error;
   } finally {
     if (transfer !== null) {
-      await client.closeProjectFileContentTransfer(transfer.transferId);
+      try {
+        await client.closeProjectFileContentTransfer(transfer.transferId);
+      } catch {
+        if (primaryError === undefined) {
+          // The local snapshot has already been committed; cleanup failure must not invert it.
+          console.warn('[idegsm-project] failed to close CSV content transfer');
+        }
+      }
     }
   }
 }
