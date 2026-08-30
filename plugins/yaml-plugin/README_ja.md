@@ -32,7 +32,7 @@ yaml-plugin は folder-plugin を継承し、YAML ファイルの管理機能を
 スキーマエディタは `@rjsf/core` + `@rjsf/mui` を使用し、選択されたスキーマに基づくフォーム UI を動的に生成する。
 Step 4はappから注入されたruntime capabilityだけを読む。app config、environment variable、
 credential、IndexedDB、localStorageを直接読まない。editor-only subtypeは実行可能commandなしとして表示し、
-upstream blockedなSSH lifecycle commandは正規registryに存在しないため表示しない。
+SSH target container lifecycle管理はapplication serverの責務外であるため、SSH lifecycle commandは正規registryに存在せず表示しない。
 
 ### アイコン
 

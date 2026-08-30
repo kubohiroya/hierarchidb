@@ -13,6 +13,7 @@
 - GraphQL mutation と task status は上記 revision の `FrontendResource` と `TaskStatus` を基準とする。
 - mutation は task ID を文字列で返す。task ID を受け取った command は subscription で terminal status まで追跡する。
 - `check` command は `checkAll` だけに対応する。`checkProject` は別の upstream command であり、代替として呼び出さない。
+- SSH 実行では、アプリケーションサーバは SSH 接続先の simulation container lifecycle を管理しない。SSH 接続先は外部管理され、アプリケーションサーバからは常時起動済みの endpoint として扱う。所有境界は [Simulation SSH Execution Connection Contract](./simulation-ssh-execution-connection-contract.md) に従う。
 
 ## YAML subtype と永続化契約
 
@@ -99,13 +100,13 @@ type YamlSubtype =
 | `git` | `init` | `init` |
 
 - `start-daemon-*` は無効な旧名称とし、alias を設けない。
-- `start-container-ssh` と `stop-container-ssh` は upstream Frontend GraphQL API に存在しないため、registry と UI に追加しない。
+- `start-container-ssh` と `stop-container-ssh` は registry と UI に追加しない。SSH 接続では simulation container start/stop がアプリケーションサーバの責務外であり、`remote` または `ec2` の lifecycle mutation を代替として呼び出してはならない。
 - `gitClone` と `gitPull` は本契約の command ではない。`init` からの fallback 先としても使用しない。
 - 未定義 subtype、または subtype に許可されていない command は network request 前に契約違反としてエラーにする。
 
 ## Command input
 
-`projectRelativePath` はすべての command で非空の必須 runtime context とする。絶対 path、`..`、未設定値を拒否する。container lifecycle mutation 自体は GraphQL input を持たないが、その前段の snapshot import には runtime `projectRelativePath` を使用する。
+`projectRelativePath` はすべての command で非空の必須 runtime context とする。絶対 path、`..`、未設定値を拒否する。remote / ec2 の container lifecycle mutation 自体は GraphQL input を持たないが、その前段の snapshot import には runtime `projectRelativePath` を使用する。SSH には container lifecycle mutation を定義せず、connection health failure から lifecycle command へ fallback しない。
 
 | mutation | input |
 | --- | --- |
@@ -553,7 +554,7 @@ single activationのupgrade commitとCoreDB initializationが成功し、同じa
 
 CoreDB / runtime laneのrollback順は次で固定する。
 
-1. final integration、SSH integration、non-SSH integrationを停止し、全YAML writerとcommand実行をfenceする。
+1. final integration、SSH execution integration、non-SSH integrationを停止し、全YAML writerとcommand実行をfenceする。
 2. Step 4 UIを無効化する。
 3. executor、credential provider、feature flag compositionを無効化する。
 4. SimulationWorkflowのcanonical snapshot consumer変更をrevertする。
@@ -565,9 +566,11 @@ CoreDB / runtime laneのrollback順は次で固定する。
 
 YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory accessとretention保護だけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
 
-## Upstream blocker
+## SSH execution ownership
 
-SSH で公開されている mutation は `simulateSsh` と `calibrateSsh` だけである。upstream task runner 内部に lifecycle command が存在しても、Frontend GraphQL API に mutation がない限り UI から実行しない。将来追加する場合は upstream revision と本仕様を先に更新する。
+SSH で公開されている execution mutation は `simulateSsh` と `calibrateSsh` だけである。SSH 接続先の simulation container は外部管理され、アプリケーションサーバからは常時起動済み endpoint として扱う。したがって、SSH container の provision / start / stop / destroy は hierarchidb の責務外であり、upstream task runner 内部に lifecycle command が存在しても UI から実行しない。
+
+SSH endpoint の health check は接続が現在利用可能かを判定するだけであり、lifecycle ownership を与えない。unhealthy / unavailable / incompatible の場合は command 実行前に失敗させ、`remote` または `ec2` の lifecycle mutation へ fallback しない。詳細は [Simulation SSH Execution Connection Contract](./simulation-ssh-execution-connection-contract.md) に従う。
 
 ## 後続実装順序
 
@@ -624,9 +627,8 @@ graph TD
   RemoveYamlReads --> RetentionGate["30日 + stable release + 全row accounted"]
   RetentionGate --> DeleteYamlDB["YamlDB物理削除"]
 
-  UpstreamSsh["upstream SSH lifecycle API"] --> SshIntegration["SSH client / UI integration"]
   NonSshIntegration --> FinalIntegration["final integration"]
-  SshIntegration --> FinalIntegration
+  SshContract["#1725 SSH execution connection contract"] --> FinalIntegration
 ```
 
 ### Runtime activation DAG
@@ -659,6 +661,6 @@ graph LR
 - validation収束後はdormant canonical writer、canonical ZIP、inverse migration artifactを相互非依存のIssueとして並列実装できる。dormant canonical SimulationWorkflow consumerはcanonical ZIP API確定後に実装する。production quiescence bridgeは#1326 / #1331を前提に#1294をtab / worker transportとresponderへ接続する別Issueとし、activationより前のstable releaseへ配備する。stable acceptanceは非破壊capability censusに限定し、actual ackはautomated integrationとsingle activationだけで実行する。#1280との接続とtarget `open()`生成はsingle activation coordinatorだけが行う。
 - activation release内では`quiescing`で旧tab / workerの停止とcloseを要求するがactual fence成立とはみなさず、read-only preflight後に同じ`openRequestId`でtarget versionを開く。`blocked`では同じrequestだけを待機し、`versionchanging`でactual fence成立、upgrade commit後に`initializing`、initialization成功後に`canonical-ready`へ進み、その後だけcanonical reader / writer / APIを公開する。failure、ID mismatch、illegal transitionはterminal `rejected`とし、retry、reset、別request、legacy fallback、v1 reopenを行わない。
 - migration commit成功前にcanonical `YamlFileNodeData`、dialog、ZIP、SimulationWorkflowまたはWorker APIを公開せず、各処理を別releaseへ分離しない。`SimulationWorkflow.runSimulation`のproduction return contractは同じactivationで`Promise<void>`へ切り替える。
-- activation前にdormant canonical SimulationWorkflow consumerの回帰を完了し、activation後にもproduction routingを対象とする回帰を行う。executor / Step 4と合わせたnon-SSH integrationを、SSH lifecycleを含むfinal integrationから分離する。
+- activation前にdormant canonical SimulationWorkflow consumerの回帰を完了し、activation後にもproduction routingを対象とする回帰を行う。executor / Step 4と合わせたnon-SSH integrationを、SSH execution connection contractの確認を含むfinal integrationから分離する。
 - YamlDB laneはproduction write除去 / fence、read-only inventory、generic resetからのretention保護、残存read path除去 / runtime retirementの順とする。read-only inventoryはsource accountingとtarget comparisonだけを行い、recovery write authorityを持たない。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
-- SSH client / UI integrationはupstream API公開と本仕様のrevision更新までblockedとし、完了後にfinal integrationへ進む。
+- SSH lifecycle client / UI integrationは対象外とする。final integrationでは、SSH execution connection contractが文書化され、SSH command pathからremote / ec2 lifecycle fallbackへ到達できないことを確認する。

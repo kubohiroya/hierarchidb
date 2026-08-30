@@ -22,6 +22,7 @@ In scope:
 Out of scope:
 
 - Making HierarchiDB authoritative for IDE-GSM execution state.
+- Provisioning, starting, stopping, destroying, or otherwise owning the lifecycle of SSH simulation containers. SSH execution targets are externally managed always-on endpoints from the application server's perspective; see `docs/simulation-ssh-execution-connection-contract.md`.
 - Client-side execution, pause, resume, retry, or offline command queues.
 - Persisting task IDs, authoritative status, progress events, or log bodies in client databases.
 - Mapping cancellation to the existing pause semantics.
