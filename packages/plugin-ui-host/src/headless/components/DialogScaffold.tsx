@@ -2,6 +2,7 @@ import { useDialogContext } from '@hierarchidb/ui-dialog';
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 import type { SxProps, Theme } from '@mui/material/styles';
 import type React from 'react';
 import { memo } from 'react';
-import type { DialogActionInFlight } from '~/headless/types';
+import type { DialogActionInFlight, StepTransitionDialogState } from '~/headless/types';
 import { PluginDialogFooter, type PluginDialogFooterProps } from './PluginDialogFooter.js';
 import { PluginDialogHeader } from './PluginDialogHeader.js';
 
@@ -127,6 +128,43 @@ export const ConflictDialog: React.FC<ConflictDialogProps> = ({
         >
           {translate('dialogs.pluginDraft.conflict.buttons.keepSelf')}
         </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export const StepTransitionDialog: React.FC<{
+  state: StepTransitionDialogState;
+}> = ({ state }) => {
+  const hasError = typeof state.error === 'string' && state.error.length > 0;
+  return (
+    <Dialog
+      open={state.open}
+      onClose={hasError ? state.onDismiss : undefined}
+      disableEscapeKeyDown={!hasError}
+      slotProps={{
+        backdrop: {
+          sx: {
+            backgroundColor: 'rgba(9, 12, 28, 0.45)',
+          },
+        },
+      }}
+    >
+      <DialogTitle>{state.title}</DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 320 }}>
+          {hasError ? null : <CircularProgress size={20} thickness={5} />}
+          <Typography variant="body2">{hasError ? state.error : state.phase}</Typography>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        {hasError ? (
+          <Button onClick={state.onDismiss}>Revert</Button>
+        ) : (
+          <Button disabled={!state.cancellable} onClick={state.onCancel}>
+            Cancel
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

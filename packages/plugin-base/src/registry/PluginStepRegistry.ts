@@ -31,6 +31,47 @@ type StartBuildCallback<TData extends StepData, TUiState extends StepUiState> = 
   void | Promise<void>
 >;
 
+export type BeforeNavigateNextResult<TData extends StepData = StepData> =
+  | {
+      readonly type: 'advance';
+      readonly nodeId?: string;
+      readonly nodeVersion?: number;
+      readonly canonicalData?: TData;
+    }
+  | {
+      readonly type: 'stay';
+      readonly reason: string;
+    };
+
+export interface BeforeNavigateNextContext<
+  TData extends StepData = StepData,
+  TUiState extends StepUiState = StepUiState,
+> {
+  readonly nodeId?: string;
+  readonly parentId?: string;
+  readonly treeId?: string;
+  readonly mode: 'create' | 'edit';
+  readonly currentStepId: string;
+  readonly targetStepId: string;
+  readonly currentStepIndex: number;
+  readonly targetStepIndex: number;
+  readonly currentNodeVersion?: number;
+  readonly dialogData: TData;
+  readonly draftData: TData;
+  readonly uiState?: TUiState;
+  readonly signal: AbortSignal;
+  readonly setPhase: (phase: string) => void;
+  readonly setCancellable: (cancellable: boolean) => void;
+}
+
+type BeforeNavigateNextCallback<
+  TData extends StepData,
+  TUiState extends StepUiState,
+> = BivariantCallback<
+  [data: TData, context: BeforeNavigateNextContext<TData, TUiState>],
+  BeforeNavigateNextResult<TData> | Promise<BeforeNavigateNextResult<TData>>
+>;
+
 export interface StepLocalizationConfig {
   defaultTitle?: string;
   titles?: Partial<Record<string, string>>;
@@ -132,6 +173,7 @@ export interface PluginStepConfig<
     canSave?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
     canProceedToNext?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
     canBackToPrevious?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
+    beforeNavigateNext?: BeforeNavigateNextCallback<TData, TUiState>;
     startBuild?: StartBuildCallback<TData, TUiState>;
   };
 
@@ -209,6 +251,7 @@ export const erasePluginStepConfig = <
   const canSave = cfg.capabilities?.canSave;
   const canProceedToNext = cfg.capabilities?.canProceedToNext;
   const canBackToPrevious = cfg.capabilities?.canBackToPrevious;
+  const beforeNavigateNext = cfg.capabilities?.beforeNavigateNext;
   const startBuild = cfg.capabilities?.startBuild;
 
   return {
@@ -241,6 +284,15 @@ export const erasePluginStepConfig = <
             : undefined,
           canBackToPrevious: canBackToPrevious
             ? (data, uiState) => canBackToPrevious(data as TData, uiState as TUiState | undefined)
+            : undefined,
+          beforeNavigateNext: beforeNavigateNext
+            ? (data, context) =>
+                beforeNavigateNext(data as TData, {
+                  ...context,
+                  dialogData: context.dialogData as TData,
+                  draftData: context.draftData as TData,
+                  uiState: context.uiState as TUiState | undefined,
+                })
             : undefined,
           startBuild: startBuild
             ? (data, context) =>
