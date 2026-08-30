@@ -198,7 +198,11 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - app は UI plugin import より前に `app/src/yaml-ide-gsm/configureYamlIdeGsmStep4Runtime.ts` で Step 4 runtime capability を1回注入する。YAML plugin はこの注入済み capability だけを読み、app config、environment variable、credential source、worker singletonを直接読まない。flag OFF または未注入では Step 4 configを生成せず、既存3 stepを維持する。
 - credential sourceが未接続の場合、UIはexecutorからのstable `CREDENTIALS_UNAVAILABLE` failureだけを表示し、endpoint、JWT、GitHub token、provider例外messageを表示またはlogへ出力しない。credential providerの実入力源をUI plugin、draft、TreeNode、IndexedDB、localStorageへ保存してはならない。
 
-## Mounted IDE-GSM filesystem projection
+## Current mounted IDE-GSM filesystem projection (removal target)
+
+本節は現行実装の記録であり、目標仕様ではない。現行の mounted filesystem projection は不完全な場合があり、後続の `idegsm-project` synchronization 実装で置き換えて撤去する。projection-specific adapter、mounted-node reference flow、UI route、composition、legacy feature flag は互換維持対象にしない。
+
+撤去前に独立した契約へ分離できる authenticated GraphQL transport、DTO parsing、logical path validation、redaction は再利用してよい。ただし projection adapter 自体を synchronization engine または代替 user-facing tree として残さない。以下は撤去対象となる現行方式の説明である。
 
 IDE-GSM の FDM space root と project root は、CoreDB が所有する通常ノードではなく remote projection として扱う。mount root だけを CoreDB `TreeNode.data` に保存し、配下の file / directory entry は IDE-GSM GraphQL read API から都度 `TreeQueryAPI.getNode`、`listChildren`、`listDescendants` 互換の `TreeNode` 形状へ投影する。配下 entry を CoreDB へ materialize、archive、duplicate、move、delete しない。
 
@@ -220,13 +224,72 @@ destructive operation は generic CoreDB `TreeMutationAPI` を通さず、明示
 
 mounted entry は deterministic order で返す。directory を file より先に置き、同種では `name`、次に `relativePath` で昇順にする。remote projection が CoreDB-owned node と同じ mutation path に入らないことを runtime-worker test で固定する。production composition と UI menu の接続、feature flag gate、表示 affordance は後続 issue で扱い、本節の adapter / action port は dormant implementation として導入できる。
 
-### Mounted project command UI
+### IDE-GSM project sync root
 
-mounted IDE-GSM project tree に対する command UI は、project-root mount のみを対象とし、明示 registry に登録された local command だけを表示する。初期 registry は `sim`、`calib`、`check` とする。UI は `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` を startup-fixed flag として app-level config から1回だけ読み、既定値は `false` とする。flag が OFF の場合でも対象 node の認識は可能だが、menu action は disabled とし、executor は credential provider、client、network を呼ばず `FEATURE_DISABLED` を返す。
+Standalone node specification: [idegsm-project-node-spec.md](./idegsm-project-node-spec.md).
 
-command target は `TreeNode.data.mountKind === "ide-gsm"`、`sourceKind === "project-root"`、かつ `projectId` が logical relative project path として検証できる node に限定する。`fdm-space-root`、通常 CoreDB node、absolute path、`..` traversal、または endpoint/token/JWT/content/absolutePath などの forbidden public field を含む node は network request 前に unsupported として拒否する。
+`idegsm-project` は IDE-GSM server-side project directory を browser-local tree に同期する server-authoritative sync root とし、本節以降を目標実装の正規仕様とする。最終的な user-facing tree は同期済み read-only node 群として CoreDB / Dexie に保持する。feature flag は startup-fixed の `VITE_IDEGSM_PROJECT_SYNC_ENABLED` と `VITE_IDEGSM_PROJECT_COMMAND_UI_ENABLED` に分け、既定値はいずれも `false` とする。既存 `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` は旧projectionとともに撤去し、aliasとして残さない。
 
-mounted command action は既存 `IdeGsmClient.executeCommand` 契約を使い、payload は `{ id: <commandId>, input: { projectRelativePath: <projectId> } }` とする。`sim`、`calib`、`check` 以外の local command、および remote / SSH / EC2 / rsync / container lifecycle command は別 issue で明示されるまで registry に入れない。YAML snapshot import、CoreDB write、TreeNode data 更新、IndexedDB 永続化、result materialization は行わない。running/success/failure は UI-only notification として扱い、画面再読み込みや dialog close で失われてよい。credential source が未接続または失敗した場合は stable code `CREDENTIALS_UNAVAILABLE` だけを表示し、provider 例外 message、endpoint、JWT、token を public UI や log へ出さない。command 実行失敗も `COMMAND_FAILED` の stable code に丸める。
+`idegsm-project` と `fdm` の create / edit dialog は、Step 2 に共通 `Connection` stepを使用する。shared React component / hookは`packages/ui/ide-gsm-connection`、named connection resolutionとhealth-check portは`packages/ide-gsm-client`、raw host / port / endpoint / cors-proxy / credentialのruntime authorityは`app/src/ide-gsm-connection/`に置く。nodeの`data` / `draftData`にはconnection dataとして`connectionName`だけを保存し、生の接続値を保存しない。通常はprovider既定のlocalhostまたはHierarchiDB提供originをread-only表示し、`Connect through cors-proxy`を有効にした場合だけhostname/IPとportを編集可能にする。入力完了後はdebounced health statusを表示し、node-specific targetもStep 2で選択する。`idegsm-project`はvalidated `projectRelativePath`、`fdm`はcanonical `spaceId`を確定してから次へ進む。Step 2に`Sync now`、manual refresh、resync controlを置かない。同期トリガーは作成/正式化成功時、再接続時、relevant authenticated server notification受領時に限定し、health / catalog loading / in-flight stateは永続化しない。詳細契約は[idegsm-project-node-spec.md](./idegsm-project-node-spec.md)および[fdm-node-spec.md](./fdm-node-spec.md)を参照する。
+
+初回同期では authenticated IDE-GSM GraphQL client boundary から project root の全階層とsafe metadataを logical relative path で読み、server-side entry を local read-only node として作成する。再接続時も同じ project root 全体の階層/metadataを同期対象とし、初期仕様では directory open によるcontent syncを導入しない。同期トリガはnode作成/正式化成功、GraphQL health check復帰、認証復帰、WebSocket / subscription復帰、relevant authenticated server notificationに限定する。user-triggered refresh/resyncは提供しない。sync runner は debounce と in-flight guard を持ち、同一 `idegsm-project` に対する重複全体同期を並列実行しない。directory / child project は folder-like read-only node、`*.yml` / `*.yaml` は read-only YAML node、`*.csv` は初期状態`metadata-only`のread-only Tabular source nodeとして扱い、node作成時にCSV body、parsed row、Tabular snapshotを一括取得/作成しない。その他 file kind は、対応仕様が追加されるまで unsupported placeholder または非表示とし、YAML / Tabular として推測しない。
+
+全体同期で一部 entry の取得または反映だけが失敗した場合、成功済み local node / snapshot は利用可能なまま保持する。project root は partial sync failure state として表示し、失敗した child node / snapshot だけを `sync-failed` として記録する。全体同期の一部失敗は、Styler選択後に既にmaterializeされ`tracked`となったCSV / Tabular snapshotのdisconnected visualizationを無効化しないが、UI は project root と失敗 child の両方に警告 affordance を出す。
+
+同期済み node の `TreeNode.id` は通常の local node と同じく CoreDB / TreeNode 作成経路で発行し、remote identityや`relativePath`からdeterministicに生成しない。project identityはroot nodeの`(connectionName, projectRelativePath)`の組であり、child sync metadataは`projectNodeId`、`generationId`、logical `relativePath`、content digest、server `updatedAt`などを保持する。旧projectionの`mountKind`、`mountId`、`sourceKind`、scalar `projectId`は新仕様では廃止し、新規node/snapshotへ保存しない。これにより、local tree 内での sync root 移動、再同期、missing source 表示、将来の conflict handling は local identity と server identity を分離して扱える。
+
+同期済み node の authoritative source は常に IDE-GSM server-side project directory である。connected 状態で YAML、または将来対応する CSV を更新する場合も、local Dexie data を直接 commit しない。必ず server write port を通して IDE-GSM server-side file を更新し、成功後に server から更新済み content / digest / updatedAt を再取得して local snapshot へ反映する。disconnected 状態では synced YAML / Tabular の閲覧と map visualization / Styler / Resolver 利用だけを許可し、edit / save / refresh / delete / verify / fill / compare / clean / diagnose など server operation は unavailable として fail-closed にする。offline write queue、optimistic local write、local conflict merge は初期仕様に含めない。
+
+`idegsm-project` 配下の YAML node は、UI 上では通常の YAML editor と同等の編集体験を提供できる。ただし保存処理は local YAML node の commit path とは分離し、connected IDE-GSM server write port を唯一の write authority とする。保存時はroot nodeの`connectionName`と`projectRelativePath`、childのlogical `relativePath`、sync state、credential availability、server connection を検証し、editor が読み込んだ server content digest を必須の `expectedDigest` として server write request に含める。IDE-GSM server は現在 content の digest 比較と full replace を原子的に実行し、不一致の場合は上書きせず stable `CONTENT_CONFLICT` を返す。server `updatedAt` は追加条件にできるが、content digest validation の代替にはしない。client-side の read-compare-write だけでは time-of-check/time-of-use race を防げないため、正規実装として認めない。競合時は local merge を試みず保存を拒否し、UI は再読み込みを要求する。server write が成功した直後は project 全体同期ではなく対象 YAML file だけを reread し、更新後の server content を local snapshot へ反映できた場合だけ local UI state を `synced` に戻す。server notificationまたは再接続ではproject全体同期を実行する。
+
+server write 前の validation / credential / connection failure では local snapshot を変更しない。server write 成功後に reread / local reflection が失敗した場合は、local snapshot を成功扱いで更新せず `sync-failed` または `stale` として扱い、再接続またはrelevant server notificationによる次回同期を待つ。local editor の未保存内容を disconnected queue として永続化しない。
+
+初期 write 対応は YAML file の full replace に限定する。CSV / Tabular write は初期範囲に含めず、encoding、quote、newline、row order、大容量差分、schema validation の契約を別 issue で確定してから追加する。Stylerで`idegsm-project`配下のCSV logical pathを選択したとき、connected clientはそのcontentをon-demand取得し、parse/validate後に専用Tabular storeへgeneration付きsnapshotをpublishしてchildを`tracked`へ変更する。これが成功した場合だけStyler source referenceをcommitする。以降は再接続またはrelevant authenticated server notification時にtracked CSVだけcontent同期し、未選択のmetadata-only CSV bodyは取得しない。
+
+server-side delete または missing source を検出しても、同期済み local node を自動削除しない。初期仕様では `missing-on-server` または `stale` として保持し、tree UI では削除せず警告 affordance を付けて表示する。CSV / Tabular snapshot が残っている場合は disconnected visualization source として利用可能にするが、再接続時の server write、command target、refresh source としては missing 状態を明示し、server-side 実体が存在するものとして扱わない。明示的な local sync cleanup は server delete とは別操作として扱う。
+
+endpoint URL、GraphQL URL、JWT、token、raw credential、IDE-GSM サーバ側 absolute path、original raw CSV text は YAML node、Styler payload、Resolver payload、TreeNode、dashboard state、localStorage、URL、log に保存しない。on-demand取得したtracked CSVからparse・normalizeしたTabular snapshot dataだけをdisconnected利用のため専用Dexie-backed Tabular storeへ保存する。metadata-only CSVにはrow snapshotを作らない。TreeNode、FDM、Styler、Resolver payloadはsnapshot referenceとsafe metadataだけを保持し、original CSV textまたはnormalized rowsを複製しない。
+
+同期済み node / snapshot に保存してよい metadata は次の安全な識別・再検証情報に限定する。
+
+- origin `projectNodeId`
+- published `generationId`
+- logical `relativePath`
+- `syncedAt`
+- source content digest
+- server `updatedAt` if provided by IDE-GSM GraphQL
+- YAML schema summary または CSV header / schema summary
+- row count / byte count などの aggregate metadata
+- read-only marker
+- sync state such as `synced`, `stale`, `missing-on-server`, `syncing`, `partial-sync-failed`, `sync-failed`, `write-pending`, or `write-failed`
+
+同期済み snapshot は remote source の最新性を保証しない。再接続後も自動的に server source と同一視せず、content digest、server `updatedAt`、relevant authenticated server notificationによって stale / current を判定する。
+
+tracked Tabular source referenceから同期済みsnapshotを参照する場合、origin `projectNodeId`、logical `relativePath`、content generation、snapshot IDを保持する。参照先はlocal Dexie-backed read-only tabular dataであり、map visualization、Styler、Resolverはremote GraphQL接続なしにそのlocal snapshotを読める。metadata-only CSVはdisconnected data sourceとして選択できず、original CSV textまたはnormalized rowsをStyler / Resolver payloadに複製してはならない。
+
+module responsibility は分離する。`idegsm-project-plugin` / `idegsm-project-api` は IDE-GSM server-side project の sync root node、server-authoritative YAML editing、project context menu command UI、run subscription / cancellation request、safe sync metadata を担当する。`fdm-plugin` / `fdm-api` は FDM dashboard、FDM space 由来の visualization、IDE-GSM / FDM API client のうち FDM dashboard に固有の読み取り・表示・可視化を担当し、`idegsm-project` の sync identity や TreeNode materialization を直接所有しない。
+
+### IDE-GSM project command UI
+
+`idegsm-project` node に対する command UI は、project-root sync root そのものの context menu からだけ起動する。右クリック context menu には `ide-gsm` menu item を表示し、その submenu に明示 registry で許可された server-side commands を表示する。初期 registry は `sim`、`calib`、`check` とする。UI は `VITE_IDEGSM_PROJECT_COMMAND_UI_ENABLED` を startup-fixed flag として app-level config から1回だけ読み、既定値は `false` とする。flag が OFF の場合でも対象 node の認識は可能だが、menu action は disabled とし、executor は credential provider、client、network を呼ばず `FEATURE_DISABLED` を返す。
+
+command target は `nodeType === "idegsm-project"`、versioned root dataを持ち、`connectionName`がnamed runtime connectionとして解決でき、`projectRelativePath`がlogical relative project pathとして検証でき、committed generationがreadyであるsync root nodeに限定する。通常 CoreDB node、同期済み child YAML / Tabular node、absolute path、`..` traversal、または endpoint/token/JWT/content/absolutePath などの forbidden public field を含む node は network request 前に unsupported として拒否する。
+
+project command action は既存 `IdeGsmClient.executeCommand` 契約を使い、named `connectionName`からclientを解決したうえで、payload は `{ id: <commandId>, input: { projectRelativePath: node.data.projectRelativePath } }` とする。project identityは`(connectionName, projectRelativePath)`の組であり、scalar `projectId`へ別名化しない。`sim` と `calib` は IDE-GSM server-side execution start を指示する commands として context menu submenu から選択できる。`check` は IDE-GSM server-side project validation command として同じ submenu に置く。これらをlocal refresh/resync actionとして扱わない。その他の local command、および remote / SSH / EC2 / rsync / container lifecycle command は別 issue で明示されるまで registry に入れない。
+
+`sim` / `calib` の run state、progress、result、cancellation state の SSOT は IDE-GSM server とする。hierarchidb client は command start request を発行し、server が返す run identifier または command status handleを購読して、進捗、接続中に到着したlive log、完了、失敗、キャンセル状態をUIに表示する。クライアント側にはephemeral subscription stateとruntime-only log bufferだけを保持し、authoritative job state、buffered row、search state、log bodyをCoreDB / TreeNode / IndexedDBへ永続化しない。初期仕様ではserver-side log persistence、paging、search、cursor replayを提供せず、再接続時はgapを明示して再接続後の行から表示する。
+
+UX として、command panel または notification から `sim` / `calib` の開始、進捗ログ表示、実行中 task のキャンセル要求を行える。キャンセルは client-side abort ではなく、`sim` / `calib` が返したtask IDを既存 IDE-GSM GraphQL `cancelTask(taskId)` mutationへ渡すserver requestとする。mutationのBoolean resultは要求が受理されたかだけを表し、`CANCELED`、`FINISHED`、`FAILED`などの最終状態はserver subscription / polling resultをSSOTとして表示する。
+
+`sim`、`calib`、`check`など非同期IDE-GSM commandは、task ID受領直後に既存HierarchiDB AppBarのBuild Session一覧へexternal session projectionとして登録する。1つの`idegsm-project` nodeでは初期仕様上active IDE-GSM commandを最大1件とし、active taskがある間の二重開始をnetwork request前に拒否する。AppBar itemにはnode、command、server-derived status、progress、elapsed time、current phaseを表示し、選択するとshared IDE-GSM Build Session progress screenを開く。progress screenはlive-only runtime-buffered log、subscription/reconnect state、terminal result/errorを表示し、active taskにはcancel controlを提供する。
+
+IDE-GSM Build Sessionのstandalone正規仕様は[ide-gsm-build-session-spec.md](./ide-gsm-build-session-spec.md)とし、本節と矛盾する場合はstandalone仕様を優先する。
+
+status mappingは`REGISTERED` / `READY`を`starting`、`LEASED`を`running`、cancel request受理待ちを`canceling`、`FINISHED`を`completed`、`CANCELED`を`canceled`、`FAILED` / unsupported `DELETED`を`failed`とする。common `packages/build-api` / AppBar Build Session UIへ`canceling`と`canceled`をadditiveに追加し、cancelをpauseまたはfailureへ読み替えない。cancel controlは既存`cancelTask(taskId)`を呼び、server terminal statusを待つ。dialog close、navigation、AppBar menu closeをcancelとして扱わない。
+
+IDE-GSM task statusのSSOTはserverのままとする。task ID、subscription handle、live-log buffer/connection epoch/search state、Build Session projectionはapp-level runtime memoryに保持できるが、TreeNode、CoreDB、plugin store、IndexedDBには永続化しない。browser reload後のtask復元には、current userとlogical project pathにscopeされた`activeProjectTasks(projectRelativePath)`相当のauthenticated IDE-GSM GraphQL queryを追加し、task ID、command ID、status、available progress、server timestampを返す。`packages/ide-gsm-client`はtyped `activeProjectTasks`、`getTaskStatus`、`subscribeTaskOnFrontend`、live-only `subscribeTaskLog`、`cancelTask`を公開する。reconnectは`getTaskStatus(taskId)`とfresh live-log subscriptionで回復し、切断中のlogは再送せずgapとして表示する。browser reload時のlog buffer復元とIDE-GSM server process restartをまたぐtask/log復元は初期仕様外とする。FDM shortcutから開始したcommandもowning `idegsm-project`の同一sessionとして登録し、FDM側に重複sessionを作らない。
+
+command 実行は local YAML / Tabular snapshot の直接書き換えではない。server-side execution により project files が更新された場合は、scopeを検証したruntime event/server notification、または再接続による同期で local synced nodes へ反映する。credential source が未接続または失敗した場合は stable code `CREDENTIALS_UNAVAILABLE` だけを表示し、provider 例外 message、endpoint、JWT、token を public UI や log へ出さない。command 実行失敗も `COMMAND_FAILED` の stable code に丸める。
 
 ## Migration と import
 
