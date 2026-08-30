@@ -17,6 +17,11 @@ const connectionRuntime: IdeGsmConnectionRuntimeProvider = {
   checkHealth: vi.fn().mockResolvedValue({ status: 'healthy' }),
 };
 
+const dashboardRuntime = {
+  loadDashboard: vi.fn(),
+  performAction: vi.fn(),
+};
+
 const getStep = (
   steps: ReadonlyArray<PluginStepConfig<FdmPluginDialogData>>,
   id: string
@@ -43,9 +48,13 @@ describe('createFdmStepConfigProvider', () => {
         listSpaces: vi.fn().mockResolvedValue({ defaultSpaceId: 'space-a', spaces: [] }),
         promoteNode: vi.fn(),
       },
+      dashboardRuntime,
     });
 
-    expect(provider.getCreateStepConfigs().map((step) => step.id)).toEqual(['connection']);
+    expect(provider.getCreateStepConfigs().map((step) => step.id)).toEqual([
+      'connection',
+      'dashboard',
+    ]);
   });
 
   it('uses the canonical ViewInArOutlined icon manifest for create menus', () => {
@@ -96,6 +105,7 @@ describe('createFdmStepConfigProvider', () => {
         listSpaces: vi.fn(),
         promoteNode,
       },
+      dashboardRuntime,
     });
     const step = getStep(provider.getCreateStepConfigs(), 'connection');
     const guard = step.capabilities?.beforeNavigateNext;
@@ -166,9 +176,46 @@ describe('createFdmStepConfigProvider', () => {
         listSpaces: vi.fn(),
         promoteNode: vi.fn(),
       },
+      dashboardRuntime,
     });
     const step = getStep(provider.getCreateStepConfigs(), 'connection');
 
     expect(await step.validate?.({ connectionName: 'local' })).toBe(false);
+  });
+
+  it('requires committed FDM node data before opening dashboard step', async () => {
+    const provider = createFdmStepConfigProvider({
+      enabled: true,
+      connectionRuntime,
+      fdmRuntime: {
+        listSpaces: vi.fn(),
+        promoteNode: vi.fn(),
+      },
+      dashboardRuntime,
+    });
+    const step = getStep(provider.getCreateStepConfigs(), 'dashboard');
+
+    expect(await step.validate?.({ connectionName: 'local', spaceId: 'space-a' })).toBe(false);
+    expect(
+      await step.validate?.({
+        version: 1,
+        connectionName: 'local',
+        spaceId: 'space-a',
+        viewMode: 'lattice-3d',
+        filters: {
+          profiles: [],
+          datasets: [],
+          computes: [],
+          checkpoints: [],
+        },
+        axisMap: {
+          xOuter: 'profile',
+          xInner: 'dataset',
+          y: 'checkpoint',
+          z: 'compute',
+        },
+        tabularSnapshotRefs: [],
+      })
+    ).toBe(true);
   });
 });

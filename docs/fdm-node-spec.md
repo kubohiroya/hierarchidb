@@ -209,6 +209,16 @@ The 3D implementation may be reorganized into React hooks and components, but it
 
 React components should follow existing HierarchiDB plugin UI patterns and should avoid introducing a separate dashboard architecture unless the existing plugin boundaries require it.
 
+### React Dashboard Runtime Port
+
+The React dashboard step receives a committed `FdmNodeData` object plus an injected `FdmDashboardPort`. The port is the only dashboard data boundary exposed to the plugin UI. It provides `loadDashboard` and `performAction` operations using safe logical identifiers: connection name, FDM space ID, optional state directory, axis map, filters, selected cell ID, result references, and directory logical path segments.
+
+The dashboard response must be validated before rendering. It must not contain GraphQL endpoints, WebSocket URLs, credentials, server absolute paths, raw CSV bodies, or duplicated Tabular rows. Cell progress is a contract value and must be a finite number in `0..100` when present.
+
+Step 3 registration is guarded by the same committed node contract as the dashboard validator. A partial draft with only `connectionName` and `spaceId` is not a valid dashboard input. The connected dashboard may show `connected`, `reconnecting`, `disconnected`, or `stale`, and reconnect explicitly reloads authoritative state through the runtime port.
+
+The first React port keeps 3D lattice placement in a pure Three.js-backed projection model and renders the current plugin UI with the same operational surfaces: summary, selectors, filters, matrix, cell detail, runtime feed, directory entries, actions, 2D matrix, map/result view, and required four-axis lattice. Live server GraphQL wiring must adapt to this typed port rather than bypass it from React components.
+
 ## FDM Data Sources
 
 The FDM dashboard may read from two source classes.
