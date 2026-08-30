@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
-export type TaskStage = 'source' | 'geometry' | 'tileEmit';
-export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
+export type TaskStage = 'source' | 'geometry' | 'tileEmit' | 'check' | 'sim' | 'calib';
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'canceled' | 'recycled';
 
 export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
 

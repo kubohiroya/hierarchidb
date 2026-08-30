@@ -702,6 +702,100 @@ describe('conditional project YAML write contract', () => {
   });
 });
 
+describe('external build session task contract', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('discovers active project tasks from typed server metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      activeProjectTasks: [
+        {
+          taskId: 'task-active',
+          commandId: 'sim',
+          status: 'LEASED',
+          projectRelativePath,
+          progress: 25,
+          phase: 'running',
+          registeredAt: '2026-08-30T00:00:00Z',
+          startedAt: '2026-08-30T00:00:01Z',
+          updatedAt: '2026-08-30T00:00:02Z',
+        },
+      ],
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.activeProjectTasks(projectRelativePath)).resolves.toEqual([
+      {
+        taskId: 'task-active',
+        commandId: 'sim',
+        status: 'LEASED',
+        projectRelativePath,
+        progress: 25,
+        phase: 'running',
+        registeredAt: '2026-08-30T00:00:00Z',
+        startedAt: '2026-08-30T00:00:01Z',
+        updatedAt: '2026-08-30T00:00:02Z',
+      },
+    ]);
+    expect(String(spy.mock.calls[0]?.[0])).toContain('activeProjectTasks');
+    expect(String(spy.mock.calls[0]?.[0])).not.toContain('paramsJson');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ projectRelativePath });
+  });
+
+  it('keeps cancellation acceptance distinct from terminal task state', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      cancelTask: {
+        taskId: 'task-active',
+        accepted: true,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.cancelTask('task-active')).resolves.toEqual({
+      taskId: 'task-active',
+      accepted: true,
+    });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('cancelTask');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ taskId: 'task-active' });
+  });
+
+  it('subscribes to live task logs without a replay cursor', () => {
+    let capturedSink: SinkLike | null = null;
+    const tracked = makeTrackedWsClient((sink) => {
+      capturedSink = sink;
+    });
+    const listener = vi.fn();
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret', tracked.factory);
+
+    const unsubscribe = client.subscribeTaskLog('task-active', listener);
+    capturedSink?.next({
+      data: {
+        subscribeTaskLog: {
+          taskId: 'task-active',
+          sequence: 0,
+          timestamp: '2026-08-30T00:00:00Z',
+          stream: 'stdout',
+          text: 'log body',
+        },
+      },
+    });
+    unsubscribe();
+
+    expect(listener).toHaveBeenCalledWith({
+      taskId: 'task-active',
+      sequence: 0,
+      timestamp: '2026-08-30T00:00:00Z',
+      stream: 'stdout',
+      text: 'log body',
+    });
+    expect(tracked.unsubscribe).toHaveBeenCalledOnce();
+    expect(tracked.dispose).toHaveBeenCalledOnce();
+  });
+});
+
 describe('task subscription contract', () => {
   it('continues through active statuses, reports each event, and resolves FINISHED', async () => {
     const statuses: TaskStatus[] = [];

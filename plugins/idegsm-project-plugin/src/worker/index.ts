@@ -6,6 +6,21 @@ export type {
   IdeGsmProjectYamlWriteCoreDbPort,
   IdeGsmProjectYamlWriteRuntimePort,
 } from './conditionalIdeGsmProjectYamlWriteTypes.js';
+export {
+  IdeGsmProjectExternalBuildSessions,
+  type IdeGsmProjectExternalBuildSessionsOptions,
+} from './createIdeGsmProjectExternalBuildSessions.js';
+export type {
+  IdeGsmProjectBuildClient,
+  IdeGsmProjectBuildCommandId,
+  IdeGsmProjectBuildCoreDbPort,
+  IdeGsmProjectBuildRuntimeLogRow,
+  IdeGsmProjectBuildRuntimePort,
+  IdeGsmProjectBuildSessionSnapshot,
+  IdeGsmProjectBuildSessionState,
+  IdeGsmProjectBuildStageId,
+  StartIdeGsmProjectBuildSessionInput,
+} from './externalBuildSessionTypes.js';
 export type {
   IdeGsmProjectCommittedRootNode,
   IdeGsmProjectCoreDbPort,

@@ -53,6 +53,7 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ide-gsm-client": "workspace:*",
     "@hierarchidb/idegsm-project-api": "workspace:*",
@@ -66,6 +67,7 @@
   },
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/ide-gsm-client": "workspace:*",
     "@hierarchidb/idegsm-project-api": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",

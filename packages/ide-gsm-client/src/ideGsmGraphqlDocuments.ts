@@ -241,6 +241,29 @@ export const ideGsmGraphqlDocuments = {
       }
     }
   `,
+  activeProjectTasks: gql`
+    query ActiveProjectTasks($projectRelativePath: String!) {
+      activeProjectTasks(input: { projectRelativePath: $projectRelativePath }) {
+        taskId
+        commandId
+        status
+        projectRelativePath
+        progress
+        phase
+        registeredAt
+        startedAt
+        updatedAt
+      }
+    }
+  `,
+  cancelTask: gql`
+    mutation CancelTask($taskId: String!) {
+      cancelTask(taskId: $taskId) {
+        taskId
+        accepted
+      }
+    }
+  `,
   importProject: gql`
     mutation ImportProject($projectSnapshot: String!, $projectRelativePath: String!) {
       importProject(
@@ -540,6 +563,17 @@ export const ideGsmGraphqlDocuments = {
         status
         paramsJson
         resultJson
+      }
+    }
+  `,
+  subscribeTaskLog: gql`
+    subscription SubscribeTaskLog($taskId: String!) {
+      subscribeTaskLog(taskId: $taskId) {
+        taskId
+        sequence
+        timestamp
+        stream
+        text
       }
     }
   `,

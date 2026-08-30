@@ -1,5 +1,7 @@
 export { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from './IdeGsmClient.js';
 export type {
+  ActiveProjectTask,
+  ActiveProjectTaskStatus,
   CalibrateCommandInput,
   ConditionalProjectYamlWriteInput,
   ConditionalProjectYamlWriteResult,
@@ -20,6 +22,9 @@ export type {
   RsyncConnectionType,
   RsyncFilter,
   SimulateCommandInput,
+  TaskCancelResult,
+  TaskLogEvent,
+  TaskLogListener,
   TaskResult,
   TaskStatus,
   TaskStatusListener,
