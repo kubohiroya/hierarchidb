@@ -38,6 +38,43 @@ export interface ProjectCommandInput {
   projectRelativePath: string;
 }
 
+export interface ProjectFileInput extends ProjectCommandInput {
+  relativePath: string;
+}
+
+export interface ProjectYamlFileContentInput extends ProjectFileInput {}
+
+export interface ProjectYamlFileContent {
+  projectRelativePath: string;
+  relativePath: string;
+  content: string;
+  contentDigest: string;
+  updatedAt: string;
+  byteCount: number;
+}
+
+export type ProjectYamlWriteStatus =
+  | 'UPDATED'
+  | 'CONTENT_CONFLICT'
+  | 'FILE_LOCK_UNAVAILABLE'
+  | 'ATOMIC_REPLACE_UNAVAILABLE'
+  | 'AUTHORIZATION_FAILED';
+
+export interface ConditionalProjectYamlWriteInput extends ProjectFileInput {
+  expectedDigest: string;
+  content: string;
+}
+
+export interface ConditionalProjectYamlWriteResult {
+  status: ProjectYamlWriteStatus;
+  projectRelativePath: string;
+  relativePath: string;
+  contentDigest: string | null;
+  updatedAt: string | null;
+  byteCount: number | null;
+  resyncRequired: boolean;
+}
+
 export interface InstallCommandInput extends ProjectCommandInput {
   force?: boolean;
 }

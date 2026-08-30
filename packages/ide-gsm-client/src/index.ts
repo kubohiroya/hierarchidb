@@ -1,6 +1,8 @@
 export { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from './IdeGsmClient.js';
 export type {
   CalibrateCommandInput,
+  ConditionalProjectYamlWriteInput,
+  ConditionalProjectYamlWriteResult,
   ExportFilter,
   IdeGsmCommand,
   IdeGsmCommandId,
@@ -8,6 +10,10 @@ export type {
   InstallCommandInput,
   PreviewEventsCommandInput,
   ProjectCommandInput,
+  ProjectFileInput,
+  ProjectYamlFileContent,
+  ProjectYamlFileContentInput,
+  ProjectYamlWriteStatus,
   RemoteCalibrateCommandInput,
   RemoteSimulateCommandInput,
   RsyncCommandInput,

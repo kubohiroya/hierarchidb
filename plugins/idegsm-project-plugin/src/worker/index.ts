@@ -1,4 +1,12 @@
 export type {
+  ConnectedIdeGsmProjectYamlWriteErrorCode,
+  ConnectedIdeGsmProjectYamlWriteInput,
+  ConnectedIdeGsmProjectYamlWriteResult,
+  IdeGsmProjectYamlClient,
+  IdeGsmProjectYamlWriteCoreDbPort,
+  IdeGsmProjectYamlWriteRuntimePort,
+} from './conditionalIdeGsmProjectYamlWriteTypes.js';
+export type {
   IdeGsmProjectCommittedRootNode,
   IdeGsmProjectCoreDbPort,
   IdeGsmProjectMaterializationInput,
@@ -11,3 +19,4 @@ export {
   buildMaterializedChildNodes,
   materializeIdeGsmProjectSnapshot,
 } from './materializeIdeGsmProjectSnapshot.js';
+export { writeConnectedIdeGsmProjectYaml } from './writeConnectedIdeGsmProjectYaml.js';

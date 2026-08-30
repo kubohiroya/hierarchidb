@@ -4,10 +4,15 @@ import { createClient } from 'graphql-ws';
 import { ideGsmGraphqlDocuments } from './ideGsmGraphqlDocuments.js';
 import type {
   CalibrateCommandInput,
+  ConditionalProjectYamlWriteInput,
+  ConditionalProjectYamlWriteResult,
   ExportFilter,
   IdeGsmCommand,
   InstallCommandInput,
   PreviewEventsCommandInput,
+  ProjectYamlFileContent,
+  ProjectYamlFileContentInput,
+  ProjectYamlWriteStatus,
   RemoteCalibrateCommandInput,
   RemoteSimulateCommandInput,
   RsyncConnectionType,
@@ -49,6 +54,15 @@ const TASK_STATUSES: ReadonlySet<string> = new Set<TaskStatus>([
 ]);
 
 const ACTIVE_TASK_STATUSES: ReadonlySet<TaskStatus> = new Set(['REGISTERED', 'READY', 'LEASED']);
+const PROJECT_YAML_WRITE_STATUSES: ReadonlySet<string> = new Set<ProjectYamlWriteStatus>([
+  'UPDATED',
+  'CONTENT_CONFLICT',
+  'FILE_LOCK_UNAVAILABLE',
+  'ATOMIC_REPLACE_UNAVAILABLE',
+  'AUTHORIZATION_FAILED',
+]);
+const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/u;
+const YAML_PATH_PATTERN = /\.ya?ml$/u;
 
 type ReportDocumentName =
   | 'fdmSpaces'
@@ -56,7 +70,9 @@ type ReportDocumentName =
   | 'fdmDirectoryInfo'
   | 'fdmDirectoryRemove'
   | 'projectDirectoryTree'
-  | 'projectDirectoryInfo';
+  | 'projectDirectoryInfo'
+  | 'projectYamlFileContent'
+  | 'conditionalProjectYamlWrite';
 
 type TaskMutationName = Exclude<
   keyof typeof ideGsmGraphqlDocuments,
@@ -126,6 +142,39 @@ function projectDirectoryVariables(input: IdeGsmProjectDirectoryInput): Record<s
   }
   assertOptionalNonNegativeInteger(input.depth, 'depth');
   addDefined(variables, 'depth', input.depth);
+  return variables;
+}
+
+function assertProjectYamlFilePath(relativePath: string): void {
+  assertMountProjectRelativePath(relativePath);
+  if (!YAML_PATH_PATTERN.test(relativePath)) {
+    throw new Error('relativePath must point to a YAML file');
+  }
+}
+
+function assertSha256Digest(expectedDigest: string): void {
+  if (!SHA256_HEX_PATTERN.test(expectedDigest)) {
+    throw new Error('expectedDigest must be a 64-character lowercase SHA-256 hex string');
+  }
+}
+
+function projectYamlFileVariables(input: ProjectYamlFileContentInput): Record<string, unknown> {
+  const variables = projectVariables(input.projectRelativePath);
+  assertProjectYamlFilePath(input.relativePath);
+  variables.relativePath = input.relativePath;
+  return variables;
+}
+
+function conditionalProjectYamlWriteVariables(
+  input: ConditionalProjectYamlWriteInput
+): Record<string, unknown> {
+  const variables = projectYamlFileVariables(input);
+  assertSha256Digest(input.expectedDigest);
+  if (typeof input.content !== 'string') {
+    throw new Error('content must be a string');
+  }
+  variables.expectedDigest = input.expectedDigest;
+  variables.content = input.content;
   return variables;
 }
 
@@ -255,6 +304,31 @@ function readFiniteNumber(record: Record<string, unknown>, key: string): number 
   return value;
 }
 
+function readDigest(record: Record<string, unknown>, key: string): string {
+  const digest = readString(record, key);
+  if (!SHA256_HEX_PATTERN.test(digest)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return digest;
+}
+
+function readNonNegativeNumber(record: Record<string, unknown>, key: string): number {
+  const value = readFiniteNumber(record, key);
+  if (value < 0) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readNullableNonNegativeNumber(
+  record: Record<string, unknown>,
+  key: string
+): number | null {
+  const value = record[key];
+  if (value === null) return null;
+  return readNonNegativeNumber(record, key);
+}
+
 function parseDirectoryNode(value: unknown): IdeGsmDirectoryNode {
   assertRecord(value, 'IDE-GSM GraphQL response malformed');
   const rawChildren = value.children;
@@ -321,6 +395,35 @@ function parseProjectDirectoryInfoReport(value: unknown): IdeGsmProjectDirectory
   return {
     ...report,
     projectRelativePath: readString(value, 'projectRelativePath'),
+  };
+}
+
+function parseProjectYamlFileContent(value: unknown): ProjectYamlFileContent {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    projectRelativePath: readString(value, 'projectRelativePath'),
+    relativePath: readString(value, 'relativePath'),
+    content: readString(value, 'content'),
+    contentDigest: readDigest(value, 'contentDigest'),
+    updatedAt: readString(value, 'updatedAt'),
+    byteCount: readNonNegativeNumber(value, 'byteCount'),
+  };
+}
+
+function parseConditionalProjectYamlWriteResult(value: unknown): ConditionalProjectYamlWriteResult {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const status = readString(value, 'status');
+  if (!PROJECT_YAML_WRITE_STATUSES.has(status)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    status: status as ProjectYamlWriteStatus,
+    projectRelativePath: readString(value, 'projectRelativePath'),
+    relativePath: readString(value, 'relativePath'),
+    contentDigest: value.contentDigest === null ? null : readDigest(value, 'contentDigest'),
+    updatedAt: readNullableString(value, 'updatedAt'),
+    byteCount: readNullableNonNegativeNumber(value, 'byteCount'),
+    resyncRequired: readBoolean(value, 'resyncRequired'),
   };
 }
 
@@ -475,6 +578,26 @@ export class IdeGsmClient {
       'projectDirectoryInfo',
       projectDirectoryVariables(input),
       parseProjectDirectoryInfoReport
+    );
+  }
+
+  async projectYamlFileContent(
+    input: ProjectYamlFileContentInput
+  ): Promise<ProjectYamlFileContent> {
+    return this.requestReport(
+      'projectYamlFileContent',
+      projectYamlFileVariables(input),
+      parseProjectYamlFileContent
+    );
+  }
+
+  async conditionalProjectYamlWrite(
+    input: ConditionalProjectYamlWriteInput
+  ): Promise<ConditionalProjectYamlWriteResult> {
+    return this.requestReport(
+      'conditionalProjectYamlWrite',
+      conditionalProjectYamlWriteVariables(input),
+      parseConditionalProjectYamlWriteResult
     );
   }
 

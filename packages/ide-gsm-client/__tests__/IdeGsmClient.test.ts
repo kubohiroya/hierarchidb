@@ -62,6 +62,9 @@ interface CommandCase {
 }
 
 const projectRelativePath = 'group/project';
+const yamlRelativePath = 'scenarios/base.yaml';
+const oldDigest = '0'.repeat(64);
+const newDigest = '1'.repeat(64);
 
 const directoryNode = {
   name: 'src',
@@ -559,6 +562,143 @@ describe('directory read and mounted filesystem contracts', () => {
       mountId: 'mount one',
       relativePath: 'src/index.ts',
     });
+  });
+});
+
+describe('conditional project YAML write contract', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('reads authoritative YAML content with digest metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      projectYamlFileContent: {
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        content: 'a: 1\n',
+        contentDigest: oldDigest,
+        updatedAt: '2026-08-30T00:00:00Z',
+        byteCount: 5,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.projectYamlFileContent({ projectRelativePath, relativePath: yamlRelativePath })
+    ).resolves.toMatchObject({ content: 'a: 1\n', contentDigest: oldDigest });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('projectYamlFileContent');
+    expect(spy.mock.calls[0]?.[1]).toEqual({ projectRelativePath, relativePath: yamlRelativePath });
+  });
+
+  it('writes with the required expectedDigest and returns updated metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      conditionalProjectYamlWrite: {
+        status: 'UPDATED',
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        contentDigest: newDigest,
+        updatedAt: '2026-08-30T00:00:01Z',
+        byteCount: 5,
+        resyncRequired: false,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.conditionalProjectYamlWrite({
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        expectedDigest: oldDigest,
+        content: 'a: 2\n',
+      })
+    ).resolves.toMatchObject({ status: 'UPDATED', contentDigest: newDigest });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('conditionalProjectYamlWrite');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      projectRelativePath,
+      relativePath: yamlRelativePath,
+      expectedDigest: oldDigest,
+      content: 'a: 2\n',
+    });
+  });
+
+  it('surfaces CONTENT_CONFLICT as a typed result without throwing', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      conditionalProjectYamlWrite: {
+        status: 'CONTENT_CONFLICT',
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        contentDigest: newDigest,
+        updatedAt: '2026-08-30T00:00:01Z',
+        byteCount: 8,
+        resyncRequired: false,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.conditionalProjectYamlWrite({
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        expectedDigest: oldDigest,
+        content: 'a: 2\n',
+      })
+    ).resolves.toMatchObject({
+      status: 'CONTENT_CONFLICT',
+      contentDigest: newDigest,
+      updatedAt: '2026-08-30T00:00:01Z',
+    });
+  });
+
+  it.each([
+    ['missing digest', { expectedDigest: '' }],
+    ['uppercase digest', { expectedDigest: 'A'.repeat(64) }],
+    ['non-yaml path', { relativePath: 'scenarios/base.json' }],
+    ['parent traversal', { relativePath: '../base.yaml' }],
+  ])('rejects %s before a network request', async (_label, overrides) => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request');
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.conditionalProjectYamlWrite({
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        expectedDigest: oldDigest,
+        content: 'a: 2\n',
+        ...overrides,
+      })
+    ).rejects.toThrow();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed write metadata without exposing secrets', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      conditionalProjectYamlWrite: {
+        status: 'UPDATED',
+        projectRelativePath,
+        relativePath: yamlRelativePath,
+        contentDigest: 'not-a-digest',
+        updatedAt: '2026-08-30T00:00:01Z',
+        byteCount: 8,
+        resyncRequired: false,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint-secret.example', 'jwt-secret');
+
+    const promise = client.conditionalProjectYamlWrite({
+      projectRelativePath,
+      relativePath: yamlRelativePath,
+      expectedDigest: oldDigest,
+      content: 'a: 2\n',
+    });
+    await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
+    await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
   });
 });
 

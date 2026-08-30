@@ -202,6 +202,45 @@ export const ideGsmGraphqlDocuments = {
       }
     }
   `,
+  projectYamlFileContent: gql`
+    query ProjectYamlFileContent($projectRelativePath: String!, $relativePath: String!) {
+      projectYamlFileContent(
+        input: { projectRelativePath: $projectRelativePath, relativePath: $relativePath }
+      ) {
+        projectRelativePath
+        relativePath
+        content
+        contentDigest
+        updatedAt
+        byteCount
+      }
+    }
+  `,
+  conditionalProjectYamlWrite: gql`
+    mutation ConditionalProjectYamlWrite(
+      $projectRelativePath: String!
+      $relativePath: String!
+      $expectedDigest: String!
+      $content: String!
+    ) {
+      conditionalProjectYamlWrite(
+        input: {
+          projectRelativePath: $projectRelativePath
+          relativePath: $relativePath
+          expectedDigest: $expectedDigest
+          content: $content
+        }
+      ) {
+        status
+        projectRelativePath
+        relativePath
+        contentDigest
+        updatedAt
+        byteCount
+        resyncRequired
+      }
+    }
+  `,
   importProject: gql`
     mutation ImportProject($projectSnapshot: String!, $projectRelativePath: String!) {
       importProject(
