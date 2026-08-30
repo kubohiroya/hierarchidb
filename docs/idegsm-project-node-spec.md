@@ -8,9 +8,9 @@ The `idegsm-project` node represents an IDE-GSM server-side project directory as
 
 ## Current And Target Architecture
 
-The current codebase contains a mounted IDE-GSM filesystem projection that reads remote entries on demand and exposes TreeNode-compatible values without materializing child nodes in CoreDB. That implementation may be incomplete and is scheduled for removal. It is historical implementation context, not the target behavior or a compatibility requirement.
+The removed mounted IDE-GSM filesystem projection read remote entries on demand and exposed TreeNode-compatible values without materializing child nodes in CoreDB. That implementation was historical context, not the target behavior or a compatibility requirement.
 
-The normative target is the `idegsm-project` synchronization model defined by this document. The user-facing project tree must consist of CoreDB / Dexie-backed synchronized nodes. The old mount adapter, mounted-node reference flow, mounted-tree UI route, legacy feature flags, and projection-specific composition must be removed after the synchronized replacement is available.
+The normative target is the `idegsm-project` synchronization model defined by this document. The user-facing project tree must consist of CoreDB / Dexie-backed synchronized nodes. The old mount adapter, mounted-node reference flow, mounted-tree UI route, legacy feature flags, and projection-specific composition are not production surfaces.
 
 Reusable low-level parts may be extracted before removal when they have an independent contract, including authenticated GraphQL transport, DTO parsing, logical-path validation, and redaction. The old projection adapter itself must not remain as the synchronization engine or as an alternative user-facing project tree.
 
@@ -177,7 +177,7 @@ Use startup-fixed flags:
 
 Both default to `false`.
 
-The older `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` flag belongs to the projection implementation and must be removed with that implementation. It is not a canonical flag or a long-term alias for the synchronized node UI.
+The older `VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED` flag belonged to the removed projection implementation and is not a canonical flag or alias for the synchronized node UI.
 
 ## Sync Model
 
@@ -531,4 +531,4 @@ Credential failures should surface stable public error codes such as `CREDENTIAL
 - Asynchronous IDE-GSM commands appear in the AppBar Build Session list, open a shared progress screen, and support server-side cancellation from that screen.
 - IDE-GSM `CANCELED` is represented as `canceled`, not `failed` or `paused`, in the common Build Session model.
 - Normalized CSV-derived rows are persisted only in the dedicated Tabular store; no forbidden endpoint, credential, absolute path, original CSV text, or duplicated row data is persisted elsewhere.
-- The old mounted filesystem projection implementation and its UI/flag integration are removed after the synchronized replacement is available.
+- The old mounted filesystem projection implementation and its UI/flag integration remain absent after the synchronized replacement is available.

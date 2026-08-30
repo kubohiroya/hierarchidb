@@ -4,12 +4,6 @@ import type { WsClientFactory } from '../src/IdeGsmClient.js';
 import { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from '../src/IdeGsmClient.js';
 import type { IdeGsmCommand, TaskStatus } from '../src/ideGsmTypes.js';
 import { IDE_GSM_COMMAND_IDS } from '../src/ideGsmTypes.js';
-import {
-  assertIdeGsmMountDescriptor,
-  decodeIdeGsmMountedNodeId,
-  encodeIdeGsmMountedNodeId,
-  isIdeGsmMountedNodeId,
-} from '../src/mount/IdeGsmMountTypes.js';
 
 type SinkLike = {
   next: (value: unknown) => void;
@@ -406,7 +400,7 @@ describe('input validation and optional variables', () => {
   });
 });
 
-describe('directory read and mounted filesystem contracts', () => {
+describe('directory read contracts', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -525,44 +519,6 @@ describe('directory read and mounted filesystem contracts', () => {
     const promise = client.projectDirectoryTree({ projectRelativePath });
     await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
     await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
-  });
-
-  it('validates mount descriptors without persisting endpoint or credential fields', () => {
-    expect(() =>
-      assertIdeGsmMountDescriptor({
-        mountKind: 'ide-gsm',
-        sourceKind: 'project-root',
-        mountId: 'project-a',
-        displayName: 'Project A',
-        rootPath: '',
-        capabilities: { read: true },
-        projectId: projectRelativePath,
-      })
-    ).not.toThrow();
-
-    expect(() =>
-      assertIdeGsmMountDescriptor({
-        mountKind: 'ide-gsm',
-        sourceKind: 'fdm-space-root',
-        mountId: 'fdm-default',
-        displayName: 'FDM default',
-        rootPath: 'runs',
-        capabilities: { read: true, remove: true },
-        spaceId: 'default',
-        endpointUrl: 'https://endpoint-secret.example',
-      })
-    ).toThrow('endpointUrl');
-  });
-
-  it('encodes and decodes mounted node IDs deterministically', () => {
-    const nodeId = encodeIdeGsmMountedNodeId('mount one', 'src/index.ts');
-
-    expect(nodeId).toBe('ide-gsm:mount%20one:src%2Findex.ts');
-    expect(isIdeGsmMountedNodeId(nodeId)).toBe(true);
-    expect(decodeIdeGsmMountedNodeId(nodeId)).toEqual({
-      mountId: 'mount one',
-      relativePath: 'src/index.ts',
-    });
   });
 });
 

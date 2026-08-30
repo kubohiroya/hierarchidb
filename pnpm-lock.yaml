@@ -1563,9 +1563,6 @@ importers:
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
         version: link:../gis-sdk
-      '@hierarchidb/ide-gsm-client':
-        specifier: workspace:*
-        version: link:../ide-gsm-client
       '@hierarchidb/import-export-api':
         specifier: workspace:*
         version: link:../import-export-api

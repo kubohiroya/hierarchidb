@@ -78,6 +78,33 @@ describe('canonical session event emission', () => {
     expect(() => emitSessionStatusUpdated(payload)).not.toThrow();
   });
 
+  it('maps cancellation states to canonical session phases', () => {
+    const cancelingPayload = createSessionStatusUpdatedPayload(
+      {
+        nodeId,
+        status: 'canceling',
+        startedAt: 100,
+      },
+      null
+    );
+    const canceledPayload = createSessionStatusUpdatedPayload(
+      {
+        nodeId,
+        status: 'canceled',
+        startedAt: 100,
+        completedAt: 200,
+      },
+      null
+    );
+
+    expect(cancelingPayload.phase).toBe('canceling');
+    expect(cancelingPayload.isActive).toBe(true);
+    expect(canceledPayload.phase).toBe('canceled');
+    expect(canceledPayload.isActive).toBe(false);
+    expect(() => emitSessionStatusUpdated(cancelingPayload)).not.toThrow();
+    expect(() => emitSessionStatusUpdated(canceledPayload)).not.toThrow();
+  });
+
   it('rejects timing and task progress contract violations', () => {
     expect(() =>
       emitSessionStatusUpdated({

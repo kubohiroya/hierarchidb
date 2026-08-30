@@ -66,7 +66,6 @@
   "dependencies": {
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/ide-gsm-client": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/origin-coordinator": "workspace:*",

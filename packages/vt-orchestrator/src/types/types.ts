@@ -10,13 +10,16 @@ import type { NodeId } from '@hierarchidb/core-types';
 
 export type StageHandlerResult<TOutput = unknown> = CommonStageHandlerResult<TOutput>;
 export type StageHandler<TInput = unknown, TOutput = unknown> = CommonStageHandler<TInput, TOutput>;
-export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = CommonTaskQueueRecord<
-  TInput,
-  TOutput
->;
+export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = Omit<
+  CommonTaskQueueRecord<TInput, TOutput>,
+  'status'
+> & {
+  status: TaskStatus;
+};
 export type TaskQueueEvent = CommonTaskQueueEvent;
 export type TaskStage = CommonTaskStage;
 export type TaskStatus = CommonTaskStatus;
+type VtTaskStage = Extract<TaskStage, 'source' | 'geometry' | 'tileEmit'>;
 export type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
 export type StageCapability = 'io' | 'geometry' | 'tile-emit';
 
@@ -86,13 +89,13 @@ const TASK_STAGE_TO_STAGE_ID = {
   source: 'source-stage',
   geometry: 'geometry-stage',
   tileEmit: 'tile-emit-stage',
-} as const satisfies Record<TaskStage, CanonicalStageId>;
+} as const satisfies Record<VtTaskStage, CanonicalStageId>;
 
 const STAGE_ID_TO_TASK_STAGE = {
   'source-stage': 'source',
   'geometry-stage': 'geometry',
   'tile-emit-stage': 'tileEmit',
-} as const satisfies Record<CanonicalStageId, TaskStage>;
+} as const satisfies Record<CanonicalStageId, VtTaskStage>;
 
 const STAGE_ID_TO_CAPABILITY = {
   'source-stage': 'io',
@@ -116,8 +119,14 @@ const normalizeStageId = (
   if (stage === undefined) {
     throw new Error('runStageTasks requires either stage or stageId');
   }
+  if (!isVtTaskStage(stage)) {
+    throw new Error(`runStageTasks unsupported stage: ${stage}`);
+  }
   return TASK_STAGE_TO_STAGE_ID[stage];
 };
+
+const isVtTaskStage = (stage: TaskStage): stage is VtTaskStage =>
+  stage === 'source' || stage === 'geometry' || stage === 'tileEmit';
 
 const normalizeCapability = (
   stageId: CanonicalStageId,
