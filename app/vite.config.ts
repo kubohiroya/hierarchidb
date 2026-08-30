@@ -2047,6 +2047,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         '@mui/icons-material/Timelapse',
         '@mui/icons-material/Tune',
         '@mui/icons-material/Visibility',
+        '@mui/icons-material/ViewInArOutlined',
 
         // --- MUI date pickers ---
         '@mui/x-date-pickers',

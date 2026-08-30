@@ -1,0 +1,114 @@
+{
+  "name": "@hierarchidb/fdm-plugin",
+  "version": "0.1.0",
+  "description": "FDM dashboard node plugin",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js",
+      "default": "./dist/ui/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "icon": [
+        "dist/icon/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/fdm-api": "workspace:*",
+    "@hierarchidb/ide-gsm-client": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-ide-gsm-connection": "workspace:*",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/fdm-api": "workspace:*",
+    "@hierarchidb/ide-gsm-client": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-ide-gsm-connection": "workspace:*",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "react": "^19.0.0",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0"
+  },
+  "dependencies": {},
+  "license": "MIT",
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "fdm",
+      "name": "FDM Plugin",
+      "displayName": "FDM",
+      "description": "FDM dashboard and visualization node",
+      "i18nNamespace": "fdm-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "connection"
+      },
+      "icon": {
+        "mui": "ViewInArOutlined",
+        "color": "#4f6f52",
+        "component": {
+          "specifier": "@hierarchidb/fdm-plugin/icon",
+          "exportName": "FdmPluginIcon"
+        }
+      },
+      "priority": 530,
+      "category": {
+        "id": "ide-gsm",
+        "menuGroup": "ide-gsm",
+        "createOrder": 530
+      },
+      "dependencies": [
+        "folder"
+      ],
+      "capabilities": {
+        "canHaveChildren": false,
+        "canBeRoot": false,
+        "canBeDeleted": true,
+        "canBeRenamed": true,
+        "canBeMoved": true,
+        "canBeCopied": true,
+        "visualization": true
+      }
+    }
+  }
+}

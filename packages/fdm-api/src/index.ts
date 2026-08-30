@@ -1,0 +1,27 @@
+export {
+  FDM_NODE_DATA_VERSION,
+  FDM_NODE_TYPE,
+  type FdmAxisDimension,
+  type FdmAxisMap,
+  FdmContractError,
+  type FdmDialogData,
+  type FdmFilters,
+  type FdmNodeData,
+  type FdmNodeIdentity,
+  type FdmPromotionInput,
+  type FdmPromotionResult,
+  type FdmRuntimePort,
+  type FdmSpaceCatalog,
+  type FdmSpaceCreateInput,
+  type FdmViewMode,
+} from './fdmTypes.js';
+export {
+  assertFdmAxisMap,
+  assertFdmFilters,
+  assertFdmNodeData,
+  assertFdmPromotionResult,
+  createFdmNodeData,
+  createFdmNodeDataFromDraft,
+  FDM_AXIS_DIMENSIONS,
+  FDM_NODE_DATA_V1_DEFAULTS,
+} from './fdmValidators.js';

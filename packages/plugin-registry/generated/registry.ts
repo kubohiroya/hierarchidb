@@ -114,6 +114,129 @@ export const pluginRegistry: PluginRegistryEntry[] = [
   }
   },
   {
+    nodeType: "fdm",
+    packageName: "@hierarchidb/fdm-plugin",
+    version: "0.1.0",
+    dependencies: [
+        "@emotion/react",
+        "@emotion/styled",
+        "@hierarchidb/core-types",
+        "@hierarchidb/fdm-api",
+        "@hierarchidb/ide-gsm-client",
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-ide-gsm-connection",
+        "@mui/icons-material",
+        "@mui/material",
+        "react"
+      ],
+    exports: ["","icon","ui"],
+    manifest: {
+        "id": "@hierarchidb/fdm-plugin",
+        "name": "FDM Plugin",
+        "displayName": "FDM",
+        "i18nNamespace": "fdm-plugin",
+        "nodeType": "fdm",
+        "version": "0.1.0",
+        "description": "FDM dashboard and visualization node",
+        "extends": "folder",
+        "priority": 530,
+        "dependencies": [
+          "@emotion/react",
+          "@emotion/styled",
+          "@hierarchidb/core-types",
+          "@hierarchidb/fdm-api",
+          "@hierarchidb/ide-gsm-client",
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-ide-gsm-connection",
+          "@mui/icons-material",
+          "@mui/material",
+          "react"
+        ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "connection"
+        },
+        "icon": {
+          "mui": "ViewInArOutlined",
+          "color": "#4f6f52",
+          "muiIconName": "ViewInArOutlined",
+          "component": {
+            "specifier": "@hierarchidb/fdm-plugin/icon",
+            "exportName": "FdmPluginIcon"
+          }
+        },
+        "category": {
+          "menuGroup": "ide-gsm",
+          "createOrder": 530
+        },
+        "schema": {
+          "inherits": "folder",
+          "fields": [
+            {
+              "name": "version",
+              "type": "number",
+              "required": true
+            },
+            {
+              "name": "connectionName",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "spaceId",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "idegsmProjectNodeId",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "selectedStateDir",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "viewMode",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "filters",
+              "type": "object",
+              "required": true
+            },
+            {
+              "name": "axisMap",
+              "type": "object",
+              "required": true
+            },
+            {
+              "name": "tabularSnapshotRefs",
+              "type": "array",
+              "required": true
+            }
+          ]
+        },
+        "packageName": "@hierarchidb/fdm-plugin"
+      },
+    modules: {
+    root: {
+        specifier: "@hierarchidb/fdm-plugin",
+      },
+    ui: {
+        specifier: "@hierarchidb/fdm-plugin/ui",
+        source: "plugins/fdm-plugin/src/ui/index.ts",
+      },
+    icon: {
+        specifier: "@hierarchidb/fdm-plugin/icon",
+        source: "plugins/fdm-plugin/src/icon/index.ts",
+        exportName: "FdmPluginIcon",
+      }
+  }
+  },
+  {
     nodeType: "folder",
     packageName: "@hierarchidb/folder-plugin",
     version: "1.0.0",
@@ -222,6 +345,125 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         specifier: "@hierarchidb/folder-plugin/icon",
         source: "plugins/folder-plugin/src/icon/index.ts",
         exportName: "FolderPluginIcon",
+      }
+  }
+  },
+  {
+    nodeType: "idegsm-project",
+    packageName: "@hierarchidb/idegsm-project-plugin",
+    version: "0.1.0",
+    dependencies: [
+        "@emotion/react",
+        "@emotion/styled",
+        "@hierarchidb/build-api",
+        "@hierarchidb/core-types",
+        "@hierarchidb/ide-gsm-client",
+        "@hierarchidb/idegsm-project-api",
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/tree-api",
+        "@hierarchidb/ui-ide-gsm-connection",
+        "@hierarchidb/yaml-api",
+        "@mui/icons-material",
+        "@mui/material",
+        "react"
+      ],
+    exports: ["","icon","ui","worker"],
+    manifest: {
+        "id": "@hierarchidb/idegsm-project-plugin",
+        "name": "IDE-GSM Project Plugin",
+        "displayName": "IDE-GSM Project",
+        "i18nNamespace": "idegsm-project-plugin",
+        "nodeType": "idegsm-project",
+        "version": "0.1.0",
+        "description": "Synchronized IDE-GSM project root node",
+        "extends": "folder",
+        "priority": 520,
+        "dependencies": [
+          "@emotion/react",
+          "@emotion/styled",
+          "@hierarchidb/build-api",
+          "@hierarchidb/core-types",
+          "@hierarchidb/ide-gsm-client",
+          "@hierarchidb/idegsm-project-api",
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/tree-api",
+          "@hierarchidb/ui-ide-gsm-connection",
+          "@hierarchidb/yaml-api",
+          "@mui/icons-material",
+          "@mui/material",
+          "react"
+        ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "connection",
+          "3": "projectPath"
+        },
+        "icon": {
+          "mui": "AccountTree",
+          "color": "#2f7d77",
+          "muiIconName": "AccountTree",
+          "component": {
+            "specifier": "@hierarchidb/idegsm-project-plugin/icon",
+            "exportName": "IdeGsmProjectPluginIcon"
+          }
+        },
+        "category": {
+          "menuGroup": "ide-gsm",
+          "createOrder": 520
+        },
+        "schema": {
+          "inherits": "folder",
+          "fields": [
+            {
+              "name": "version",
+              "type": "number",
+              "required": true
+            },
+            {
+              "name": "connectionName",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "projectRelativePath",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "activeSyncGenerationId",
+              "type": "string|null",
+              "required": true
+            },
+            {
+              "name": "syncState",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "syncedAt",
+              "type": "string|null",
+              "required": true
+            }
+          ]
+        },
+        "packageName": "@hierarchidb/idegsm-project-plugin"
+      },
+    modules: {
+    root: {
+        specifier: "@hierarchidb/idegsm-project-plugin",
+      },
+    ui: {
+        specifier: "@hierarchidb/idegsm-project-plugin/ui",
+        source: "plugins/idegsm-project-plugin/src/ui/index.ts",
+      },
+    worker: {
+        specifier: "@hierarchidb/idegsm-project-plugin/worker",
+        source: "plugins/idegsm-project-plugin/src/worker/index.ts",
+      },
+    icon: {
+        specifier: "@hierarchidb/idegsm-project-plugin/icon",
+        source: "plugins/idegsm-project-plugin/src/icon/index.ts",
+        exportName: "IdeGsmProjectPluginIcon",
       }
   }
   },
