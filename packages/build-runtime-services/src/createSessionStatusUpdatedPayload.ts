@@ -36,6 +36,10 @@ const toSessionPhase = (status: BuildSessionState['status']): SessionPhase => {
       return 'pausing';
     case 'paused':
       return 'paused';
+    case 'canceling':
+      return 'canceling';
+    case 'canceled':
+      return 'canceled';
     case 'completed':
       return 'completed';
     case 'failed':
@@ -55,6 +59,7 @@ const isActiveSessionPhase = (phase: SessionPhase): boolean =>
   phase === 'starting' ||
   phase === 'running' ||
   phase === 'pausing' ||
+  phase === 'canceling' ||
   phase === 'resuming' ||
   phase === 'finalizing';
 

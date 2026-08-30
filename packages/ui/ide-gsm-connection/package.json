@@ -22,11 +22,13 @@
     "test": "vitest run"
   },
   "peerDependencies": {
+    "@hierarchidb/ui-external-service-connection": "workspace:*",
     "@hierarchidb/ui-external-service-health": "workspace:*",
     "@mui/material": "^7.3.6",
     "react": "^19.0.0"
   },
   "devDependencies": {
+    "@hierarchidb/ui-external-service-connection": "workspace:*",
     "@hierarchidb/ui-external-service-health": "workspace:*",
     "@mui/material": "^7.3.6",
     "@testing-library/react": "^16.3.0",

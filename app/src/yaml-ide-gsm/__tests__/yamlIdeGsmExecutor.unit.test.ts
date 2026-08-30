@@ -51,22 +51,13 @@ describe('yaml IDE-GSM executor', () => {
   it('keeps the startup-fixed flag off by default', () => {
     expect(resolveYamlIdeGsmAppConfig({})).toEqual({
       yamlIdeGsmStep4Enabled: false,
-      mountedIdeGsmCommandUiEnabled: false,
     });
     expect(resolveYamlIdeGsmAppConfig({ VITE_YAML_IDE_GSM_STEP4_ENABLED: '1' })).toEqual({
       yamlIdeGsmStep4Enabled: true,
-      mountedIdeGsmCommandUiEnabled: false,
-    });
-    expect(resolveYamlIdeGsmAppConfig({ VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED: '1' })).toEqual({
-      yamlIdeGsmStep4Enabled: false,
-      mountedIdeGsmCommandUiEnabled: true,
     });
     expect(() => resolveYamlIdeGsmAppConfig({ VITE_YAML_IDE_GSM_STEP4_ENABLED: 'true' })).toThrow(
       'VITE_YAML_IDE_GSM_STEP4_ENABLED must be unset, 0, or 1'
     );
-    expect(() =>
-      resolveYamlIdeGsmAppConfig({ VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED: 'true' })
-    ).toThrow('VITE_MOUNTED_IDE_GSM_COMMAND_UI_ENABLED must be unset, 0, or 1');
   });
 
   it('does not touch credentials, sync, or network when the flag is disabled', async () => {

@@ -12,6 +12,7 @@ export {
   type IdeGsmProjectSnapshotEntry,
   type IdeGsmProjectSnapshotManifest,
   type IdeGsmProjectSyncState,
+  type IdeGsmProjectTabularContent,
 } from './ideGsmProjectTypes.js';
 export {
   assertIdeGsmProjectChildMetadata,
@@ -22,5 +23,6 @@ export {
   createIdeGsmProjectDirectoryRequest,
   createIdeGsmProjectRootNodeData,
   createIdeGsmProjectSnapshotManifest,
+  createTrackedIdeGsmProjectChildMetadata,
   sameIdeGsmProjectIdentity,
 } from './ideGsmProjectValidators.js';

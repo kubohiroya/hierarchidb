@@ -1,0 +1,32 @@
+{
+  "name": "@hierarchidb/external-content-transfer",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Shared immutable external content transfer utilities for HierarchiDB",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "5.8.2",
+    "vitest": "^4.1.0"
+  },
+  "keywords": [],
+  "author": "HierarchiDB Team",
+  "license": "MIT"
+}

@@ -82,6 +82,29 @@ export interface ProjectYamlFileContent {
   byteCount: number;
 }
 
+export interface ProjectFileContentTransferInput extends ProjectFileInput {}
+
+export interface ProjectFileContentTransfer {
+  transferId: string;
+  contentDigest: string;
+  updatedAt: string;
+  byteCount: number;
+  chunkSizeBytes: number;
+  expiresAt: string;
+}
+
+export interface ProjectFileContentPageInput {
+  transferId: string;
+  cursor?: string;
+}
+
+export interface ProjectFileContentPage {
+  contentChunkBase64: string;
+  rawByteCount: number;
+  nextCursor: string | null;
+  hasNext: boolean;
+}
+
 export type ProjectYamlWriteStatus =
   | 'UPDATED'
   | 'CONTENT_CONFLICT'

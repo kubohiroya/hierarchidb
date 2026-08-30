@@ -30,8 +30,10 @@ The implementation should be split as follows:
 
 - `plugins/fdm-plugin`: `fdm` TreeNode plugin, node create/edit UI, React dashboard UI, FDM visualization UI, dashboard-specific state and components.
 - `packages/fdm-api`: public `fdm` node data types plus FDM-specific client services and DTOs for IDE-GSM GraphQL APIs.
-- `packages/ide-gsm-client`: reusable low-level IDE-GSM GraphQL client, named-connection resolution contract, and health-check port.
-- `packages/ui/ide-gsm-connection`: shared React Step 2 component and presentation/controller hooks used without duplication by both `fdm` and `idegsm-project` dialogs.
+- `packages/ide-gsm-client`: reusable low-level IDE-GSM GraphQL client and typed service operations.
+- `packages/ui/external-service-health`: canonical external-service health state and health-check lifecycle.
+- `packages/ui/external-service-connection`: generic named-connection/manual-target Step 2 component, validation, and runtime-provider contract.
+- `packages/ui/ide-gsm-connection`: IDE-GSM compatibility wrapper around the generic external-service connection package, used without duplication by both `fdm` and `idegsm-project` dialogs.
 - `app/src/ide-gsm-connection/`: app-level runtime provider that owns raw host, port, endpoint, CORS proxy, and credential values.
 - `plugins/idegsm-project-plugin` and `packages/idegsm-project-api`: separate owner of IDE-GSM project sync roots, YAML editing, command execution, run subscription, and cancellation.
 
@@ -128,7 +130,7 @@ Creating an `fdm` node must allow selection of an accessible existing FDM space.
 
 ## Dialog Step 2: Connection (`接続先`)
 
-Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `fdm` plugin must use the same `IdeGsmConnectionStep` component, validation, runtime-provider contract, and external-service health state model as the `idegsm-project` plugin; it must not fork or copy this code. The health state/check lifecycle is the generic `@hierarchidb/ui-external-service-health` contract described in `docs/external-service-health-spec.md`, not an IDE-GSM-owned model.
+Step 1 follows the normal HierarchiDB basic-information contract. Step 2 for both create and edit dialogs must be the shared `Connection` (`接続先`) step. The `fdm` plugin must use the same `IdeGsmConnectionStep` compatibility wrapper as the `idegsm-project` plugin; that wrapper delegates to the generic `@hierarchidb/ui-external-service-connection` component, validation, runtime-provider contract, and `@hierarchidb/ui-external-service-health` health model. These shared contracts are described in `docs/external-service-integration-spec.md` and `docs/external-service-health-spec.md`; FDM and IDE-GSM packages must not fork or copy them.
 
 The step provides either:
 
@@ -208,6 +210,16 @@ Compatibility means:
 The 3D implementation may be reorganized into React hooks and components, but its observable interactions and state meanings must remain compatible with the existing `dashboard-scene-core.js` and dashboard scene logic. Removal or simplification of the 3D lattice is a specification change and requires a separate decision.
 
 React components should follow existing HierarchiDB plugin UI patterns and should avoid introducing a separate dashboard architecture unless the existing plugin boundaries require it.
+
+### React Dashboard Runtime Port
+
+The React dashboard step receives a committed `FdmNodeData` object plus an injected `FdmDashboardPort`. The port is the only dashboard data boundary exposed to the plugin UI. It provides `loadDashboard` and `performAction` operations using safe logical identifiers: connection name, FDM space ID, optional state directory, axis map, filters, selected cell ID, result references, and directory logical path segments.
+
+The dashboard response must be validated before rendering. It must not contain GraphQL endpoints, WebSocket URLs, credentials, server absolute paths, raw CSV bodies, or duplicated Tabular rows. Cell progress is a contract value and must be a finite number in `0..100` when present.
+
+Step 3 registration is guarded by the same committed node contract as the dashboard validator. A partial draft with only `connectionName` and `spaceId` is not a valid dashboard input. The connected dashboard may show `connected`, `reconnecting`, `disconnected`, or `stale`, and reconnect explicitly reloads authoritative state through the runtime port.
+
+The first React port keeps 3D lattice placement in a pure Three.js-backed projection model and renders the current plugin UI with the same operational surfaces: summary, selectors, filters, matrix, cell detail, runtime feed, directory entries, actions, 2D matrix, map/result view, and required four-axis lattice. Live server GraphQL wiring must adapt to this typed port rather than bypass it from React components.
 
 ## FDM Data Sources
 
