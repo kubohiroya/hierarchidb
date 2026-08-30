@@ -360,13 +360,10 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
       latestProps = props;
       return React.createElement('div', { 'data-testid': 'context-menu-stub' });
     };
-    const node = createNode('mounted-project', {
+    const node = createNode('command-target', {
       nodeType: asNodeType('folder'),
       data: {
-        mountKind: 'ide-gsm',
-        sourceKind: 'project-root',
-        mountId: 'mount-1',
-        projectId: 'projects/demo',
+        commandTarget: true,
       },
     });
     const onContextAction = vi.fn();
@@ -383,14 +380,14 @@ describe('TreeTableContextMenu archive disable for running build session', () =>
         controller: {
           nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
           onContextAction,
-          resolveContextMenuCommandActions: () => [{ id: 'ide-gsm:sim', label: 'Run local sim' }],
+          resolveContextMenuCommandActions: () => [{ id: 'custom:run', label: 'Run command' }],
         },
         ContextMenuComponent,
       })
     );
 
-    expect(latestProps?.commandActions).toEqual([{ id: 'ide-gsm:sim', label: 'Run local sim' }]);
-    latestProps?.onCommandAction?.('ide-gsm:sim');
-    expect(onContextAction).toHaveBeenCalledWith('ide-gsm:sim', node, { source: 'treetable' });
+    expect(latestProps?.commandActions).toEqual([{ id: 'custom:run', label: 'Run command' }]);
+    latestProps?.onCommandAction?.('custom:run');
+    expect(onContextAction).toHaveBeenCalledWith('custom:run', node, { source: 'treetable' });
   });
 });

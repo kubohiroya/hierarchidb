@@ -7,6 +7,8 @@ export type BuildSessionLifecyclePhase =
   | 'running'
   | 'pausing'
   | 'paused'
+  | 'canceling'
+  | 'canceled'
   | 'resuming'
   | 'finalizing'
   | 'completed'

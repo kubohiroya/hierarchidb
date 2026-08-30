@@ -1,22 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
 import type { Client as WsClient } from 'graphql-ws';
 import { createClient } from 'graphql-ws';
-import { ideGsmGraphqlDocuments } from './ideGsmGraphqlDocuments.js';
-import type {
-  CalibrateCommandInput,
-  ExportFilter,
-  IdeGsmCommand,
-  InstallCommandInput,
-  PreviewEventsCommandInput,
-  RemoteCalibrateCommandInput,
-  RemoteSimulateCommandInput,
-  RsyncConnectionType,
-  RsyncFilter,
-  SimulateCommandInput,
-  TaskResult,
-  TaskStatus,
-  TaskStatusListener,
-} from './ideGsmTypes.js';
 import type {
   IdeGsmDirectoryInfoReport,
   IdeGsmDirectoryNode,
@@ -29,11 +13,42 @@ import type {
   IdeGsmProjectDirectoryInfoReport,
   IdeGsmProjectDirectoryInput,
   IdeGsmProjectDirectoryTreeReport,
-} from './mount/IdeGsmMountTypes.js';
+} from './ideGsmDirectoryTypes.js';
 import {
   assertLogicalPath,
   assertProjectRelativePath as assertMountProjectRelativePath,
-} from './mount/IdeGsmMountTypes.js';
+} from './ideGsmDirectoryTypes.js';
+import { ideGsmGraphqlDocuments } from './ideGsmGraphqlDocuments.js';
+import type {
+  ActiveProjectTask,
+  ActiveProjectTaskStatus,
+  CalibrateCommandInput,
+  ConditionalProjectYamlWriteInput,
+  ConditionalProjectYamlWriteResult,
+  ExportFilter,
+  IdeGsmCommand,
+  InstallCommandInput,
+  PreviewEventsCommandInput,
+  ProjectFileContentPage,
+  ProjectFileContentPageInput,
+  ProjectFileContentTransfer,
+  ProjectFileContentTransferInput,
+  ProjectYamlFileContent,
+  ProjectYamlFileContentInput,
+  ProjectYamlWriteStatus,
+  RemoteCalibrateCommandInput,
+  RemoteSimulateCommandInput,
+  RsyncConnectionType,
+  RsyncFilter,
+  SimulateCommandInput,
+  TaskCancelResult,
+  TaskLogEvent,
+  TaskLogListener,
+  TaskResult,
+  TaskStatus,
+  TaskStatusListener,
+} from './ideGsmTypes.js';
+import { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';
 
 /** Factory type for creating a graphql-ws client. Injected for testability. */
 export type WsClientFactory = (url: string, connectionParams: Record<string, string>) => WsClient;
@@ -47,8 +62,28 @@ const TASK_STATUSES: ReadonlySet<string> = new Set<TaskStatus>([
   'CANCELED',
   'DELETED',
 ]);
+const IDE_GSM_COMMAND_ID_SET: ReadonlySet<string> = new Set(IDE_GSM_COMMAND_IDS);
 
+const ACTIVE_PROJECT_TASK_STATUSES: ReadonlySet<string> = new Set<ActiveProjectTaskStatus>([
+  'REGISTERED',
+  'READY',
+  'LEASED',
+  'FINISHED',
+  'FAILED',
+  'CANCELED',
+]);
 const ACTIVE_TASK_STATUSES: ReadonlySet<TaskStatus> = new Set(['REGISTERED', 'READY', 'LEASED']);
+const PROJECT_YAML_WRITE_STATUSES: ReadonlySet<string> = new Set<ProjectYamlWriteStatus>([
+  'UPDATED',
+  'CONTENT_CONFLICT',
+  'FILE_LOCK_UNAVAILABLE',
+  'ATOMIC_REPLACE_UNAVAILABLE',
+  'AUTHORIZATION_FAILED',
+]);
+const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/u;
+const YAML_PATH_PATTERN = /\.ya?ml$/u;
+const CSV_PATH_PATTERN = /\.csv$/u;
+const CSV_TRANSFER_CHUNK_SIZE_BYTES = 16_384;
 
 type ReportDocumentName =
   | 'fdmSpaces'
@@ -56,15 +91,26 @@ type ReportDocumentName =
   | 'fdmDirectoryInfo'
   | 'fdmDirectoryRemove'
   | 'projectDirectoryTree'
-  | 'projectDirectoryInfo';
+  | 'projectDirectoryInfo'
+  | 'projectYamlFileContent'
+  | 'beginProjectFileContentTransfer'
+  | 'projectFileContentPage'
+  | 'closeProjectFileContentTransfer'
+  | 'conditionalProjectYamlWrite'
+  | 'activeProjectTasks'
+  | 'cancelTask';
 
 type TaskMutationName = Exclude<
   keyof typeof ideGsmGraphqlDocuments,
-  ReportDocumentName | 'subscribeTask'
+  ReportDocumentName | 'subscribeTask' | 'subscribeTaskLog'
 >;
 
 interface SubscribeTaskEvent {
   subscribeTaskOnFrontend?: unknown;
+}
+
+interface SubscribeTaskLogEvent {
+  subscribeTaskLog?: unknown;
 }
 
 function buildAuthHeaders(authToken: string): Record<string, string> {
@@ -126,6 +172,65 @@ function projectDirectoryVariables(input: IdeGsmProjectDirectoryInput): Record<s
   }
   assertOptionalNonNegativeInteger(input.depth, 'depth');
   addDefined(variables, 'depth', input.depth);
+  return variables;
+}
+
+function assertProjectYamlFilePath(relativePath: string): void {
+  assertMountProjectRelativePath(relativePath);
+  if (!YAML_PATH_PATTERN.test(relativePath)) {
+    throw new Error('relativePath must point to a YAML file');
+  }
+}
+
+function assertProjectCsvFilePath(relativePath: string): void {
+  assertMountProjectRelativePath(relativePath);
+  if (!CSV_PATH_PATTERN.test(relativePath)) {
+    throw new Error('relativePath must point to a CSV file');
+  }
+}
+
+function assertSha256Digest(expectedDigest: string): void {
+  if (!SHA256_HEX_PATTERN.test(expectedDigest)) {
+    throw new Error('expectedDigest must be a 64-character lowercase SHA-256 hex string');
+  }
+}
+
+function projectYamlFileVariables(input: ProjectYamlFileContentInput): Record<string, unknown> {
+  const variables = projectVariables(input.projectRelativePath);
+  assertProjectYamlFilePath(input.relativePath);
+  variables.relativePath = input.relativePath;
+  return variables;
+}
+
+function projectCsvFileVariables(input: ProjectFileContentTransferInput): Record<string, unknown> {
+  const variables = projectVariables(input.projectRelativePath);
+  assertProjectCsvFilePath(input.relativePath);
+  variables.relativePath = input.relativePath;
+  return variables;
+}
+
+function projectFileContentPageVariables(
+  input: ProjectFileContentPageInput
+): Record<string, unknown> {
+  assertNonEmpty(input.transferId, 'transferId');
+  const variables: Record<string, unknown> = { transferId: input.transferId };
+  if (input.cursor !== undefined) {
+    assertNonEmpty(input.cursor, 'cursor');
+    variables.cursor = input.cursor;
+  }
+  return variables;
+}
+
+function conditionalProjectYamlWriteVariables(
+  input: ConditionalProjectYamlWriteInput
+): Record<string, unknown> {
+  const variables = projectYamlFileVariables(input);
+  assertSha256Digest(input.expectedDigest);
+  if (typeof input.content !== 'string') {
+    throw new Error('content must be a string');
+  }
+  variables.expectedDigest = input.expectedDigest;
+  variables.content = input.content;
   return variables;
 }
 
@@ -255,6 +360,55 @@ function readFiniteNumber(record: Record<string, unknown>, key: string): number 
   return value;
 }
 
+function readDigest(record: Record<string, unknown>, key: string): string {
+  const digest = readString(record, key);
+  if (!SHA256_HEX_PATTERN.test(digest)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return digest;
+}
+
+function readSha256Digest(record: Record<string, unknown>, key: string): string {
+  const digest = readDigest(record, key);
+  return digest;
+}
+
+function readNonNegativeNumber(record: Record<string, unknown>, key: string): number {
+  const value = readFiniteNumber(record, key);
+  if (value < 0) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readNullableNonNegativeNumber(
+  record: Record<string, unknown>,
+  key: string
+): number | null {
+  const value = record[key];
+  if (value === null) return null;
+  return readNonNegativeNumber(record, key);
+}
+
+function readOptionalNullableString(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readNullableProgress(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+  if (value === null) return null;
+  const progress = readFiniteNumber(record, key);
+  if (progress < 0 || progress > 100) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return progress;
+}
+
 function parseDirectoryNode(value: unknown): IdeGsmDirectoryNode {
   assertRecord(value, 'IDE-GSM GraphQL response malformed');
   const rawChildren = value.children;
@@ -322,6 +476,150 @@ function parseProjectDirectoryInfoReport(value: unknown): IdeGsmProjectDirectory
     ...report,
     projectRelativePath: readString(value, 'projectRelativePath'),
   };
+}
+
+function parseProjectYamlFileContent(value: unknown): ProjectYamlFileContent {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    projectRelativePath: readString(value, 'projectRelativePath'),
+    relativePath: readString(value, 'relativePath'),
+    content: readString(value, 'content'),
+    contentDigest: readDigest(value, 'contentDigest'),
+    updatedAt: readString(value, 'updatedAt'),
+    byteCount: readNonNegativeNumber(value, 'byteCount'),
+  };
+}
+
+function parseConditionalProjectYamlWriteResult(value: unknown): ConditionalProjectYamlWriteResult {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const status = readString(value, 'status');
+  if (!PROJECT_YAML_WRITE_STATUSES.has(status)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    status: status as ProjectYamlWriteStatus,
+    projectRelativePath: readString(value, 'projectRelativePath'),
+    relativePath: readString(value, 'relativePath'),
+    contentDigest: value.contentDigest === null ? null : readDigest(value, 'contentDigest'),
+    updatedAt: readNullableString(value, 'updatedAt'),
+    byteCount: readNullableNonNegativeNumber(value, 'byteCount'),
+    resyncRequired: readBoolean(value, 'resyncRequired'),
+  };
+}
+
+function decodeBase64Bytes(value: string): Uint8Array {
+  if (typeof globalThis.atob !== 'function') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  try {
+    const binary = globalThis.atob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
+  } catch {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+}
+
+function parseProjectFileContentTransfer(value: unknown): ProjectFileContentTransfer {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const transfer = {
+    transferId: readString(value, 'transferId'),
+    contentDigest: readSha256Digest(value, 'contentDigest'),
+    updatedAt: readString(value, 'updatedAt'),
+    byteCount: readNonNegativeNumber(value, 'byteCount'),
+    chunkSizeBytes: readNonNegativeNumber(value, 'chunkSizeBytes'),
+    expiresAt: readString(value, 'expiresAt'),
+  };
+  if (
+    transfer.transferId.length === 0 ||
+    transfer.chunkSizeBytes !== CSV_TRANSFER_CHUNK_SIZE_BYTES
+  ) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return transfer;
+}
+
+function parseProjectFileContentPage(value: unknown): ProjectFileContentPage {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const contentChunkBase64 = readString(value, 'contentChunkBase64');
+  const rawByteCount = readNonNegativeNumber(value, 'rawByteCount');
+  const nextCursor = readNullableString(value, 'nextCursor');
+  const hasNext = readBoolean(value, 'hasNext');
+  const bytes = decodeBase64Bytes(contentChunkBase64);
+  if (
+    rawByteCount > CSV_TRANSFER_CHUNK_SIZE_BYTES ||
+    bytes.byteLength !== rawByteCount ||
+    (hasNext && nextCursor === null) ||
+    (!hasNext && nextCursor !== null)
+  ) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    contentChunkBase64,
+    rawByteCount,
+    nextCursor,
+    hasNext,
+  };
+}
+
+function parseActiveProjectTask(value: unknown): ActiveProjectTask {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const status = readString(value, 'status');
+  if (!ACTIVE_PROJECT_TASK_STATUSES.has(status)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    taskId: readString(value, 'taskId'),
+    commandId: readIdeGsmCommandId(value),
+    status: status as ActiveProjectTaskStatus,
+    projectRelativePath: readString(value, 'projectRelativePath'),
+    progress: readNullableProgress(value, 'progress'),
+    phase: readOptionalNullableString(value, 'phase'),
+    registeredAt: readString(value, 'registeredAt'),
+    startedAt: readOptionalNullableString(value, 'startedAt'),
+    updatedAt: readString(value, 'updatedAt'),
+  };
+}
+
+function parseActiveProjectTasks(value: unknown): ActiveProjectTask[] {
+  if (!Array.isArray(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value.map(parseActiveProjectTask);
+}
+
+function parseTaskCancelResult(value: unknown): TaskCancelResult {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    taskId: readString(value, 'taskId'),
+    accepted: readBoolean(value, 'accepted'),
+  };
+}
+
+function parseTaskLogEvent(value: unknown): TaskLogEvent {
+  assertRecord(value, 'IDE-GSM task log subscription returned a malformed event');
+  const stream = readString(value, 'stream');
+  if (stream !== 'stdout' && stream !== 'stderr' && stream !== 'system') {
+    throw new Error('IDE-GSM task log subscription returned a malformed event');
+  }
+  return {
+    taskId: readString(value, 'taskId'),
+    sequence: readNonNegativeNumber(value, 'sequence'),
+    timestamp: readString(value, 'timestamp'),
+    stream,
+    text: readString(value, 'text'),
+  };
+}
+
+function readIdeGsmCommandId(record: Record<string, unknown>): IdeGsmCommand['id'] {
+  const commandId = readString(record, 'commandId');
+  if (!IDE_GSM_COMMAND_ID_SET.has(commandId)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return commandId as IdeGsmCommand['id'];
 }
 
 function parseFdmDirectoryRemoveReport(value: unknown): IdeGsmFdmDirectoryRemoveReport {
@@ -476,6 +774,73 @@ export class IdeGsmClient {
       projectDirectoryVariables(input),
       parseProjectDirectoryInfoReport
     );
+  }
+
+  async projectYamlFileContent(
+    input: ProjectYamlFileContentInput
+  ): Promise<ProjectYamlFileContent> {
+    return this.requestReport(
+      'projectYamlFileContent',
+      projectYamlFileVariables(input),
+      parseProjectYamlFileContent
+    );
+  }
+
+  async conditionalProjectYamlWrite(
+    input: ConditionalProjectYamlWriteInput
+  ): Promise<ConditionalProjectYamlWriteResult> {
+    return this.requestReport(
+      'conditionalProjectYamlWrite',
+      conditionalProjectYamlWriteVariables(input),
+      parseConditionalProjectYamlWriteResult
+    );
+  }
+
+  async beginProjectFileContentTransfer(
+    input: ProjectFileContentTransferInput
+  ): Promise<ProjectFileContentTransfer> {
+    return this.requestReport(
+      'beginProjectFileContentTransfer',
+      projectCsvFileVariables(input),
+      parseProjectFileContentTransfer
+    );
+  }
+
+  async projectFileContentPage(
+    input: ProjectFileContentPageInput
+  ): Promise<ProjectFileContentPage> {
+    return this.requestReport(
+      'projectFileContentPage',
+      projectFileContentPageVariables(input),
+      parseProjectFileContentPage
+    );
+  }
+
+  async closeProjectFileContentTransfer(transferId: string): Promise<boolean> {
+    assertNonEmpty(transferId, 'transferId');
+    return this.requestReport(
+      'closeProjectFileContentTransfer',
+      { transferId },
+      (value): boolean => {
+        if (typeof value !== 'boolean') {
+          throw new Error('IDE-GSM GraphQL response malformed');
+        }
+        return value;
+      }
+    );
+  }
+
+  async activeProjectTasks(projectRelativePath: string): Promise<ActiveProjectTask[]> {
+    return this.requestReport(
+      'activeProjectTasks',
+      projectVariables(projectRelativePath),
+      parseActiveProjectTasks
+    );
+  }
+
+  async cancelTask(taskId: string): Promise<TaskCancelResult> {
+    assertNonEmpty(taskId, 'taskId');
+    return this.requestReport('cancelTask', { taskId }, parseTaskCancelResult);
   }
 
   async importProject(projectSnapshot: string, projectRelativePath: string): Promise<string> {
@@ -819,5 +1184,51 @@ export class IdeGsmClient {
         }
       }
     });
+  }
+
+  subscribeTaskLog(taskId: string, onLog: TaskLogListener): () => void {
+    assertNonEmpty(taskId, 'taskId');
+
+    const wsUrl = deriveWsUrl(this.endpointUrl);
+    const wsClient = this.wsClientFactory(wsUrl, buildAuthHeaders(this.authToken));
+    let disposed = false;
+    const disposeClient = (): void => {
+      if (disposed) return;
+      disposed = true;
+      try {
+        void Promise.resolve(wsClient.dispose()).catch(() => undefined);
+      } catch {
+        // Cleanup failures must not outlive unsubscribe.
+      }
+    };
+    const unsubscribe = wsClient.subscribe<SubscribeTaskLogEvent>(
+      {
+        query: ideGsmGraphqlDocuments.subscribeTaskLog,
+        variables: { taskId },
+      },
+      {
+        next: (event) => {
+          const result = parseTaskLogEvent(event.data?.subscribeTaskLog);
+          if (result.taskId !== taskId) {
+            throw new Error('IDE-GSM task log subscription returned a mismatched task ID');
+          }
+          onLog(result);
+        },
+        error: () => {
+          disposeClient();
+        },
+        complete: () => {
+          disposeClient();
+        },
+      }
+    );
+
+    return () => {
+      try {
+        unsubscribe();
+      } finally {
+        disposeClient();
+      }
+    };
   }
 }

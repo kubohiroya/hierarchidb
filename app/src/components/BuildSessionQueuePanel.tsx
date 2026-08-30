@@ -65,6 +65,7 @@ const SESSION_TIMER_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status'
   'resuming',
   'finalizing',
   'pausing',
+  'canceling',
 ]);
 
 const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>

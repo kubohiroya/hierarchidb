@@ -17,11 +17,12 @@ export type BuildStatus =
   | 'queued'
   | 'running'
   | 'paused'
+  | 'canceled'
   | 'completed'
   | 'failed'
   | 'recycled';
 
-export type BuildSessionStatusValue = BuildStatus | 'pausing';
+export type BuildSessionStatusValue = BuildStatus | 'pausing' | 'canceling';
 
 export type BaseBuildConfig = {};
 
@@ -117,6 +118,8 @@ export type BuildSessionRuntimeStatus =
   | 'running'
   | 'pausing'
   | 'paused'
+  | 'canceling'
+  | 'canceled'
   | 'resuming'
   | 'finalizing'
   | 'completed'

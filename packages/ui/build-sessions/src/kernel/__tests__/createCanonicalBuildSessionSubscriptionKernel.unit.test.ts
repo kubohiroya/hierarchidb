@@ -37,7 +37,7 @@ const createSessionEvent = (stageId: string, startedAt = 100) => ({
   },
 });
 
-const createSnapshotEvent = (stageId: string, version = 1) => ({
+const createSnapshotEvent = (stageId: string, version = 1, status = 'running') => ({
   type: 'stageSnapshotUpdated' as const,
   payload: {
     stageId,
@@ -47,7 +47,7 @@ const createSnapshotEvent = (stageId: string, version = 1) => ({
       {
         taskId: `${stageId}-task`,
         stage: stageId,
-        status: 'running',
+        status,
         progress: 0,
         version,
       },
@@ -144,6 +144,37 @@ describe('createCanonicalBuildSessionSubscriptionKernel', () => {
 
     expect(consumer.onReset).toHaveBeenCalledOnce();
     expect(consumer.onTaskProgress).not.toHaveBeenCalled();
+  });
+
+  it('accepts canceling sessions and canceled task summaries', () => {
+    const stageIds = ['source'] as const;
+    type StageId = (typeof stageIds)[number];
+    const consumer = createConsumer<StageId>();
+    const kernel = createCanonicalBuildSessionSubscriptionKernel({
+      nodeId: NODE_ID,
+      resolveStageId: createStageResolver(stageIds),
+      consumer,
+    });
+
+    kernel.handlers.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: NODE_ID,
+        phase: 'canceling',
+        isActive: true,
+        startedAt: 100,
+      },
+    });
+    kernel.handlers.onTaskEvent(createSnapshotEvent('source', 1, 'canceled'));
+
+    expect(consumer.onSessionStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ phase: 'canceling', isActive: true })
+    );
+    expect(consumer.onStageSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tasks: [expect.objectContaining({ status: 'canceled' })],
+      })
+    );
   });
 
   it('fails fast for invalid progress and progress without authoritative membership', () => {

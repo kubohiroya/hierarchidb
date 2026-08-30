@@ -35,6 +35,8 @@ export const canonicalBuildSessionRuntimeStatuses = [
   'running',
   'pausing',
   'paused',
+  'canceling',
+  'canceled',
   'resuming',
   'finalizing',
   'completed',
@@ -50,6 +52,7 @@ export const activeBuildSessionRuntimeStatuses = [
   'starting',
   'running',
   'pausing',
+  'canceling',
   'resuming',
   'finalizing',
 ] as const satisfies readonly BuildSessionRuntimeStatus[];

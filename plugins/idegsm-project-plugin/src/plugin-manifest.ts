@@ -1,10 +1,10 @@
+import type { NodeType } from '@hierarchidb/core-types';
 import type { PluginManifest } from '@hierarchidb/plugin-base';
-import {
-  IDEGSM_PROJECT_PLUGIN_FEATURE_FLAG_DEFAULT,
-  IDEGSM_PROJECT_PLUGIN_ID,
-  IDEGSM_PROJECT_PLUGIN_NODE_TYPE,
-  IDEGSM_PROJECT_PLUGIN_VERSION,
-} from './common/constants.js';
+
+const IDEGSM_PROJECT_PLUGIN_ID = '@hierarchidb/idegsm-project-plugin' as const;
+const IDEGSM_PROJECT_PLUGIN_VERSION = '0.1.0' as const;
+const IDEGSM_PROJECT_PLUGIN_NODE_TYPE = 'idegsm-project' as NodeType;
+const IDEGSM_PROJECT_PLUGIN_FEATURE_FLAG_DEFAULT = false as const;
 
 export const PLUGIN_MANIFEST: PluginManifest = {
   id: IDEGSM_PROJECT_PLUGIN_ID,

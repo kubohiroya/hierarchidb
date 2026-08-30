@@ -82,6 +82,7 @@ const BUILD_JOB_TERMINAL_STATUSES = new Set<BuildSessionStatusValue>([
   'completed',
   'failed',
   'paused',
+  'canceled',
 ]);
 
 const POLL_INTERVAL_MS = 1000;
