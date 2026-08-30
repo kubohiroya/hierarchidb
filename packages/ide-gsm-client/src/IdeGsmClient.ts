@@ -1,6 +1,23 @@
 import { GraphQLClient } from 'graphql-request';
 import type { Client as WsClient } from 'graphql-ws';
 import { createClient } from 'graphql-ws';
+import type {
+  IdeGsmDirectoryInfoReport,
+  IdeGsmDirectoryNode,
+  IdeGsmDirectoryTreeReport,
+  IdeGsmFdmDirectoryInfoInput,
+  IdeGsmFdmDirectoryRemoveInput,
+  IdeGsmFdmDirectoryRemoveReport,
+  IdeGsmFdmDirectoryTreeInput,
+  IdeGsmFdmSpacesReport,
+  IdeGsmProjectDirectoryInfoReport,
+  IdeGsmProjectDirectoryInput,
+  IdeGsmProjectDirectoryTreeReport,
+} from './ideGsmDirectoryTypes.js';
+import {
+  assertLogicalPath,
+  assertProjectRelativePath as assertMountProjectRelativePath,
+} from './ideGsmDirectoryTypes.js';
 import { ideGsmGraphqlDocuments } from './ideGsmGraphqlDocuments.js';
 import type {
   ActiveProjectTask,
@@ -32,23 +49,6 @@ import type {
   TaskStatusListener,
 } from './ideGsmTypes.js';
 import { IDE_GSM_COMMAND_IDS } from './ideGsmTypes.js';
-import type {
-  IdeGsmDirectoryInfoReport,
-  IdeGsmDirectoryNode,
-  IdeGsmDirectoryTreeReport,
-  IdeGsmFdmDirectoryInfoInput,
-  IdeGsmFdmDirectoryRemoveInput,
-  IdeGsmFdmDirectoryRemoveReport,
-  IdeGsmFdmDirectoryTreeInput,
-  IdeGsmFdmSpacesReport,
-  IdeGsmProjectDirectoryInfoReport,
-  IdeGsmProjectDirectoryInput,
-  IdeGsmProjectDirectoryTreeReport,
-} from './mount/IdeGsmMountTypes.js';
-import {
-  assertLogicalPath,
-  assertProjectRelativePath as assertMountProjectRelativePath,
-} from './mount/IdeGsmMountTypes.js';
 
 /** Factory type for creating a graphql-ws client. Injected for testability. */
 export type WsClientFactory = (url: string, connectionParams: Record<string, string>) => WsClient;
