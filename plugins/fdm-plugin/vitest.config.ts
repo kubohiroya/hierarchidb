@@ -16,6 +16,10 @@ export default defineConfig({
         replacement: path.resolve(workspaceRoot, 'packages/fdm-api/src/index.ts'),
       },
       {
+        find: '@hierarchidb/ide-gsm-client',
+        replacement: path.resolve(workspaceRoot, 'packages/ide-gsm-client/src/index.ts'),
+      },
+      {
         find: '@hierarchidb/ui-ide-gsm-connection',
         replacement: path.resolve(workspaceRoot, 'packages/ui/ide-gsm-connection/src/index.ts'),
       },

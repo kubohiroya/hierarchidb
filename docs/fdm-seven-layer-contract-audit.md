@@ -63,6 +63,18 @@ The initial implementation keeps node data version `1` and preserves existing se
 - Axis maps still contain the four visible dashboard slots, but each slot can choose either legacy or canonical axis names.
 - `fdmSweep`, dedicated run/job lifecycle, workflow projection, ruleset governance, and lifecycle-aware space mutation stay gated until the matching ide-gsm schema capabilities are available.
 
+## Dashboard adapter implementation
+
+The concrete current-schema dashboard adapter is `createIdeGsmFdmDashboardPort` in `plugins/fdm-plugin/src/ui/dashboard/createIdeGsmFdmDashboardPort.ts`.
+
+The adapter maps `FdmDashboardPort.loadDashboard` to `IdeGsmClient.fdmDashboardStatus` and preserves the current upstream input naming:
+
+- Dashboard status filters use `timeline`.
+- Returned cells may still expose `checkpoint`; the adapter keeps it as a legacy compatibility alias while producing canonical `timeline`.
+- `run-selected` remains unavailable until the `fdmSweep` or dedicated run/job execution contract is confirmed.
+
+Cell detail/log subscriptions and runtime event subscriptions remain separate follow-up wiring because `fdmCellDetail`, `subscribeFdmCellLog`, and `subscribeFdmRuntimeEvents` use operation-specific inputs that must not be guessed from dashboard status alone.
+
 ## Shared fixture layout
 
 Shared fixtures for this migration live under `packages/fdm-api/src/__fixtures__/fdm-seven-layer/`.

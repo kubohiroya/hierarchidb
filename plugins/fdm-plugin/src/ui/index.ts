@@ -14,6 +14,8 @@ export {
   buildFdmLatticePoints,
   buildFdmMatrixRows,
   cellAxisValue,
+  createIdeGsmFdmDashboardPort,
   getDimensionLabel,
   getDimensionValues,
 } from './dashboard/index.js';
+export type { IdeGsmFdmDashboardClient } from './dashboard/index.js';

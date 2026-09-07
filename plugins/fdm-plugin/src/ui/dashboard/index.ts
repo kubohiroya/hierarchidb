@@ -1,6 +1,10 @@
 export { FdmDashboardPresentation } from './FdmDashboardPresentation.js';
 export { FdmDashboardView } from './FdmDashboardView.js';
 export {
+  createIdeGsmFdmDashboardPort,
+  type IdeGsmFdmDashboardClient,
+} from './createIdeGsmFdmDashboardPort.js';
+export {
   buildFdmMatrixRows,
   cellAxisValue,
   getDimensionLabel,
