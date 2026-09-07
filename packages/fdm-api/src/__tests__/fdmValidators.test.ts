@@ -4,7 +4,9 @@ import {
   assertFdmNodeData,
   createFdmNodeData,
   createFdmNodeDataFromDraft,
+  createFdmSpaceCatalogEntries,
   FDM_NODE_DATA_V1_DEFAULTS,
+  normalizeFdmNodeData,
 } from '../index.js';
 
 describe('FDM node data contract', () => {
@@ -20,15 +22,15 @@ describe('FDM node data contract', () => {
       spaceId: 'space-a',
       viewMode: 'lattice-3d',
       filters: {
-        profiles: [],
+        parameterSets: [],
         datasets: [],
         computes: [],
-        checkpoints: [],
+        timelines: [],
       },
       axisMap: {
-        xOuter: 'profile',
+        xOuter: 'parameterSet',
         xInner: 'dataset',
-        y: 'checkpoint',
+        y: 'timeline',
         z: 'compute',
       },
       tabularSnapshotRefs: [],
@@ -54,10 +56,10 @@ describe('FDM node data contract', () => {
         selectedStateDir: 'states/run-a',
         viewMode: 'matrix-2d',
         filters: {
-          profiles: ['p1'],
+          parameterSets: ['p1'],
           datasets: [],
           computes: ['cpu'],
-          checkpoints: ['2026'],
+          timelines: ['2026'],
         },
         tabularSnapshotRefs: ['snapshot-a'],
       }
@@ -70,9 +72,9 @@ describe('FDM node data contract', () => {
       selectedStateDir: 'states/run-a',
       viewMode: 'matrix-2d',
       filters: {
-        profiles: ['p1'],
+        parameterSets: ['p1'],
         computes: ['cpu'],
-        checkpoints: ['2026'],
+        timelines: ['2026'],
       },
       tabularSnapshotRefs: ['snapshot-a'],
     });
@@ -97,13 +99,13 @@ describe('FDM node data contract', () => {
         connectionName: 'local',
         spaceId: 'space-a',
         axisMap: {
-          xOuter: 'profile',
-          xInner: 'profile',
-          y: 'checkpoint',
+          xOuter: 'parameterSet',
+          xInner: 'parameterSet',
+          y: 'timeline',
           z: 'compute',
         },
       })
-    ).toThrow('permutation');
+    ).toThrow('duplicate');
   });
 
   it('treats empty filters as valid unrestricted dimensions', () => {
@@ -111,14 +113,49 @@ describe('FDM node data contract', () => {
       connectionName: 'local',
       spaceId: 'space-a',
       filters: {
-        profiles: [],
+        parameterSets: [],
         datasets: [],
         computes: [],
-        checkpoints: [],
+        timelines: [],
       },
     });
 
     expect(data.filters).toEqual(FDM_NODE_DATA_V1_DEFAULTS.filters);
+  });
+
+  it('normalizes legacy saved filter and axis names into canonical node data', () => {
+    const data = normalizeFdmNodeData({
+      version: 1,
+      connectionName: 'local',
+      spaceId: 'space-a',
+      viewMode: 'lattice-3d',
+      filters: {
+        profiles: ['baseline'],
+        datasets: ['world'],
+        computes: ['java'],
+        checkpoints: ['INIT_WORLD'],
+      },
+      axisMap: {
+        xOuter: 'profile',
+        xInner: 'dataset',
+        y: 'checkpoint',
+        z: 'compute',
+      },
+      tabularSnapshotRefs: [],
+    } as never);
+
+    expect(data.filters).toEqual({
+      parameterSets: ['baseline'],
+      datasets: ['world'],
+      computes: ['java'],
+      timelines: ['INIT_WORLD'],
+    });
+    expect(data.axisMap).toEqual({
+      xOuter: 'parameterSet',
+      xInner: 'dataset',
+      y: 'timeline',
+      z: 'compute',
+    });
   });
 
   it('does not backfill invalid existing records during edit promotion', () => {
@@ -130,5 +167,66 @@ describe('FDM node data contract', () => {
         viewMode: 'legacy',
       } as never)
     ).toThrow('viewMode');
+  });
+
+  it('projects current space catalog metadata without inferring L6 provenance', () => {
+    const entries = createFdmSpaceCatalogEntries({
+      defaultSpaceId: 'baseline',
+      spaces: [
+        {
+          spaceId: 'baseline',
+          label: 'Baseline',
+          defaultSpace: true,
+          visible: true,
+          archived: false,
+          owner: 'team-a',
+          layoutVersion: 'v2',
+          legacyRoot: false,
+          order: 1,
+          createdAt: '2026-09-07T00:00:00Z',
+          defaults: {
+            profile: ['baseline'],
+            dataset: ['world'],
+            compute: ['java'],
+            timeline: ['INIT_WORLD'],
+          },
+          warnings: ['read-only'],
+        },
+      ],
+    });
+
+    expect(entries).toEqual([
+      {
+        spaceId: 'baseline',
+        label: 'Baseline',
+        kind: 'unknown',
+        catalog: {
+          defaultSpace: true,
+          visible: true,
+          archived: false,
+          owner: 'team-a',
+          layoutVersion: 'v2',
+          legacyRoot: false,
+          order: 1,
+          createdAt: '2026-09-07T00:00:00Z',
+          defaults: {
+            profile: ['baseline'],
+            dataset: ['world'],
+            compute: ['java'],
+            timeline: ['INIT_WORLD'],
+          },
+          warnings: ['read-only'],
+        },
+        capability: {
+          canRead: true,
+          source: 'server',
+        },
+        provenance: {
+          status: 'unavailable',
+          spaceId: 'baseline',
+          reason: 'FDM_SPACE_PROVENANCE_UNAVAILABLE',
+        },
+      },
+    ]);
   });
 });

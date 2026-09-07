@@ -8,6 +8,22 @@ export const ideGsmGraphqlDocuments = {
         defaultSpaceId
         spaces {
           spaceId
+          label
+          defaultSpace
+          visible
+          archived
+          owner
+          layoutVersion
+          legacyRoot
+          order
+          createdAt
+          defaults {
+            profile
+            dataset
+            compute
+            timeline
+          }
+          warnings
         }
       }
     }
@@ -117,6 +133,537 @@ export const ideGsmGraphqlDocuments = {
             childCount
           }
         }
+      }
+    }
+  `,
+  fdmSpaceCreate: gql`
+    mutation FdmSpaceCreate($spaceId: String, $label: String, $defaultSpace: Boolean) {
+      fdmSpaceCreate(input: { spaceId: $spaceId, label: $label, defaultSpace: $defaultSpace }) {
+        spaceId
+        label
+        defaultSpace
+        visible
+        archived
+        owner
+        layoutVersion
+        legacyRoot
+        order
+        createdAt
+        defaults {
+          profile
+          dataset
+          compute
+          timeline
+        }
+        warnings
+      }
+    }
+  `,
+  fdmSpaceUpdate: gql`
+    mutation FdmSpaceUpdate(
+      $spaceId: String!
+      $label: String
+      $visible: Boolean
+      $archived: Boolean
+      $defaultSpace: Boolean
+      $order: Int
+    ) {
+      fdmSpaceUpdate(
+        input: {
+          spaceId: $spaceId
+          label: $label
+          visible: $visible
+          archived: $archived
+          defaultSpace: $defaultSpace
+          order: $order
+        }
+      ) {
+        spaceId
+        label
+        defaultSpace
+        visible
+        archived
+        owner
+        layoutVersion
+        legacyRoot
+        order
+        createdAt
+        defaults {
+          profile
+          dataset
+          compute
+          timeline
+        }
+        warnings
+      }
+    }
+  `,
+  fdmSpaceDelete: gql`
+    mutation FdmSpaceDelete(
+      $spaceId: String!
+      $apply: Boolean
+      $deleteFiles: Boolean
+      $confirmation: String
+    ) {
+      fdmSpaceDelete(
+        input: {
+          spaceId: $spaceId
+          apply: $apply
+          deleteFiles: $deleteFiles
+          confirmation: $confirmation
+        }
+      ) {
+        apply
+        archived
+        byteCount
+        confirmed
+        deleted
+        fileCount
+        physicalDelete
+        spaceId
+        topLevelEntries
+        spaces {
+          defaultSpaceId
+          spaces {
+            spaceId
+            label
+            defaultSpace
+            visible
+            archived
+            owner
+            layoutVersion
+            legacyRoot
+            order
+            createdAt
+            defaults {
+              profile
+              dataset
+              compute
+              timeline
+            }
+            warnings
+          }
+        }
+      }
+    }
+  `,
+  fdmDashboardStatus: gql`
+    query FdmDashboardStatus(
+      $spaceId: String!
+      $parameterSet: String
+      $profile: String
+      $dataset: String
+      $compute: String
+      $timeline: String
+      $stateDir: String
+    ) {
+      fdmDashboardStatus(
+        input: {
+          spaceId: $spaceId
+          parameterSet: $parameterSet
+          profile: $profile
+          dataset: $dataset
+          compute: $compute
+          timeline: $timeline
+          stateDir: $stateDir
+        }
+      ) {
+        generatedAt
+        selectedSpaceId
+        selectedStateDir
+        availableStateDirs
+        parameterSet
+        profile
+        dataset
+        compute
+        timeline
+        state {
+          status
+        }
+        live {
+          status
+          startedAt
+        }
+        startup {
+          ready
+          phase
+          startedAt
+          finishedAt
+          waitedMillis
+          waitingForHolder
+          apiStartupLock {
+            active
+            acquiredAt
+            ageMillis
+            fileName
+            host
+            owner
+            pid
+            role
+            staleMetadata
+          }
+          simulatorLock {
+            active
+            acquiredAt
+            ageMillis
+            fileName
+            host
+            owner
+            pid
+            role
+            staleMetadata
+          }
+        }
+        cells {
+          parameterSet
+          profile
+          dataset
+          compute
+          timelinePoint
+          checkpoint
+          label
+          source
+          bucket
+          rawStatus
+          accuracyLabel
+          summaryFile
+          current
+          next
+          blockingDrift
+          variantCount
+        }
+      }
+    }
+  `,
+  fdmCellDetail: gql`
+    query FdmCellDetail(
+      $spaceId: String!
+      $parameterSet: String!
+      $dataset: String!
+      $compute: String!
+      $timelinePoint: String!
+      $label: String
+      $stateDir: String
+    ) {
+      fdmCellDetail(
+        input: {
+          spaceId: $spaceId
+          parameterSet: $parameterSet
+          dataset: $dataset
+          compute: $compute
+          timelinePoint: $timelinePoint
+          label: $label
+          stateDir: $stateDir
+        }
+      ) {
+        generatedAt
+        selectedStateDir
+        startedAt
+        updatedAt
+        finishedAt
+        elapsedMs
+        estimatedRemainingMs
+        estimatedCompletedAt
+        logPath
+        latestLogLines
+        stage {
+          parameterSet
+          profile
+          dataset
+          compute
+          timelinePoint
+          checkpoint
+          label
+          source
+        }
+      }
+    }
+  `,
+  fdmRuntimeDiagnostics: gql`
+    query FdmRuntimeDiagnostics($projectRelativePath: String!) {
+      fdmRuntimeDiagnostics(input: { projectRelativePath: $projectRelativePath }) {
+        generatedAt
+        startup {
+          ready
+          phase
+          startedAt
+          finishedAt
+          waitedMillis
+          waitingForHolder
+          apiStartupLock {
+            active
+            acquiredAt
+            ageMillis
+            fileName
+            host
+            owner
+            pid
+            role
+            staleMetadata
+          }
+          simulatorLock {
+            active
+            acquiredAt
+            ageMillis
+            fileName
+            host
+            owner
+            pid
+            role
+            staleMetadata
+          }
+        }
+        recoveredStates {
+          command
+          compute
+          connectionType
+          launchLogFile
+          launchPid
+          launchPlanName
+          liveStatus
+          message
+          phase
+          recovered
+          runtimeIdentity
+          stateDir
+          taskId
+        }
+      }
+    }
+  `,
+  fdmCapabilities: gql`
+    query FdmCapabilities {
+      fdmCapabilities {
+        capabilities {
+          level
+          name
+          note
+          operations
+          supported
+        }
+        workflows {
+          capabilities
+          workflowId
+          runId
+          stateDir
+          status
+          sourceFile
+          sourceRevision
+        }
+        runs {
+          capabilities
+          diagnostics {
+            code
+            message
+            path
+            severity
+          }
+          operations {
+            attemptId
+            disposition
+            evidence
+            operationId
+            outcome
+            status
+            updatedAt
+          }
+          projectionConsistent
+          runId
+          stateDir
+          status
+          workflowId
+        }
+        jobs {
+          capabilities
+          diagnostics {
+            code
+            message
+            path
+            severity
+          }
+          executionKind
+          jobId
+          operationId
+          runId
+          status
+          taskId
+          workflowId
+        }
+        rulesets {
+          capabilities
+          operations
+          reference
+          roles
+          rulesetId
+          version
+        }
+        baselines {
+          baselineId
+          capabilities
+          computeEngine
+          dataset
+          profile
+          source
+          timelinePoint
+        }
+        forks {
+          capabilities
+          forkId
+          sourceRunId
+          sourceWorkflowId
+          status
+          targetRunId
+          targetWorkflowId
+        }
+        lineage {
+          capabilities
+          lineageId
+          operationId
+          runId
+          sourceOperationId
+          sourceRunId
+          workflowId
+        }
+      }
+    }
+  `,
+  fdmWorkflow: gql`
+    query FdmWorkflow($spaceId: String, $workflowId: String, $runId: String, $stateDir: String) {
+      fdmWorkflow(
+        input: { spaceId: $spaceId, workflowId: $workflowId, runId: $runId, stateDir: $stateDir }
+      ) {
+        capabilities
+        workflowId
+        runId
+        stateDir
+        status
+        sourceFile
+        sourceRevision
+      }
+    }
+  `,
+  fdmWorkflows: gql`
+    query FdmWorkflows($spaceId: String) {
+      fdmWorkflows(input: { spaceId: $spaceId }) {
+        capabilities
+        workflowId
+        runId
+        stateDir
+        status
+        sourceFile
+        sourceRevision
+      }
+    }
+  `,
+  fdmRun: gql`
+    query FdmRun($spaceId: String, $workflowId: String, $runId: String, $stateDir: String) {
+      fdmRun(input: { spaceId: $spaceId, workflowId: $workflowId, runId: $runId, stateDir: $stateDir }) {
+        capabilities
+        diagnostics {
+          code
+          message
+          path
+          severity
+        }
+        operations {
+          attemptId
+          disposition
+          evidence
+          operationId
+          outcome
+          status
+          updatedAt
+        }
+        projectionConsistent
+        runId
+        stateDir
+        status
+        workflowId
+      }
+    }
+  `,
+  fdmRuns: gql`
+    query FdmRuns($spaceId: String) {
+      fdmRuns(input: { spaceId: $spaceId }) {
+        capabilities
+        diagnostics {
+          code
+          message
+          path
+          severity
+        }
+        operations {
+          attemptId
+          disposition
+          evidence
+          operationId
+          outcome
+          status
+          updatedAt
+        }
+        projectionConsistent
+        runId
+        stateDir
+        status
+        workflowId
+      }
+    }
+  `,
+  fdmJob: gql`
+    query FdmJob(
+      $spaceId: String
+      $workflowId: String
+      $runId: String
+      $jobId: String
+      $taskId: String
+      $operationId: String
+      $executionKind: String
+    ) {
+      fdmJob(
+        input: {
+          spaceId: $spaceId
+          workflowId: $workflowId
+          runId: $runId
+          jobId: $jobId
+          taskId: $taskId
+          operationId: $operationId
+          executionKind: $executionKind
+        }
+      ) {
+        capabilities
+        diagnostics {
+          code
+          message
+          path
+          severity
+        }
+        executionKind
+        jobId
+        operationId
+        runId
+        status
+        taskId
+        workflowId
+      }
+    }
+  `,
+  fdmJobs: gql`
+    query FdmJobs($spaceId: String) {
+      fdmJobs(input: { spaceId: $spaceId }) {
+        capabilities
+        diagnostics {
+          code
+          message
+          path
+          severity
+        }
+        executionKind
+        jobId
+        operationId
+        runId
+        status
+        taskId
+        workflowId
       }
     }
   `,
@@ -275,16 +822,20 @@ export const ideGsmGraphqlDocuments = {
   `,
   activeProjectTasks: gql`
     query ActiveProjectTasks($projectRelativePath: String!) {
-      activeProjectTasks(input: { projectRelativePath: $projectRelativePath }) {
+      activeProjectTasks(projectRelativePath: $projectRelativePath) {
         taskId
-        commandId
+        commandId: command
         status
         projectRelativePath
         progress
         phase
-        registeredAt
-        startedAt
-        updatedAt
+        registeredAt: registerAt
+        startedAt: startAt
+        updatedAt: updateAt
+        runId
+        jobId
+        workflowId
+        executionKind
       }
     }
   `,
@@ -294,6 +845,242 @@ export const ideGsmGraphqlDocuments = {
         taskId
         accepted
       }
+    }
+  `,
+  fdmVerify: gql`
+    mutation FdmVerify(
+      $spaceId: String!
+      $planName: String
+      $parameterSet: [String]
+      $profile: [String]
+      $dataset: [String]
+      $computeEngine: [String]
+      $timeline: [String]
+      $sources: [String]
+      $stateDir: String
+      $defaultCompute: String
+      $targetComputes: [String]
+      $baselineCompute: String
+      $compareSelectors: String
+      $tolerance: String
+      $toleranceProfile: String
+      $snapshotLevel: String
+      $snapshotPolicy: String
+      $compatibleSnapshotCommits: [String]
+      $compatibleSnapshotRevisions: [String]
+      $axisPriority: [String]
+      $benchmarkAggregateMode: String
+      $remoteInventoryFile: String
+      $remoteLabel: String
+      $sshProfile: String
+      $originalSourceParameterSet: String
+      $originalSourceProfile: String
+      $originalSourceProjectDir: String
+      $preflight: Boolean
+    ) {
+      fdmVerify(
+        input: {
+          spaceId: $spaceId
+          planName: $planName
+          parameterSet: $parameterSet
+          profile: $profile
+          dataset: $dataset
+          computeEngine: $computeEngine
+          timeline: $timeline
+          sources: $sources
+          stateDir: $stateDir
+          defaultCompute: $defaultCompute
+          targetComputes: $targetComputes
+          baselineCompute: $baselineCompute
+          compareSelectors: $compareSelectors
+          tolerance: $tolerance
+          toleranceProfile: $toleranceProfile
+          snapshotLevel: $snapshotLevel
+          snapshotPolicy: $snapshotPolicy
+          compatibleSnapshotCommits: $compatibleSnapshotCommits
+          compatibleSnapshotRevisions: $compatibleSnapshotRevisions
+          axisPriority: $axisPriority
+          benchmarkAggregateMode: $benchmarkAggregateMode
+          remoteInventoryFile: $remoteInventoryFile
+          remoteLabel: $remoteLabel
+          sshProfile: $sshProfile
+          originalSourceParameterSet: $originalSourceParameterSet
+          originalSourceProfile: $originalSourceProfile
+          originalSourceProjectDir: $originalSourceProjectDir
+          preflight: $preflight
+        }
+      ) {
+        axisPriority
+        baselineCompute
+        benchmarkAggregateMode
+        calibrationRuntimeOptions {
+          key
+          value
+        }
+        command
+        compareSelectors
+        compatibleSnapshotCommits
+        compatibleSnapshotRevisions
+        compute
+        dataset
+        dryRun
+        executionKind
+        logFile
+        pathContext {
+          allowedProjectRoots
+          allowedProjectRootsSource
+          fdmDirectory
+          fdmDirectorySource
+          fixtureDirectory
+          fixtureDirectorySource
+        }
+        pid
+        planFile
+        planName
+        profile
+        remoteDataset
+        remoteInventoryFile
+        remoteLabel
+        runId
+        snapshotLevel
+        snapshotPolicy
+        snapshotReusePolicy
+        sources
+        sshCompute
+        sshProfile
+        stateDir
+        stateSegment
+        timeline
+        tolerance
+        toleranceProfile
+        useSharedBaseline
+        workflowId
+      }
+    }
+  `,
+  fdmSweep: gql`
+    mutation FdmSweep(
+      $spaceId: String!
+      $planName: String
+      $parameterSet: [String]
+      $profile: [String]
+      $dataset: [String]
+      $computeEngine: [String]
+      $timeline: [String]
+      $sources: [String]
+      $stateDir: String
+      $defaultCompute: String
+      $targetComputes: [String]
+      $baselineCompute: String
+      $compareSelectors: String
+      $tolerance: String
+      $toleranceProfile: String
+      $snapshotLevel: String
+      $snapshotPolicy: String
+      $compatibleSnapshotCommits: [String]
+      $compatibleSnapshotRevisions: [String]
+      $axisPriority: [String]
+      $benchmarkAggregateMode: String
+      $remoteInventoryFile: String
+      $remoteLabel: String
+      $sshProfile: String
+      $originalSourceParameterSet: String
+      $originalSourceProfile: String
+      $originalSourceProjectDir: String
+      $preflight: Boolean
+    ) {
+      fdmSweep(
+        input: {
+          spaceId: $spaceId
+          planName: $planName
+          parameterSet: $parameterSet
+          profile: $profile
+          dataset: $dataset
+          computeEngine: $computeEngine
+          timeline: $timeline
+          sources: $sources
+          stateDir: $stateDir
+          defaultCompute: $defaultCompute
+          targetComputes: $targetComputes
+          baselineCompute: $baselineCompute
+          compareSelectors: $compareSelectors
+          tolerance: $tolerance
+          toleranceProfile: $toleranceProfile
+          snapshotLevel: $snapshotLevel
+          snapshotPolicy: $snapshotPolicy
+          compatibleSnapshotCommits: $compatibleSnapshotCommits
+          compatibleSnapshotRevisions: $compatibleSnapshotRevisions
+          axisPriority: $axisPriority
+          benchmarkAggregateMode: $benchmarkAggregateMode
+          remoteInventoryFile: $remoteInventoryFile
+          remoteLabel: $remoteLabel
+          sshProfile: $sshProfile
+          originalSourceParameterSet: $originalSourceParameterSet
+          originalSourceProfile: $originalSourceProfile
+          originalSourceProjectDir: $originalSourceProjectDir
+          preflight: $preflight
+        }
+      ) {
+        axisPriority
+        baselineCompute
+        benchmarkAggregateMode
+        calibrationRuntimeOptions {
+          key
+          value
+        }
+        command
+        compareSelectors
+        compatibleSnapshotCommits
+        compatibleSnapshotRevisions
+        compute
+        dataset
+        dryRun
+        executionKind
+        logFile
+        pathContext {
+          allowedProjectRoots
+          allowedProjectRootsSource
+          fdmDirectory
+          fdmDirectorySource
+          fixtureDirectory
+          fixtureDirectorySource
+        }
+        pid
+        planFile
+        planName
+        profile
+        remoteDataset
+        remoteInventoryFile
+        remoteLabel
+        runId
+        snapshotLevel
+        snapshotPolicy
+        snapshotReusePolicy
+        sources
+        sshCompute
+        sshProfile
+        stateDir
+        stateSegment
+        timeline
+        tolerance
+        toleranceProfile
+        useSharedBaseline
+        workflowId
+      }
+    }
+  `,
+  fdmRunCancel: gql`
+    mutation FdmRunCancel($workflowId: String, $runId: String, $jobId: String, $taskId: String) {
+      fdmRunCancel(
+        input: { workflowId: $workflowId, runId: $runId, jobId: $jobId, taskId: $taskId }
+      )
+    }
+  `,
+  fdmJobCancel: gql`
+    mutation FdmJobCancel($workflowId: String, $runId: String, $jobId: String, $taskId: String) {
+      fdmJobCancel(
+        input: { workflowId: $workflowId, runId: $runId, jobId: $jobId, taskId: $taskId }
+      )
     }
   `,
   importProject: gql`
@@ -595,6 +1382,10 @@ export const ideGsmGraphqlDocuments = {
         status
         paramsJson
         resultJson
+        runId
+        jobId
+        workflowId
+        executionKind
       }
     }
   `,
@@ -606,6 +1397,67 @@ export const ideGsmGraphqlDocuments = {
         timestamp
         stream
         text
+      }
+    }
+  `,
+  subscribeFdmCellLog: gql`
+    subscription SubscribeFdmCellLog(
+      $spaceId: String!
+      $parameterSet: String!
+      $dataset: String!
+      $compute: String!
+      $timelinePoint: String!
+      $label: String
+      $stateDir: String
+    ) {
+      subscribeFdmCellLog(
+        input: {
+          spaceId: $spaceId
+          parameterSet: $parameterSet
+          dataset: $dataset
+          compute: $compute
+          timelinePoint: $timelinePoint
+          label: $label
+          stateDir: $stateDir
+        }
+      ) {
+        generatedAt
+        logPath
+        latestLogLines
+        stage {
+          parameterSet
+          profile
+          dataset
+          compute
+          timelinePoint
+          checkpoint
+          label
+          source
+        }
+      }
+    }
+  `,
+  subscribeFdmRuntimeEvents: gql`
+    subscription SubscribeFdmRuntimeEvents($projectRelativePath: String!, $stateDir: String) {
+      subscribeFdmRuntimeEvents(
+        input: { projectRelativePath: $projectRelativePath, stateDir: $stateDir }
+      ) {
+        backendType
+        command
+        compute
+        connectionType
+        message
+        phase
+        progress
+        projectRelativePath
+        receivedAt
+        recovered
+        taskId
+        username
+        backendMetadata {
+          key
+          value
+        }
       }
     }
   `,

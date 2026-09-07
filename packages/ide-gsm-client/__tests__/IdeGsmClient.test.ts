@@ -85,6 +85,37 @@ const directoryNode = {
   ],
 };
 
+const fdmCellInput = {
+  spaceId: 'default',
+  parameterSet: 'baseline',
+  dataset: 'world',
+  compute: 'java-fp64-raw',
+  timelinePoint: 'INIT_WORLD',
+  label: 'Initial world',
+  stateDir: 'state/latest',
+};
+
+const fdmStartup = {
+  ready: true,
+  phase: 'ready',
+  startedAt: '2026-09-07T00:00:00Z',
+  finishedAt: '2026-09-07T00:00:01Z',
+  waitedMillis: 1000,
+  waitingForHolder: null,
+  apiStartupLock: {
+    active: false,
+    acquiredAt: null,
+    ageMillis: null,
+    fileName: null,
+    host: null,
+    owner: null,
+    pid: null,
+    role: null,
+    staleMetadata: false,
+  },
+  simulatorLock: null,
+};
+
 const commandCases: CommandCase[] = [
   {
     command: { id: 'install', input: { projectRelativePath, force: false } },
@@ -467,6 +498,125 @@ describe('directory read contracts', () => {
     expect(spy.mock.calls[0]?.[1]).toEqual({ spaceId: 'default', path: 'runs/tmp', apply: true });
   });
 
+  it('loads current FDM space catalog metadata without requiring provenance fields', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmSpaces: {
+        defaultSpaceId: 'baseline',
+        spaces: [
+          {
+            spaceId: 'baseline',
+            label: 'Baseline',
+            defaultSpace: true,
+            visible: true,
+            archived: false,
+            owner: 'team-a',
+            layoutVersion: 'v2',
+            legacyRoot: false,
+            order: 1,
+            createdAt: '2026-09-07T00:00:00Z',
+            defaults: {
+              profile: ['baseline'],
+              dataset: ['world'],
+              compute: ['java'],
+              timeline: ['INIT_WORLD'],
+            },
+            warnings: ['read-only'],
+          },
+        ],
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.fdmSpaces()).resolves.toEqual({
+      defaultSpaceId: 'baseline',
+      spaces: [
+        {
+          spaceId: 'baseline',
+          label: 'Baseline',
+          defaultSpace: true,
+          visible: true,
+          archived: false,
+          owner: 'team-a',
+          layoutVersion: 'v2',
+          legacyRoot: false,
+          order: 1,
+          createdAt: '2026-09-07T00:00:00Z',
+          defaults: {
+            profile: ['baseline'],
+            dataset: ['world'],
+            compute: ['java'],
+            timeline: ['INIT_WORLD'],
+          },
+          warnings: ['read-only'],
+        },
+      ],
+    });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('defaultSpace');
+  });
+
+  it('dispatches current FDM space lifecycle mutations without wiring destructive UI behavior', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const space = {
+      spaceId: 'working',
+      label: 'Working',
+      defaultSpace: false,
+      visible: true,
+      archived: false,
+      owner: null,
+      layoutVersion: 'v2',
+      legacyRoot: false,
+      order: 2,
+      createdAt: null,
+      defaults: null,
+      warnings: null,
+    };
+    const spy = vi
+      .spyOn(GraphQLClient.prototype, 'request')
+      .mockResolvedValueOnce({ fdmSpaceCreate: space })
+      .mockResolvedValueOnce({ fdmSpaceUpdate: { ...space, archived: true } })
+      .mockResolvedValueOnce({
+        fdmSpaceDelete: {
+          apply: false,
+          archived: true,
+          byteCount: 0,
+          confirmed: false,
+          deleted: false,
+          fileCount: 0,
+          physicalDelete: false,
+          spaceId: 'working',
+          topLevelEntries: [],
+          spaces: {
+            defaultSpaceId: 'baseline',
+            spaces: [space],
+          },
+        },
+      });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmSpaceCreate({ spaceId: 'working', label: 'Working', defaultSpace: false })
+    ).resolves.toMatchObject({ spaceId: 'working', label: 'Working' });
+    await expect(
+      client.fdmSpaceUpdate({ spaceId: 'working', archived: true })
+    ).resolves.toMatchObject({ spaceId: 'working', archived: true });
+    await expect(
+      client.fdmSpaceDelete({ spaceId: 'working', apply: false, deleteFiles: false })
+    ).resolves.toMatchObject({ spaceId: 'working', apply: false, deleted: false });
+
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      spaceId: 'working',
+      label: 'Working',
+      defaultSpace: false,
+    });
+    expect(spy.mock.calls[1]?.[1]).toEqual({ spaceId: 'working', archived: true });
+    expect(spy.mock.calls[2]?.[1]).toEqual({
+      spaceId: 'working',
+      apply: false,
+      deleteFiles: false,
+    });
+  });
+
   it.each([
     [
       'project path',
@@ -519,6 +669,540 @@ describe('directory read contracts', () => {
     const promise = client.projectDirectoryTree({ projectRelativePath });
     await expect(promise).rejects.toThrow('IDE-GSM GraphQL response malformed');
     await expect(promise).rejects.not.toThrow(/endpoint-secret|jwt-secret/u);
+  });
+});
+
+describe('FDM dashboard GraphQL contracts', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('loads dashboard status with timeline selectors and current schema cells', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmDashboardStatus: {
+        generatedAt: '2026-09-07T00:00:00Z',
+        selectedSpaceId: 'default',
+        selectedStateDir: 'state/latest',
+        availableStateDirs: ['state/latest'],
+        parameterSet: ['baseline'],
+        profile: ['baseline'],
+        dataset: ['world'],
+        compute: ['java-fp64-raw'],
+        timeline: ['2020'],
+        state: { status: 'ready' },
+        live: { status: 'running', startedAt: '2026-09-07T00:00:01Z' },
+        startup: fdmStartup,
+        cells: [
+          {
+            parameterSet: 'baseline',
+            profile: 'baseline',
+            dataset: 'world',
+            compute: 'java-fp64-raw',
+            timelinePoint: 'INIT_WORLD',
+            checkpoint: 'INIT_WORLD',
+            label: 'Initial world',
+            source: 'current',
+            bucket: 'succeeded',
+            rawStatus: 'SUCCEEDED',
+            accuracyLabel: null,
+            summaryFile: 'summary.json',
+            current: true,
+            next: false,
+            blockingDrift: false,
+            variantCount: 1,
+          },
+        ],
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmDashboardStatus({
+        spaceId: 'default',
+        timeline: '2020',
+        stateDir: 'state/latest',
+      })
+    ).resolves.toMatchObject({
+      selectedSpaceId: 'default',
+      parameterSet: ['baseline'],
+      timeline: ['2020'],
+      cells: [{ parameterSet: 'baseline', timelinePoint: 'INIT_WORLD', current: true }],
+    });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('fdmDashboardStatus');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      spaceId: 'default',
+      timeline: '2020',
+      stateDir: 'state/latest',
+    });
+  });
+
+  it('loads cell detail with canonical parameter set and timeline-point inputs', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmCellDetail: {
+        generatedAt: '2026-09-07T00:00:00Z',
+        selectedStateDir: 'state/latest',
+        startedAt: '2026-09-07T00:00:01Z',
+        updatedAt: '2026-09-07T00:00:02Z',
+        finishedAt: null,
+        elapsedMs: 1000,
+        estimatedRemainingMs: 2000,
+        estimatedCompletedAt: '2026-09-07T00:00:04Z',
+        logPath: 'logs/cell.log',
+        latestLogLines: ['line 1'],
+        stage: {
+          parameterSet: 'baseline',
+          profile: 'baseline',
+          dataset: 'world',
+          compute: 'java-fp64-raw',
+          timelinePoint: 'INIT_WORLD',
+          checkpoint: 'INIT_WORLD',
+          label: 'Initial world',
+          source: 'current',
+        },
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.fdmCellDetail(fdmCellInput)).resolves.toMatchObject({
+      stage: { parameterSet: 'baseline', timelinePoint: 'INIT_WORLD' },
+      latestLogLines: ['line 1'],
+    });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('fdmCellDetail');
+    expect(spy.mock.calls[0]?.[1]).toEqual(fdmCellInput);
+  });
+
+  it('loads runtime diagnostics by projectRelativePath', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmRuntimeDiagnostics: {
+        generatedAt: '2026-09-07T00:00:00Z',
+        startup: fdmStartup,
+        recoveredStates: [
+          {
+            command: 'fdmVerify',
+            compute: 'java-fp64-raw',
+            connectionType: 'local',
+            launchLogFile: 'launch.log',
+            launchPid: '123',
+            launchPlanName: 'plan',
+            liveStatus: 'running',
+            message: 'recovered',
+            phase: 'STARTED',
+            recovered: true,
+            runtimeIdentity: 'runtime-1',
+            stateDir: 'state/latest',
+            taskId: 'task-active',
+          },
+        ],
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.fdmRuntimeDiagnostics({ projectRelativePath })).resolves.toMatchObject({
+      recoveredStates: [{ taskId: 'task-active', recovered: true }],
+    });
+  });
+
+  it('runs fdmVerify and exposes current run metadata', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmVerify: {
+        axisPriority: ['parameterSet'],
+        baselineCompute: 'java-fp64-raw',
+        benchmarkAggregateMode: 'latest',
+        calibrationRuntimeOptions: [{ key: 'heap', value: '4g' }],
+        command: ['verify'],
+        compareSelectors: 'all',
+        compatibleSnapshotCommits: ['9e0a5a3a9'],
+        compatibleSnapshotRevisions: ['rev-1'],
+        compute: ['java-fp64-raw'],
+        dataset: ['world'],
+        dryRun: false,
+        executionKind: 'local',
+        logFile: 'verify.log',
+        pathContext: {
+          allowedProjectRoots: ['group/project'],
+          allowedProjectRootsSource: 'config',
+          fdmDirectory: 'fdm',
+          fdmDirectorySource: 'config',
+          fixtureDirectory: 'fixtures',
+          fixtureDirectorySource: 'config',
+        },
+        pid: 123,
+        planFile: 'plan.yml',
+        planName: 'plan',
+        profile: ['baseline'],
+        remoteDataset: null,
+        remoteInventoryFile: null,
+        remoteLabel: null,
+        runId: 'run-1',
+        snapshotLevel: '2',
+        snapshotPolicy: 'reuse',
+        snapshotReusePolicy: 'compatible',
+        sources: ['source.yml'],
+        sshCompute: null,
+        sshProfile: null,
+        stateDir: 'state/latest',
+        stateSegment: 'latest',
+        timeline: ['2020'],
+        tolerance: 'strict',
+        toleranceProfile: 'default',
+        useSharedBaseline: true,
+        workflowId: 'workflow-1',
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmVerify({ spaceId: 'default', parameterSet: ['baseline'], timeline: ['2020'] })
+    ).resolves.toMatchObject({
+      runId: 'run-1',
+      workflowId: 'workflow-1',
+      executionKind: 'local',
+      calibrationRuntimeOptions: { heap: '4g' },
+    });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('fdmVerify');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      spaceId: 'default',
+      parameterSet: ['baseline'],
+      timeline: ['2020'],
+    });
+  });
+
+  it('loads FDM lifecycle capabilities', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmCapabilities: {
+        capabilities: [
+          {
+            level: 'L3',
+            name: 'fdmSweep',
+            note: 'available',
+            operations: ['fdmSweep'],
+            supported: true,
+          },
+        ],
+        workflows: [
+          {
+            capabilities: ['read'],
+            workflowId: 'workflow-1',
+            runId: 'run-1',
+            stateDir: 'state/latest',
+            status: 'RUNNING',
+            sourceFile: 'workflow.yml',
+            sourceRevision: 'rev-1',
+          },
+        ],
+        runs: [
+          {
+            capabilities: ['cancel'],
+            diagnostics: [{ code: 'ok', message: null, path: null, severity: 'info' }],
+            operations: [
+              {
+                attemptId: 'attempt-1',
+                disposition: 'accepted',
+                evidence: ['evidence.json'],
+                operationId: 'operation-1',
+                outcome: null,
+                status: 'RUNNING',
+                updatedAt: '2026-09-07T00:00:00Z',
+              },
+            ],
+            projectionConsistent: true,
+            runId: 'run-1',
+            stateDir: 'state/latest',
+            status: 'RUNNING',
+            workflowId: 'workflow-1',
+          },
+        ],
+        jobs: [
+          {
+            capabilities: ['cancel'],
+            diagnostics: [],
+            executionKind: 'LOCAL',
+            jobId: 'job-1',
+            operationId: 'operation-1',
+            runId: 'run-1',
+            status: 'RUNNING',
+            taskId: 'task-1',
+            workflowId: 'workflow-1',
+          },
+        ],
+        rulesets: [
+          {
+            capabilities: ['read'],
+            operations: ['fdmSweep'],
+            reference: 'ruleset.yml',
+            roles: ['operator'],
+            rulesetId: 'ruleset-1',
+            version: 1,
+          },
+        ],
+        baselines: [
+          {
+            baselineId: 'baseline-1',
+            capabilities: ['read'],
+            computeEngine: 'java-fp64-raw',
+            dataset: 'world',
+            profile: 'baseline',
+            source: 'current',
+            timelinePoint: 'INIT_WORLD',
+          },
+        ],
+        forks: [
+          {
+            capabilities: ['read'],
+            forkId: 'fork-1',
+            sourceRunId: 'run-1',
+            sourceWorkflowId: 'workflow-1',
+            status: 'AVAILABLE',
+            targetRunId: 'run-2',
+            targetWorkflowId: 'workflow-2',
+          },
+        ],
+        lineage: [
+          {
+            capabilities: ['read'],
+            lineageId: 'lineage-1',
+            operationId: 'operation-1',
+            runId: 'run-1',
+            sourceOperationId: null,
+            sourceRunId: null,
+            workflowId: 'workflow-1',
+          },
+        ],
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.fdmCapabilities()).resolves.toMatchObject({
+      capabilities: [{ name: 'fdmSweep', supported: true }],
+      workflows: [{ workflowId: 'workflow-1' }],
+      runs: [{ operations: [{ operationId: 'operation-1' }] }],
+      jobs: [{ jobId: 'job-1' }],
+      rulesets: [{ rulesetId: 'ruleset-1', version: 1 }],
+      baselines: [{ baselineId: 'baseline-1', timelinePoint: 'INIT_WORLD' }],
+      lineage: [{ lineageId: 'lineage-1' }],
+    });
+  });
+
+  it('loads FDM workflow, run, and job projections', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi
+      .spyOn(GraphQLClient.prototype, 'request')
+      .mockResolvedValueOnce({
+        fdmWorkflow: {
+          capabilities: ['read'],
+          workflowId: 'workflow-1',
+          runId: 'run-1',
+          stateDir: 'state/latest',
+          status: 'RUNNING',
+          sourceFile: 'workflow.yml',
+          sourceRevision: 'rev-1',
+        },
+      })
+      .mockResolvedValueOnce({
+        fdmRun: {
+          capabilities: ['cancel'],
+          diagnostics: [],
+          operations: [],
+          projectionConsistent: true,
+          runId: 'run-1',
+          stateDir: 'state/latest',
+          status: 'RUNNING',
+          workflowId: 'workflow-1',
+        },
+      })
+      .mockResolvedValueOnce({
+        fdmJob: {
+          capabilities: ['cancel'],
+          diagnostics: [],
+          executionKind: 'LOCAL',
+          jobId: 'job-1',
+          operationId: 'operation-1',
+          runId: 'run-1',
+          status: 'RUNNING',
+          taskId: 'task-1',
+          workflowId: 'workflow-1',
+        },
+      });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmWorkflow({ spaceId: 'default', workflowId: 'workflow-1' })
+    ).resolves.toMatchObject({
+      workflowId: 'workflow-1',
+    });
+    await expect(client.fdmRun({ spaceId: 'default', runId: 'run-1' })).resolves.toMatchObject({
+      runId: 'run-1',
+    });
+    await expect(client.fdmJob({ spaceId: 'default', jobId: 'job-1' })).resolves.toMatchObject({
+      jobId: 'job-1',
+    });
+    expect(spy.mock.calls.map((call) => call[1])).toEqual([
+      { spaceId: 'default', workflowId: 'workflow-1' },
+      { spaceId: 'default', runId: 'run-1' },
+      { spaceId: 'default', jobId: 'job-1' },
+    ]);
+  });
+
+  it('runs fdmSweep with canonical parameter-set inputs', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmSweep: {
+        axisPriority: ['parameterSet'],
+        baselineCompute: null,
+        benchmarkAggregateMode: null,
+        calibrationRuntimeOptions: [],
+        command: ['sweep'],
+        compareSelectors: null,
+        compatibleSnapshotCommits: null,
+        compatibleSnapshotRevisions: null,
+        compute: ['java-fp64-raw'],
+        dataset: ['world'],
+        dryRun: false,
+        executionKind: 'LOCAL',
+        logFile: 'sweep.log',
+        pathContext: null,
+        pid: 123,
+        planFile: null,
+        planName: 'plan',
+        profile: ['baseline'],
+        remoteDataset: null,
+        remoteInventoryFile: null,
+        remoteLabel: null,
+        runId: 'run-1',
+        snapshotLevel: null,
+        snapshotPolicy: null,
+        snapshotReusePolicy: null,
+        sources: null,
+        sshCompute: null,
+        sshProfile: null,
+        stateDir: 'state/latest',
+        stateSegment: 'latest',
+        timeline: ['INIT_WORLD'],
+        tolerance: null,
+        toleranceProfile: null,
+        useSharedBaseline: false,
+        workflowId: 'workflow-1',
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmSweep({
+        spaceId: 'default',
+        parameterSet: ['baseline'],
+        timeline: ['INIT_WORLD'],
+        originalSourceParameterSet: 'source-parameters',
+      })
+    ).resolves.toMatchObject({ runId: 'run-1', workflowId: 'workflow-1' });
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      spaceId: 'default',
+      parameterSet: ['baseline'],
+      timeline: ['INIT_WORLD'],
+      originalSourceParameterSet: 'source-parameters',
+    });
+  });
+
+  it('cancels FDM run and job lifecycle handles', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi
+      .spyOn(GraphQLClient.prototype, 'request')
+      .mockResolvedValueOnce({ fdmRunCancel: true })
+      .mockResolvedValueOnce({ fdmJobCancel: true });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(client.fdmRunCancel({ runId: 'run-1' })).resolves.toBe(true);
+    await expect(client.fdmJobCancel({ jobId: 'job-1' })).resolves.toBe(true);
+    expect(spy.mock.calls.map((call) => call[1])).toEqual([{ runId: 'run-1' }, { jobId: 'job-1' }]);
+    await expect(client.fdmRunCancel({})).rejects.toThrow(
+      'workflowId, runId, jobId, or taskId is required'
+    );
+  });
+
+  it('subscribes to FDM cell logs and runtime events', () => {
+    const sinks: SinkLike[] = [];
+    const tracked = makeTrackedWsClient((sink) => {
+      sinks.push(sink);
+    });
+    const cellLogListener = vi.fn();
+    const runtimeEventListener = vi.fn();
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret', tracked.factory);
+
+    const unsubscribeCell = client.subscribeFdmCellLog(fdmCellInput, cellLogListener);
+    const unsubscribeRuntime = client.subscribeFdmRuntimeEvents(
+      { projectRelativePath, stateDir: 'state/latest' },
+      runtimeEventListener
+    );
+    sinks[0]?.next({
+      data: {
+        subscribeFdmCellLog: {
+          generatedAt: '2026-09-07T00:00:00Z',
+          logPath: 'logs/cell.log',
+          latestLogLines: ['line 1'],
+          stage: {
+            parameterSet: 'baseline',
+            profile: 'baseline',
+            dataset: 'world',
+            compute: 'java-fp64-raw',
+            timelinePoint: 'INIT_WORLD',
+            checkpoint: 'INIT_WORLD',
+            label: 'Initial world',
+            source: 'current',
+          },
+        },
+      },
+    });
+    sinks[1]?.next({
+      data: {
+        subscribeFdmRuntimeEvents: {
+          backendType: 'LOCAL',
+          command: 'fdmVerify',
+          compute: 'java-fp64-raw',
+          connectionType: 'local',
+          message: 'running',
+          phase: 'PROGRESS',
+          progress: 50,
+          projectRelativePath,
+          receivedAt: '2026-09-07T00:00:00Z',
+          recovered: false,
+          taskId: 'task-active',
+          username: 'user',
+          backendMetadata: [{ key: 'runId', value: 'run-1' }],
+        },
+      },
+    });
+    unsubscribeCell();
+    unsubscribeRuntime();
+
+    expect(cellLogListener).toHaveBeenCalledWith({
+      generatedAt: '2026-09-07T00:00:00Z',
+      logPath: 'logs/cell.log',
+      latestLogLines: ['line 1'],
+      stage: {
+        parameterSet: 'baseline',
+        profile: 'baseline',
+        dataset: 'world',
+        compute: 'java-fp64-raw',
+        timelinePoint: 'INIT_WORLD',
+        checkpoint: 'INIT_WORLD',
+        label: 'Initial world',
+        source: 'current',
+      },
+    });
+    expect(runtimeEventListener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        backendType: 'LOCAL',
+        phase: 'PROGRESS',
+        progress: 50,
+        backendMetadata: { runId: 'run-1' },
+      })
+    );
+    expect(tracked.unsubscribe).toHaveBeenCalledTimes(2);
+    expect(tracked.dispose).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -804,9 +1488,13 @@ describe('external build session task contract', () => {
           projectRelativePath,
           progress: 25,
           phase: 'running',
-          registeredAt: '2026-08-30T00:00:00Z',
-          startedAt: '2026-08-30T00:00:01Z',
-          updatedAt: '2026-08-30T00:00:02Z',
+          registeredAt: 1788048000000,
+          startedAt: 1788048001000,
+          updatedAt: 1788048002000,
+          runId: 'run-1',
+          jobId: 'job-1',
+          workflowId: 'workflow-1',
+          executionKind: 'local',
         },
       ],
     });
@@ -820,9 +1508,13 @@ describe('external build session task contract', () => {
         projectRelativePath,
         progress: 25,
         phase: 'running',
-        registeredAt: '2026-08-30T00:00:00Z',
-        startedAt: '2026-08-30T00:00:01Z',
-        updatedAt: '2026-08-30T00:00:02Z',
+        registeredAt: '2026-08-30T00:00:00.000Z',
+        startedAt: '2026-08-30T00:00:01.000Z',
+        updatedAt: '2026-08-30T00:00:02.000Z',
+        runId: 'run-1',
+        jobId: 'job-1',
+        workflowId: 'workflow-1',
+        executionKind: 'local',
       },
     ]);
     expect(String(spy.mock.calls[0]?.[0])).toContain('activeProjectTasks');
@@ -904,6 +1596,10 @@ describe('task subscription contract', () => {
       status: 'FINISHED',
       paramsJson: '{}',
       resultJson: '{"ok":true}',
+      runId: null,
+      jobId: null,
+      workflowId: null,
+      executionKind: null,
     });
     expect(tracked.unsubscribe).toHaveBeenCalledTimes(1);
     expect(tracked.dispose).toHaveBeenCalledTimes(1);

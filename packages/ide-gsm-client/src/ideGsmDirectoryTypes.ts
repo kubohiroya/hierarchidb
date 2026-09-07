@@ -58,13 +58,66 @@ export interface IdeGsmFdmDirectoryRemoveReport {
   target: IdeGsmDirectoryNode;
 }
 
+export interface IdeGsmFdmSpaceDefaults {
+  profile: readonly string[] | null;
+  dataset: readonly string[] | null;
+  compute: readonly string[] | null;
+  timeline: readonly string[] | null;
+}
+
 export interface IdeGsmFdmSpace {
   spaceId: string;
+  label?: string | null;
+  defaultSpace?: boolean | null;
+  visible?: boolean | null;
+  archived?: boolean | null;
+  owner?: string | null;
+  layoutVersion?: string | null;
+  legacyRoot?: boolean | null;
+  order?: number | null;
+  createdAt?: string | null;
+  defaults?: IdeGsmFdmSpaceDefaults | null;
+  warnings?: readonly string[] | null;
 }
 
 export interface IdeGsmFdmSpacesReport {
   defaultSpaceId: string;
   spaces: IdeGsmFdmSpace[];
+}
+
+export interface IdeGsmFdmSpaceCreateInput {
+  spaceId?: string;
+  label?: string;
+  defaultSpace?: boolean;
+}
+
+export interface IdeGsmFdmSpaceUpdateInput {
+  spaceId: string;
+  label?: string;
+  visible?: boolean;
+  archived?: boolean;
+  defaultSpace?: boolean;
+  order?: number;
+}
+
+export interface IdeGsmFdmSpaceDeleteInput {
+  spaceId: string;
+  apply?: boolean;
+  deleteFiles?: boolean;
+  confirmation?: string;
+}
+
+export interface IdeGsmFdmSpaceDeleteReport {
+  apply: boolean;
+  archived: boolean;
+  byteCount: number;
+  confirmed: boolean;
+  deleted: boolean;
+  fileCount: number;
+  physicalDelete: boolean;
+  spaceId: string | null;
+  spaces: IdeGsmFdmSpacesReport | null;
+  topLevelEntries: readonly string[] | null;
 }
 
 export interface IdeGsmProjectDirectoryInput {

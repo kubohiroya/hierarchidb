@@ -2,6 +2,7 @@ import {
   assertFdmDashboardResponse,
   type FdmDashboardResponse,
   filterFdmCells,
+  normalizeFdmDashboardResponse,
   projectFdmCellAxisKey,
   summarizeFdmCells,
 } from '../index.js';
@@ -13,15 +14,15 @@ const response: FdmDashboardResponse = {
     spaceId: 'space-a',
     viewMode: 'lattice-3d',
     filters: {
-      profiles: [],
+      parameterSets: [],
       datasets: [],
       computes: [],
-      checkpoints: [],
+      timelines: [],
     },
     axisMap: {
-      xOuter: 'profile',
+      xOuter: 'parameterSet',
       xInner: 'dataset',
-      y: 'checkpoint',
+      y: 'timeline',
       z: 'compute',
     },
     tabularSnapshotRefs: [],
@@ -31,18 +32,18 @@ const response: FdmDashboardResponse = {
   stateDirectories: ['state-001'],
   selectedStateDir: 'state-001',
   dimensions: {
-    profiles: [{ id: 'profile-a', label: 'Profile A' }],
+    parameterSets: [{ id: 'parameter-a', label: 'Parameter A' }],
     datasets: [{ id: 'dataset-a', label: 'Dataset A' }],
     computes: [{ id: 'compute-a', label: 'Compute A' }],
-    checkpoints: [{ id: 'checkpoint-a', label: 'Checkpoint A' }],
+    timelines: [{ id: 'timeline-a', label: 'Timeline A' }],
   },
   cells: [
     {
       id: 'cell-a',
-      profile: 'profile-a',
+      parameterSet: 'parameter-a',
       dataset: 'dataset-a',
       compute: 'compute-a',
-      checkpoint: 'checkpoint-a',
+      timeline: 'timeline-a',
       status: 'running',
       progress: 40,
       resultRef: 'result-a',
@@ -94,7 +95,7 @@ describe('fdm dashboard validators', () => {
   it('filters cells with empty arrays as unrestricted dimensions', () => {
     expect(filterFdmCells(response.cells, response.node.filters)).toHaveLength(1);
     expect(
-      filterFdmCells(response.cells, { ...response.node.filters, profiles: ['missing'] })
+      filterFdmCells(response.cells, { ...response.node.filters, parameterSets: ['missing'] })
     ).toHaveLength(0);
   });
 
@@ -118,5 +119,189 @@ describe('fdm dashboard validators', () => {
   it('projects a cell value by dashboard axis', () => {
     expect(projectFdmCellAxisKey(response.cells[0], 'compute')).toBe('compute-a');
     expect(() => projectFdmCellAxisKey(response.cells[0], 'unknown')).toThrow(/axis/);
+  });
+
+  it('normalizes legacy profile and checkpoint names into seven-layer dashboard aliases', () => {
+    const legacy = {
+      ...response,
+      node: {
+        ...response.node,
+        filters: {
+          profiles: [],
+          datasets: [],
+          computes: [],
+          checkpoints: [],
+        },
+        axisMap: {
+          xOuter: 'profile',
+          xInner: 'dataset',
+          y: 'checkpoint',
+          z: 'compute',
+        },
+      },
+      dimensions: {
+        profiles: [{ id: 'profile-a', label: 'Profile A' }],
+        datasets: response.dimensions.datasets,
+        computes: response.dimensions.computes,
+        checkpoints: [{ id: 'checkpoint-a', label: 'Checkpoint A' }],
+      },
+      cells: [
+        {
+          id: 'cell-a',
+          profile: 'profile-a',
+          dataset: 'dataset-a',
+          compute: 'compute-a',
+          checkpoint: 'checkpoint-a',
+          status: 'running',
+          progress: 40,
+          resultRef: 'result-a',
+        },
+      ],
+    };
+
+    const { response: normalized, notices } = normalizeFdmDashboardResponse(legacy);
+
+    expect(normalized.dimensions.parameterSets).toEqual(legacy.dimensions.profiles);
+    expect(normalized.dimensions.timelines).toEqual(legacy.dimensions.checkpoints);
+    expect(normalized.cells[0]).toMatchObject({
+      parameterSet: 'profile-a',
+      timeline: 'checkpoint-a',
+      snapshot: {
+        timelineId: 'checkpoint-a',
+        resultRef: 'result-a',
+      },
+    });
+    expect(notices.map((notice) => notice.code)).toEqual(
+      expect.arrayContaining([
+        'LEGACY_PROFILE_ALIAS',
+        'LEGACY_CHECKPOINT_ALIAS',
+        'CANONICAL_PARAMETER_SET_BACKFILL',
+        'CANONICAL_TIMELINE_BACKFILL',
+      ])
+    );
+  });
+
+  it('normalizes canonical parameter set and timeline names for legacy dashboard consumers', () => {
+    const canonical = {
+      ...response,
+      dimensions: {
+        parameterSets: [{ id: 'parameter-a', label: 'Parameter A' }],
+        datasets: response.dimensions.datasets,
+        computes: response.dimensions.computes,
+        timelines: [{ id: 'timeline-a', label: 'Timeline A' }],
+      },
+      cells: [
+        {
+          id: 'cell-a',
+          parameterSet: 'parameter-a',
+          dataset: 'dataset-a',
+          compute: 'compute-a',
+          timeline: 'timeline-a',
+          status: 'succeeded',
+        },
+      ],
+    };
+
+    const { response: normalized } = normalizeFdmDashboardResponse(canonical);
+
+    expect(normalized.dimensions.profiles).toEqual(canonical.dimensions.parameterSets);
+    expect(normalized.dimensions.checkpoints).toEqual(canonical.dimensions.timelines);
+    expect(normalized.cells[0]).toMatchObject({
+      profile: 'parameter-a',
+      checkpoint: 'timeline-a',
+      parameterSet: 'parameter-a',
+      timeline: 'timeline-a',
+    });
+    expect(() => assertFdmDashboardResponse(normalized)).not.toThrow();
+  });
+
+  it('rejects conflicting canonical and legacy dashboard aliases', () => {
+    expect(() =>
+      normalizeFdmDashboardResponse({
+        ...response,
+        cells: [
+          {
+            ...response.cells[0],
+            timeline: 'timeline-b',
+            checkpoint: 'timeline-a',
+          },
+        ],
+      })
+    ).toThrow(/conflicts/);
+
+    expect(() =>
+      normalizeFdmDashboardResponse({
+        ...response,
+        dimensions: {
+          ...response.dimensions,
+          timelines: [{ id: 'timeline-b', label: 'Timeline B' }],
+          checkpoints: [{ id: 'timeline-a', label: 'Timeline A' }],
+        },
+      })
+    ).toThrow(/conflicts/);
+  });
+
+  it('accepts server-provided workflow and ruleset projections without local inference', () => {
+    expect(() =>
+      assertFdmDashboardResponse({
+        ...response,
+        workflow: {
+          availability: 'available',
+          workflowId: 'workflow-a',
+          status: 'WAITING_FOR_AGENT',
+          nextAction: 'request-agent-work',
+          origin: { spaceId: 'space-a' },
+          operations: [
+            {
+              id: 'verify-baseline',
+              label: 'Verify baseline',
+              status: 'TERMINAL',
+              outcome: 'UNSUPPORTED_CAPABILITY',
+              nextAction: 'run-diagnosis',
+            },
+          ],
+        },
+        ruleset: {
+          availability: 'stale',
+          rulesetId: 'ruleset-a',
+          fingerprint: 'fingerprint-a',
+          acceptedKnownIssues: [
+            {
+              reason: 'Server omitted the issue number',
+            },
+          ],
+          origin: { spaceId: 'space-a' },
+          message: 'Ruleset requires server-side revalidation',
+        },
+      })
+    ).not.toThrow();
+  });
+
+  it('rejects unknown workflow projection enum values', () => {
+    expect(() =>
+      assertFdmDashboardResponse({
+        ...response,
+        workflow: {
+          availability: 'available',
+          status: 'DONE',
+        },
+      })
+    ).toThrow(/workflow.status/);
+
+    expect(() =>
+      assertFdmDashboardResponse({
+        ...response,
+        workflow: {
+          availability: 'available',
+          operations: [
+            {
+              id: 'verify-baseline',
+              status: 'READY',
+              outcome: 'UNKNOWN_OUTCOME',
+            },
+          ],
+        },
+      })
+    ).toThrow(/workflow.operation.outcome/);
   });
 });

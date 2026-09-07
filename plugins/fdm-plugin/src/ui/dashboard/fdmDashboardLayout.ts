@@ -5,6 +5,7 @@ import {
   type FdmDashboardDimensions,
   type FdmFilters,
   filterFdmCells,
+  projectFdmCellAxisKey,
 } from '@hierarchidb/fdm-api';
 import type { FdmMatrixColumn, FdmMatrixRow } from './fdmDashboardViewTypes.js';
 
@@ -28,9 +29,11 @@ export function getDimensionLabel(
 }
 
 function dimensionEntries(dimensions: FdmDashboardDimensions, axis: FdmAxisDimension) {
-  if (axis === 'profile') return dimensions.profiles;
+  if (axis === 'parameterSet') return dimensions.parameterSets;
+  if (axis === 'profile') return dimensions.profiles ?? dimensions.parameterSets;
   if (axis === 'dataset') return dimensions.datasets;
-  if (axis === 'checkpoint') return dimensions.checkpoints;
+  if (axis === 'timeline') return dimensions.timelines;
+  if (axis === 'checkpoint') return dimensions.checkpoints ?? dimensions.timelines;
   return dimensions.computes;
 }
 
@@ -62,8 +65,5 @@ export function buildFdmMatrixRows(
 }
 
 export function cellAxisValue(cell: FdmDashboardCell, axis: FdmAxisDimension): string {
-  if (axis === 'profile') return cell.profile;
-  if (axis === 'dataset') return cell.dataset;
-  if (axis === 'checkpoint') return cell.checkpoint;
-  return cell.compute;
+  return projectFdmCellAxisKey(cell, axis);
 }

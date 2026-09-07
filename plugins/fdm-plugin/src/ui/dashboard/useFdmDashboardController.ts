@@ -1,14 +1,26 @@
 import {
-  assertFdmDashboardResponse,
   assertFdmNodeData,
   type FdmAxisDimension,
   type FdmAxisMap,
-  type FdmDashboardResponse,
   type FdmFilters,
   type FdmNodeData,
   type FdmViewMode,
+  normalizeFdmNodeData,
 } from '@hierarchidb/fdm-api';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useMemo } from 'react';
+import {
+  fdmDashboardActionAtom,
+  fdmDashboardAxisMapAtom,
+  fdmDashboardDisabledAtom,
+  fdmDashboardFiltersAtom,
+  fdmDashboardNodeAtom,
+  fdmDashboardNodeChangeAtom,
+  fdmDashboardPortAtom,
+  fdmDashboardQueryAtom,
+  fdmDashboardSelectedCellIdAtom,
+  fdmDashboardSelectedViewModeAtom,
+} from './fdmDashboardAtoms.js';
 import type {
   FdmDashboardControllerActions,
   FdmDashboardControllerState,
@@ -24,56 +36,37 @@ export function useFdmDashboardController({
   readonly state: FdmDashboardControllerState;
   readonly actions: FdmDashboardControllerActions;
 } {
-  const [response, setResponse] = useState<FdmDashboardResponse | undefined>();
-  const [selectedCellId, setSelectedCellId] = useState<string | undefined>();
-  const [selectedViewMode, setSelectedViewMode] = useState<FdmViewMode>(node.viewMode);
-  const [filters, setFilters] = useState<FdmFilters>(node.filters);
-  const [axisMap, setAxisMap] = useState<FdmAxisMap>(node.axisMap);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | undefined>();
-
-  const applyResponse = useCallback((next: FdmDashboardResponse) => {
-    assertFdmDashboardResponse(next);
-    setResponse(next);
-    setError(undefined);
-  }, []);
-
-  const load = useCallback(
-    async (signal: AbortSignal) => {
-      assertFdmNodeData(node);
-      setLoading(true);
-      setError(undefined);
-      try {
-        const next = await port.loadDashboard({
-          node,
-          filters,
-          axisMap,
-          selectedStateDir: node.selectedStateDir,
-          signal,
-        });
-        if (!signal.aborted) {
-          applyResponse(next);
-        }
-      } catch (unknownError) {
-        if (!signal.aborted) {
-          setError(
-            unknownError instanceof Error ? unknownError.message : 'FDM_DASHBOARD_LOAD_FAILED'
-          );
-        }
-      } finally {
-        if (!signal.aborted) {
-          setLoading(false);
-        }
-      }
-    },
-    [applyResponse, axisMap, filters, node, port]
-  );
+  const setNode = useSetAtom(fdmDashboardNodeAtom);
+  const setPort = useSetAtom(fdmDashboardPortAtom);
+  const setDisabled = useSetAtom(fdmDashboardDisabledAtom);
+  const setOnNodeDataChange = useSetAtom(fdmDashboardNodeChangeAtom);
+  const [selectedCellId, setSelectedCellId] = useAtom(fdmDashboardSelectedCellIdAtom);
+  const [selectedViewMode, setSelectedViewMode] = useAtom(fdmDashboardSelectedViewModeAtom);
+  const [filters, setFilters] = useAtom(fdmDashboardFiltersAtom);
+  const [axisMap, setAxisMap] = useAtom(fdmDashboardAxisMapAtom);
+  const queryResult = useAtomValue(fdmDashboardQueryAtom);
+  const [actionResult] = useAtom(fdmDashboardActionAtom);
+  const storedOnNodeDataChange = useAtomValue(fdmDashboardNodeChangeAtom);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void load(controller.signal);
-    return () => controller.abort();
-  }, [load]);
+    const normalizedNode = normalizeFdmNodeData(node);
+    setNode(normalizedNode);
+    setSelectedViewMode(normalizedNode.viewMode);
+    setFilters(normalizedNode.filters);
+    setAxisMap(normalizedNode.axisMap);
+  }, [node, setAxisMap, setFilters, setNode, setSelectedViewMode]);
+
+  useEffect(() => {
+    setPort(port);
+  }, [port, setPort]);
+
+  useEffect(() => {
+    setDisabled(disabled ?? false);
+  }, [disabled, setDisabled]);
+
+  useEffect(() => {
+    setOnNodeDataChange(() => onNodeDataChange);
+  }, [onNodeDataChange, setOnNodeDataChange]);
 
   const updateNodePresentation = useCallback(
     (partial: Pick<FdmNodeData, 'viewMode' | 'filters' | 'axisMap'>) => {
@@ -84,34 +77,21 @@ export function useFdmDashboardController({
         axisMap: partial.axisMap,
       };
       assertFdmNodeData(nextNode);
-      onNodeDataChange?.(nextNode);
+      storedOnNodeDataChange?.(nextNode);
     },
-    [node, onNodeDataChange]
+    [node, storedOnNodeDataChange]
   );
 
   const performAction = useCallback(
     async (action: 'refresh' | 'reconnect' | 'run-selected' | 'open-result') => {
       if (disabled) return;
-      const controller = new AbortController();
-      setLoading(true);
-      setError(undefined);
       try {
-        const next = await port.performAction({
-          node,
-          action,
-          selectedCellId,
-          signal: controller.signal,
-        });
-        applyResponse(next);
-      } catch (unknownError) {
-        setError(
-          unknownError instanceof Error ? unknownError.message : 'FDM_DASHBOARD_ACTION_FAILED'
-        );
-      } finally {
-        setLoading(false);
+        await actionResult.mutateAsync(action);
+      } catch {
+        // The mutation atom carries the error into controller state.
       }
     },
-    [applyResponse, disabled, node, port, selectedCellId]
+    [actionResult, disabled]
   );
 
   const setViewMode = useCallback(
@@ -159,16 +139,21 @@ export function useFdmDashboardController({
 
   return {
     state: {
-      response,
+      response: queryResult.data,
       selectedCellId,
       selectedViewMode,
       filters,
       axisMap,
-      loading,
-      error,
+      loading: queryResult.isFetching || actionResult.isPending,
+      error: formatDashboardError(queryResult.error ?? actionResult.error),
     },
     actions,
   };
+}
+
+function formatDashboardError(unknownError: unknown): string | undefined {
+  if (unknownError === null || unknownError === undefined) return undefined;
+  return unknownError instanceof Error ? unknownError.message : 'FDM_DASHBOARD_FAILED';
 }
 
 export function replaceFdmAxisDimension(
