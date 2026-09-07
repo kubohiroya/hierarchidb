@@ -3920,6 +3920,12 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
+      '@hierarchidb/ui-external-service-connection':
+        specifier: workspace:*
+        version: link:../../packages/ui/external-service-connection
+      '@hierarchidb/ui-external-service-health':
+        specifier: workspace:*
+        version: link:../../packages/ui/external-service-health
       '@hierarchidb/ui-ide-gsm-connection':
         specifier: workspace:*
         version: link:../../packages/ui/ide-gsm-connection
