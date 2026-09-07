@@ -9,7 +9,13 @@ import type {
   IdeGsmFdmDirectoryRemoveInput,
   IdeGsmFdmDirectoryRemoveReport,
   IdeGsmFdmDirectoryTreeInput,
+  IdeGsmFdmSpace,
+  IdeGsmFdmSpaceCreateInput,
+  IdeGsmFdmSpaceDefaults,
+  IdeGsmFdmSpaceDeleteInput,
+  IdeGsmFdmSpaceDeleteReport,
   IdeGsmFdmSpacesReport,
+  IdeGsmFdmSpaceUpdateInput,
   IdeGsmProjectDirectoryInfoReport,
   IdeGsmProjectDirectoryInput,
   IdeGsmProjectDirectoryTreeReport,
@@ -26,7 +32,43 @@ import type {
   ConditionalProjectYamlWriteInput,
   ConditionalProjectYamlWriteResult,
   ExportFilter,
+  FdmBaseline,
+  FdmCapabilitiesPayload,
+  FdmCapability,
+  FdmCellDetailInput,
+  FdmCellDetailPayload,
+  FdmCellLogInput,
+  FdmCellLogListener,
+  FdmCellLogStreamPayload,
+  FdmCellStageIdentity,
+  FdmDashboardCell,
+  FdmDashboardLivePayload,
+  FdmDashboardStartupStatus,
+  FdmDashboardStatePayload,
+  FdmDashboardStatusInput,
+  FdmDashboardStatusPayload,
+  FdmFork,
+  FdmJob,
+  FdmLifecycleDiagnostic,
+  FdmLifecycleInput,
+  FdmLineage,
+  FdmLockStatus,
+  FdmRecoveredStateDiagnostics,
+  FdmRuleset,
+  FdmRun,
+  FdmRunOperation,
+  FdmRuntimeBackendType,
+  FdmRuntimeDiagnosticsInput,
+  FdmRuntimeDiagnosticsPayload,
+  FdmRuntimeEventListener,
+  FdmRuntimeEventPayload,
+  FdmRuntimeEventsInput,
+  FdmRuntimePhase,
+  FdmVerifyInput,
+  FdmVerifyReport,
+  FdmWorkflow,
   IdeGsmCommand,
+  IdeGsmFdmResolvedPathContext,
   InstallCommandInput,
   PreviewEventsCommandInput,
   ProjectFileContentPage,
@@ -80,6 +122,23 @@ const PROJECT_YAML_WRITE_STATUSES: ReadonlySet<string> = new Set<ProjectYamlWrit
   'ATOMIC_REPLACE_UNAVAILABLE',
   'AUTHORIZATION_FAILED',
 ]);
+const FDM_RUNTIME_BACKEND_TYPES: ReadonlySet<string> = new Set<FdmRuntimeBackendType>([
+  'API',
+  'BATCH',
+  'EC2',
+  'LOCAL',
+  'MCP',
+  'REMOTE',
+  'SSH',
+]);
+const FDM_RUNTIME_PHASES: ReadonlySet<string> = new Set<FdmRuntimePhase>([
+  'ACCEPTED',
+  'CANCELED',
+  'FAILED',
+  'PROGRESS',
+  'STARTED',
+  'SUCCEEDED',
+]);
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/u;
 const YAML_PATH_PATTERN = /\.ya?ml$/u;
 const CSV_PATH_PATTERN = /\.csv$/u;
@@ -90,6 +149,21 @@ type ReportDocumentName =
   | 'fdmDirectoryTree'
   | 'fdmDirectoryInfo'
   | 'fdmDirectoryRemove'
+  | 'fdmSpaceCreate'
+  | 'fdmSpaceUpdate'
+  | 'fdmSpaceDelete'
+  | 'fdmDashboardStatus'
+  | 'fdmCellDetail'
+  | 'fdmRuntimeDiagnostics'
+  | 'fdmCapabilities'
+  | 'fdmWorkflow'
+  | 'fdmWorkflows'
+  | 'fdmRun'
+  | 'fdmRuns'
+  | 'fdmJob'
+  | 'fdmJobs'
+  | 'fdmRunCancel'
+  | 'fdmJobCancel'
   | 'projectDirectoryTree'
   | 'projectDirectoryInfo'
   | 'projectYamlFileContent'
@@ -98,11 +172,17 @@ type ReportDocumentName =
   | 'closeProjectFileContentTransfer'
   | 'conditionalProjectYamlWrite'
   | 'activeProjectTasks'
-  | 'cancelTask';
+  | 'cancelTask'
+  | 'fdmVerify'
+  | 'fdmSweep';
 
 type TaskMutationName = Exclude<
   keyof typeof ideGsmGraphqlDocuments,
-  ReportDocumentName | 'subscribeTask' | 'subscribeTaskLog'
+  | ReportDocumentName
+  | 'subscribeTask'
+  | 'subscribeTaskLog'
+  | 'subscribeFdmCellLog'
+  | 'subscribeFdmRuntimeEvents'
 >;
 
 interface SubscribeTaskEvent {
@@ -111,6 +191,14 @@ interface SubscribeTaskEvent {
 
 interface SubscribeTaskLogEvent {
   subscribeTaskLog?: unknown;
+}
+
+interface SubscribeFdmCellLogEvent {
+  subscribeFdmCellLog?: unknown;
+}
+
+interface SubscribeFdmRuntimeEventsEvent {
+  subscribeFdmRuntimeEvents?: unknown;
 }
 
 function buildAuthHeaders(authToken: string): Record<string, string> {
@@ -161,6 +249,43 @@ function fdmDirectoryVariables(
   }
   assertOptionalNonNegativeInteger(input?.depth, 'depth');
   addDefined(variables, 'depth', input?.depth);
+  return variables;
+}
+
+function fdmSpaceCreateVariables(input: IdeGsmFdmSpaceCreateInput): Record<string, unknown> {
+  const variables: Record<string, unknown> = {};
+  if (input.spaceId !== undefined) {
+    assertNonEmpty(input.spaceId, 'spaceId');
+    variables.spaceId = input.spaceId;
+  }
+  if (input.label !== undefined) {
+    assertNonEmpty(input.label, 'label');
+    variables.label = input.label;
+  }
+  addDefined(variables, 'defaultSpace', input.defaultSpace);
+  return variables;
+}
+
+function fdmSpaceUpdateVariables(input: IdeGsmFdmSpaceUpdateInput): Record<string, unknown> {
+  assertNonEmpty(input.spaceId, 'spaceId');
+  const variables: Record<string, unknown> = { spaceId: input.spaceId };
+  if (input.label !== undefined) {
+    assertNonEmpty(input.label, 'label');
+    variables.label = input.label;
+  }
+  addDefined(variables, 'visible', input.visible);
+  addDefined(variables, 'archived', input.archived);
+  addDefined(variables, 'defaultSpace', input.defaultSpace);
+  addDefined(variables, 'order', input.order);
+  return variables;
+}
+
+function fdmSpaceDeleteVariables(input: IdeGsmFdmSpaceDeleteInput): Record<string, unknown> {
+  assertNonEmpty(input.spaceId, 'spaceId');
+  const variables: Record<string, unknown> = { spaceId: input.spaceId };
+  addDefined(variables, 'apply', input.apply);
+  addDefined(variables, 'deleteFiles', input.deleteFiles);
+  addDefined(variables, 'confirmation', input.confirmation);
   return variables;
 }
 
@@ -217,6 +342,124 @@ function projectFileContentPageVariables(
   if (input.cursor !== undefined) {
     assertNonEmpty(input.cursor, 'cursor');
     variables.cursor = input.cursor;
+  }
+  return variables;
+}
+
+function assertStringArray(value: readonly string[] | undefined, fieldName: string): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+    throw new Error(`${fieldName} must be an array of strings`);
+  }
+}
+
+function fdmDashboardStatusVariables(input: FdmDashboardStatusInput): Record<string, unknown> {
+  assertNonEmpty(input.spaceId, 'spaceId');
+  const variables: Record<string, unknown> = { spaceId: input.spaceId };
+  addDefined(variables, 'parameterSet', input.parameterSet);
+  addDefined(variables, 'profile', input.profile);
+  addDefined(variables, 'dataset', input.dataset);
+  addDefined(variables, 'compute', input.compute);
+  addDefined(variables, 'timeline', input.timeline);
+  addDefined(variables, 'stateDir', input.stateDir);
+  return variables;
+}
+
+function fdmCellVariables(input: FdmCellDetailInput | FdmCellLogInput): Record<string, unknown> {
+  assertNonEmpty(input.spaceId, 'spaceId');
+  assertNonEmpty(input.parameterSet, 'parameterSet');
+  assertNonEmpty(input.dataset, 'dataset');
+  assertNonEmpty(input.compute, 'compute');
+  assertNonEmpty(input.timelinePoint, 'timelinePoint');
+  const variables: Record<string, unknown> = {
+    spaceId: input.spaceId,
+    parameterSet: input.parameterSet,
+    dataset: input.dataset,
+    compute: input.compute,
+    timelinePoint: input.timelinePoint,
+  };
+  addDefined(variables, 'label', input.label);
+  addDefined(variables, 'stateDir', input.stateDir);
+  return variables;
+}
+
+function fdmRuntimeDiagnosticsVariables(
+  input: FdmRuntimeDiagnosticsInput
+): Record<string, unknown> {
+  return projectVariables(input.projectRelativePath);
+}
+
+function fdmRuntimeEventsVariables(input: FdmRuntimeEventsInput): Record<string, unknown> {
+  const variables = projectVariables(input.projectRelativePath);
+  addDefined(variables, 'stateDir', input.stateDir);
+  return variables;
+}
+
+function fdmVerifyVariables(input: FdmVerifyInput): Record<string, unknown> {
+  assertNonEmpty(input.spaceId, 'spaceId');
+  assertStringArray(input.parameterSet, 'parameterSet');
+  assertStringArray(input.profile, 'profile');
+  assertStringArray(input.dataset, 'dataset');
+  assertStringArray(input.computeEngine, 'computeEngine');
+  assertStringArray(input.timeline, 'timeline');
+  assertStringArray(input.sources, 'sources');
+  assertStringArray(input.targetComputes, 'targetComputes');
+  assertStringArray(input.compatibleSnapshotCommits, 'compatibleSnapshotCommits');
+  assertStringArray(input.compatibleSnapshotRevisions, 'compatibleSnapshotRevisions');
+  assertStringArray(input.axisPriority, 'axisPriority');
+  const variables: Record<string, unknown> = { spaceId: input.spaceId };
+  addDefined(variables, 'planName', input.planName);
+  addDefined(variables, 'parameterSet', input.parameterSet);
+  addDefined(variables, 'profile', input.profile);
+  addDefined(variables, 'dataset', input.dataset);
+  addDefined(variables, 'computeEngine', input.computeEngine);
+  addDefined(variables, 'timeline', input.timeline);
+  addDefined(variables, 'sources', input.sources);
+  addDefined(variables, 'stateDir', input.stateDir);
+  addDefined(variables, 'defaultCompute', input.defaultCompute);
+  addDefined(variables, 'targetComputes', input.targetComputes);
+  addDefined(variables, 'baselineCompute', input.baselineCompute);
+  addDefined(variables, 'compareSelectors', input.compareSelectors);
+  addDefined(variables, 'tolerance', input.tolerance);
+  addDefined(variables, 'toleranceProfile', input.toleranceProfile);
+  addDefined(variables, 'snapshotLevel', input.snapshotLevel);
+  addDefined(variables, 'snapshotPolicy', input.snapshotPolicy);
+  addDefined(variables, 'compatibleSnapshotCommits', input.compatibleSnapshotCommits);
+  addDefined(variables, 'compatibleSnapshotRevisions', input.compatibleSnapshotRevisions);
+  addDefined(variables, 'axisPriority', input.axisPriority);
+  addDefined(variables, 'benchmarkAggregateMode', input.benchmarkAggregateMode);
+  addDefined(variables, 'remoteInventoryFile', input.remoteInventoryFile);
+  addDefined(variables, 'remoteLabel', input.remoteLabel);
+  addDefined(variables, 'sshProfile', input.sshProfile);
+  addDefined(variables, 'originalSourceParameterSet', input.originalSourceParameterSet);
+  addDefined(variables, 'originalSourceProfile', input.originalSourceProfile);
+  addDefined(variables, 'originalSourceProjectDir', input.originalSourceProjectDir);
+  addDefined(variables, 'preflight', input.preflight);
+  return variables;
+}
+
+function fdmLifecycleVariables(input: FdmLifecycleInput): Record<string, unknown> {
+  const variables: Record<string, unknown> = {};
+  addDefined(variables, 'spaceId', input.spaceId);
+  addDefined(variables, 'workflowId', input.workflowId);
+  addDefined(variables, 'runId', input.runId);
+  addDefined(variables, 'jobId', input.jobId);
+  addDefined(variables, 'taskId', input.taskId);
+  addDefined(variables, 'operationId', input.operationId);
+  addDefined(variables, 'stateDir', input.stateDir);
+  addDefined(variables, 'executionKind', input.executionKind);
+  return variables;
+}
+
+function fdmLifecycleCancelVariables(input: FdmLifecycleInput): Record<string, unknown> {
+  const variables = fdmLifecycleVariables(input);
+  if (
+    variables.workflowId === undefined &&
+    variables.runId === undefined &&
+    variables.jobId === undefined &&
+    variables.taskId === undefined
+  ) {
+    throw new Error('workflowId, runId, jobId, or taskId is required');
   }
   return variables;
 }
@@ -319,6 +562,10 @@ function parseTaskResult(value: unknown): TaskResult {
     status: event.status as TaskStatus,
     paramsJson: event.paramsJson,
     resultJson: event.resultJson,
+    runId: readOptionalNullableScalarString(event, 'runId'),
+    jobId: readOptionalNullableScalarString(event, 'jobId'),
+    workflowId: readOptionalNullableScalarString(event, 'workflowId'),
+    executionKind: readOptionalNullableScalarString(event, 'executionKind'),
   };
 }
 
@@ -342,6 +589,89 @@ function readNullableString(record: Record<string, unknown>, key: string): strin
     throw new Error('IDE-GSM GraphQL response malformed');
   }
   return value;
+}
+
+function readOptionalNullableScalarString(
+  record: Record<string, unknown>,
+  key: string
+): string | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  throw new Error('IDE-GSM GraphQL response malformed');
+}
+
+function readOptionalNullableStringArray(
+  record: Record<string, unknown>,
+  key: string
+): string[] | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readNullableFiniteNumber(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readNullableNonNegativeIntegerScalar(
+  record: Record<string, unknown>,
+  key: string
+): number | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  const parsed = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return parsed;
+}
+
+function readNonNegativeIntegerScalar(record: Record<string, unknown>, key: string): number {
+  const value = readNullableNonNegativeIntegerScalar(record, key);
+  if (value === null) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readServerTimestampString(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  if (typeof value === 'string') {
+    if (/^\d+$/u.test(value)) {
+      const millis = Number(value);
+      if (!Number.isSafeInteger(millis)) {
+        throw new Error('IDE-GSM GraphQL response malformed');
+      }
+      return new Date(millis).toISOString();
+    }
+    return value;
+  }
+  if (typeof value === 'number' && Number.isSafeInteger(value)) {
+    return new Date(value).toISOString();
+  }
+  throw new Error('IDE-GSM GraphQL response malformed');
+}
+
+function readNullableServerTimestampString(
+  record: Record<string, unknown>,
+  key: string
+): string | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  return readServerTimestampString(record, key);
 }
 
 function readBoolean(record: Record<string, unknown>, key: string): boolean {
@@ -394,6 +724,15 @@ function readOptionalNullableString(record: Record<string, unknown>, key: string
   const value = record[key];
   if (value === undefined || value === null) return null;
   if (typeof value !== 'string') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
+}
+
+function readOptionalNullableBoolean(record: Record<string, unknown>, key: string): boolean | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'boolean') {
     throw new Error('IDE-GSM GraphQL response malformed');
   }
   return value;
@@ -453,10 +792,73 @@ function parseFdmSpacesReport(value: unknown): IdeGsmFdmSpacesReport {
   }
   return {
     defaultSpaceId: readString(value, 'defaultSpaceId'),
-    spaces: value.spaces.map((space) => {
-      assertRecord(space, 'IDE-GSM GraphQL response malformed');
-      return { spaceId: readString(space, 'spaceId') };
-    }),
+    spaces: value.spaces.map(parseFdmSpace),
+  };
+}
+
+function parseFdmSpace(value: unknown): IdeGsmFdmSpace {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    spaceId: readString(value, 'spaceId'),
+    ...(Object.hasOwn(value, 'label') ? { label: readOptionalNullableString(value, 'label') } : {}),
+    ...(Object.hasOwn(value, 'defaultSpace')
+      ? { defaultSpace: readOptionalNullableBoolean(value, 'defaultSpace') }
+      : {}),
+    ...(Object.hasOwn(value, 'visible')
+      ? { visible: readOptionalNullableBoolean(value, 'visible') }
+      : {}),
+    ...(Object.hasOwn(value, 'archived')
+      ? { archived: readOptionalNullableBoolean(value, 'archived') }
+      : {}),
+    ...(Object.hasOwn(value, 'owner') ? { owner: readOptionalNullableString(value, 'owner') } : {}),
+    ...(Object.hasOwn(value, 'layoutVersion')
+      ? { layoutVersion: readOptionalNullableString(value, 'layoutVersion') }
+      : {}),
+    ...(Object.hasOwn(value, 'legacyRoot')
+      ? { legacyRoot: readOptionalNullableBoolean(value, 'legacyRoot') }
+      : {}),
+    ...(Object.hasOwn(value, 'order')
+      ? { order: readNullableNonNegativeIntegerScalar(value, 'order') }
+      : {}),
+    ...(Object.hasOwn(value, 'createdAt')
+      ? { createdAt: readOptionalNullableString(value, 'createdAt') }
+      : {}),
+    ...(Object.hasOwn(value, 'defaults')
+      ? { defaults: parseFdmSpaceDefaults(value.defaults) }
+      : {}),
+    ...(Object.hasOwn(value, 'warnings')
+      ? { warnings: readOptionalNullableStringArray(value, 'warnings') }
+      : {}),
+  };
+}
+
+function parseFdmSpaceDefaults(value: unknown): IdeGsmFdmSpaceDefaults | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    profile: readOptionalNullableStringArray(value, 'profile'),
+    dataset: readOptionalNullableStringArray(value, 'dataset'),
+    compute: readOptionalNullableStringArray(value, 'compute'),
+    timeline: readOptionalNullableStringArray(value, 'timeline'),
+  };
+}
+
+function parseFdmSpaceDeleteReport(value: unknown): IdeGsmFdmSpaceDeleteReport {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    apply: readBoolean(value, 'apply'),
+    archived: readBoolean(value, 'archived'),
+    byteCount: readNonNegativeIntegerScalar(value, 'byteCount'),
+    confirmed: readBoolean(value, 'confirmed'),
+    deleted: readBoolean(value, 'deleted'),
+    fileCount: readNonNegativeIntegerScalar(value, 'fileCount'),
+    physicalDelete: readBoolean(value, 'physicalDelete'),
+    spaceId: readNullableString(value, 'spaceId'),
+    spaces:
+      value.spaces === undefined || value.spaces === null
+        ? null
+        : parseFdmSpacesReport(value.spaces),
+    topLevelEntries: readOptionalNullableStringArray(value, 'topLevelEntries'),
   };
 }
 
@@ -578,9 +980,13 @@ function parseActiveProjectTask(value: unknown): ActiveProjectTask {
     projectRelativePath: readString(value, 'projectRelativePath'),
     progress: readNullableProgress(value, 'progress'),
     phase: readOptionalNullableString(value, 'phase'),
-    registeredAt: readString(value, 'registeredAt'),
-    startedAt: readOptionalNullableString(value, 'startedAt'),
-    updatedAt: readString(value, 'updatedAt'),
+    registeredAt: readServerTimestampString(value, 'registeredAt'),
+    startedAt: readNullableServerTimestampString(value, 'startedAt'),
+    updatedAt: readServerTimestampString(value, 'updatedAt'),
+    runId: readOptionalNullableScalarString(value, 'runId'),
+    jobId: readOptionalNullableScalarString(value, 'jobId'),
+    workflowId: readOptionalNullableScalarString(value, 'workflowId'),
+    executionKind: readOptionalNullableScalarString(value, 'executionKind'),
   };
 }
 
@@ -633,6 +1039,462 @@ function parseFdmDirectoryRemoveReport(value: unknown): IdeGsmFdmDirectoryRemove
     deletedBytes: readFiniteNumber(value, 'deletedBytes'),
     target: parseDirectoryNode(value.target),
   };
+}
+
+function parseEntryMap(value: unknown): Readonly<Record<string, string>> {
+  if (value === undefined || value === null) return {};
+  if (!Array.isArray(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  const entries: Record<string, string> = {};
+  for (const entry of value) {
+    assertRecord(entry, 'IDE-GSM GraphQL response malformed');
+    entries[readString(entry, 'key')] = readString(entry, 'value');
+  }
+  return entries;
+}
+
+function parseNullableArray<T>(value: unknown, parser: (entry: unknown) => T): T[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value.map(parser);
+}
+
+function parseFdmCellStageIdentity(value: unknown): FdmCellStageIdentity | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    parameterSet: readNullableString(value, 'parameterSet'),
+    profile: readNullableString(value, 'profile'),
+    dataset: readNullableString(value, 'dataset'),
+    compute: readNullableString(value, 'compute'),
+    timelinePoint: readNullableString(value, 'timelinePoint'),
+    checkpoint: readNullableString(value, 'checkpoint'),
+    label: readNullableString(value, 'label'),
+    source: readNullableString(value, 'source'),
+  };
+}
+
+function parseFdmLockStatus(value: unknown): FdmLockStatus | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    active: readBoolean(value, 'active'),
+    acquiredAt: readNullableString(value, 'acquiredAt'),
+    ageMillis: readNullableNonNegativeIntegerScalar(value, 'ageMillis'),
+    fileName: readNullableString(value, 'fileName'),
+    host: readNullableString(value, 'host'),
+    owner: readNullableString(value, 'owner'),
+    pid: readNullableNonNegativeIntegerScalar(value, 'pid'),
+    role: readNullableString(value, 'role'),
+    staleMetadata: readBoolean(value, 'staleMetadata'),
+  };
+}
+
+function parseFdmDashboardStartupStatus(value: unknown): FdmDashboardStartupStatus | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    ready: readBoolean(value, 'ready'),
+    phase: readNullableString(value, 'phase'),
+    startedAt: readNullableString(value, 'startedAt'),
+    finishedAt: readNullableString(value, 'finishedAt'),
+    waitedMillis: readNonNegativeIntegerScalar(value, 'waitedMillis'),
+    waitingForHolder: readNullableString(value, 'waitingForHolder'),
+    apiStartupLock: parseFdmLockStatus(value.apiStartupLock),
+    simulatorLock: parseFdmLockStatus(value.simulatorLock),
+  };
+}
+
+function parseFdmDashboardStatePayload(value: unknown): FdmDashboardStatePayload | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return { status: readNullableString(value, 'status') };
+}
+
+function parseFdmDashboardLivePayload(value: unknown): FdmDashboardLivePayload | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    status: readNullableString(value, 'status'),
+    startedAt: readNullableString(value, 'startedAt'),
+  };
+}
+
+function parseFdmDashboardCell(value: unknown): FdmDashboardCell {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    parameterSet: readNullableString(value, 'parameterSet'),
+    profile: readNullableString(value, 'profile'),
+    dataset: readNullableString(value, 'dataset'),
+    compute: readNullableString(value, 'compute'),
+    timelinePoint: readNullableString(value, 'timelinePoint'),
+    checkpoint: readNullableString(value, 'checkpoint'),
+    label: readNullableString(value, 'label'),
+    source: readNullableString(value, 'source'),
+    bucket: readNullableString(value, 'bucket'),
+    rawStatus: readNullableString(value, 'rawStatus'),
+    accuracyLabel: readNullableString(value, 'accuracyLabel'),
+    summaryFile: readNullableString(value, 'summaryFile'),
+    current: readBoolean(value, 'current'),
+    next: readBoolean(value, 'next'),
+    blockingDrift: readBoolean(value, 'blockingDrift'),
+    variantCount: readNonNegativeIntegerScalar(value, 'variantCount'),
+  };
+}
+
+function parseNullableFdmDashboardCells(value: unknown): FdmDashboardCell[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value.map(parseFdmDashboardCell);
+}
+
+function parseFdmDashboardStatusPayload(value: unknown): FdmDashboardStatusPayload {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    generatedAt: readNullableString(value, 'generatedAt'),
+    selectedSpaceId: readNullableString(value, 'selectedSpaceId'),
+    selectedStateDir: readNullableString(value, 'selectedStateDir'),
+    availableStateDirs: readOptionalNullableStringArray(value, 'availableStateDirs'),
+    parameterSet: readOptionalNullableStringArray(value, 'parameterSet'),
+    profile: readOptionalNullableStringArray(value, 'profile'),
+    dataset: readOptionalNullableStringArray(value, 'dataset'),
+    compute: readOptionalNullableStringArray(value, 'compute'),
+    timeline: readOptionalNullableStringArray(value, 'timeline'),
+    state: parseFdmDashboardStatePayload(value.state),
+    live: parseFdmDashboardLivePayload(value.live),
+    startup: parseFdmDashboardStartupStatus(value.startup),
+    cells: parseNullableFdmDashboardCells(value.cells),
+  };
+}
+
+function parseFdmCellDetailPayload(value: unknown): FdmCellDetailPayload {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    generatedAt: readNullableString(value, 'generatedAt'),
+    selectedStateDir: readNullableString(value, 'selectedStateDir'),
+    stage: parseFdmCellStageIdentity(value.stage),
+    startedAt: readNullableString(value, 'startedAt'),
+    updatedAt: readNullableString(value, 'updatedAt'),
+    finishedAt: readNullableString(value, 'finishedAt'),
+    elapsedMs: readNullableNonNegativeIntegerScalar(value, 'elapsedMs'),
+    estimatedRemainingMs: readNullableNonNegativeIntegerScalar(value, 'estimatedRemainingMs'),
+    estimatedCompletedAt: readNullableString(value, 'estimatedCompletedAt'),
+    logPath: readNullableString(value, 'logPath'),
+    latestLogLines: readOptionalNullableStringArray(value, 'latestLogLines'),
+  };
+}
+
+function parseFdmCellLogStreamPayload(value: unknown): FdmCellLogStreamPayload {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    generatedAt: readNullableString(value, 'generatedAt'),
+    stage: parseFdmCellStageIdentity(value.stage),
+    logPath: readNullableString(value, 'logPath'),
+    latestLogLines: readOptionalNullableStringArray(value, 'latestLogLines'),
+  };
+}
+
+function parseFdmRuntimeBackendType(value: string | null): FdmRuntimeBackendType | null {
+  if (value === null) return null;
+  if (!FDM_RUNTIME_BACKEND_TYPES.has(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value as FdmRuntimeBackendType;
+}
+
+function parseFdmRuntimePhase(value: string | null): FdmRuntimePhase | null {
+  if (value === null) return null;
+  if (!FDM_RUNTIME_PHASES.has(value)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value as FdmRuntimePhase;
+}
+
+function parseFdmRuntimeEventPayload(value: unknown): FdmRuntimeEventPayload {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const progress = readNullableFiniteNumber(value, 'progress');
+  if (progress !== null && (progress < 0 || progress > 100)) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    backendType: parseFdmRuntimeBackendType(readNullableString(value, 'backendType')),
+    command: readNullableString(value, 'command'),
+    compute: readNullableString(value, 'compute'),
+    connectionType: readNullableString(value, 'connectionType'),
+    message: readNullableString(value, 'message'),
+    phase: parseFdmRuntimePhase(readNullableString(value, 'phase')),
+    progress,
+    projectRelativePath: readNullableString(value, 'projectRelativePath'),
+    receivedAt: readNullableString(value, 'receivedAt'),
+    recovered: readBoolean(value, 'recovered'),
+    taskId: readNullableString(value, 'taskId'),
+    username: readNullableString(value, 'username'),
+    backendMetadata: parseEntryMap(value.backendMetadata),
+  };
+}
+
+function parseFdmRecoveredStateDiagnostics(value: unknown): FdmRecoveredStateDiagnostics {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    command: readNullableString(value, 'command'),
+    compute: readNullableString(value, 'compute'),
+    connectionType: readNullableString(value, 'connectionType'),
+    launchLogFile: readNullableString(value, 'launchLogFile'),
+    launchPid: readNullableString(value, 'launchPid'),
+    launchPlanName: readNullableString(value, 'launchPlanName'),
+    liveStatus: readNullableString(value, 'liveStatus'),
+    message: readNullableString(value, 'message'),
+    phase: readNullableString(value, 'phase'),
+    recovered: readBoolean(value, 'recovered'),
+    runtimeIdentity: readNullableString(value, 'runtimeIdentity'),
+    stateDir: readNullableString(value, 'stateDir'),
+    taskId: readNullableString(value, 'taskId'),
+  };
+}
+
+function parseFdmRuntimeDiagnosticsPayload(value: unknown): FdmRuntimeDiagnosticsPayload {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  const recoveredStates = value.recoveredStates;
+  if (
+    recoveredStates !== undefined &&
+    recoveredStates !== null &&
+    !Array.isArray(recoveredStates)
+  ) {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return {
+    generatedAt: readNullableString(value, 'generatedAt'),
+    startup: parseFdmDashboardStartupStatus(value.startup),
+    recoveredStates:
+      recoveredStates === undefined || recoveredStates === null
+        ? null
+        : recoveredStates.map(parseFdmRecoveredStateDiagnostics),
+  };
+}
+
+function parseFdmResolvedPathContext(value: unknown): IdeGsmFdmResolvedPathContext | null {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    allowedProjectRoots: readOptionalNullableStringArray(value, 'allowedProjectRoots'),
+    allowedProjectRootsSource: readNullableString(value, 'allowedProjectRootsSource'),
+    fdmDirectory: readNullableString(value, 'fdmDirectory'),
+    fdmDirectorySource: readNullableString(value, 'fdmDirectorySource'),
+    fixtureDirectory: readNullableString(value, 'fixtureDirectory'),
+    fixtureDirectorySource: readNullableString(value, 'fixtureDirectorySource'),
+  };
+}
+
+function parseFdmVerifyReport(value: unknown): FdmVerifyReport {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    axisPriority: readOptionalNullableStringArray(value, 'axisPriority'),
+    baselineCompute: readNullableString(value, 'baselineCompute'),
+    benchmarkAggregateMode: readNullableString(value, 'benchmarkAggregateMode'),
+    calibrationRuntimeOptions: parseEntryMap(value.calibrationRuntimeOptions),
+    command: readOptionalNullableStringArray(value, 'command'),
+    compareSelectors: readNullableString(value, 'compareSelectors'),
+    compatibleSnapshotCommits: readOptionalNullableStringArray(value, 'compatibleSnapshotCommits'),
+    compatibleSnapshotRevisions: readOptionalNullableStringArray(
+      value,
+      'compatibleSnapshotRevisions'
+    ),
+    compute: readOptionalNullableStringArray(value, 'compute'),
+    dataset: readOptionalNullableStringArray(value, 'dataset'),
+    dryRun: readBoolean(value, 'dryRun'),
+    executionKind: readNullableString(value, 'executionKind'),
+    logFile: readNullableString(value, 'logFile'),
+    pathContext: parseFdmResolvedPathContext(value.pathContext),
+    pid: readNonNegativeIntegerScalar(value, 'pid'),
+    planFile: readNullableString(value, 'planFile'),
+    planName: readNullableString(value, 'planName'),
+    profile: readOptionalNullableStringArray(value, 'profile'),
+    remoteDataset: readOptionalNullableStringArray(value, 'remoteDataset'),
+    remoteInventoryFile: readNullableString(value, 'remoteInventoryFile'),
+    remoteLabel: readNullableString(value, 'remoteLabel'),
+    runId: readNullableString(value, 'runId'),
+    snapshotLevel: readNullableString(value, 'snapshotLevel'),
+    snapshotPolicy: readNullableString(value, 'snapshotPolicy'),
+    snapshotReusePolicy: readNullableString(value, 'snapshotReusePolicy'),
+    sources: readOptionalNullableStringArray(value, 'sources'),
+    sshCompute: readOptionalNullableStringArray(value, 'sshCompute'),
+    sshProfile: readNullableString(value, 'sshProfile'),
+    stateDir: readNullableString(value, 'stateDir'),
+    stateSegment: readNullableString(value, 'stateSegment'),
+    timeline: readOptionalNullableStringArray(value, 'timeline'),
+    tolerance: readNullableString(value, 'tolerance'),
+    toleranceProfile: readNullableString(value, 'toleranceProfile'),
+    useSharedBaseline: readBoolean(value, 'useSharedBaseline'),
+    workflowId: readNullableString(value, 'workflowId'),
+  };
+}
+
+function parseFdmCapability(value: unknown): FdmCapability {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    level: readNullableString(value, 'level'),
+    name: readNullableString(value, 'name'),
+    note: readNullableString(value, 'note'),
+    operations: readOptionalNullableStringArray(value, 'operations'),
+    supported: readBoolean(value, 'supported'),
+  };
+}
+
+function parseFdmLifecycleDiagnostic(value: unknown): FdmLifecycleDiagnostic {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    code: readNullableString(value, 'code'),
+    message: readNullableString(value, 'message'),
+    path: readNullableString(value, 'path'),
+    severity: readNullableString(value, 'severity'),
+  };
+}
+
+function parseFdmWorkflow(value: unknown): FdmWorkflow {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    workflowId: readNullableString(value, 'workflowId'),
+    runId: readNullableString(value, 'runId'),
+    stateDir: readNullableString(value, 'stateDir'),
+    status: readNullableString(value, 'status'),
+    sourceFile: readNullableString(value, 'sourceFile'),
+    sourceRevision: readNullableString(value, 'sourceRevision'),
+  };
+}
+
+function parseFdmRunOperation(value: unknown): FdmRunOperation {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    attemptId: readNullableString(value, 'attemptId'),
+    disposition: readNullableString(value, 'disposition'),
+    evidence: readOptionalNullableStringArray(value, 'evidence'),
+    operationId: readNullableString(value, 'operationId'),
+    outcome: readNullableString(value, 'outcome'),
+    status: readNullableString(value, 'status'),
+    updatedAt: readNullableString(value, 'updatedAt'),
+  };
+}
+
+function parseFdmRun(value: unknown): FdmRun {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    diagnostics: parseNullableArray(value.diagnostics, parseFdmLifecycleDiagnostic),
+    operations: parseNullableArray(value.operations, parseFdmRunOperation),
+    projectionConsistent: readBoolean(value, 'projectionConsistent'),
+    runId: readNullableString(value, 'runId'),
+    stateDir: readNullableString(value, 'stateDir'),
+    status: readNullableString(value, 'status'),
+    workflowId: readNullableString(value, 'workflowId'),
+  };
+}
+
+function parseFdmJob(value: unknown): FdmJob {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    diagnostics: parseNullableArray(value.diagnostics, parseFdmLifecycleDiagnostic),
+    executionKind: readNullableString(value, 'executionKind'),
+    jobId: readNullableString(value, 'jobId'),
+    operationId: readNullableString(value, 'operationId'),
+    runId: readNullableString(value, 'runId'),
+    status: readNullableString(value, 'status'),
+    taskId: readNullableString(value, 'taskId'),
+    workflowId: readNullableString(value, 'workflowId'),
+  };
+}
+
+function parseFdmRuleset(value: unknown): FdmRuleset {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    operations: readOptionalNullableStringArray(value, 'operations'),
+    reference: readNullableString(value, 'reference'),
+    roles: readOptionalNullableStringArray(value, 'roles'),
+    rulesetId: readNullableString(value, 'rulesetId'),
+    version: readNullableNonNegativeIntegerScalar(value, 'version'),
+  };
+}
+
+function parseFdmBaseline(value: unknown): FdmBaseline {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    baselineId: readNullableString(value, 'baselineId'),
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    computeEngine: readNullableString(value, 'computeEngine'),
+    dataset: readNullableString(value, 'dataset'),
+    profile: readNullableString(value, 'profile'),
+    source: readNullableString(value, 'source'),
+    timelinePoint: readNullableString(value, 'timelinePoint'),
+  };
+}
+
+function parseFdmFork(value: unknown): FdmFork {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    forkId: readNullableString(value, 'forkId'),
+    sourceRunId: readNullableString(value, 'sourceRunId'),
+    sourceWorkflowId: readNullableString(value, 'sourceWorkflowId'),
+    status: readNullableString(value, 'status'),
+    targetRunId: readNullableString(value, 'targetRunId'),
+    targetWorkflowId: readNullableString(value, 'targetWorkflowId'),
+  };
+}
+
+function parseFdmLineage(value: unknown): FdmLineage {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: readOptionalNullableStringArray(value, 'capabilities'),
+    lineageId: readNullableString(value, 'lineageId'),
+    operationId: readNullableString(value, 'operationId'),
+    runId: readNullableString(value, 'runId'),
+    sourceOperationId: readNullableString(value, 'sourceOperationId'),
+    sourceRunId: readNullableString(value, 'sourceRunId'),
+    workflowId: readNullableString(value, 'workflowId'),
+  };
+}
+
+function parseFdmCapabilitiesPayload(value: unknown): FdmCapabilitiesPayload {
+  assertRecord(value, 'IDE-GSM GraphQL response malformed');
+  return {
+    capabilities: parseNullableArray(value.capabilities, parseFdmCapability),
+    workflows: parseNullableArray(value.workflows, parseFdmWorkflow),
+    runs: parseNullableArray(value.runs, parseFdmRun),
+    jobs: parseNullableArray(value.jobs, parseFdmJob),
+    rulesets: parseNullableArray(value.rulesets, parseFdmRuleset),
+    baselines: parseNullableArray(value.baselines, parseFdmBaseline),
+    forks: parseNullableArray(value.forks, parseFdmFork),
+    lineage: parseNullableArray(value.lineage, parseFdmLineage),
+  };
+}
+
+function parseNullableFdmWorkflow(value: unknown): FdmWorkflow | null {
+  if (value === undefined || value === null) return null;
+  return parseFdmWorkflow(value);
+}
+
+function parseNullableFdmRun(value: unknown): FdmRun | null {
+  if (value === undefined || value === null) return null;
+  return parseFdmRun(value);
+}
+
+function parseNullableFdmJob(value: unknown): FdmJob | null {
+  if (value === undefined || value === null) return null;
+  return parseFdmJob(value);
+}
+
+function parseBooleanReport(value: unknown): boolean {
+  if (typeof value !== 'boolean') {
+    throw new Error('IDE-GSM GraphQL response malformed');
+  }
+  return value;
 }
 
 function assertNeverCommand(command: never): never {
@@ -756,6 +1618,88 @@ export class IdeGsmClient {
     );
   }
 
+  async fdmSpaceCreate(input: IdeGsmFdmSpaceCreateInput): Promise<IdeGsmFdmSpace> {
+    return this.requestReport('fdmSpaceCreate', fdmSpaceCreateVariables(input), parseFdmSpace);
+  }
+
+  async fdmSpaceUpdate(input: IdeGsmFdmSpaceUpdateInput): Promise<IdeGsmFdmSpace> {
+    return this.requestReport('fdmSpaceUpdate', fdmSpaceUpdateVariables(input), parseFdmSpace);
+  }
+
+  async fdmSpaceDelete(input: IdeGsmFdmSpaceDeleteInput): Promise<IdeGsmFdmSpaceDeleteReport> {
+    return this.requestReport(
+      'fdmSpaceDelete',
+      fdmSpaceDeleteVariables(input),
+      parseFdmSpaceDeleteReport
+    );
+  }
+
+  async fdmDashboardStatus(input: FdmDashboardStatusInput): Promise<FdmDashboardStatusPayload> {
+    return this.requestReport(
+      'fdmDashboardStatus',
+      fdmDashboardStatusVariables(input),
+      parseFdmDashboardStatusPayload
+    );
+  }
+
+  async fdmCellDetail(input: FdmCellDetailInput): Promise<FdmCellDetailPayload> {
+    return this.requestReport('fdmCellDetail', fdmCellVariables(input), parseFdmCellDetailPayload);
+  }
+
+  async fdmRuntimeDiagnostics(
+    input: FdmRuntimeDiagnosticsInput
+  ): Promise<FdmRuntimeDiagnosticsPayload> {
+    return this.requestReport(
+      'fdmRuntimeDiagnostics',
+      fdmRuntimeDiagnosticsVariables(input),
+      parseFdmRuntimeDiagnosticsPayload
+    );
+  }
+
+  async fdmCapabilities(): Promise<FdmCapabilitiesPayload> {
+    return this.requestReport('fdmCapabilities', undefined, parseFdmCapabilitiesPayload);
+  }
+
+  async fdmWorkflow(input: FdmLifecycleInput): Promise<FdmWorkflow | null> {
+    return this.requestReport(
+      'fdmWorkflow',
+      fdmLifecycleVariables(input),
+      parseNullableFdmWorkflow
+    );
+  }
+
+  async fdmWorkflows(input: Pick<FdmLifecycleInput, 'spaceId'> = {}): Promise<FdmWorkflow[]> {
+    return this.requestReport(
+      'fdmWorkflows',
+      fdmLifecycleVariables(input),
+      (value): FdmWorkflow[] => parseNullableArray(value, parseFdmWorkflow) ?? []
+    );
+  }
+
+  async fdmRun(input: FdmLifecycleInput): Promise<FdmRun | null> {
+    return this.requestReport('fdmRun', fdmLifecycleVariables(input), parseNullableFdmRun);
+  }
+
+  async fdmRuns(input: Pick<FdmLifecycleInput, 'spaceId'> = {}): Promise<FdmRun[]> {
+    return this.requestReport(
+      'fdmRuns',
+      fdmLifecycleVariables(input),
+      (value): FdmRun[] => parseNullableArray(value, parseFdmRun) ?? []
+    );
+  }
+
+  async fdmJob(input: FdmLifecycleInput): Promise<FdmJob | null> {
+    return this.requestReport('fdmJob', fdmLifecycleVariables(input), parseNullableFdmJob);
+  }
+
+  async fdmJobs(input: Pick<FdmLifecycleInput, 'spaceId'> = {}): Promise<FdmJob[]> {
+    return this.requestReport(
+      'fdmJobs',
+      fdmLifecycleVariables(input),
+      (value): FdmJob[] => parseNullableArray(value, parseFdmJob) ?? []
+    );
+  }
+
   async projectDirectoryTree(
     input: IdeGsmProjectDirectoryInput
   ): Promise<IdeGsmProjectDirectoryTreeReport> {
@@ -841,6 +1785,30 @@ export class IdeGsmClient {
   async cancelTask(taskId: string): Promise<TaskCancelResult> {
     assertNonEmpty(taskId, 'taskId');
     return this.requestReport('cancelTask', { taskId }, parseTaskCancelResult);
+  }
+
+  async fdmVerify(input: FdmVerifyInput): Promise<FdmVerifyReport> {
+    return this.requestReport('fdmVerify', fdmVerifyVariables(input), parseFdmVerifyReport);
+  }
+
+  async fdmSweep(input: FdmVerifyInput): Promise<FdmVerifyReport> {
+    return this.requestReport('fdmSweep', fdmVerifyVariables(input), parseFdmVerifyReport);
+  }
+
+  async fdmRunCancel(input: FdmLifecycleInput): Promise<boolean> {
+    return this.requestReport(
+      'fdmRunCancel',
+      fdmLifecycleCancelVariables(input),
+      parseBooleanReport
+    );
+  }
+
+  async fdmJobCancel(input: FdmLifecycleInput): Promise<boolean> {
+    return this.requestReport(
+      'fdmJobCancel',
+      fdmLifecycleCancelVariables(input),
+      parseBooleanReport
+    );
   }
 
   async importProject(projectSnapshot: string, projectRelativePath: string): Promise<string> {
@@ -1213,6 +2181,91 @@ export class IdeGsmClient {
             throw new Error('IDE-GSM task log subscription returned a mismatched task ID');
           }
           onLog(result);
+        },
+        error: () => {
+          disposeClient();
+        },
+        complete: () => {
+          disposeClient();
+        },
+      }
+    );
+
+    return () => {
+      try {
+        unsubscribe();
+      } finally {
+        disposeClient();
+      }
+    };
+  }
+
+  subscribeFdmCellLog(input: FdmCellLogInput, onLog: FdmCellLogListener): () => void {
+    const variables = fdmCellVariables(input);
+    const wsUrl = deriveWsUrl(this.endpointUrl);
+    const wsClient = this.wsClientFactory(wsUrl, buildAuthHeaders(this.authToken));
+    let disposed = false;
+    const disposeClient = (): void => {
+      if (disposed) return;
+      disposed = true;
+      try {
+        void Promise.resolve(wsClient.dispose()).catch(() => undefined);
+      } catch {
+        // Cleanup failures must not outlive unsubscribe.
+      }
+    };
+    const unsubscribe = wsClient.subscribe<SubscribeFdmCellLogEvent>(
+      {
+        query: ideGsmGraphqlDocuments.subscribeFdmCellLog,
+        variables,
+      },
+      {
+        next: (event) => {
+          onLog(parseFdmCellLogStreamPayload(event.data?.subscribeFdmCellLog));
+        },
+        error: () => {
+          disposeClient();
+        },
+        complete: () => {
+          disposeClient();
+        },
+      }
+    );
+
+    return () => {
+      try {
+        unsubscribe();
+      } finally {
+        disposeClient();
+      }
+    };
+  }
+
+  subscribeFdmRuntimeEvents(
+    input: FdmRuntimeEventsInput,
+    onEvent: FdmRuntimeEventListener
+  ): () => void {
+    const variables = fdmRuntimeEventsVariables(input);
+    const wsUrl = deriveWsUrl(this.endpointUrl);
+    const wsClient = this.wsClientFactory(wsUrl, buildAuthHeaders(this.authToken));
+    let disposed = false;
+    const disposeClient = (): void => {
+      if (disposed) return;
+      disposed = true;
+      try {
+        void Promise.resolve(wsClient.dispose()).catch(() => undefined);
+      } catch {
+        // Cleanup failures must not outlive unsubscribe.
+      }
+    };
+    const unsubscribe = wsClient.subscribe<SubscribeFdmRuntimeEventsEvent>(
+      {
+        query: ideGsmGraphqlDocuments.subscribeFdmRuntimeEvents,
+        variables,
+      },
+      {
+        next: (event) => {
+          onEvent(parseFdmRuntimeEventPayload(event.data?.subscribeFdmRuntimeEvents));
         },
         error: () => {
           disposeClient();

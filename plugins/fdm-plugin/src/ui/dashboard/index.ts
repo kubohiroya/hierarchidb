@@ -1,3 +1,4 @@
+export { FdmDashboardPresentation } from './FdmDashboardPresentation.js';
 export { FdmDashboardView } from './FdmDashboardView.js';
 export {
   buildFdmMatrixRows,

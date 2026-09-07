@@ -1,9 +1,12 @@
 import type { PluginStepConfig } from '@hierarchidb/plugin-base';
 import type { IdeGsmConnectionRuntimeProvider } from '@hierarchidb/ui-ide-gsm-connection';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { FdmPluginManifest } from '../../../index.js';
 import { createFdmStepConfigProvider } from '../createFdmStepConfigProvider.js';
 import type { FdmPluginDialogData } from '../fdmStepProviderTypes.js';
+import { FdmSpaceSelectionStep } from '../steps/FdmSpaceSelectionStep.js';
 
 const connectionRuntime: IdeGsmConnectionRuntimeProvider = {
   listConnections: vi.fn().mockResolvedValue([
@@ -217,5 +220,59 @@ describe('createFdmStepConfigProvider', () => {
         tabularSnapshotRefs: [],
       })
     ).toBe(true);
+  });
+
+  it('loads and creates spaces through the Jotai TanStack Query bridge', async () => {
+    const onChange = vi.fn();
+    const createSpace = vi.fn().mockResolvedValue({ spaceId: 'space-created' });
+    const listSpaces = vi.fn().mockResolvedValue({
+      defaultSpaceId: 'space-a',
+      spaces: [
+        {
+          spaceId: 'space-a',
+          label: 'Space A',
+        },
+      ],
+    });
+
+    render(
+      createElement(FdmSpaceSelectionStep, {
+        data: { connectionName: 'local' },
+        persistedConnection: { connectionName: 'local' },
+        health: { status: 'healthy' },
+        runtime: {
+          enabled: true,
+          fdmRuntime: {
+            listSpaces,
+            createSpace,
+            promoteNode: vi.fn(),
+          },
+        },
+        onChange,
+      })
+    );
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({ connectionName: 'local', spaceId: 'space-a' })
+    );
+    fireEvent.change(screen.getByLabelText('New FDM space'), {
+      target: { value: 'space-created' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() =>
+      expect(createSpace).toHaveBeenCalledWith(
+        expect.objectContaining({
+          connectionName: 'local',
+          requestedName: 'space-created',
+        })
+      )
+    );
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        connectionName: 'local',
+        spaceId: 'space-created',
+      })
+    );
   });
 });

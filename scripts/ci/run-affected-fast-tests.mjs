@@ -98,7 +98,7 @@ const isTestFile = (filePath) => TEST_FILE_PATTERN.test(filePath);
 const isRunnableSourceFile = (filePath) =>
   SOURCE_FILE_PATTERN.test(filePath) && !filePath.endsWith('.d.ts');
 
-export const selectRelatedTests = ({ changedPaths, cwd = process.cwd() }) => {
+export const selectChangedPackages = ({ changedPaths, cwd = process.cwd() }) => {
   const packages = new Map();
   for (const changedPath of changedPaths) {
     assertRepositoryPath(changedPath);
@@ -120,6 +120,12 @@ export const selectRelatedTests = ({ changedPaths, cwd = process.cwd() }) => {
     entry.changedFiles.push(changedPath);
     packages.set(packageRoot, entry);
   }
+
+  return [...packages.values()];
+};
+
+export const selectRelatedTests = ({ changedPaths, cwd = process.cwd() }) => {
+  const packages = selectChangedPackages({ changedPaths, cwd });
 
   for (const entry of packages.values()) {
     const absolutePackageRoot = path.join(cwd, entry.packageRoot);

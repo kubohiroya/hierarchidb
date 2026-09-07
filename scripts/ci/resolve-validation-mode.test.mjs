@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { classifyChangedPaths } from './resolve-validation-mode.mjs';
-import { selectRelatedTests } from './run-affected-fast-tests.mjs';
+import { selectChangedPackages, selectRelatedTests } from './run-affected-fast-tests.mjs';
 import { createTurboArguments } from './run-affected-validation.mjs';
 
 const BASE_SHA = '1111111111111111111111111111111111111111';
@@ -58,12 +58,23 @@ test('rejects empty and invalid path lists', () => {
   );
 });
 
-test('builds an exact changed-package Turbo filter', () => {
-  const args = createTurboArguments({ baseSha: BASE_SHA, headSha: HEAD_SHA });
+test('builds exact changed-package Turbo filters', () => {
+  const args = createTurboArguments({
+    baseSha: BASE_SHA,
+    headSha: HEAD_SHA,
+    packageNames: ['@hierarchidb/example-b', '@hierarchidb/example-a'],
+  });
   assert.deepEqual(args.slice(0, 5), ['exec', 'turbo', 'run', 'typecheck', '--filter']);
+  assert.equal(args[5], '@hierarchidb/example-a');
+  assert.equal(args[6], '--filter');
+  assert.equal(args[7], '@hierarchidb/example-b');
+  assert.equal(args[8], '--log-order=grouped');
+  assert.equal(args[9], '--output-logs=errors-only');
+});
+
+test('keeps SCM range Turbo filter as an explicit fallback', () => {
+  const args = createTurboArguments({ baseSha: BASE_SHA, headSha: HEAD_SHA });
   assert.equal(args[5], `[${BASE_SHA}...${HEAD_SHA}]`);
-  assert.equal(args[6], '--log-order=grouped');
-  assert.equal(args[7], '--output-logs=errors-only');
 });
 
 test('allows affected Turbo task escalation through CI_AFFECTED_TASKS', () => {
@@ -79,6 +90,30 @@ test('allows affected Turbo task escalation through CI_AFFECTED_TASKS', () => {
       process.env.CI_AFFECTED_TASKS = previousTasks;
     }
   }
+});
+
+test('selects changed workspace packages without treating lockfiles as packages', () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'hdb-ci-changed-packages-'));
+  mkdirSync(path.join(cwd, 'packages/example/src'), { recursive: true });
+  writeFileSync(
+    path.join(cwd, 'packages/example/package.json'),
+    JSON.stringify({
+      name: '@hierarchidb/example',
+      scripts: {
+        test: 'vitest run',
+      },
+    })
+  );
+  writeFileSync(path.join(cwd, 'packages/example/src/index.ts'), '');
+
+  const selections = selectChangedPackages({
+    cwd,
+    changedPaths: ['packages/example/src/index.ts', 'pnpm-lock.yaml'],
+  });
+  assert.deepEqual(
+    selections.map((selection) => selection.packageName),
+    ['@hierarchidb/example']
+  );
 });
 
 test('selects changed and related package tests for fast PR validation', () => {

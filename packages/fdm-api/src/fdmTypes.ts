@@ -5,13 +5,20 @@ export const FDM_NODE_TYPE = 'fdm' as const;
 export const FDM_NODE_DATA_VERSION = 1 as const;
 
 export type FdmViewMode = 'lattice-3d' | 'matrix-2d' | 'map';
-export type FdmAxisDimension = 'profile' | 'dataset' | 'checkpoint' | 'compute';
+export type FdmCanonicalAxisDimension = 'parameterSet' | 'dataset' | 'timeline' | 'compute';
+export type FdmLegacyAxisDimension = 'profile' | 'checkpoint';
+export type FdmAxisDimension = FdmCanonicalAxisDimension | FdmLegacyAxisDimension;
 
 export interface FdmFilters extends Record<string, unknown> {
-  readonly profiles: readonly string[];
+  readonly parameterSets: readonly string[];
   readonly datasets: readonly string[];
   readonly computes: readonly string[];
-  readonly checkpoints: readonly string[];
+  readonly timelines: readonly string[];
+  readonly rangeProfiles?: readonly string[];
+  /** @deprecated Use parameterSets. */
+  readonly profiles?: readonly string[];
+  /** @deprecated Use timelines. */
+  readonly checkpoints?: readonly string[];
 }
 
 export interface FdmAxisMap extends Record<string, unknown> {
@@ -52,6 +59,58 @@ export interface FdmDialogData extends Record<string, unknown> {
 export interface FdmSpaceCatalog extends Record<string, unknown> {
   readonly defaultSpaceId: string;
   readonly spaces: readonly IdeGsmFdmSpace[];
+  readonly entries?: readonly FdmSpaceCatalogEntry[];
+}
+
+export type FdmSpaceKind = 'baseline' | 'working' | 'fork' | 'archived' | 'unknown';
+export type FdmProjectionAvailability = 'available' | 'unavailable' | 'stale' | 'unsupported';
+
+export interface FdmSpaceCatalogMetadata extends Record<string, unknown> {
+  readonly defaultSpace?: boolean;
+  readonly visible?: boolean;
+  readonly archived?: boolean;
+  readonly owner?: string;
+  readonly layoutVersion?: string;
+  readonly legacyRoot?: boolean;
+  readonly order?: number;
+  readonly createdAt?: string;
+  readonly warnings?: readonly string[];
+  readonly defaults?: IdeGsmFdmSpace['defaults'];
+}
+
+export interface FdmSpaceCapabilityProjection extends Record<string, unknown> {
+  readonly canRead: boolean;
+  readonly canUpdate?: boolean;
+  readonly canArchive?: boolean;
+  readonly canDelete?: boolean;
+  readonly canFork?: boolean;
+  readonly canViewAcrossSpaces?: boolean;
+  readonly source: 'server' | 'unavailable';
+  readonly reason?: string;
+}
+
+export interface FdmSpaceProvenanceProjection extends Record<string, unknown> {
+  readonly status: FdmProjectionAvailability;
+  readonly spaceId: string;
+  readonly baselineSpaceId?: string;
+  readonly forkParentSpaceId?: string;
+  readonly source?: string;
+  readonly reason?: string;
+}
+
+export interface FdmProjectionOrigin extends Record<string, unknown> {
+  readonly spaceId: string;
+  readonly baselineSpaceId?: string;
+  readonly source?: string;
+}
+
+export interface FdmSpaceCatalogEntry extends Record<string, unknown> {
+  readonly spaceId: string;
+  readonly label?: string;
+  readonly kind: FdmSpaceKind;
+  readonly catalog: FdmSpaceCatalogMetadata;
+  readonly capability: FdmSpaceCapabilityProjection;
+  readonly provenance: FdmSpaceProvenanceProjection;
 }
 
 export interface FdmSpaceCreateInput extends Record<string, unknown> {

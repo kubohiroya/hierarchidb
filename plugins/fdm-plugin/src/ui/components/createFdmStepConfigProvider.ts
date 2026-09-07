@@ -7,6 +7,9 @@ import {
 import type { PluginStepConfig, PluginStepProps, StepData } from '@hierarchidb/plugin-base';
 import {
   createEmptyIdeGsmConnectionDraft,
+  type IdeGsmConnectionDraft,
+  type IdeGsmConnectionHealthResult,
+  type IdeGsmConnectionInput,
   IdeGsmConnectionStep,
   validateIdeGsmConnectionDraft,
 } from '@hierarchidb/ui-ide-gsm-connection';
@@ -48,7 +51,7 @@ export function createFdmStepConfigProvider(runtime: FdmPluginRuntime) {
               },
               disabled: props.disabled,
               provider: connectionRuntime,
-              onChange: (next) => {
+              onChange: (next: IdeGsmConnectionDraft) => {
                 props.onChange({
                   ...props.data,
                   connectionName: next.connectionName,
@@ -58,7 +61,7 @@ export function createFdmStepConfigProvider(runtime: FdmPluginRuntime) {
                       : undefined,
                 });
               },
-              onPersistedValueChange: (value) =>
+              onPersistedValueChange: (value: IdeGsmConnectionInput | null) =>
                 props.onChange({
                   ...props.data,
                   connectionName: value?.connectionName,
@@ -67,7 +70,13 @@ export function createFdmStepConfigProvider(runtime: FdmPluginRuntime) {
                       ? props.data.spaceId
                       : undefined,
                 }),
-              children: ({ persistedValue, health }) =>
+              children: ({
+                persistedValue,
+                health,
+              }: {
+                readonly persistedValue: IdeGsmConnectionInput | null;
+                readonly health: IdeGsmConnectionHealthResult;
+              }) =>
                 createElement(FdmSpaceSelectionStep, {
                   data: props.data,
                   persistedConnection: persistedValue,

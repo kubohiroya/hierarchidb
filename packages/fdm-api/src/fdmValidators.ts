@@ -3,35 +3,53 @@ import {
   FDM_NODE_DATA_VERSION,
   type FdmAxisDimension,
   type FdmAxisMap,
+  type FdmCanonicalAxisDimension,
   FdmContractError,
   type FdmDialogData,
   type FdmFilters,
+  type FdmLegacyAxisDimension,
   type FdmNodeData,
   type FdmNodeIdentity,
   type FdmPromotionResult,
+  type FdmSpaceCatalog,
+  type FdmSpaceCatalogEntry,
   type FdmViewMode,
 } from './fdmTypes.js';
 
 export const FDM_AXIS_DIMENSIONS: readonly FdmAxisDimension[] = [
+  'parameterSet',
   'profile',
   'dataset',
+  'timeline',
   'checkpoint',
   'compute',
+] as const;
+
+export const FDM_CANONICAL_AXIS_DIMENSIONS: readonly FdmCanonicalAxisDimension[] = [
+  'parameterSet',
+  'dataset',
+  'timeline',
+  'compute',
+] as const;
+
+export const FDM_LEGACY_AXIS_DIMENSIONS: readonly FdmLegacyAxisDimension[] = [
+  'profile',
+  'checkpoint',
 ] as const;
 
 export const FDM_NODE_DATA_V1_DEFAULTS = {
   version: FDM_NODE_DATA_VERSION,
   viewMode: 'lattice-3d',
   filters: {
-    profiles: [],
+    parameterSets: [],
     datasets: [],
     computes: [],
-    checkpoints: [],
+    timelines: [],
   },
   axisMap: {
-    xOuter: 'profile',
+    xOuter: 'parameterSet',
     xInner: 'dataset',
-    y: 'checkpoint',
+    y: 'timeline',
     z: 'compute',
   },
   tabularSnapshotRefs: [],
@@ -65,24 +83,25 @@ const FORBIDDEN_NODE_DATA_KEYS = [
 export function createFdmNodeData(identity: FdmNodeIdentity, existing?: FdmNodeData): FdmNodeData {
   assertNonEmptyString(identity.connectionName, 'connectionName');
   assertNonEmptyString(identity.spaceId, 'spaceId');
+  const normalizedExisting = existing === undefined ? undefined : normalizeFdmNodeData(existing);
   if (existing !== undefined) {
-    assertFdmNodeData(existing);
+    assertFdmNodeData(normalizedExisting);
   }
   const data = {
     version: FDM_NODE_DATA_VERSION,
     connectionName: identity.connectionName,
     spaceId: identity.spaceId,
-    ...(existing?.idegsmProjectNodeId === undefined
+    ...(normalizedExisting?.idegsmProjectNodeId === undefined
       ? {}
-      : { idegsmProjectNodeId: existing.idegsmProjectNodeId }),
-    ...(existing?.selectedStateDir === undefined
+      : { idegsmProjectNodeId: normalizedExisting.idegsmProjectNodeId }),
+    ...(normalizedExisting?.selectedStateDir === undefined
       ? {}
-      : { selectedStateDir: existing.selectedStateDir }),
-    viewMode: existing?.viewMode ?? FDM_NODE_DATA_V1_DEFAULTS.viewMode,
-    filters: cloneFilters(existing?.filters ?? FDM_NODE_DATA_V1_DEFAULTS.filters),
-    axisMap: { ...(existing?.axisMap ?? FDM_NODE_DATA_V1_DEFAULTS.axisMap) },
+      : { selectedStateDir: normalizedExisting.selectedStateDir }),
+    viewMode: normalizedExisting?.viewMode ?? FDM_NODE_DATA_V1_DEFAULTS.viewMode,
+    filters: cloneFilters(normalizedExisting?.filters ?? FDM_NODE_DATA_V1_DEFAULTS.filters),
+    axisMap: { ...(normalizedExisting?.axisMap ?? FDM_NODE_DATA_V1_DEFAULTS.axisMap) },
     tabularSnapshotRefs: [
-      ...(existing?.tabularSnapshotRefs ?? FDM_NODE_DATA_V1_DEFAULTS.tabularSnapshotRefs),
+      ...(normalizedExisting?.tabularSnapshotRefs ?? FDM_NODE_DATA_V1_DEFAULTS.tabularSnapshotRefs),
     ],
   };
   assertFdmNodeData(data);
@@ -93,29 +112,40 @@ export function createFdmNodeDataFromDraft(
   draft: FdmDialogData,
   existing?: FdmNodeData
 ): FdmNodeData {
+  const normalizedExisting = existing === undefined ? undefined : normalizeFdmNodeData(existing);
   if (existing !== undefined) {
-    assertFdmNodeData(existing);
+    assertFdmNodeData(normalizedExisting);
   }
+  const normalizedDraft = normalizeFdmDialogData(draft);
   const data = {
     version: FDM_NODE_DATA_VERSION,
-    connectionName: draft.connectionName,
-    spaceId: draft.spaceId,
-    ...(draft.idegsmProjectNodeId === undefined
-      ? existing?.idegsmProjectNodeId === undefined
+    connectionName: normalizedDraft.connectionName,
+    spaceId: normalizedDraft.spaceId,
+    ...(normalizedDraft.idegsmProjectNodeId === undefined
+      ? normalizedExisting?.idegsmProjectNodeId === undefined
         ? {}
-        : { idegsmProjectNodeId: existing.idegsmProjectNodeId }
-      : { idegsmProjectNodeId: draft.idegsmProjectNodeId }),
-    ...(draft.selectedStateDir === undefined
-      ? existing?.selectedStateDir === undefined
+        : { idegsmProjectNodeId: normalizedExisting.idegsmProjectNodeId }
+      : { idegsmProjectNodeId: normalizedDraft.idegsmProjectNodeId }),
+    ...(normalizedDraft.selectedStateDir === undefined
+      ? normalizedExisting?.selectedStateDir === undefined
         ? {}
-        : { selectedStateDir: existing.selectedStateDir }
-      : { selectedStateDir: draft.selectedStateDir }),
-    viewMode: draft.viewMode ?? existing?.viewMode ?? FDM_NODE_DATA_V1_DEFAULTS.viewMode,
-    filters: cloneFilters(draft.filters ?? existing?.filters ?? FDM_NODE_DATA_V1_DEFAULTS.filters),
-    axisMap: { ...(draft.axisMap ?? existing?.axisMap ?? FDM_NODE_DATA_V1_DEFAULTS.axisMap) },
+        : { selectedStateDir: normalizedExisting.selectedStateDir }
+      : { selectedStateDir: normalizedDraft.selectedStateDir }),
+    viewMode:
+      normalizedDraft.viewMode ??
+      normalizedExisting?.viewMode ??
+      FDM_NODE_DATA_V1_DEFAULTS.viewMode,
+    filters: cloneFilters(
+      normalizedDraft.filters ?? normalizedExisting?.filters ?? FDM_NODE_DATA_V1_DEFAULTS.filters
+    ),
+    axisMap: {
+      ...(normalizedDraft.axisMap ??
+        normalizedExisting?.axisMap ??
+        FDM_NODE_DATA_V1_DEFAULTS.axisMap),
+    },
     tabularSnapshotRefs: [
-      ...(draft.tabularSnapshotRefs ??
-        existing?.tabularSnapshotRefs ??
+      ...(normalizedDraft.tabularSnapshotRefs ??
+        normalizedExisting?.tabularSnapshotRefs ??
         FDM_NODE_DATA_V1_DEFAULTS.tabularSnapshotRefs),
     ],
   };
@@ -124,6 +154,41 @@ export function createFdmNodeDataFromDraft(
 }
 
 export function assertFdmNodeData(value: unknown): asserts value is FdmNodeData {
+  const record = assertRecord(value, 'FDM node data');
+  rejectForbiddenKeys(record, FORBIDDEN_NODE_DATA_KEYS, 'FDM node data');
+  if (record.version !== FDM_NODE_DATA_VERSION) {
+    throw new FdmContractError('FDM node data version must be 1');
+  }
+  assertNonEmptyString(record.connectionName, 'connectionName');
+  assertNonEmptyString(record.spaceId, 'spaceId');
+  assertOptionalNodeId(record.idegsmProjectNodeId, 'idegsmProjectNodeId');
+  assertOptionalTrimmedString(record.selectedStateDir, 'selectedStateDir');
+  assertViewMode(record.viewMode);
+  assertFdmFilters(record.filters);
+  assertFdmAxisMap(record.axisMap);
+  assertStringArray(record.tabularSnapshotRefs, 'tabularSnapshotRefs');
+}
+
+export function normalizeFdmNodeData(value: FdmNodeData): FdmNodeData {
+  assertFdmNodeDataShape(value);
+  const normalized = {
+    ...value,
+    filters: normalizeFdmFilters(value.filters),
+    axisMap: normalizeFdmAxisMap(value.axisMap),
+  };
+  assertFdmNodeData(normalized);
+  return normalized;
+}
+
+function normalizeFdmDialogData(value: FdmDialogData): FdmDialogData {
+  return {
+    ...value,
+    ...(value.filters === undefined ? {} : { filters: normalizeFdmFilters(value.filters) }),
+    ...(value.axisMap === undefined ? {} : { axisMap: normalizeFdmAxisMap(value.axisMap) }),
+  };
+}
+
+function assertFdmNodeDataShape(value: unknown): asserts value is FdmNodeData {
   const record = assertRecord(value, 'FDM node data');
   rejectForbiddenKeys(record, FORBIDDEN_NODE_DATA_KEYS, 'FDM node data');
   if (record.version !== FDM_NODE_DATA_VERSION) {
@@ -156,10 +221,13 @@ export function assertFdmPromotionResult(value: unknown): asserts value is FdmPr
 
 export function assertFdmFilters(value: unknown): asserts value is FdmFilters {
   const record = assertRecord(value, 'filters');
-  assertStringArray(record.profiles, 'filters.profiles');
+  assertStringArray(record.parameterSets ?? record.profiles, 'filters.parameterSets');
   assertStringArray(record.datasets, 'filters.datasets');
   assertStringArray(record.computes, 'filters.computes');
-  assertStringArray(record.checkpoints, 'filters.checkpoints');
+  assertStringArray(record.timelines ?? record.checkpoints, 'filters.timelines');
+  assertOptionalStringArray(record.profiles, 'filters.profiles');
+  assertOptionalStringArray(record.checkpoints, 'filters.checkpoints');
+  assertOptionalStringArray(record.rangeProfiles, 'filters.rangeProfiles');
 }
 
 export function assertFdmAxisMap(value: unknown): asserts value is FdmAxisMap {
@@ -170,9 +238,60 @@ export function assertFdmAxisMap(value: unknown): asserts value is FdmAxisMap {
       throw new FdmContractError(`axisMap.${['xOuter', 'xInner', 'y', 'z'][index]} is invalid`);
     }
   }
-  if (new Set(axes).size !== FDM_AXIS_DIMENSIONS.length) {
-    throw new FdmContractError('axisMap must be an exact permutation');
+  if (new Set(axes).size !== axes.length) {
+    throw new FdmContractError('axisMap must not contain duplicate dimensions');
   }
+}
+
+export function createFdmSpaceCatalogEntries(
+  catalog: FdmSpaceCatalog
+): readonly FdmSpaceCatalogEntry[] {
+  assertNonEmptyString(catalog.defaultSpaceId, 'defaultSpaceId');
+  return catalog.spaces.map((space) => {
+    assertNonEmptyString(space.spaceId, 'spaceId');
+    return {
+      spaceId: space.spaceId,
+      ...(space.label === null || space.label === undefined ? {} : { label: space.label }),
+      kind: space.archived === true ? 'archived' : 'unknown',
+      catalog: {
+        ...(space.defaultSpace === null || space.defaultSpace === undefined
+          ? {}
+          : { defaultSpace: space.defaultSpace }),
+        ...(space.visible === null || space.visible === undefined
+          ? {}
+          : { visible: space.visible }),
+        ...(space.archived === null || space.archived === undefined
+          ? {}
+          : { archived: space.archived }),
+        ...(space.owner === null || space.owner === undefined ? {} : { owner: space.owner }),
+        ...(space.layoutVersion === null || space.layoutVersion === undefined
+          ? {}
+          : { layoutVersion: space.layoutVersion }),
+        ...(space.legacyRoot === null || space.legacyRoot === undefined
+          ? {}
+          : { legacyRoot: space.legacyRoot }),
+        ...(space.order === null || space.order === undefined ? {} : { order: space.order }),
+        ...(space.createdAt === null || space.createdAt === undefined
+          ? {}
+          : { createdAt: space.createdAt }),
+        ...(space.defaults === null || space.defaults === undefined
+          ? {}
+          : { defaults: space.defaults }),
+        ...(space.warnings === null || space.warnings === undefined
+          ? {}
+          : { warnings: space.warnings }),
+      },
+      capability: {
+        canRead: true,
+        source: 'server',
+      },
+      provenance: {
+        status: 'unavailable',
+        spaceId: space.spaceId,
+        reason: 'FDM_SPACE_PROVENANCE_UNAVAILABLE',
+      },
+    } satisfies FdmSpaceCatalogEntry;
+  });
 }
 
 function assertRecord(value: unknown, label: string): Record<string, unknown> {
@@ -231,11 +350,39 @@ function assertStringArray(value: unknown, fieldName: string): asserts value is 
   }
 }
 
+function assertOptionalStringArray(
+  value: unknown,
+  fieldName: string
+): asserts value is readonly string[] | undefined {
+  if (value === undefined) return;
+  assertStringArray(value, fieldName);
+}
+
 function cloneFilters(filters: FdmFilters): FdmFilters {
+  return normalizeFdmFilters(filters);
+}
+
+function normalizeFdmFilters(filters: FdmFilters): FdmFilters {
   return {
-    profiles: [...filters.profiles],
+    parameterSets: [...(filters.parameterSets ?? filters.profiles ?? [])],
     datasets: [...filters.datasets],
     computes: [...filters.computes],
-    checkpoints: [...filters.checkpoints],
+    timelines: [...(filters.timelines ?? filters.checkpoints ?? [])],
+    ...(filters.rangeProfiles === undefined ? {} : { rangeProfiles: [...filters.rangeProfiles] }),
   };
+}
+
+function normalizeFdmAxisMap(axisMap: FdmAxisMap): FdmAxisMap {
+  return {
+    xOuter: normalizeFdmAxisDimension(axisMap.xOuter),
+    xInner: normalizeFdmAxisDimension(axisMap.xInner),
+    y: normalizeFdmAxisDimension(axisMap.y),
+    z: normalizeFdmAxisDimension(axisMap.z),
+  };
+}
+
+function normalizeFdmAxisDimension(axis: FdmAxisDimension): FdmAxisDimension {
+  if (axis === 'profile') return 'parameterSet';
+  if (axis === 'checkpoint') return 'timeline';
+  return axis;
 }

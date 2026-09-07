@@ -1,4 +1,4 @@
-import type { FdmDialogData, FdmSpaceCatalog } from '@hierarchidb/fdm-api';
+import type { FdmDialogData } from '@hierarchidb/fdm-api';
 import type {
   IdeGsmConnectionHealthResult,
   IdeGsmConnectionInput,
@@ -16,8 +16,20 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Provider as JotaiProvider, useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useHydrateAtoms } from 'jotai/react/utils';
+import { createStore } from 'jotai/vanilla';
+import { queryClientAtom } from 'jotai-tanstack-query';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import type { FdmPluginRuntime } from '../fdmStepProviderTypes.js';
+import {
+  fdmSpaceCatalogQueryAtom,
+  fdmSpaceCreateMutationAtom,
+  fdmSpaceSelectionConnectionAtom,
+  fdmSpaceSelectionHealthAtom,
+  fdmSpaceSelectionRuntimeAtom,
+} from './fdmSpaceSelectionAtoms.js';
 
 export interface FdmSpaceSelectionStepProps {
   readonly data: FdmDialogData;
@@ -28,13 +40,55 @@ export interface FdmSpaceSelectionStepProps {
   readonly onChange: (next: FdmDialogData) => void;
 }
 
-type LoadState =
-  | { readonly status: 'idle' }
-  | { readonly status: 'loading' }
-  | { readonly status: 'loaded'; readonly catalog: FdmSpaceCatalog }
-  | { readonly status: 'failed'; readonly code: string };
+export function FdmSpaceSelectionStep(props: FdmSpaceSelectionStepProps) {
+  const store = useMemo(() => createStore(), []);
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      })
+  );
 
-export function FdmSpaceSelectionStep({
+  return (
+    <QueryClientProvider client={queryClient}>
+      <JotaiProviderBridge store={store} queryClient={queryClient}>
+        <FdmSpaceSelectionStepBody {...props} />
+      </JotaiProviderBridge>
+    </QueryClientProvider>
+  );
+}
+
+function JotaiProviderBridge({
+  store,
+  queryClient,
+  children,
+}: {
+  readonly store: ReturnType<typeof createStore>;
+  readonly queryClient: QueryClient;
+  readonly children: ReactNode;
+}) {
+  return (
+    <JotaiProvider store={store}>
+      <HydrateQueryClient queryClient={queryClient}>{children}</HydrateQueryClient>
+    </JotaiProvider>
+  );
+}
+
+function HydrateQueryClient({
+  queryClient,
+  children,
+}: {
+  readonly queryClient: QueryClient;
+  readonly children: ReactNode;
+}) {
+  useHydrateAtoms([[queryClientAtom, queryClient]]);
+  return children;
+}
+
+function FdmSpaceSelectionStepBody({
   data,
   persistedConnection,
   health,
@@ -42,78 +96,70 @@ export function FdmSpaceSelectionStep({
   disabled = false,
   onChange,
 }: FdmSpaceSelectionStepProps) {
-  const [loadState, setLoadState] = useState<LoadState>({ status: 'idle' });
   const [newSpaceName, setNewSpaceName] = useState('');
-  const [creating, setCreating] = useState(false);
+  const setRuntime = useSetAtom(fdmSpaceSelectionRuntimeAtom);
+  const setPersistedConnection = useSetAtom(fdmSpaceSelectionConnectionAtom);
+  const setHealth = useSetAtom(fdmSpaceSelectionHealthAtom);
+  const queryResult = useAtomValue(fdmSpaceCatalogQueryAtom);
+  const [createResult] = useAtom(fdmSpaceCreateMutationAtom);
   const fdmRuntime = runtime.fdmRuntime;
-  const connectionName = persistedConnection?.connectionName ?? '';
 
   useEffect(() => {
-    if (!fdmRuntime || !persistedConnection || health.status !== 'healthy') {
-      setLoadState({ status: 'idle' });
-      return;
-    }
-    const controller = new AbortController();
-    setLoadState({ status: 'loading' });
-    fdmRuntime
-      .listSpaces(persistedConnection.connectionName, controller.signal)
-      .then((catalog) => {
-        if (controller.signal.aborted) return;
-        setLoadState({ status: 'loaded', catalog });
-        if (!data.spaceId && catalog.defaultSpaceId.length > 0) {
-          onChange({ ...data, spaceId: catalog.defaultSpaceId });
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setLoadState({ status: 'failed', code: 'FDM_SPACES_UNAVAILABLE' });
-        }
-      });
-    return () => {
-      controller.abort();
-    };
-  }, [data, fdmRuntime, health.status, onChange, persistedConnection]);
+    setRuntime(runtime);
+  }, [runtime, setRuntime]);
+
+  useEffect(() => {
+    setPersistedConnection(persistedConnection);
+  }, [persistedConnection, setPersistedConnection]);
+
+  useEffect(() => {
+    setHealth(health);
+  }, [health, setHealth]);
+
+  useEffect(() => {
+    const catalog = queryResult.data;
+    if (!catalog || data.spaceId || catalog.defaultSpaceId.length === 0) return;
+    onChange({ ...data, spaceId: catalog.defaultSpaceId });
+  }, [data, onChange, queryResult.data]);
 
   const canCreate =
     !!fdmRuntime?.createSpace &&
     !!persistedConnection &&
     health.status === 'healthy' &&
     newSpaceName.trim().length > 0 &&
-    !creating;
+    !createResult.isPending;
 
   const createSpace = async () => {
     if (!fdmRuntime?.createSpace || !persistedConnection) return;
-    setCreating(true);
     try {
-      const created = await fdmRuntime.createSpace({
-        connectionName,
-        requestedName: newSpaceName.trim(),
-        signal: new AbortController().signal,
-      });
-      onChange({ ...data, spaceId: created.spaceId });
+      const spaceId = await createResult.mutateAsync(newSpaceName.trim());
+      onChange({ ...data, spaceId });
       setNewSpaceName('');
-    } finally {
-      setCreating(false);
+    } catch {
+      // The mutation atom exposes the error through createResult.error.
     }
   };
 
-  const spaces = loadState.status === 'loaded' ? loadState.catalog.spaces : [];
+  const spaces = queryResult.data?.spaces ?? [];
+  const loadError = queryResult.error ? 'FDM_SPACES_UNAVAILABLE' : undefined;
+  const createError = createResult.error ? 'FDM_SPACE_CREATE_FAILED' : undefined;
 
   return (
     <Stack spacing={2}>
       <Box aria-live="polite">
-        {loadState.status === 'idle' && (
+        {(!fdmRuntime || !persistedConnection || health.status !== 'healthy') && (
           <Typography variant="body2" color="text.secondary">
             Select a healthy connection to load FDM spaces.
           </Typography>
         )}
-        {loadState.status === 'loading' && (
+        {queryResult.isFetching ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={16} />
             <Typography variant="body2">Loading FDM spaces</Typography>
           </Stack>
-        )}
-        {loadState.status === 'failed' && <Alert severity="error">{loadState.code}</Alert>}
+        ) : null}
+        {loadError ? <Alert severity="error">{loadError}</Alert> : null}
+        {createError ? <Alert severity="error">{createError}</Alert> : null}
       </Box>
       <FormControl fullWidth disabled={disabled || spaces.length === 0}>
         <InputLabel id="fdm-space-label">FDM space</InputLabel>
@@ -146,7 +192,7 @@ export function FdmSpaceSelectionStep({
               void createSpace();
             }}
           >
-            Create
+            {createResult.isPending ? 'Creating' : 'Create'}
           </Button>
         </Stack>
       )}

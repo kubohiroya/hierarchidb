@@ -13,15 +13,15 @@ const response: FdmDashboardResponse = {
     spaceId: 'space-a',
     viewMode: 'lattice-3d',
     filters: {
-      profiles: [],
+      parameterSets: [],
       datasets: [],
       computes: [],
-      checkpoints: [],
+      timelines: [],
     },
     axisMap: {
-      xOuter: 'profile',
+      xOuter: 'parameterSet',
       xInner: 'dataset',
-      y: 'checkpoint',
+      y: 'timeline',
       z: 'compute',
     },
     tabularSnapshotRefs: [],
@@ -31,34 +31,34 @@ const response: FdmDashboardResponse = {
   stateDirectories: ['state-001'],
   selectedStateDir: 'state-001',
   dimensions: {
-    profiles: [
-      { id: 'profile-a', label: 'Profile A' },
-      { id: 'profile-b', label: 'Profile B' },
+    parameterSets: [
+      { id: 'parameter-a', label: 'Parameter A' },
+      { id: 'parameter-b', label: 'Parameter B' },
     ],
     datasets: [
       { id: 'dataset-a', label: 'Dataset A' },
       { id: 'dataset-b', label: 'Dataset B' },
     ],
     computes: [{ id: 'compute-a', label: 'Compute A' }],
-    checkpoints: [{ id: 'checkpoint-a', label: 'Checkpoint A' }],
+    timelines: [{ id: 'timeline-a', label: 'Timeline A' }],
   },
   cells: [
     {
       id: 'cell-a',
-      profile: 'profile-a',
+      parameterSet: 'parameter-a',
       dataset: 'dataset-a',
       compute: 'compute-a',
-      checkpoint: 'checkpoint-a',
+      timeline: 'timeline-a',
       status: 'running',
       message: 'running cell',
       resultRef: 'result-a',
     },
     {
       id: 'cell-b',
-      profile: 'profile-b',
+      parameterSet: 'parameter-b',
       dataset: 'dataset-b',
       compute: 'compute-a',
-      checkpoint: 'checkpoint-a',
+      timeline: 'timeline-a',
       status: 'succeeded',
     },
   ],
@@ -124,6 +124,89 @@ describe('FdmDashboardView', () => {
     expect(screen.getByText(/results\/results.csv/)).toBeInTheDocument();
   });
 
+  it('renders server-provided workflow and ruleset projections without inferring them', async () => {
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockResolvedValue({
+        ...response,
+        workflow: {
+          availability: 'available',
+          workflowId: 'workflow-a',
+          status: 'WAITING_FOR_HUMAN',
+          nextAction: 'request-agent-work',
+          operations: [
+            {
+              id: 'verify-baseline',
+              status: 'TERMINAL',
+              outcome: 'UNSUPPORTED_CAPABILITY',
+            },
+          ],
+        },
+        ruleset: {
+          availability: 'stale',
+          rulesetId: 'ruleset-a',
+          acceptedKnownIssues: [{ reason: 'Missing server issue number' }],
+          message: 'Ruleset requires server-side revalidation',
+        },
+      }),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('Workflow')).toBeInTheDocument();
+    expect(screen.getByText('WAITING_FOR_HUMAN')).toBeInTheDocument();
+    expect(
+      screen.getByText(/verify-baseline: TERMINAL \/ UNSUPPORTED_CAPABILITY/)
+    ).toBeInTheDocument();
+    expect(screen.getByText('Ruleset')).toBeInTheDocument();
+    expect(screen.getByText('ruleset-a')).toBeInTheDocument();
+    expect(screen.getByText(/accepted known issue: unavailable/)).toBeInTheDocument();
+  });
+
+  it('normalizes legacy saved node presentation before loading dashboard data', async () => {
+    const legacyNode = {
+      ...response.node,
+      filters: {
+        profiles: ['parameter-a'],
+        datasets: [],
+        computes: [],
+        checkpoints: ['timeline-a'],
+      },
+      axisMap: {
+        xOuter: 'profile',
+        xInner: 'dataset',
+        y: 'checkpoint',
+        z: 'compute',
+      },
+    };
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockResolvedValue(response),
+      performAction: vi.fn().mockResolvedValue(response),
+    };
+
+    render(<FdmDashboardView node={legacyNode as never} port={port} />);
+
+    expect(await screen.findByText('FDM Space A')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(port.loadDashboard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: {
+            parameterSets: ['parameter-a'],
+            datasets: [],
+            computes: [],
+            timelines: ['timeline-a'],
+          },
+          axisMap: {
+            xOuter: 'parameterSet',
+            xInner: 'dataset',
+            y: 'timeline',
+            z: 'compute',
+          },
+        })
+      )
+    );
+  });
+
   it('builds deterministic Three.js lattice vectors from axis mapping', () => {
     const points = buildFdmLatticePoints({
       cells: response.cells,
@@ -150,8 +233,8 @@ describe('FdmDashboardView', () => {
   it('swaps axis dimensions so every axis update remains a valid permutation', () => {
     expect(replaceFdmAxisDimension(response.node.axisMap, 'xOuter', 'dataset')).toEqual({
       xOuter: 'dataset',
-      xInner: 'profile',
-      y: 'checkpoint',
+      xInner: 'parameterSet',
+      y: 'timeline',
       z: 'compute',
     });
   });

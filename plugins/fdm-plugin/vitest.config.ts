@@ -20,6 +20,20 @@ export default defineConfig({
         replacement: path.resolve(workspaceRoot, 'packages/ui/ide-gsm-connection/src/index.ts'),
       },
       {
+        find: '@hierarchidb/ui-external-service-connection',
+        replacement: path.resolve(
+          workspaceRoot,
+          'packages/ui/external-service-connection/src/index.ts'
+        ),
+      },
+      {
+        find: '@hierarchidb/ui-external-service-health',
+        replacement: path.resolve(
+          workspaceRoot,
+          'packages/ui/external-service-health/src/index.ts'
+        ),
+      },
+      {
         find: '@hierarchidb/plugin-base',
         replacement: path.resolve(pluginBaseSrc, 'index.ts'),
       },
