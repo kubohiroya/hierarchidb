@@ -254,6 +254,13 @@ export interface FdmDashboardCellLogEvent extends Record<string, unknown> {
 
 export type FdmDashboardCellLogListener = (event: FdmDashboardCellLogEvent) => void;
 
+export interface FdmDashboardRuntimeEventSubscriptionInput extends Record<string, unknown> {
+  readonly node: FdmNodeData;
+  readonly selectedStateDir?: string;
+}
+
+export type FdmDashboardRuntimeEventListener = (event: FdmRuntimeEvent) => void;
+
 export interface FdmDashboardPort {
   readonly loadDashboard: (query: FdmDashboardQuery) => Promise<FdmDashboardResponse>;
   readonly performAction: (input: FdmDashboardActionInput) => Promise<FdmDashboardResponse>;
@@ -262,6 +269,10 @@ export interface FdmDashboardPort {
     input: FdmDashboardCellLogSubscriptionInput,
     onLog: FdmDashboardCellLogListener
   ) => () => void;
+  readonly subscribeRuntimeEvents?: (
+    input: FdmDashboardRuntimeEventSubscriptionInput,
+    onEvent: FdmDashboardRuntimeEventListener
+  ) => (() => void) | Promise<() => void>;
 }
 
 export const FDM_CELL_STATUSES: readonly FdmCellStatus[] = [

@@ -9,7 +9,9 @@ import {
   type FdmDashboardPort,
   type FdmDashboardQuery,
   type FdmDashboardResponse,
+  type FdmDashboardRuntimeEventSubscriptionInput,
   type FdmDimensionValue,
+  type FdmNodeData,
   type FdmRuntimeEvent,
   normalizeFdmDashboardResponse,
   type FdmDashboardCell as PortDashboardCell,
@@ -22,6 +24,9 @@ import type {
   FdmCellLogStreamPayload,
   FdmDashboardStatusInput,
   FdmDashboardStatusPayload,
+  FdmRuntimeEventListener,
+  FdmRuntimeEventPayload,
+  FdmRuntimeEventsInput,
   FdmVerifyInput,
   FdmVerifyReport,
   FdmDashboardCell as IdeGsmDashboardCell,
@@ -33,10 +38,25 @@ export interface IdeGsmFdmDashboardClient {
   ) => Promise<FdmDashboardStatusPayload>;
   readonly fdmCellDetail: (input: FdmCellDetailInput) => Promise<FdmCellDetailPayload>;
   readonly subscribeFdmCellLog: (input: FdmCellLogInput, onLog: FdmCellLogListener) => () => void;
+  readonly subscribeFdmRuntimeEvents?: (
+    input: FdmRuntimeEventsInput,
+    onEvent: FdmRuntimeEventListener
+  ) => () => void;
   readonly fdmSweep: (input: FdmVerifyInput) => Promise<FdmVerifyReport>;
 }
 
-export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): FdmDashboardPort {
+export interface IdeGsmFdmDashboardPortOptions {
+  readonly resolveProjectRelativePath?: (
+    node: FdmNodeData
+  ) => string | undefined | Promise<string | undefined>;
+}
+
+export function createIdeGsmFdmDashboardPort(
+  client: IdeGsmFdmDashboardClient,
+  options: IdeGsmFdmDashboardPortOptions = {}
+): FdmDashboardPort {
+  const resolveProjectRelativePath = options.resolveProjectRelativePath;
+  const subscribeFdmRuntimeEvents = client.subscribeFdmRuntimeEvents;
   const loadDashboard = async (query: FdmDashboardQuery): Promise<FdmDashboardResponse> => {
     const status = await client.fdmDashboardStatus(toStatusInput(query));
     return toDashboardResponse(query, status);
@@ -52,6 +72,25 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
       client.subscribeFdmCellLog(toCellLogInput(input), (event) => {
         onLog(toCellLogEvent(input.cell, event));
       }),
+    subscribeRuntimeEvents:
+      resolveProjectRelativePath && subscribeFdmRuntimeEvents
+        ? async (
+            input: FdmDashboardRuntimeEventSubscriptionInput,
+            onEvent
+          ): Promise<() => void> => {
+            const projectRelativePath = await resolveProjectRelativePath(input.node);
+            if (projectRelativePath === undefined) {
+              throw new FdmContractError('FDM_RUNTIME_EVENTS_PROJECT_PATH_UNAVAILABLE');
+            }
+            assertRuntimeProjectRelativePath(projectRelativePath);
+            return subscribeFdmRuntimeEvents(
+              toRuntimeEventsInput(input, projectRelativePath),
+              (event) => {
+                onEvent(toRuntimeEvent(event));
+              }
+            );
+          }
+        : undefined,
     performAction: async (input: FdmDashboardActionInput): Promise<FdmDashboardResponse> => {
       if (input.action === 'run-selected') {
         const current = await loadDashboard({
@@ -73,6 +112,62 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
       });
     },
   };
+}
+
+function assertRuntimeProjectRelativePath(projectRelativePath: string): void {
+  const segments = projectRelativePath.split(/[\\/]/u);
+  const isWindowsAbsolute = /^[A-Za-z]:[\\/]/u.test(projectRelativePath);
+  if (
+    projectRelativePath.length === 0 ||
+    projectRelativePath.trim() !== projectRelativePath ||
+    projectRelativePath.startsWith('/') ||
+    projectRelativePath.startsWith('\\') ||
+    isWindowsAbsolute ||
+    segments.includes('..')
+  ) {
+    throw new FdmContractError('FDM_RUNTIME_EVENTS_PROJECT_PATH_INVALID');
+  }
+}
+
+function toRuntimeEventsInput(
+  input: FdmDashboardRuntimeEventSubscriptionInput,
+  projectRelativePath: string
+): FdmRuntimeEventsInput {
+  return {
+    projectRelativePath,
+    stateDir: input.selectedStateDir,
+  };
+}
+
+function toRuntimeEvent(payload: FdmRuntimeEventPayload): FdmRuntimeEvent {
+  return {
+    id: [
+      'fdm-runtime',
+      payload.taskId ?? 'no-task',
+      payload.receivedAt ?? 'no-time',
+      payload.phase ?? 'no-phase',
+    ].join(':'),
+    status: toRuntimeCellStatus(payload),
+    message: payload.message ?? payload.phase ?? 'Runtime event',
+    occurredAt: payload.receivedAt ?? new Date(0).toISOString(),
+  };
+}
+
+function toRuntimeCellStatus(payload: FdmRuntimeEventPayload): FdmRuntimeEvent['status'] {
+  switch (payload.phase) {
+    case 'ACCEPTED':
+    case 'STARTED':
+    case 'PROGRESS':
+      return 'running';
+    case 'SUCCEEDED':
+      return 'succeeded';
+    case 'FAILED':
+      return 'failed';
+    case 'CANCELED':
+      return 'blocked';
+    default:
+      return 'idle';
+  }
 }
 
 function toCellInput(query: FdmDashboardCellDetailQuery): FdmCellDetailInput {

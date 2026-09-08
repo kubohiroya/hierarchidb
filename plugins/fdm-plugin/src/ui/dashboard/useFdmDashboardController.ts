@@ -50,6 +50,7 @@ export function useFdmDashboardController({
   const [actionResult] = useAtom(fdmDashboardActionAtom);
   const storedOnNodeDataChange = useAtomValue(fdmDashboardNodeChangeAtom);
   const [cellLogLines, setCellLogLines] = useState<readonly string[]>([]);
+  const [runtimeEvents, setRuntimeEvents] = useState(queryResult.data?.runtimeEvents ?? []);
 
   useEffect(() => {
     const normalizedNode = normalizeFdmNodeData(node);
@@ -95,6 +96,48 @@ export function useFdmDashboardController({
       }
     );
   }, [disabled, node, port, queryResult.data, selectedCellId]);
+
+  useEffect(() => {
+    setRuntimeEvents(queryResult.data?.runtimeEvents ?? []);
+  }, [queryResult.data?.runtimeEvents]);
+
+  useEffect(() => {
+    const response = queryResult.data;
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+    if (
+      disabled ||
+      port.subscribeRuntimeEvents === undefined ||
+      node === undefined ||
+      response === undefined
+    ) {
+      return;
+    }
+    void Promise.resolve(
+      port.subscribeRuntimeEvents(
+        {
+          node,
+          selectedStateDir: response.selectedStateDir,
+        },
+        (event) => {
+          if (disposed) return;
+          setRuntimeEvents((previous) => [...previous, event].slice(-32));
+        }
+      )
+    )
+      .then((dispose) => {
+        if (disposed) {
+          dispose();
+          return;
+        }
+        unsubscribe = dispose;
+      })
+      .catch(() => undefined);
+    return () => {
+      disposed = true;
+      unsubscribe?.();
+    };
+  }, [disabled, node, port, queryResult.data]);
 
   const updateNodePresentation = useCallback(
     (partial: Pick<FdmNodeData, 'viewMode' | 'filters' | 'axisMap'>) => {
@@ -170,6 +213,7 @@ export function useFdmDashboardController({
       response: queryResult.data,
       cellDetail: cellDetailResult.data,
       cellLogLines,
+      runtimeEvents,
       selectedCellId,
       selectedViewMode,
       filters,
