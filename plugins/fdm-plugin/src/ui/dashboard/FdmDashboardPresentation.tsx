@@ -252,6 +252,12 @@ function ProjectionStatusBar({
             {ruleset.version ? (
               <Chip size="small" label={ruleset.version} variant="outlined" />
             ) : null}
+            {ruleset.fingerprint ? (
+              <Chip size="small" label={ruleset.fingerprint} variant="outlined" />
+            ) : null}
+            {ruleset.digest ? (
+              <Chip size="small" label={ruleset.digest} variant="outlined" />
+            ) : null}
           </Stack>
           {ruleset.message ? (
             <Typography variant="caption" color="text.secondary">

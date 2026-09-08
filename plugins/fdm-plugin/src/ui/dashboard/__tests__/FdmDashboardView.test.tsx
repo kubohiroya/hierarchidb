@@ -273,6 +273,8 @@ describe('FdmDashboardView', () => {
         ruleset: {
           availability: 'stale',
           rulesetId: 'ruleset-a',
+          fingerprint: 'fingerprint-a',
+          digest: 'sha256:ruleset-a',
           acceptedKnownIssues: [{ reason: 'Missing server issue number' }],
           message: 'Ruleset requires server-side revalidation',
         },
@@ -289,6 +291,65 @@ describe('FdmDashboardView', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Ruleset')).toBeInTheDocument();
     expect(screen.getByText('ruleset-a')).toBeInTheDocument();
+    expect(screen.getByText('fingerprint-a')).toBeInTheDocument();
+    expect(screen.getByText('sha256:ruleset-a')).toBeInTheDocument();
+    expect(screen.getByText(/accepted known issue: unavailable/)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['WAITING_FOR_AGENT', 'request-agent-work', 'Agent work is required'],
+    ['RECHECKING_REPAIR', 'retry-operation', 'Repair recheck is running'],
+    ['COMPLETED_WITH_WAIVER', 'complete-workflow', 'Workflow completed with a server waiver'],
+  ] as const)(
+    'renders the server-provided workflow state %s',
+    async (status, nextAction, message) => {
+      const port: FdmDashboardPort = {
+        loadDashboard: vi.fn().mockResolvedValue({
+          ...response,
+          workflow: {
+            availability: 'available',
+            workflowId: `workflow-${status}`,
+            status,
+            nextAction,
+            message,
+          },
+        }),
+        performAction: vi.fn(),
+      };
+
+      render(<FdmDashboardView node={response.node} port={port} />);
+
+      expect(await screen.findByText(status)).toBeInTheDocument();
+      expect(screen.getByText(nextAction)).toBeInTheDocument();
+      expect(screen.getByText(message)).toBeInTheDocument();
+    }
+  );
+
+  it('renders unavailable and unsupported projection states as server contract messages', async () => {
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockResolvedValue({
+        ...response,
+        workflow: {
+          availability: 'unsupported',
+          message: 'Workflow projection is not exposed by this server',
+        },
+        ruleset: {
+          availability: 'unavailable',
+          message: 'Ruleset governance metadata is unavailable',
+          acceptedKnownIssues: [{ reason: 'Server did not provide an issue number' }],
+        },
+      }),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('unsupported')).toBeInTheDocument();
+    expect(
+      screen.getByText('Workflow projection is not exposed by this server')
+    ).toBeInTheDocument();
+    expect(screen.getByText('unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Ruleset governance metadata is unavailable')).toBeInTheDocument();
     expect(screen.getByText(/accepted known issue: unavailable/)).toBeInTheDocument();
   });
 

@@ -62,7 +62,7 @@ The initial implementation keeps node data version `1` and preserves existing se
 - Payloads that specify both old and new aliases with conflicting values are rejected.
 - Axis maps still contain the four visible dashboard slots, but each slot can choose either legacy or canonical axis names.
 - `fdmSweep` is the primary FDM sweep mutation. `fdmVerify` remains a compatibility mutation while upstream keeps exposing it.
-- Dedicated run/job lifecycle, workflow projection, ruleset governance, and lifecycle-aware space mutation stay gated until the matching ide-gsm schema capabilities are available.
+- Dedicated run/job lifecycle and lifecycle-aware space mutation stay gated until the matching ide-gsm schema capabilities are available. L4 workflow and L5 ruleset projections are represented as optional server-provided dashboard projections; unavailable, stale, and unsupported states are displayed without client-side inference.
 
 ## Dashboard adapter implementation
 
@@ -89,8 +89,8 @@ Phase B1 now keeps each layer represented by an executable fixture or an explici
 | L1 parameter set | `parameterSet` / `profile` saved-node normalization | covered |
 | L2 range snapshot | `resultRef` to `snapshot.resultRef` projection | covered |
 | L3 run/job | runtime-event bridge payload and forbidden credential-key rejection | covered |
-| L4 workflow | workflow projection acceptance and unknown enum rejection | covered |
-| L5 ruleset | ruleset governance projection acceptance | covered |
+| L4 workflow | workflow projection acceptance, full known enum coverage, unknown enum rejection, and representative UI states | covered |
+| L5 ruleset | ruleset governance projection acceptance, fingerprint/digest display, missing issue-number visibility, and unavailable/stale UI states | covered |
 | L6 space | space catalog metadata with explicit unavailable or unscoped capability provenance | covered, pending #1735/#1736 action/view expansion |
 
 Later issues should extend these fixtures instead of creating divergent local terminology. #1732 adds read-only intake for baseline/fork/lineage capability summaries without per-space inference, #1735 owns lifecycle dry-run/safety wiring, and #1736 owns fork/cross-space read-only dashboard views.
