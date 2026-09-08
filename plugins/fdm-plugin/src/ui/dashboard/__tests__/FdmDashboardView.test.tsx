@@ -155,6 +155,104 @@ describe('FdmDashboardView', () => {
     expect(screen.getByText(/results\/results.csv/)).toBeInTheDocument();
   });
 
+  it('renders recoverable query errors from the dashboard port', async () => {
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockRejectedValue(new Error('FDM_DASHBOARD_QUERY_FAILED')),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('FDM_DASHBOARD_QUERY_FAILED')).toBeInTheDocument();
+  });
+
+  it('invalidates and refetches the dashboard query after successful actions', async () => {
+    const refreshed: FdmDashboardResponse = {
+      ...response,
+      refreshedAt: '2026-08-30T00:00:10Z',
+      logs: ['job refreshed'],
+    };
+    let actionCompleted = false;
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn(() => Promise.resolve(actionCompleted ? refreshed : response)),
+      performAction: vi.fn(async () => {
+        actionCompleted = true;
+        return refreshed;
+      }),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('FDM Space A')).toBeInTheDocument();
+    const initialLoadCount = vi.mocked(port.loadDashboard).mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    await waitFor(() =>
+      expect(port.performAction).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'refresh' })
+      )
+    );
+    await waitFor(() => expect(port.loadDashboard).toHaveBeenCalledTimes(initialLoadCount + 1));
+    expect(screen.getByText('2026-08-30T00:00:10Z')).toBeInTheDocument();
+  });
+
+  it('keeps local-only cell and view changes out of dashboard query keys', async () => {
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockResolvedValue(response),
+      loadCellDetail: vi.fn().mockResolvedValue({
+        cell: response.cells[0],
+        latestLogLines: [],
+      }),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('FDM Space A')).toBeInTheDocument();
+    const initialLoadCount = vi.mocked(port.loadDashboard).mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: /FDM 3D cell cell-a running/ }));
+    await waitFor(() => expect(port.loadCellDetail).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('tab', { name: /2D matrix/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Map/ }));
+
+    expect(port.loadDashboard).toHaveBeenCalledTimes(initialLoadCount);
+  });
+
+  it('reloads dashboard data when server-scope filters change', async () => {
+    const filtered: FdmDashboardResponse = {
+      ...response,
+      cells: [response.cells[0]],
+      refreshedAt: '2026-08-30T00:00:20Z',
+    };
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn((query) =>
+        Promise.resolve(query.filters.parameterSets.includes('parameter-a') ? filtered : response)
+      ),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('FDM Space A')).toBeInTheDocument();
+    const initialLoadCount = vi.mocked(port.loadDashboard).mock.calls.length;
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'parameter sets' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Parameter A' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(port.loadDashboard).mock.calls.length).toBeGreaterThan(initialLoadCount)
+    );
+    expect(port.loadDashboard).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        filters: expect.objectContaining({
+          parameterSets: ['parameter-a'],
+        }),
+      })
+    );
+  });
+
   it('renders server-provided workflow and ruleset projections without inferring them', async () => {
     const port: FdmDashboardPort = {
       loadDashboard: vi.fn().mockResolvedValue({

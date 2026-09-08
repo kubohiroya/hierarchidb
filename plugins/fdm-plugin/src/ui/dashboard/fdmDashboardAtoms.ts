@@ -160,9 +160,11 @@ export const fdmDashboardActionAtom = atomWithMutation<
       });
       return normalizeFdmDashboardResponse(next).response;
     },
-    onSuccess: (next) => {
+    onSuccess: async () => {
       if (node === undefined) return;
-      queryClient.setQueryData(fdmDashboardQueryKey({ node, filters, axisMap }), next);
+      await queryClient.invalidateQueries({
+        queryKey: fdmDashboardQueryKey({ node, filters, axisMap }),
+      });
     },
   };
 });
