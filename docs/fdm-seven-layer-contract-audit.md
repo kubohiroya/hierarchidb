@@ -94,3 +94,7 @@ Phase B1 now keeps each layer represented by an executable fixture or an explici
 | L6 space | space catalog metadata with explicit unavailable or unscoped capability provenance | covered, pending #1735/#1736 action/view expansion |
 
 Later issues should extend these fixtures instead of creating divergent local terminology. #1732 adds read-only intake for baseline/fork/lineage capability summaries without per-space inference, #1735 owns lifecycle dry-run/safety wiring, and #1736 owns fork/cross-space read-only dashboard views.
+
+## L6 lifecycle safety
+
+`fdmSpaceDeleteDryRun` is the safe client helper for server-side FDM space delete/archive inspection. It always calls `fdmSpaceDelete` with `apply: false` and is tested separately from `fdmDirectoryRemove`. Destructive apply behavior and UI actions remain gated until the server contract provides reference-aware denial, authorization evidence, and explicit apply semantics.

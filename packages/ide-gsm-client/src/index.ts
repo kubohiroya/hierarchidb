@@ -10,6 +10,7 @@ export type {
   IdeGsmFdmSpace,
   IdeGsmFdmSpaceCreateInput,
   IdeGsmFdmSpaceDefaults,
+  IdeGsmFdmSpaceDeleteDryRunInput,
   IdeGsmFdmSpaceDeleteInput,
   IdeGsmFdmSpaceDeleteReport,
   IdeGsmFdmSpacesReport,

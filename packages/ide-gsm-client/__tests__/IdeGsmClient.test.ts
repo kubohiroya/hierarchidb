@@ -617,6 +617,42 @@ describe('directory read contracts', () => {
     });
   });
 
+  it('runs FDM space delete dry-run through the space lifecycle mutation only', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmSpaceDelete: {
+        apply: false,
+        archived: true,
+        byteCount: 1024,
+        confirmed: false,
+        deleted: false,
+        fileCount: 3,
+        physicalDelete: false,
+        spaceId: 'working',
+        topLevelEntries: ['runs', 'snapshots'],
+        spaces: null,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmSpaceDeleteDryRun({ spaceId: 'working', deleteFiles: true })
+    ).resolves.toMatchObject({
+      apply: false,
+      deleted: false,
+      physicalDelete: false,
+      spaceId: 'working',
+    });
+
+    expect(String(spy.mock.calls[0]?.[0])).toContain('fdmSpaceDelete');
+    expect(String(spy.mock.calls[0]?.[0])).not.toContain('fdmDirectoryRemove');
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      spaceId: 'working',
+      apply: false,
+      deleteFiles: true,
+    });
+  });
+
   it.each([
     [
       'project path',

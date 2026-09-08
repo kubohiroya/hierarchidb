@@ -12,6 +12,7 @@ import type {
   IdeGsmFdmSpace,
   IdeGsmFdmSpaceCreateInput,
   IdeGsmFdmSpaceDefaults,
+  IdeGsmFdmSpaceDeleteDryRunInput,
   IdeGsmFdmSpaceDeleteInput,
   IdeGsmFdmSpaceDeleteReport,
   IdeGsmFdmSpacesReport,
@@ -1674,6 +1675,16 @@ export class IdeGsmClient {
       fdmSpaceDeleteVariables(input),
       parseFdmSpaceDeleteReport
     );
+  }
+
+  async fdmSpaceDeleteDryRun(
+    input: IdeGsmFdmSpaceDeleteDryRunInput
+  ): Promise<IdeGsmFdmSpaceDeleteReport> {
+    return this.fdmSpaceDelete({
+      spaceId: input.spaceId,
+      apply: false,
+      deleteFiles: input.deleteFiles,
+    });
   }
 
   async fdmDashboardStatus(input: FdmDashboardStatusInput): Promise<FdmDashboardStatusPayload> {
