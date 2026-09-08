@@ -147,6 +147,9 @@ describe('createIdeGsmFdmDashboardPort', () => {
       port.performAction({
         node,
         action: 'run-selected',
+        filters: node.filters,
+        axisMap: node.axisMap,
+        selectedStateDir: 'state-a',
         selectedCellId: 'parameter-a::dataset-a::compute-a::timeline-a',
         signal: new AbortController().signal,
       })
@@ -189,6 +192,8 @@ describe('createIdeGsmFdmDashboardPort', () => {
       port.performAction({
         node,
         action: 'run-selected',
+        filters: node.filters,
+        axisMap: node.axisMap,
         selectedCellId: 'cell-a',
         signal: new AbortController().signal,
       })

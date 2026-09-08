@@ -37,9 +37,9 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
       if (input.action === 'run-selected') {
         const current = await loadDashboard({
           node: input.node,
-          filters: input.node.filters,
-          axisMap: input.node.axisMap,
-          selectedStateDir: input.node.selectedStateDir,
+          filters: input.filters,
+          axisMap: input.axisMap,
+          selectedStateDir: input.selectedStateDir,
           signal: input.signal,
         });
         const selectedCell = selectedActionCell(current.cells, input.selectedCellId);
@@ -47,9 +47,9 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
       }
       return loadDashboard({
         node: input.node,
-        filters: input.node.filters,
-        axisMap: input.node.axisMap,
-        selectedStateDir: input.node.selectedStateDir,
+        filters: input.filters,
+        axisMap: input.axisMap,
+        selectedStateDir: input.selectedStateDir,
         signal: input.signal,
       });
     },

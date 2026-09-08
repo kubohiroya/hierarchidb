@@ -211,6 +211,9 @@ export interface FdmDashboardQuery extends Record<string, unknown> {
 export interface FdmDashboardActionInput extends Record<string, unknown> {
   readonly node: FdmNodeData;
   readonly action: 'refresh' | 'reconnect' | 'run-selected' | 'open-result';
+  readonly filters: FdmFilters;
+  readonly axisMap: FdmAxisMap;
+  readonly selectedStateDir?: string;
   readonly selectedCellId?: string;
   readonly signal: AbortSignal;
 }

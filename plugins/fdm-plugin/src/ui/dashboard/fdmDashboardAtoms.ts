@@ -102,6 +102,9 @@ export const fdmDashboardActionAtom = atomWithMutation<
       const next = await port.performAction({
         node,
         action,
+        filters,
+        axisMap,
+        selectedStateDir: node.selectedStateDir,
         selectedCellId,
         signal: controller.signal,
       });
