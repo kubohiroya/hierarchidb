@@ -1,6 +1,10 @@
 import {
   assertFdmDashboardResponse,
   type FdmDashboardResponse,
+  type FdmWorkflowNextAction,
+  type FdmWorkflowOperationOutcome,
+  type FdmWorkflowOperationStatus,
+  type FdmWorkflowStatus,
   filterFdmCells,
   normalizeFdmDashboardResponse,
   projectFdmCellAxisKey,
@@ -275,6 +279,98 @@ describe('fdm dashboard validators', () => {
         },
       })
     ).not.toThrow();
+  });
+
+  it('accepts every upstream workflow projection enum value explicitly', () => {
+    const workflowStatuses: readonly FdmWorkflowStatus[] = [
+      'CREATED',
+      'PREFLIGHT_FAILED',
+      'RUNNING',
+      'DIAGNOSING',
+      'WAITING_FOR_AGENT',
+      'RECHECKING_REPAIR',
+      'WAITING_FOR_HUMAN',
+      'COMPLETED',
+      'COMPLETED_WITH_WAIVER',
+      'ABORTED',
+      'CANCELLED',
+      'VERIFYING_REPAIR',
+      'COMPLETE',
+    ];
+    const operationStatuses: readonly FdmWorkflowOperationStatus[] = [
+      'PENDING',
+      'READY',
+      'RUNNING',
+      'TERMINAL',
+      'UNKNOWN_AFTER_INTERRUPTION',
+    ];
+    const operationOutcomes: readonly FdmWorkflowOperationOutcome[] = [
+      'SUCCEEDED',
+      'DRIFTED',
+      'MISSING_ARTIFACT',
+      'UNSUPPORTED_CAPABILITY',
+      'EXECUTION_FAILED',
+      'CANCELLED',
+      'SKIPPED',
+    ];
+    const nextActions: readonly FdmWorkflowNextAction[] = [
+      'await-dependency',
+      'complete-workflow',
+      'execute-operation',
+      'request-agent-work',
+      'rerun-producer',
+      'run-diagnosis',
+      'retry-operation',
+    ];
+
+    for (const status of workflowStatuses) {
+      expect(() =>
+        assertFdmDashboardResponse({
+          ...response,
+          workflow: {
+            availability: 'available',
+            status,
+          },
+        })
+      ).not.toThrow();
+    }
+
+    for (const status of operationStatuses) {
+      expect(() =>
+        assertFdmDashboardResponse({
+          ...response,
+          workflow: {
+            availability: 'available',
+            operations: [{ id: `operation-${status}`, status }],
+          },
+        })
+      ).not.toThrow();
+    }
+
+    for (const outcome of operationOutcomes) {
+      expect(() =>
+        assertFdmDashboardResponse({
+          ...response,
+          workflow: {
+            availability: 'available',
+            operations: [{ id: `operation-${outcome}`, status: 'TERMINAL', outcome }],
+          },
+        })
+      ).not.toThrow();
+    }
+
+    for (const nextAction of nextActions) {
+      expect(() =>
+        assertFdmDashboardResponse({
+          ...response,
+          workflow: {
+            availability: 'available',
+            nextAction,
+            operations: [{ id: `operation-${nextAction}`, status: 'READY', nextAction }],
+          },
+        })
+      ).not.toThrow();
+    }
   });
 
   it('rejects unknown workflow projection enum values', () => {
