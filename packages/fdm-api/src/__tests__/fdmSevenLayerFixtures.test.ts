@@ -212,6 +212,20 @@ describe('FDM seven-layer contract fixtures', () => {
     }
   });
 
+  it('loads and validates the L6 cross-space read-only view fixture', () => {
+    const fixture = readFixture<{
+      crossSpace: FdmDashboardResponse['crossSpace'];
+    }>('l6-space/cross-space-readonly-view.json');
+
+    expect(() =>
+      assertFdmDashboardResponse(
+        baseDashboardResponse({
+          crossSpace: fixture.crossSpace,
+        })
+      )
+    ).not.toThrow();
+  });
+
   it('rejects negative fixtures for conflicts, credentials, and unknown workflow values', () => {
     const aliasConflict = readFixture<{ cell: JsonRecord; expectedError: string }>(
       'l0-timeline/negative-conflicting-checkpoint-axis.json'
@@ -223,6 +237,10 @@ describe('FDM seven-layer contract fixtures', () => {
       workflow: FdmDashboardResponse['workflow'];
       expectedError: string;
     }>('l4-workflow/negative-unknown-workflow-status.json');
+    const missingCrossSpaceOrigin = readFixture<{
+      crossSpace: FdmDashboardResponse['crossSpace'];
+      expectedError: string;
+    }>('l6-space/negative-cross-space-missing-origin.json');
 
     expect(() =>
       normalizeFdmDashboardResponse(
@@ -237,5 +255,10 @@ describe('FDM seven-layer contract fixtures', () => {
     expect(() =>
       assertFdmDashboardResponse(baseDashboardResponse({ workflow: unknownWorkflow.workflow }))
     ).toThrow(unknownWorkflow.expectedError);
+    expect(() =>
+      assertFdmDashboardResponse(
+        baseDashboardResponse({ crossSpace: missingCrossSpaceOrigin.crossSpace })
+      )
+    ).toThrow(missingCrossSpaceOrigin.expectedError);
   });
 });
