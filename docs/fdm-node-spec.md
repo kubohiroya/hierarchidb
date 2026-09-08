@@ -339,7 +339,8 @@ Queries:
 Mutations:
 
 - `fdmSpaceCreate`, `fdmSpaceUpdate`, and `fdmSpaceDelete`: explicit FDM space lifecycle operations.
-- `fdmVerify`, `fdmFill`, `fdmCompare`, `fdmDiagnose`, and `fdmClean`: dashboard workspace actions.
+- `fdmSweep`: primary FDM sweep launch action using canonical `parameterSet`, `timeline`, and `preflight` input names.
+- `fdmVerify`, `fdmFill`, `fdmCompare`, `fdmDiagnose`, and `fdmClean`: dashboard workspace actions. `fdmVerify` is a compatibility mutation while IDE-GSM still exposes it.
 - `fdmDirectoryRemove`: explicit FDM directory removal with dry-run/apply semantics.
 - `importProject` and `exportProject`: project snapshot workflow bridge where exposed by the FDM workflow.
 - `cancelTask(taskId)`: cancellation request for a server task.

@@ -5,7 +5,7 @@ This note records the hierarchidb-side implementation baseline for the FDM seven
 ## Upstream schema baseline
 
 - Source repository: `kubohiroya/ide-gsm`
-- Baseline ref used for this implementation pass: `origin/main` at `9e0a5a3a9`
+- Baseline ref used for this implementation pass: `origin/main` at `1f0c50d32634b8e08f0d80b8ec3a9e0e447e01fb`
 - Generated schema file: `api-idegsm/docs/generated/schema.graphql`
 - Schema generation/check commands in ide-gsm: `./gradlew api-idegsm:updateGraphqlSchema` and `./gradlew api-idegsm:graphqlSchemaCheck`
 
@@ -14,7 +14,7 @@ This note records the hierarchidb-side implementation baseline for the FDM seven
 The current ide-gsm schema exposes the following FDM dashboard operations:
 
 - Queries: `fdmDashboardStatus`, `fdmCellDetail`, `fdmRuntimeDiagnostics`, `fdmSpaces`, `fdmDirectoryTree`, `fdmDirectoryInfo`
-- Mutations: `fdmVerify`, `fdmFill`, `fdmCompare`, `fdmClean`, `fdmDiagnose`, `fdmSpaceCreate`, `fdmSpaceUpdate`, `fdmSpaceDelete`, `fdmDirectoryRemove`
+- Mutations: `fdmSweep`, `fdmVerify`, `fdmFill`, `fdmCompare`, `fdmClean`, `fdmDiagnose`, `fdmSpaceCreate`, `fdmSpaceUpdate`, `fdmSpaceDelete`, `fdmDirectoryRemove`
 - Subscriptions: `subscribeFdmCellLog`, `subscribeFdmRuntimeEvents`
 
 The same schema still carries legacy dashboard field names in several places:
@@ -24,9 +24,10 @@ The same schema still carries legacy dashboard field names in several places:
 - `FdmCellDetailInput.checkpoint`
 - `FdmCellLogInput.checkpoint`
 
-The action inputs already use `timeline` naming:
+The action inputs use canonical `parameterSet` / `timeline` naming:
 
 - `FdmVerifyInput.timeline`
+- `FdmVerifyInput.parameterSet`
 - `FdmFillInput.timeline`
 - `FdmCleanInput.timeline`
 - `FdmDiagnoseInput.timeline`
@@ -37,7 +38,6 @@ The action inputs already use `timeline` naming:
 
 These items remain planned or gated in the #1728 issue graph and must not be assumed available in hierarchidb implementation:
 
-- `fdmSweep`
 - Dedicated FDM run/job lifecycle operations beyond the generic active task fields
 - GraphQL objects for workflow, ruleset governance, baseline space, space fork, or cross-space lineage
 - FDM-specific capability keys in `ideGsmServerInfo.capabilities`
@@ -61,7 +61,8 @@ The initial implementation keeps node data version `1` and preserves existing se
 - Canonical-only payloads are backfilled with legacy `profile` and `checkpoint` aliases for existing UI code.
 - Payloads that specify both old and new aliases with conflicting values are rejected.
 - Axis maps still contain the four visible dashboard slots, but each slot can choose either legacy or canonical axis names.
-- `fdmSweep`, dedicated run/job lifecycle, workflow projection, ruleset governance, and lifecycle-aware space mutation stay gated until the matching ide-gsm schema capabilities are available.
+- `fdmSweep` is the primary FDM sweep mutation. `fdmVerify` remains a compatibility mutation while upstream keeps exposing it.
+- Dedicated run/job lifecycle, workflow projection, ruleset governance, and lifecycle-aware space mutation stay gated until the matching ide-gsm schema capabilities are available.
 
 ## Dashboard adapter implementation
 
@@ -71,7 +72,7 @@ The adapter maps `FdmDashboardPort.loadDashboard` to `IdeGsmClient.fdmDashboardS
 
 - Dashboard status filters use `timeline`.
 - Returned cells may still expose `checkpoint`; the adapter keeps it as a legacy compatibility alias while producing canonical `timeline`.
-- `run-selected` remains unavailable until the `fdmSweep` or dedicated run/job execution contract is confirmed.
+- `run-selected` remains adapter/UI-gated until #1737 wires dashboard actions, but the upstream `fdmSweep` mutation is confirmed and should be used for sweep launch requests.
 
 Cell detail/log subscriptions and runtime event subscriptions remain separate follow-up wiring because `fdmCellDetail`, `subscribeFdmCellLog`, and `subscribeFdmRuntimeEvents` use operation-specific inputs that must not be guessed from dashboard status alone.
 

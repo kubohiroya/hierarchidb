@@ -1099,12 +1099,99 @@ describe('FDM dashboard GraphQL contracts', () => {
         originalSourceParameterSet: 'source-parameters',
       })
     ).resolves.toMatchObject({ runId: 'run-1', workflowId: 'workflow-1' });
+    const requestDocument = String(spy.mock.calls[0]?.[0]);
+    expect(requestDocument).toContain('fdmSweep');
+    expect(requestDocument).not.toContain('$profile: [String]');
+    expect(requestDocument).not.toContain('profile: $profile');
+    expect(requestDocument).not.toContain('originalSourceProfile');
     expect(spy.mock.calls[0]?.[1]).toEqual({
       spaceId: 'default',
       parameterSet: ['baseline'],
       timeline: ['INIT_WORLD'],
       originalSourceParameterSet: 'source-parameters',
     });
+  });
+
+  it('normalizes deprecated fdmSweep aliases to canonical GraphQL variables', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request').mockResolvedValueOnce({
+      fdmSweep: {
+        axisPriority: null,
+        baselineCompute: null,
+        benchmarkAggregateMode: null,
+        calibrationRuntimeOptions: [],
+        command: ['sweep'],
+        compareSelectors: null,
+        compatibleSnapshotCommits: null,
+        compatibleSnapshotRevisions: null,
+        compute: null,
+        dataset: null,
+        dryRun: true,
+        executionKind: 'LOCAL',
+        logFile: null,
+        pathContext: null,
+        pid: 0,
+        planFile: null,
+        planName: null,
+        profile: ['legacy-profile'],
+        remoteDataset: null,
+        remoteInventoryFile: null,
+        remoteLabel: null,
+        runId: null,
+        snapshotLevel: null,
+        snapshotPolicy: null,
+        snapshotReusePolicy: null,
+        sources: null,
+        sshCompute: null,
+        sshProfile: null,
+        stateDir: null,
+        stateSegment: null,
+        timeline: null,
+        tolerance: null,
+        toleranceProfile: null,
+        useSharedBaseline: false,
+        workflowId: null,
+      },
+    });
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await client.fdmSweep({
+      spaceId: 'default',
+      profile: ['legacy-profile'],
+      originalSourceProfile: 'source-profile',
+      preflight: true,
+    });
+
+    expect(spy.mock.calls[0]?.[1]).toEqual({
+      spaceId: 'default',
+      parameterSet: ['legacy-profile'],
+      originalSourceParameterSet: 'source-profile',
+      preflight: true,
+    });
+  });
+
+  it('rejects conflicting fdmSweep parameter aliases before sending the request', async () => {
+    const { GraphQLClient } = await import('graphql-request');
+    const spy = vi.spyOn(GraphQLClient.prototype, 'request');
+    const client = new IdeGsmClient('https://endpoint.example', 'jwt-secret');
+
+    await expect(
+      client.fdmSweep({
+        spaceId: 'default',
+        parameterSet: ['canonical'],
+        profile: ['legacy'],
+      })
+    ).rejects.toThrow('parameterSet and profile must match when both are provided');
+    await expect(
+      client.fdmSweep({
+        spaceId: 'default',
+        originalSourceParameterSet: 'canonical-source',
+        originalSourceProfile: 'legacy-source',
+      })
+    ).rejects.toThrow(
+      'originalSourceParameterSet and originalSourceProfile must match when both are provided'
+    );
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('cancels FDM run and job lifecycle handles', async () => {
