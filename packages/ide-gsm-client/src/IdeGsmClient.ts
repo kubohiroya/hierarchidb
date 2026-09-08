@@ -353,6 +353,38 @@ function assertStringArray(value: readonly string[] | undefined, fieldName: stri
   }
 }
 
+function sameStringArray(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
+
+function canonicalStringArrayAlias(
+  canonicalValue: readonly string[] | undefined,
+  legacyValue: readonly string[] | undefined,
+  canonicalName: string,
+  legacyName: string
+): readonly string[] | undefined {
+  if (canonicalValue === undefined) return legacyValue;
+  if (legacyValue === undefined) return canonicalValue;
+  if (!sameStringArray(canonicalValue, legacyValue)) {
+    throw new Error(`${canonicalName} and ${legacyName} must match when both are provided`);
+  }
+  return canonicalValue;
+}
+
+function canonicalStringAlias(
+  canonicalValue: string | undefined,
+  legacyValue: string | undefined,
+  canonicalName: string,
+  legacyName: string
+): string | undefined {
+  if (canonicalValue === undefined) return legacyValue;
+  if (legacyValue === undefined) return canonicalValue;
+  if (canonicalValue !== legacyValue) {
+    throw new Error(`${canonicalName} and ${legacyName} must match when both are provided`);
+  }
+  return canonicalValue;
+}
+
 function fdmDashboardStatusVariables(input: FdmDashboardStatusInput): Record<string, unknown> {
   assertNonEmpty(input.spaceId, 'spaceId');
   const variables: Record<string, unknown> = { spaceId: input.spaceId };
@@ -407,10 +439,21 @@ function fdmVerifyVariables(input: FdmVerifyInput): Record<string, unknown> {
   assertStringArray(input.compatibleSnapshotCommits, 'compatibleSnapshotCommits');
   assertStringArray(input.compatibleSnapshotRevisions, 'compatibleSnapshotRevisions');
   assertStringArray(input.axisPriority, 'axisPriority');
+  const parameterSet = canonicalStringArrayAlias(
+    input.parameterSet,
+    input.profile,
+    'parameterSet',
+    'profile'
+  );
+  const originalSourceParameterSet = canonicalStringAlias(
+    input.originalSourceParameterSet,
+    input.originalSourceProfile,
+    'originalSourceParameterSet',
+    'originalSourceProfile'
+  );
   const variables: Record<string, unknown> = { spaceId: input.spaceId };
   addDefined(variables, 'planName', input.planName);
-  addDefined(variables, 'parameterSet', input.parameterSet);
-  addDefined(variables, 'profile', input.profile);
+  addDefined(variables, 'parameterSet', parameterSet);
   addDefined(variables, 'dataset', input.dataset);
   addDefined(variables, 'computeEngine', input.computeEngine);
   addDefined(variables, 'timeline', input.timeline);
@@ -431,8 +474,7 @@ function fdmVerifyVariables(input: FdmVerifyInput): Record<string, unknown> {
   addDefined(variables, 'remoteInventoryFile', input.remoteInventoryFile);
   addDefined(variables, 'remoteLabel', input.remoteLabel);
   addDefined(variables, 'sshProfile', input.sshProfile);
-  addDefined(variables, 'originalSourceParameterSet', input.originalSourceParameterSet);
-  addDefined(variables, 'originalSourceProfile', input.originalSourceProfile);
+  addDefined(variables, 'originalSourceParameterSet', originalSourceParameterSet);
   addDefined(variables, 'originalSourceProjectDir', input.originalSourceProjectDir);
   addDefined(variables, 'preflight', input.preflight);
   return variables;

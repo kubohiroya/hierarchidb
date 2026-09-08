@@ -852,7 +852,6 @@ export const ideGsmGraphqlDocuments = {
       $spaceId: String!
       $planName: String
       $parameterSet: [String]
-      $profile: [String]
       $dataset: [String]
       $computeEngine: [String]
       $timeline: [String]
@@ -874,7 +873,6 @@ export const ideGsmGraphqlDocuments = {
       $remoteLabel: String
       $sshProfile: String
       $originalSourceParameterSet: String
-      $originalSourceProfile: String
       $originalSourceProjectDir: String
       $preflight: Boolean
     ) {
@@ -883,7 +881,6 @@ export const ideGsmGraphqlDocuments = {
           spaceId: $spaceId
           planName: $planName
           parameterSet: $parameterSet
-          profile: $profile
           dataset: $dataset
           computeEngine: $computeEngine
           timeline: $timeline
@@ -905,7 +902,6 @@ export const ideGsmGraphqlDocuments = {
           remoteLabel: $remoteLabel
           sshProfile: $sshProfile
           originalSourceParameterSet: $originalSourceParameterSet
-          originalSourceProfile: $originalSourceProfile
           originalSourceProjectDir: $originalSourceProjectDir
           preflight: $preflight
         }
@@ -963,7 +959,6 @@ export const ideGsmGraphqlDocuments = {
       $spaceId: String!
       $planName: String
       $parameterSet: [String]
-      $profile: [String]
       $dataset: [String]
       $computeEngine: [String]
       $timeline: [String]
@@ -985,7 +980,6 @@ export const ideGsmGraphqlDocuments = {
       $remoteLabel: String
       $sshProfile: String
       $originalSourceParameterSet: String
-      $originalSourceProfile: String
       $originalSourceProjectDir: String
       $preflight: Boolean
     ) {
@@ -994,7 +988,6 @@ export const ideGsmGraphqlDocuments = {
           spaceId: $spaceId
           planName: $planName
           parameterSet: $parameterSet
-          profile: $profile
           dataset: $dataset
           computeEngine: $computeEngine
           timeline: $timeline
@@ -1016,7 +1009,6 @@ export const ideGsmGraphqlDocuments = {
           remoteLabel: $remoteLabel
           sshProfile: $sshProfile
           originalSourceParameterSet: $originalSourceParameterSet
-          originalSourceProfile: $originalSourceProfile
           originalSourceProjectDir: $originalSourceProjectDir
           preflight: $preflight
         }

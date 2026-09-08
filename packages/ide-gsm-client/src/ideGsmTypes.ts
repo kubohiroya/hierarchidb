@@ -243,6 +243,7 @@ export interface FdmVerifyInput {
   spaceId: string;
   planName?: string;
   parameterSet?: string[];
+  /** @deprecated Use parameterSet. */
   profile?: string[];
   dataset?: string[];
   computeEngine?: string[];
@@ -265,6 +266,7 @@ export interface FdmVerifyInput {
   remoteLabel?: string;
   sshProfile?: string;
   originalSourceParameterSet?: string;
+  /** @deprecated Use originalSourceParameterSet. */
   originalSourceProfile?: string;
   originalSourceProjectDir?: string;
   preflight?: boolean;
