@@ -1,3 +1,3 @@
 # L6 space fixtures
 
-Add fixtures here for FDM space catalog and lifecycle cases.
+Fixtures here cover FDM space catalog and lifecycle cases. Current ready-scope fixtures keep provenance explicit when upstream data is unavailable.

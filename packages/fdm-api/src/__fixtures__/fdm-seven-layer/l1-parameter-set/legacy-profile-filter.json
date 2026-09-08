@@ -1,0 +1,28 @@
+{
+  "description": "L1 parameter set compatibility: saved legacy profile filters normalize to parameterSets.",
+  "node": {
+    "version": 1,
+    "connectionName": "local",
+    "spaceId": "space-a",
+    "viewMode": "lattice-3d",
+    "filters": {
+      "profiles": ["baseline"],
+      "datasets": ["world"],
+      "computes": ["java"],
+      "checkpoints": ["INIT_WORLD"]
+    },
+    "axisMap": {
+      "xOuter": "profile",
+      "xInner": "dataset",
+      "y": "checkpoint",
+      "z": "compute"
+    },
+    "tabularSnapshotRefs": []
+  },
+  "expectedFilters": {
+    "parameterSets": ["baseline"],
+    "datasets": ["world"],
+    "computes": ["java"],
+    "timelines": ["INIT_WORLD"]
+  }
+}

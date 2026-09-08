@@ -1,3 +1,3 @@
 # L5 ruleset fixtures
 
-Add fixtures here for ruleset and governance cases once the upstream schema exposes them.
+Fixtures here cover ruleset and governance projection cases exposed by the upstream schema.

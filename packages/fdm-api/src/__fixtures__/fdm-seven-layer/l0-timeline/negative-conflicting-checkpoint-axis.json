@@ -1,0 +1,8 @@
+{
+  "description": "L0 negative compatibility: canonical timeline and legacy checkpoint must not conflict.",
+  "cell": {
+    "timeline": "timeline-a",
+    "checkpoint": "cp1"
+  },
+  "expectedError": "conflicts"
+}

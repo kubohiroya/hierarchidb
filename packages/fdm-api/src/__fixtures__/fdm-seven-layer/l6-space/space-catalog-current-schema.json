@@ -1,0 +1,31 @@
+{
+  "description": "L6 space catalog: current schema exposes catalog metadata while provenance remains unavailable.",
+  "catalog": {
+    "defaultSpaceId": "baseline",
+    "spaces": [
+      {
+        "spaceId": "baseline",
+        "label": "Baseline",
+        "defaultSpace": true,
+        "visible": true,
+        "archived": false,
+        "owner": "team-a",
+        "layoutVersion": "v2",
+        "legacyRoot": false,
+        "order": 1,
+        "createdAt": "2026-09-08T00:00:00Z",
+        "defaults": {
+          "profile": ["baseline"],
+          "dataset": ["world"],
+          "compute": ["java"],
+          "timeline": ["CP1"]
+        },
+        "warnings": ["provenance-unavailable"]
+      }
+    ]
+  },
+  "expectedProvenance": {
+    "status": "unavailable",
+    "reason": "FDM_SPACE_PROVENANCE_UNAVAILABLE"
+  }
+}

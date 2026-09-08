@@ -1,0 +1,10 @@
+{
+  "description": "L0 timeline compatibility: upstream cells may still expose checkpoint aliases.",
+  "dimensions": {
+    "checkpoints": [{ "id": "cp1", "label": "CP1" }]
+  },
+  "cell": {
+    "checkpoint": "cp1"
+  },
+  "expectedTimeline": "cp1"
+}

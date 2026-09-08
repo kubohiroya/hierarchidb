@@ -1,0 +1,19 @@
+{
+  "description": "L4 workflow projection: server-provided workflow state is accepted without local inference.",
+  "workflow": {
+    "availability": "available",
+    "workflowId": "workflow-a",
+    "status": "WAITING_FOR_AGENT",
+    "nextAction": "request-agent-work",
+    "origin": { "spaceId": "space-a" },
+    "operations": [
+      {
+        "id": "verify-baseline",
+        "label": "Verify baseline",
+        "status": "TERMINAL",
+        "outcome": "DRIFTED",
+        "nextAction": "request-agent-work"
+      }
+    ]
+  }
+}

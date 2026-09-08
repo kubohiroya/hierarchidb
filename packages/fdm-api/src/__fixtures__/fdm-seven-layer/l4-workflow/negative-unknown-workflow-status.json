@@ -1,0 +1,9 @@
+{
+  "description": "L4 negative projection: unknown workflow status values are rejected instead of defaulted.",
+  "workflow": {
+    "availability": "available",
+    "workflowId": "workflow-a",
+    "status": "DONE"
+  },
+  "expectedError": "workflow.status"
+}
