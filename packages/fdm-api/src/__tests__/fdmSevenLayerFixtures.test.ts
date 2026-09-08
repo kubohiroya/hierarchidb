@@ -187,6 +187,31 @@ describe('FDM seven-layer contract fixtures', () => {
     expect(entry?.capability).toMatchObject({ canRead: true, source: 'server' });
   });
 
+  it('loads and validates the L6 capability-present fixture without scoping provenance locally', () => {
+    const fixture = readFixture<{
+      catalog: Parameters<typeof createFdmSpaceCatalogEntries>[0];
+      expectedCapability: JsonRecord;
+      expectedProvenance: JsonRecord;
+    }>('l6-space/space-catalog-with-capabilities.json');
+
+    const entries = createFdmSpaceCatalogEntries(fixture.catalog);
+
+    expect(entries).toHaveLength(2);
+    for (const entry of entries) {
+      expect(entry.capability).toMatchObject({
+        canRead: true,
+        source: 'server',
+        ...fixture.expectedCapability,
+      });
+      expect(entry.capability).not.toHaveProperty('canFork');
+      expect(entry.capability).not.toHaveProperty('canViewAcrossSpaces');
+      expect(entry.provenance).toMatchObject({
+        spaceId: entry.spaceId,
+        ...fixture.expectedProvenance,
+      });
+    }
+  });
+
   it('rejects negative fixtures for conflicts, credentials, and unknown workflow values', () => {
     const aliasConflict = readFixture<{ cell: JsonRecord; expectedError: string }>(
       'l0-timeline/negative-conflicting-checkpoint-axis.json'

@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { IdeGsmFdmSpace } from '@hierarchidb/ide-gsm-client';
+import type { FdmCapabilitiesPayload, IdeGsmFdmSpace } from '@hierarchidb/ide-gsm-client';
 
 export const FDM_NODE_TYPE = 'fdm' as const;
 export const FDM_NODE_DATA_VERSION = 1 as const;
@@ -59,6 +59,7 @@ export interface FdmDialogData extends Record<string, unknown> {
 export interface FdmSpaceCatalog extends Record<string, unknown> {
   readonly defaultSpaceId: string;
   readonly spaces: readonly IdeGsmFdmSpace[];
+  readonly capabilities?: FdmCapabilitiesPayload | null;
   readonly entries?: readonly FdmSpaceCatalogEntry[];
 }
 
@@ -87,6 +88,10 @@ export interface FdmSpaceCapabilityProjection extends Record<string, unknown> {
   readonly canViewAcrossSpaces?: boolean;
   readonly source: 'server' | 'unavailable';
   readonly reason?: string;
+  readonly serverCapabilities?: readonly string[];
+  readonly baselineCount?: number;
+  readonly forkCount?: number;
+  readonly lineageCount?: number;
 }
 
 export interface FdmSpaceProvenanceProjection extends Record<string, unknown> {
