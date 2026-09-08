@@ -190,45 +190,10 @@
     "vitest": "^4.1.0"
   },
   "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=10.26.1"
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0 <12.0.0"
   },
-  "packageManager": "pnpm@10.29.3",
-  "pnpm": {
-    "overrides": {
-      "@biomejs/biome": "2.2.0",
-      "ast-types": "0.16.1",
-      "dexie": "4.2.0",
-      "@mui/system": "^7.3.6",
-      "@mui/material": "^7.3.6",
-      "@emotion/react": "11.14.0",
-      "@emotion/styled": "11.14.0",
-      "vite": "npm:rolldown-vite@7.2.10",
-      "@vitejs/plugin-react": "5.0.1",
-      "vite@*": "npm:rolldown-vite@7.2.10",
-      "@types/react": "^19.1.1",
-      "@types/react-dom": "^19.1.1",
-      "react-is": "^18.3.1",
-      "@types/node": "18.19.123",
-      "typescript": "5.8.2",
-      "type-fest": "0.21.3",
-      "type-fest@*": "0.21.3",
-      "i18next": "22.5.0",
-      "react-i18next": "12.3.1",
-      "@mui/icons-material": "^7.3.6",
-      "rollup": "4.59.0"
-    },
-    "ignoredBuiltDependencies": [
-      "@vaadin/vaadin-usage-statistics",
-      "better-sqlite3",
-      "esbuild",
-      "sharp",
-      "workerd"
-    ],
-    "patchedDependencies": {
-      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
-    }
-  },
+  "packageManager": "pnpm@11.25.0",
   "keywords": [
     "hierarchical-data",
     "tree-structure",
