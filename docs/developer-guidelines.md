@@ -7,6 +7,8 @@ strict, packages interoperable, and builds reproducible.
 
 ## Dependencies and Packaging
 
+- MUST: Pin the repository package manager with the root `packageManager` field. pnpm-specific workspace configuration, including overrides, build permissions, and patched dependencies, belongs in `pnpm-workspace.yaml`; do not add a root `package.json#pnpm` field.
+- MUST: pnpm 11 requires Node.js 22 or newer. Keep the root `engines` contract and CI runtime compatible with the pinned pnpm version.
 - MUST: Use `workspace:*` to reference sibling packages. Do not path-map to
   built artifacts (`dist/*`) in `tsconfig`. No per-package tsconfig aliasing
   to other packages' `dist`.
