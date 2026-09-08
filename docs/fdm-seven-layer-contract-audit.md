@@ -39,7 +39,7 @@ The action inputs use canonical `parameterSet` / `timeline` naming:
 These items remain planned or gated in the #1728 issue graph and must not be assumed available in hierarchidb implementation:
 
 - Dedicated FDM run/job lifecycle operations beyond the generic active task fields
-- GraphQL objects for workflow, ruleset governance, baseline space, space fork, or cross-space lineage
+- Full baseline-space, space-fork, and cross-space lineage projections in hierarchidb client/API contracts
 - FDM-specific capability keys in `ideGsmServerInfo.capabilities`
 
 ## Hierarchidb compatibility mapping
@@ -81,4 +81,16 @@ The adapter still does not infer `projectRelativePath` from `spaceId`; callers m
 ## Shared fixture layout
 
 Shared fixtures for this migration live under `packages/fdm-api/src/__fixtures__/fdm-seven-layer/`.
-Each layer directory is intentionally small at this stage; later issues should add executable schema/client/dashboard fixtures without creating divergent local terminology.
+Phase B1 now keeps each layer represented by an executable fixture or an explicit gated/unavailable fixture:
+
+| Layer | Fixture coverage | Status |
+| --- | --- | --- |
+| L0 timeline | `timeline` / `checkpoint` compatibility and conflict rejection | covered |
+| L1 parameter set | `parameterSet` / `profile` saved-node normalization | covered |
+| L2 range snapshot | `resultRef` to `snapshot.resultRef` projection | covered |
+| L3 run/job | runtime-event bridge payload and forbidden credential-key rejection | covered |
+| L4 workflow | workflow projection acceptance and unknown enum rejection | covered |
+| L5 ruleset | ruleset governance projection acceptance | covered |
+| L6 space | space catalog metadata with explicit unavailable provenance | covered, pending #1732 expansion |
+
+Later issues should extend these fixtures instead of creating divergent local terminology. #1732 owns baseline/fork provenance schema intake, #1735 owns lifecycle dry-run/safety wiring, and #1736 owns fork/cross-space read-only dashboard views after #1732 lands.

@@ -1,0 +1,10 @@
+{
+  "description": "L2 range snapshot compatibility: resultRef is projected into a canonical snapshot reference.",
+  "cell": {
+    "resultRef": "results/cp1/parity.yml"
+  },
+  "expectedSnapshot": {
+    "timelineId": "timeline-a",
+    "resultRef": "results/cp1/parity.yml"
+  }
+}

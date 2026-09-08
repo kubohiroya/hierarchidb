@@ -1,3 +1,3 @@
 # L1 parameter set fixtures
 
-Add fixtures here for `parameterSet` and legacy `profile` compatibility.
+Fixtures here cover `parameterSet` and legacy `profile` compatibility.

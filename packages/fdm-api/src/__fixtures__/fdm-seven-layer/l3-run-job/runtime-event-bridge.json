@@ -1,0 +1,10 @@
+{
+  "description": "L3 run/job bridge: dashboard runtime events carry cell progress without exposing credentials.",
+  "runtimeEvent": {
+    "id": "event-run-a",
+    "cellId": "cell-a",
+    "status": "running",
+    "message": "job job-a is running",
+    "occurredAt": "2026-09-08T02:45:00Z"
+  }
+}

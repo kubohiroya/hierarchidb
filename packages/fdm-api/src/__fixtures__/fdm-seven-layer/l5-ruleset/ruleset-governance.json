@@ -1,0 +1,18 @@
+{
+  "description": "L5 ruleset governance: accepted known issues and origin metadata are server-provided.",
+  "ruleset": {
+    "availability": "stale",
+    "rulesetId": "cp1-tolerance",
+    "version": "2026-09-08",
+    "fingerprint": "sha256:ruleset-a",
+    "acceptedKnownIssues": [
+      {
+        "issueNumber": 2488,
+        "issueUrl": "https://github.com/kubohiroya/ide-gsm/issues/2488",
+        "reason": "Metal CP1 drift is under certification review."
+      }
+    ],
+    "origin": { "spaceId": "space-a" },
+    "message": "Ruleset requires server-side revalidation"
+  }
+}
