@@ -59,6 +59,7 @@ describe('createIdeGsmFdmDashboardPort', () => {
           },
         ],
       }),
+      fdmSweep: vi.fn(),
     };
     const port: FdmDashboardPort = createIdeGsmFdmDashboardPort(client);
 
@@ -101,15 +102,98 @@ describe('createIdeGsmFdmDashboardPort', () => {
     });
   });
 
-  it('rejects run-selected until a confirmed execution contract is available', async () => {
+  it('runs fdmSweep for the selected dashboard cell and reloads status', async () => {
+    const statusPayload = {
+      generatedAt: '2026-09-07T00:00:00Z',
+      selectedSpaceId: 'space-a',
+      selectedStateDir: 'state-a',
+      availableStateDirs: ['state-a'],
+      parameterSet: ['parameter-a'],
+      profile: ['parameter-a'],
+      dataset: ['dataset-a'],
+      compute: ['compute-a'],
+      timeline: ['timeline-a'],
+      state: { status: 'READY' },
+      live: null,
+      startup: null,
+      cells: [
+        {
+          parameterSet: 'parameter-a',
+          profile: 'parameter-a',
+          dataset: 'dataset-a',
+          compute: 'compute-a',
+          timelinePoint: 'timeline-a',
+          checkpoint: 'timeline-a',
+          label: 'cell-a',
+          source: null,
+          bucket: 'READY',
+          rawStatus: 'READY',
+          accuracyLabel: null,
+          summaryFile: null,
+          current: false,
+          next: true,
+          blockingDrift: false,
+          variantCount: 1,
+        },
+      ],
+    };
+    const client = {
+      fdmDashboardStatus: vi.fn().mockResolvedValue(statusPayload),
+      fdmSweep: vi.fn().mockResolvedValue({ runId: 'run-1', workflowId: 'workflow-1' }),
+    };
+    const port = createIdeGsmFdmDashboardPort(client);
+
+    await expect(
+      port.performAction({
+        node,
+        action: 'run-selected',
+        filters: node.filters,
+        axisMap: node.axisMap,
+        selectedStateDir: 'state-a',
+        selectedCellId: 'parameter-a::dataset-a::compute-a::timeline-a',
+        signal: new AbortController().signal,
+      })
+    ).resolves.toMatchObject({
+      cells: [{ id: 'parameter-a::dataset-a::compute-a::timeline-a' }],
+    });
+
+    expect(client.fdmSweep).toHaveBeenCalledWith({
+      spaceId: 'space-a',
+      parameterSet: ['parameter-a'],
+      dataset: ['dataset-a'],
+      computeEngine: ['compute-a'],
+      timeline: ['timeline-a'],
+      stateDir: 'state-a',
+    });
+    expect(client.fdmDashboardStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects run-selected without a selected dashboard cell', async () => {
     const port = createIdeGsmFdmDashboardPort({
-      fdmDashboardStatus: vi.fn(),
+      fdmDashboardStatus: vi.fn().mockResolvedValue({
+        generatedAt: '2026-09-07T00:00:00Z',
+        selectedSpaceId: 'space-a',
+        selectedStateDir: null,
+        availableStateDirs: [],
+        parameterSet: [],
+        profile: [],
+        dataset: [],
+        compute: [],
+        timeline: [],
+        state: null,
+        live: null,
+        startup: null,
+        cells: [],
+      }),
+      fdmSweep: vi.fn(),
     });
 
     await expect(
       port.performAction({
         node,
         action: 'run-selected',
+        filters: node.filters,
+        axisMap: node.axisMap,
         selectedCellId: 'cell-a',
         signal: new AbortController().signal,
       })
