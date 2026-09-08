@@ -106,6 +106,7 @@ export interface FdmSpaceProvenanceProjection extends Record<string, unknown> {
 export interface FdmProjectionOrigin extends Record<string, unknown> {
   readonly spaceId: string;
   readonly baselineSpaceId?: string;
+  readonly forkParentSpaceId?: string;
   readonly source?: string;
 }
 

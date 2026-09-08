@@ -1,0 +1,15 @@
+{
+  "description": "L6 negative projection: available cross-space items must not default origin from the selected dashboard space.",
+  "crossSpace": {
+    "availability": "available",
+    "readOnly": true,
+    "viewId": "comparison-view-a",
+    "cells": [
+      {
+        "cellId": "cell-a",
+        "status": "succeeded"
+      }
+    ]
+  },
+  "expectedError": "crossSpace.cells.origin"
+}

@@ -1,6 +1,8 @@
 import {
   FDM_CELL_STATUSES,
   type FdmCompatibilityNotice,
+  type FdmCrossSpaceCellProjection,
+  type FdmCrossSpaceViewProjection,
   type FdmDashboardCell,
   type FdmDashboardConnectionState,
   type FdmDashboardDimensions,
@@ -8,6 +10,7 @@ import {
   type FdmDashboardResponse,
   type FdmDimensionValue,
   type FdmDirectoryEntry,
+  type FdmForkParentProvenanceProjection,
   type FdmResultLocation,
   type FdmRulesetGovernanceProjection,
   type FdmRuntimeEvent,
@@ -138,6 +141,7 @@ function assertNormalizedFdmDashboardResponse(
   assertResultLocations(record.resultLocations);
   assertWorkflowProjection(record.workflow);
   assertRulesetGovernanceProjection(record.ruleset);
+  assertCrossSpaceViewProjection(record.crossSpace);
   assertNonEmptyString(record.refreshedAt, 'refreshedAt');
   assertCompatibilityNotices(record.compatibility);
 }
@@ -378,6 +382,78 @@ function assertRulesetGovernanceProjection(
   if (record.updatedAt !== undefined) assertNonEmptyString(record.updatedAt, 'ruleset.updatedAt');
 }
 
+function assertCrossSpaceViewProjection(
+  value: unknown
+): asserts value is FdmCrossSpaceViewProjection | undefined {
+  if (value === undefined) return;
+  const record = assertRecord(value, 'crossSpace');
+  assertProjectionAvailability(record.availability, 'crossSpace.availability');
+  if (record.readOnly !== true) {
+    throw new FdmContractError('crossSpace.readOnly must be true');
+  }
+  if (record.viewId !== undefined) assertNonEmptyString(record.viewId, 'crossSpace.viewId');
+  assertProjectionOrigin(record.origin, 'crossSpace.origin');
+  if (record.cells !== undefined) assertCrossSpaceCells(record.cells);
+  if (record.forks !== undefined) assertForkParentProvenance(record.forks);
+  if (record.message !== undefined) assertNonEmptyString(record.message, 'crossSpace.message');
+  if (record.updatedAt !== undefined)
+    assertNonEmptyString(record.updatedAt, 'crossSpace.updatedAt');
+}
+
+function assertCrossSpaceCells(
+  value: unknown
+): asserts value is readonly FdmCrossSpaceCellProjection[] {
+  if (!Array.isArray(value)) {
+    throw new FdmContractError('crossSpace.cells must be an array');
+  }
+  const ids = new Set<string>();
+  for (const entry of value) {
+    const record = assertRecord(entry, 'cross-space cell');
+    assertNonEmptyString(record.cellId, 'crossSpace.cells.cellId');
+    if (ids.has(record.cellId)) {
+      throw new FdmContractError('crossSpace.cells contains duplicated cellId');
+    }
+    ids.add(record.cellId);
+    if (record.label !== undefined) assertNonEmptyString(record.label, 'crossSpace.cells.label');
+    if (record.origin === undefined) {
+      throw new FdmContractError('crossSpace.cells.origin is required');
+    }
+    assertProjectionOrigin(record.origin, 'crossSpace.cells.origin');
+    if (record.status !== undefined) assertCellStatus(record.status, 'crossSpace.cells.status');
+    if (record.snapshot !== undefined)
+      assertSnapshotRef(record.snapshot, 'crossSpace.cells.snapshot');
+    if (record.message !== undefined)
+      assertNonEmptyString(record.message, 'crossSpace.cells.message');
+  }
+}
+
+function assertForkParentProvenance(
+  value: unknown
+): asserts value is readonly FdmForkParentProvenanceProjection[] {
+  if (!Array.isArray(value)) {
+    throw new FdmContractError('crossSpace.forks must be an array');
+  }
+  for (const entry of value) {
+    const record = assertRecord(entry, 'fork provenance');
+    assertProjectionAvailability(record.availability, 'crossSpace.forks.availability');
+    if (record.origin === undefined) {
+      throw new FdmContractError('crossSpace.forks.origin is required');
+    }
+    assertProjectionOrigin(record.origin, 'crossSpace.forks.origin');
+    if (record.forkSpaceId !== undefined)
+      assertNonEmptyString(record.forkSpaceId, 'crossSpace.forks.forkSpaceId');
+    if (record.parentSpaceId !== undefined)
+      assertNonEmptyString(record.parentSpaceId, 'crossSpace.forks.parentSpaceId');
+    if (record.manifestRef !== undefined)
+      assertNonEmptyString(record.manifestRef, 'crossSpace.forks.manifestRef');
+    if (record.commit !== undefined) assertNonEmptyString(record.commit, 'crossSpace.forks.commit');
+    if (record.message !== undefined)
+      assertNonEmptyString(record.message, 'crossSpace.forks.message');
+    if (record.updatedAt !== undefined)
+      assertNonEmptyString(record.updatedAt, 'crossSpace.forks.updatedAt');
+  }
+}
+
 function assertAcceptedKnownIssues(value: unknown): void {
   if (!Array.isArray(value)) {
     throw new FdmContractError('ruleset.acceptedKnownIssues must be an array');
@@ -420,6 +496,9 @@ function assertProjectionOrigin(value: unknown, fieldName: string): void {
   assertNonEmptyString(record.spaceId, `${fieldName}.spaceId`);
   if (record.baselineSpaceId !== undefined) {
     assertNonEmptyString(record.baselineSpaceId, `${fieldName}.baselineSpaceId`);
+  }
+  if (record.forkParentSpaceId !== undefined) {
+    assertNonEmptyString(record.forkParentSpaceId, `${fieldName}.forkParentSpaceId`);
   }
   if (record.source !== undefined) assertNonEmptyString(record.source, `${fieldName}.source`);
 }

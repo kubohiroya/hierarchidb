@@ -353,6 +353,89 @@ describe('FdmDashboardView', () => {
     expect(screen.getByText(/accepted known issue: unavailable/)).toBeInTheDocument();
   });
 
+  it('renders cross-space projections as read-only server-provided views', async () => {
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockResolvedValue({
+        ...response,
+        crossSpace: {
+          availability: 'available',
+          readOnly: true,
+          viewId: 'comparison-view-a',
+          origin: {
+            spaceId: 'working',
+            baselineSpaceId: 'baseline',
+            source: 'fdmCrossSpaceView',
+          },
+          cells: [
+            {
+              cellId: 'baseline:cell-a',
+              label: 'Baseline cell',
+              origin: { spaceId: 'baseline', source: 'fdmCrossSpaceView' },
+              status: 'succeeded',
+            },
+            {
+              cellId: 'fork:cell-a',
+              label: 'Fork cell',
+              origin: { spaceId: 'fork-a', forkParentSpaceId: 'working' },
+              status: 'running',
+              message: 'Server marked this fork item as read-only',
+            },
+          ],
+          forks: [
+            {
+              availability: 'available',
+              origin: { spaceId: 'fork-a', forkParentSpaceId: 'working' },
+              forkSpaceId: 'fork-a',
+              parentSpaceId: 'working',
+              manifestRef: 'forks/fork-a/manifest.yml',
+            },
+          ],
+          message: 'Cross-space view is read-only',
+        },
+      }),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('Cross-space view')).toBeInTheDocument();
+    expect(screen.getByText('read-only')).toBeInTheDocument();
+    expect(screen.getByText('comparison-view-a')).toBeInTheDocument();
+    expect(screen.getByText('view space working')).toBeInTheDocument();
+    expect(screen.getByText('baseline baseline')).toBeInTheDocument();
+    expect(screen.getByText('source fdmCrossSpaceView')).toBeInTheDocument();
+    expect(screen.getByText(/Baseline cell: baseline \/ succeeded/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Fork cell: fork-a \/ running \/ Server marked this fork item as read-only/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/fork provenance: fork-a <- working \/ forks\/fork-a\/manifest.yml/)
+    ).toBeInTheDocument();
+    expect(screen.getByText('Cross-space view is read-only')).toBeInTheDocument();
+    expect(port.performAction).not.toHaveBeenCalled();
+  });
+
+  it('renders unavailable cross-space projections without local origin fallback', async () => {
+    const port: FdmDashboardPort = {
+      loadDashboard: vi.fn().mockResolvedValue({
+        ...response,
+        crossSpace: {
+          availability: 'unavailable',
+          readOnly: true,
+          message: 'Cross-space view is not exposed by this server',
+        },
+      }),
+      performAction: vi.fn(),
+    };
+
+    render(<FdmDashboardView node={response.node} port={port} />);
+
+    expect(await screen.findByText('Cross-space view')).toBeInTheDocument();
+    expect(screen.getByText('unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Cross-space view is not exposed by this server')).toBeInTheDocument();
+    expect(screen.queryByText('view space space-a')).not.toBeInTheDocument();
+  });
+
   it('normalizes legacy saved node presentation before loading dashboard data', async () => {
     const legacyNode = {
       ...response.node,

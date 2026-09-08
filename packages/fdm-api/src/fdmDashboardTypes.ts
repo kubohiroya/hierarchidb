@@ -100,6 +100,7 @@ export interface FdmDashboardResponse extends Record<string, unknown> {
   readonly resultLocations: readonly FdmResultLocation[];
   readonly workflow?: FdmWorkflowProjection;
   readonly ruleset?: FdmRulesetGovernanceProjection;
+  readonly crossSpace?: FdmCrossSpaceViewProjection;
   readonly refreshedAt: string;
   readonly compatibility?: readonly FdmCompatibilityNotice[];
 }
@@ -179,6 +180,37 @@ export interface FdmRulesetGovernanceProjection extends Record<string, unknown> 
   readonly digest?: string;
   readonly acceptedKnownIssues?: readonly FdmAcceptedKnownIssueProjection[];
   readonly origin?: FdmProjectionOrigin;
+  readonly message?: string;
+  readonly updatedAt?: string;
+}
+
+export interface FdmForkParentProvenanceProjection extends Record<string, unknown> {
+  readonly availability: FdmProjectionAvailability;
+  readonly origin: FdmProjectionOrigin;
+  readonly forkSpaceId?: string;
+  readonly parentSpaceId?: string;
+  readonly manifestRef?: string;
+  readonly commit?: string;
+  readonly message?: string;
+  readonly updatedAt?: string;
+}
+
+export interface FdmCrossSpaceCellProjection extends Record<string, unknown> {
+  readonly cellId: string;
+  readonly label?: string;
+  readonly origin: FdmProjectionOrigin;
+  readonly status?: FdmCellStatus;
+  readonly snapshot?: FdmSnapshotRef;
+  readonly message?: string;
+}
+
+export interface FdmCrossSpaceViewProjection extends Record<string, unknown> {
+  readonly availability: FdmProjectionAvailability;
+  readonly readOnly: true;
+  readonly viewId?: string;
+  readonly origin?: FdmProjectionOrigin;
+  readonly cells?: readonly FdmCrossSpaceCellProjection[];
+  readonly forks?: readonly FdmForkParentProvenanceProjection[];
   readonly message?: string;
   readonly updatedAt?: string;
 }

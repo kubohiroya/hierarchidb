@@ -1,0 +1,55 @@
+{
+  "description": "L6 cross-space read-only view: every displayed item carries explicit server-provided origin.",
+  "crossSpace": {
+    "availability": "available",
+    "readOnly": true,
+    "viewId": "comparison-view-a",
+    "origin": {
+      "spaceId": "working",
+      "source": "fdmCrossSpaceView"
+    },
+    "cells": [
+      {
+        "cellId": "baseline:cell-a",
+        "label": "Baseline cell",
+        "origin": {
+          "spaceId": "baseline",
+          "source": "fdmCrossSpaceView"
+        },
+        "status": "succeeded",
+        "snapshot": {
+          "timelineId": "timeline-a",
+          "resultRef": "result-baseline-a"
+        }
+      },
+      {
+        "cellId": "fork:cell-a",
+        "label": "Fork cell",
+        "origin": {
+          "spaceId": "fork-a",
+          "baselineSpaceId": "baseline",
+          "forkParentSpaceId": "working",
+          "source": "fdmCrossSpaceView"
+        },
+        "status": "running",
+        "message": "Server marked this fork item as read-only"
+      }
+    ],
+    "forks": [
+      {
+        "availability": "available",
+        "origin": {
+          "spaceId": "fork-a",
+          "forkParentSpaceId": "working",
+          "source": "forkManifest"
+        },
+        "forkSpaceId": "fork-a",
+        "parentSpaceId": "working",
+        "manifestRef": "forks/fork-a/manifest.yml",
+        "commit": "abcdef0",
+        "message": "Fork provenance is server-provided"
+      }
+    ],
+    "message": "Cross-space view is read-only until the server exposes write-safe lifecycle operations"
+  }
+}

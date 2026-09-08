@@ -2,6 +2,7 @@ import {
   FDM_CANONICAL_AXIS_DIMENSIONS,
   type FdmAxisDimension,
   type FdmAxisMap,
+  type FdmCrossSpaceViewProjection,
   type FdmDashboardCell,
   type FdmDashboardCellDetail,
   type FdmDashboardDimensions,
@@ -135,6 +136,7 @@ export function FdmDashboardPresentation({
             onAxisChange={actions.setAxis}
           />
           <ProjectionStatusBar workflow={response.workflow} ruleset={response.ruleset} />
+          <CrossSpaceReadOnlyPanel crossSpace={response.crossSpace} />
           <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 1 }}>
             <Tabs
               value={state.selectedViewMode}
@@ -199,6 +201,82 @@ export function FdmDashboardPresentation({
         </>
       ) : null}
     </Box>
+  );
+}
+
+function CrossSpaceReadOnlyPanel({
+  crossSpace,
+}: {
+  readonly crossSpace?: FdmCrossSpaceViewProjection;
+}) {
+  if (!crossSpace) return null;
+  return (
+    <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+          <Typography variant="subtitle2">Cross-space view</Typography>
+          <Chip
+            size="small"
+            label={crossSpace.availability}
+            color={projectionColor(crossSpace.availability)}
+          />
+          <Chip size="small" label="read-only" variant="outlined" />
+          {crossSpace.viewId ? <Chip size="small" label={crossSpace.viewId} /> : null}
+          {crossSpace.origin ? <OriginChips prefix="view" origin={crossSpace.origin} /> : null}
+        </Stack>
+        {crossSpace.message ? (
+          <Typography variant="caption" color="text.secondary">
+            {crossSpace.message}
+          </Typography>
+        ) : null}
+        {crossSpace.cells?.map((cell) => (
+          <Typography key={cell.cellId} variant="caption" component="div">
+            {cell.label ?? cell.cellId}: {cell.origin.spaceId}
+            {cell.status ? ` / ${cell.status}` : ''}
+            {cell.message ? ` / ${cell.message}` : ''}
+          </Typography>
+        ))}
+        {crossSpace.forks?.map((fork, index) => (
+          <Typography
+            key={`${fork.forkSpaceId ?? fork.origin.spaceId}:${index}`}
+            variant="caption"
+            component="div"
+          >
+            fork provenance: {fork.forkSpaceId ?? fork.origin.spaceId}
+            {fork.parentSpaceId ? ` <- ${fork.parentSpaceId}` : ''}
+            {fork.manifestRef ? ` / ${fork.manifestRef}` : ''}
+          </Typography>
+        ))}
+      </Stack>
+    </Paper>
+  );
+}
+
+function OriginChips({
+  prefix,
+  origin,
+}: {
+  readonly prefix: string;
+  readonly origin: {
+    readonly spaceId: string;
+    readonly baselineSpaceId?: string;
+    readonly forkParentSpaceId?: string;
+    readonly source?: string;
+  };
+}) {
+  return (
+    <>
+      <Chip size="small" label={`${prefix} space ${origin.spaceId}`} variant="outlined" />
+      {origin.baselineSpaceId ? (
+        <Chip size="small" label={`baseline ${origin.baselineSpaceId}`} variant="outlined" />
+      ) : null}
+      {origin.forkParentSpaceId ? (
+        <Chip size="small" label={`parent ${origin.forkParentSpaceId}`} variant="outlined" />
+      ) : null}
+      {origin.source ? (
+        <Chip size="small" label={`source ${origin.source}`} variant="outlined" />
+      ) : null}
+    </>
   );
 }
 
