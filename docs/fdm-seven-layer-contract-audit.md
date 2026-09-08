@@ -72,9 +72,10 @@ The adapter maps `FdmDashboardPort.loadDashboard` to `IdeGsmClient.fdmDashboardS
 
 - Dashboard status filters use `timeline`.
 - Returned cells may still expose `checkpoint`; the adapter keeps it as a legacy compatibility alias while producing canonical `timeline`.
+- Cell detail and cell log requests map the selected canonical dashboard cell identity into the current `IdeGsmClient.fdmCellDetail` / `IdeGsmClient.subscribeFdmCellLog` input shape.
 - `run-selected` is wired through `IdeGsmClient.fdmSweep` for a selected dashboard cell. The adapter reloads the current dashboard, resolves the selected cell by canonical cell ID, sends `parameterSet` / `dataset` / `computeEngine` / `timeline` selectors, and reloads status after the mutation returns.
 
-Cell detail/log subscriptions and runtime event subscriptions remain separate follow-up wiring because `fdmCellDetail`, `subscribeFdmCellLog`, and `subscribeFdmRuntimeEvents` use operation-specific inputs that must not be guessed from dashboard status alone.
+Runtime event subscriptions remain blocked because `subscribeFdmRuntimeEvents` requires a safe `projectRelativePath` resolution path from the linked ide-gsm project root; `FdmNodeData` does not carry that server project path directly.
 
 ## Shared fixture layout
 

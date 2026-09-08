@@ -218,9 +218,50 @@ export interface FdmDashboardActionInput extends Record<string, unknown> {
   readonly signal: AbortSignal;
 }
 
+export interface FdmDashboardCellDetailQuery extends Record<string, unknown> {
+  readonly node: FdmNodeData;
+  readonly cell: FdmDashboardCell;
+  readonly selectedStateDir?: string;
+  readonly signal: AbortSignal;
+}
+
+export interface FdmDashboardCellDetail extends Record<string, unknown> {
+  readonly cell: FdmDashboardCell;
+  readonly generatedAt?: string;
+  readonly selectedStateDir?: string;
+  readonly startedAt?: string;
+  readonly updatedAt?: string;
+  readonly finishedAt?: string;
+  readonly elapsedMs?: number;
+  readonly estimatedRemainingMs?: number;
+  readonly estimatedCompletedAt?: string;
+  readonly logPath?: string;
+  readonly latestLogLines: readonly string[];
+}
+
+export interface FdmDashboardCellLogSubscriptionInput extends Record<string, unknown> {
+  readonly node: FdmNodeData;
+  readonly cell: FdmDashboardCell;
+  readonly selectedStateDir?: string;
+}
+
+export interface FdmDashboardCellLogEvent extends Record<string, unknown> {
+  readonly cell: FdmDashboardCell;
+  readonly generatedAt?: string;
+  readonly logPath?: string;
+  readonly latestLogLines: readonly string[];
+}
+
+export type FdmDashboardCellLogListener = (event: FdmDashboardCellLogEvent) => void;
+
 export interface FdmDashboardPort {
   readonly loadDashboard: (query: FdmDashboardQuery) => Promise<FdmDashboardResponse>;
   readonly performAction: (input: FdmDashboardActionInput) => Promise<FdmDashboardResponse>;
+  readonly loadCellDetail?: (query: FdmDashboardCellDetailQuery) => Promise<FdmDashboardCellDetail>;
+  readonly subscribeCellLog?: (
+    input: FdmDashboardCellLogSubscriptionInput,
+    onLog: FdmDashboardCellLogListener
+  ) => () => void;
 }
 
 export const FDM_CELL_STATUSES: readonly FdmCellStatus[] = [

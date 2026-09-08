@@ -59,6 +59,8 @@ describe('createIdeGsmFdmDashboardPort', () => {
           },
         ],
       }),
+      fdmCellDetail: vi.fn(),
+      subscribeFdmCellLog: vi.fn(),
       fdmSweep: vi.fn(),
     };
     const port: FdmDashboardPort = createIdeGsmFdmDashboardPort(client);
@@ -139,6 +141,8 @@ describe('createIdeGsmFdmDashboardPort', () => {
     };
     const client = {
       fdmDashboardStatus: vi.fn().mockResolvedValue(statusPayload),
+      fdmCellDetail: vi.fn(),
+      subscribeFdmCellLog: vi.fn(),
       fdmSweep: vi.fn().mockResolvedValue({ runId: 'run-1', workflowId: 'workflow-1' }),
     };
     const port = createIdeGsmFdmDashboardPort(client);
@@ -185,6 +189,8 @@ describe('createIdeGsmFdmDashboardPort', () => {
         startup: null,
         cells: [],
       }),
+      fdmCellDetail: vi.fn(),
+      subscribeFdmCellLog: vi.fn(),
       fdmSweep: vi.fn(),
     });
 
@@ -198,5 +204,110 @@ describe('createIdeGsmFdmDashboardPort', () => {
         signal: new AbortController().signal,
       })
     ).rejects.toBeInstanceOf(FdmContractError);
+  });
+
+  it('loads selected cell detail through the current ide-gsm timelinePoint input shape', async () => {
+    const client = {
+      fdmDashboardStatus: vi.fn(),
+      fdmCellDetail: vi.fn().mockResolvedValue({
+        generatedAt: '2026-09-08T00:00:00Z',
+        selectedStateDir: 'state-a',
+        stage: null,
+        startedAt: '2026-09-08T00:00:01Z',
+        updatedAt: '2026-09-08T00:00:02Z',
+        finishedAt: null,
+        elapsedMs: 1000,
+        estimatedRemainingMs: 2000,
+        estimatedCompletedAt: '2026-09-08T00:00:04Z',
+        logPath: 'logs/cell-a.log',
+        latestLogLines: ['line 1', 'line 2'],
+      }),
+      subscribeFdmCellLog: vi.fn(),
+      fdmSweep: vi.fn(),
+    };
+    const port = createIdeGsmFdmDashboardPort(client);
+
+    const detail = await port.loadCellDetail?.({
+      node,
+      cell: {
+        id: 'parameter-a::dataset-a::compute-a::timeline-a',
+        parameterSet: 'parameter-a',
+        dataset: 'dataset-a',
+        compute: 'compute-a',
+        timeline: 'timeline-a',
+        status: 'running',
+      },
+      selectedStateDir: 'state-a',
+      signal: new AbortController().signal,
+    });
+
+    expect(client.fdmCellDetail).toHaveBeenCalledWith({
+      spaceId: 'space-a',
+      parameterSet: 'parameter-a',
+      dataset: 'dataset-a',
+      compute: 'compute-a',
+      timelinePoint: 'timeline-a',
+      stateDir: 'state-a',
+    });
+    expect(detail).toMatchObject({
+      logPath: 'logs/cell-a.log',
+      latestLogLines: ['line 1', 'line 2'],
+    });
+  });
+
+  it('subscribes selected cell logs and maps stream payloads to port events', () => {
+    const unsubscribe = vi.fn();
+    const client = {
+      fdmDashboardStatus: vi.fn(),
+      fdmCellDetail: vi.fn(),
+      subscribeFdmCellLog: vi.fn((_input, onLog) => {
+        onLog({
+          generatedAt: '2026-09-08T00:00:00Z',
+          stage: null,
+          logPath: 'logs/cell-a.log',
+          latestLogLines: ['live line'],
+        });
+        return unsubscribe;
+      }),
+      fdmSweep: vi.fn(),
+    };
+    const port = createIdeGsmFdmDashboardPort(client);
+    const onLog = vi.fn();
+
+    const dispose = port.subscribeCellLog?.(
+      {
+        node,
+        cell: {
+          id: 'parameter-a::dataset-a::compute-a::timeline-a',
+          parameterSet: 'parameter-a',
+          dataset: 'dataset-a',
+          compute: 'compute-a',
+          timeline: 'timeline-a',
+          status: 'running',
+        },
+        selectedStateDir: 'state-a',
+      },
+      onLog
+    );
+
+    expect(client.subscribeFdmCellLog).toHaveBeenCalledWith(
+      {
+        spaceId: 'space-a',
+        parameterSet: 'parameter-a',
+        dataset: 'dataset-a',
+        compute: 'compute-a',
+        timelinePoint: 'timeline-a',
+        stateDir: 'state-a',
+      },
+      expect.any(Function)
+    );
+    expect(onLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        logPath: 'logs/cell-a.log',
+        latestLogLines: ['live line'],
+      })
+    );
+    dispose?.();
+    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 });

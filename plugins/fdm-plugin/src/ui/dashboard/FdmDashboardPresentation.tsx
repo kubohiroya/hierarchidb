@@ -3,6 +3,7 @@ import {
   type FdmAxisDimension,
   type FdmAxisMap,
   type FdmDashboardCell,
+  type FdmDashboardCellDetail,
   type FdmDashboardDimensions,
   type FdmFilters,
   type FdmRulesetGovernanceProjection,
@@ -184,6 +185,8 @@ export function FdmDashboardPresentation({
           </Paper>
           <DashboardDetails
             selectedCell={selectedCell}
+            cellDetail={state.cellDetail}
+            cellLogLines={state.cellLogLines}
             logs={response.logs}
             events={response.runtimeEvents}
             directoryEntries={response.directoryEntries}
@@ -740,6 +743,8 @@ function FdmMapView({
 
 function DashboardDetails({
   selectedCell,
+  cellDetail,
+  cellLogLines,
   logs,
   events,
   directoryEntries,
@@ -748,6 +753,8 @@ function DashboardDetails({
   disabled,
 }: {
   readonly selectedCell?: FdmDashboardCell;
+  readonly cellDetail?: FdmDashboardCellDetail;
+  readonly cellLogLines: readonly string[];
   readonly logs: readonly string[];
   readonly events: readonly {
     readonly id: string;
@@ -764,6 +771,9 @@ function DashboardDetails({
   readonly onOpenSelectedResult: () => void;
   readonly disabled?: boolean;
 }) {
+  const currentCellDetail =
+    selectedCell && cellDetail?.cell.id === selectedCell.id ? cellDetail : undefined;
+  const displayedLogs = [...logs, ...(currentCellDetail?.latestLogLines ?? []), ...cellLogLines];
   return (
     <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' } }}>
       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1, minHeight: 180 }}>
@@ -777,6 +787,15 @@ function DashboardDetails({
               sx={{ bgcolor: STATUS_COLORS[selectedCell.status], color: '#fff' }}
             />
             <Typography variant="caption">{selectedCell.message ?? 'No message'}</Typography>
+            {currentCellDetail?.startedAt ? (
+              <Typography variant="caption">Started {currentCellDetail.startedAt}</Typography>
+            ) : null}
+            {currentCellDetail?.updatedAt ? (
+              <Typography variant="caption">Updated {currentCellDetail.updatedAt}</Typography>
+            ) : null}
+            {currentCellDetail?.logPath ? (
+              <Typography variant="caption">Log {currentCellDetail.logPath}</Typography>
+            ) : null}
             <Stack direction="row" spacing={1}>
               <Button size="small" onClick={onRunSelected} disabled={disabled}>
                 Run
@@ -811,7 +830,7 @@ function DashboardDetails({
             {entry.logicalPath.join('/')} / {entry.label}
           </Typography>
         ))}
-        {logs.slice(-8).map((line, index) => (
+        {displayedLogs.slice(-8).map((line, index) => (
           <Typography key={`${line}:${index}`} variant="caption" component="pre" sx={{ m: 0 }}>
             {line}
           </Typography>

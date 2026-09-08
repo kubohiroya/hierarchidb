@@ -1,6 +1,7 @@
 import {
   type FdmAxisMap,
   type FdmDashboardActionInput,
+  type FdmDashboardCell,
   type FdmDashboardPort,
   type FdmDashboardQuery,
   type FdmDashboardResponse,
@@ -49,6 +50,20 @@ export function fdmDashboardQueryKey(input: {
   ];
 }
 
+export function fdmDashboardCellDetailQueryKey(input: {
+  readonly node: FdmNodeData;
+  readonly cell: FdmDashboardCell;
+  readonly selectedStateDir?: string;
+}): QueryKey {
+  return [
+    'fdm-dashboard-cell-detail',
+    input.node.connectionName,
+    input.node.spaceId,
+    input.selectedStateDir ?? '',
+    input.cell.id,
+  ];
+}
+
 export const fdmDashboardQueryAtom = atomWithQuery((get: Getter) => {
   const node = get(fdmDashboardNodeAtom);
   const port = get(fdmDashboardPortAtom);
@@ -73,6 +88,41 @@ export const fdmDashboardQueryAtom = atomWithQuery((get: Getter) => {
       };
       const next = await port.loadDashboard(query);
       return normalizeFdmDashboardResponse(next).response;
+    },
+  };
+});
+
+export const fdmDashboardCellDetailQueryAtom = atomWithQuery((get: Getter) => {
+  const node = get(fdmDashboardNodeAtom);
+  const port = get(fdmDashboardPortAtom);
+  const selectedCellId = get(fdmDashboardSelectedCellIdAtom);
+  const dashboardResult = get(fdmDashboardQueryAtom);
+  const dashboard = dashboardResult.data;
+  const selectedCell = dashboard?.cells.find((cell) => cell.id === selectedCellId);
+  return {
+    queryKey:
+      node === undefined || selectedCell === undefined
+        ? ['fdm-dashboard-cell-detail', 'missing-cell']
+        : fdmDashboardCellDetailQueryKey({
+            node,
+            cell: selectedCell,
+            selectedStateDir: dashboard?.selectedStateDir,
+          }),
+    enabled:
+      node !== undefined &&
+      port?.loadCellDetail !== undefined &&
+      selectedCell !== undefined &&
+      !dashboardResult.isFetching,
+    queryFn: async ({ signal }) => {
+      if (node === undefined || port?.loadCellDetail === undefined || selectedCell === undefined) {
+        throw new Error('FDM_DASHBOARD_CELL_DETAIL_NOT_READY');
+      }
+      return port.loadCellDetail({
+        node,
+        cell: selectedCell,
+        selectedStateDir: dashboard?.selectedStateDir,
+        signal,
+      });
     },
   };
 });
