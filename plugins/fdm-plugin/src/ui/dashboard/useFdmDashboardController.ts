@@ -8,10 +8,11 @@ import {
   normalizeFdmNodeData,
 } from '@hierarchidb/fdm-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fdmDashboardActionAtom,
   fdmDashboardAxisMapAtom,
+  fdmDashboardCellDetailQueryAtom,
   fdmDashboardDisabledAtom,
   fdmDashboardFiltersAtom,
   fdmDashboardNodeAtom,
@@ -45,8 +46,10 @@ export function useFdmDashboardController({
   const [filters, setFilters] = useAtom(fdmDashboardFiltersAtom);
   const [axisMap, setAxisMap] = useAtom(fdmDashboardAxisMapAtom);
   const queryResult = useAtomValue(fdmDashboardQueryAtom);
+  const cellDetailResult = useAtomValue(fdmDashboardCellDetailQueryAtom);
   const [actionResult] = useAtom(fdmDashboardActionAtom);
   const storedOnNodeDataChange = useAtomValue(fdmDashboardNodeChangeAtom);
+  const [cellLogLines, setCellLogLines] = useState<readonly string[]>([]);
 
   useEffect(() => {
     const normalizedNode = normalizeFdmNodeData(node);
@@ -67,6 +70,31 @@ export function useFdmDashboardController({
   useEffect(() => {
     setOnNodeDataChange(() => onNodeDataChange);
   }, [onNodeDataChange, setOnNodeDataChange]);
+
+  useEffect(() => {
+    const response = queryResult.data;
+    const selectedCell = response?.cells.find((cell) => cell.id === selectedCellId);
+    setCellLogLines([]);
+    if (
+      disabled ||
+      port.subscribeCellLog === undefined ||
+      node === undefined ||
+      response === undefined ||
+      selectedCell === undefined
+    ) {
+      return;
+    }
+    return port.subscribeCellLog(
+      {
+        node,
+        cell: selectedCell,
+        selectedStateDir: response.selectedStateDir,
+      },
+      (event) => {
+        setCellLogLines(event.latestLogLines);
+      }
+    );
+  }, [disabled, node, port, queryResult.data, selectedCellId]);
 
   const updateNodePresentation = useCallback(
     (partial: Pick<FdmNodeData, 'viewMode' | 'filters' | 'axisMap'>) => {
@@ -140,12 +168,16 @@ export function useFdmDashboardController({
   return {
     state: {
       response: queryResult.data,
+      cellDetail: cellDetailResult.data,
+      cellLogLines,
       selectedCellId,
       selectedViewMode,
       filters,
       axisMap,
-      loading: queryResult.isFetching || actionResult.isPending,
-      error: formatDashboardError(queryResult.error ?? actionResult.error),
+      loading: queryResult.isFetching || cellDetailResult.isFetching || actionResult.isPending,
+      error: formatDashboardError(
+        queryResult.error ?? cellDetailResult.error ?? actionResult.error
+      ),
     },
     actions,
   };

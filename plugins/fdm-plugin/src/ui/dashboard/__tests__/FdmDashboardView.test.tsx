@@ -97,6 +97,21 @@ describe('FdmDashboardView', () => {
   it('renders summary, 3D lattice, 2D matrix, map, feed, directory, and selected cell actions', async () => {
     const port: FdmDashboardPort = {
       loadDashboard: vi.fn().mockResolvedValue(response),
+      loadCellDetail: vi.fn().mockResolvedValue({
+        cell: response.cells[0],
+        startedAt: '2026-08-30T00:00:01Z',
+        updatedAt: '2026-08-30T00:00:02Z',
+        logPath: 'logs/cell-a.log',
+        latestLogLines: ['detail line'],
+      }),
+      subscribeCellLog: vi.fn((_input, onLog) => {
+        onLog({
+          cell: response.cells[0],
+          logPath: 'logs/cell-a.log',
+          latestLogLines: ['live line'],
+        });
+        return vi.fn();
+      }),
       performAction: vi.fn().mockResolvedValue(response),
     };
 
@@ -106,6 +121,11 @@ describe('FdmDashboardView', () => {
     expect(screen.getByRole('img', { name: 'FDM 3D lattice' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /FDM 3D cell cell-a running/ }));
     expect(screen.getByText('running cell')).toBeInTheDocument();
+    await waitFor(() => expect(port.loadCellDetail).toHaveBeenCalled());
+    await waitFor(() => expect(port.subscribeCellLog).toHaveBeenCalled());
+    expect(await screen.findByText('Log logs/cell-a.log')).toBeInTheDocument();
+    expect(screen.getByText('detail line')).toBeInTheDocument();
+    expect(screen.getByText('live line')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /2D matrix/ }));
     expect(screen.getByRole('grid', { name: 'FDM 2D matrix' })).toBeInTheDocument();

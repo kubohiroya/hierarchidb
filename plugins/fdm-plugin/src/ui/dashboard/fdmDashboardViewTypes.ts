@@ -2,6 +2,7 @@ import type {
   FdmAxisDimension,
   FdmAxisMap,
   FdmDashboardCell,
+  FdmDashboardCellDetail,
   FdmDashboardPort,
   FdmDashboardResponse,
   FdmFilters,
@@ -18,6 +19,8 @@ export interface FdmDashboardViewProps {
 
 export interface FdmDashboardControllerState {
   readonly response?: FdmDashboardResponse;
+  readonly cellDetail?: FdmDashboardCellDetail;
+  readonly cellLogLines: readonly string[];
   readonly selectedCellId?: string;
   readonly selectedViewMode: FdmViewMode;
   readonly filters: FdmFilters;

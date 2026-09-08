@@ -1,6 +1,10 @@
 import {
   FdmContractError,
   type FdmDashboardActionInput,
+  type FdmDashboardCellDetail,
+  type FdmDashboardCellDetailQuery,
+  type FdmDashboardCellLogEvent,
+  type FdmDashboardCellLogSubscriptionInput,
   type FdmDashboardDimensions,
   type FdmDashboardPort,
   type FdmDashboardQuery,
@@ -11,6 +15,11 @@ import {
   type FdmDashboardCell as PortDashboardCell,
 } from '@hierarchidb/fdm-api';
 import type {
+  FdmCellDetailInput,
+  FdmCellDetailPayload,
+  FdmCellLogInput,
+  FdmCellLogListener,
+  FdmCellLogStreamPayload,
   FdmDashboardStatusInput,
   FdmDashboardStatusPayload,
   FdmVerifyInput,
@@ -22,6 +31,8 @@ export interface IdeGsmFdmDashboardClient {
   readonly fdmDashboardStatus: (
     input: FdmDashboardStatusInput
   ) => Promise<FdmDashboardStatusPayload>;
+  readonly fdmCellDetail: (input: FdmCellDetailInput) => Promise<FdmCellDetailPayload>;
+  readonly subscribeFdmCellLog: (input: FdmCellLogInput, onLog: FdmCellLogListener) => () => void;
   readonly fdmSweep: (input: FdmVerifyInput) => Promise<FdmVerifyReport>;
 }
 
@@ -33,6 +44,14 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
 
   return {
     loadDashboard,
+    loadCellDetail: async (query: FdmDashboardCellDetailQuery): Promise<FdmDashboardCellDetail> => {
+      const detail = await client.fdmCellDetail(toCellInput(query));
+      return toCellDetail(query.cell, detail);
+    },
+    subscribeCellLog: (input: FdmDashboardCellLogSubscriptionInput, onLog): (() => void) =>
+      client.subscribeFdmCellLog(toCellLogInput(input), (event) => {
+        onLog(toCellLogEvent(input.cell, event));
+      }),
     performAction: async (input: FdmDashboardActionInput): Promise<FdmDashboardResponse> => {
       if (input.action === 'run-selected') {
         const current = await loadDashboard({
@@ -53,6 +72,59 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
         signal: input.signal,
       });
     },
+  };
+}
+
+function toCellInput(query: FdmDashboardCellDetailQuery): FdmCellDetailInput {
+  return {
+    spaceId: query.node.spaceId,
+    parameterSet: query.cell.parameterSet,
+    dataset: query.cell.dataset,
+    compute: query.cell.compute,
+    timelinePoint: query.cell.timeline,
+    stateDir: query.selectedStateDir,
+  };
+}
+
+function toCellLogInput(input: FdmDashboardCellLogSubscriptionInput): FdmCellLogInput {
+  return {
+    spaceId: input.node.spaceId,
+    parameterSet: input.cell.parameterSet,
+    dataset: input.cell.dataset,
+    compute: input.cell.compute,
+    timelinePoint: input.cell.timeline,
+    stateDir: input.selectedStateDir,
+  };
+}
+
+function toCellDetail(
+  cell: PortDashboardCell,
+  payload: FdmCellDetailPayload
+): FdmDashboardCellDetail {
+  return {
+    cell,
+    generatedAt: payload.generatedAt ?? undefined,
+    selectedStateDir: payload.selectedStateDir ?? undefined,
+    startedAt: payload.startedAt ?? undefined,
+    updatedAt: payload.updatedAt ?? undefined,
+    finishedAt: payload.finishedAt ?? undefined,
+    elapsedMs: payload.elapsedMs ?? undefined,
+    estimatedRemainingMs: payload.estimatedRemainingMs ?? undefined,
+    estimatedCompletedAt: payload.estimatedCompletedAt ?? undefined,
+    logPath: payload.logPath ?? undefined,
+    latestLogLines: payload.latestLogLines ?? [],
+  };
+}
+
+function toCellLogEvent(
+  cell: PortDashboardCell,
+  payload: FdmCellLogStreamPayload
+): FdmDashboardCellLogEvent {
+  return {
+    cell,
+    generatedAt: payload.generatedAt ?? undefined,
+    logPath: payload.logPath ?? undefined,
+    latestLogLines: payload.latestLogLines ?? [],
   };
 }
 
