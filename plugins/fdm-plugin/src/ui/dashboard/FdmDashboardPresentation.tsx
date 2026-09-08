@@ -419,6 +419,7 @@ function DimensionFilter({
       <Select
         multiple
         label={label}
+        inputProps={{ 'aria-label': label }}
         value={[...selected]}
         onChange={(event) => {
           const value = event.target.value;
@@ -450,6 +451,7 @@ function AxisSelect({
       <InputLabel>{label}</InputLabel>
       <Select
         label={label}
+        inputProps={{ 'aria-label': label }}
         value={value}
         onChange={(event) => onChange(event.target.value as FdmAxisDimension)}
       >
