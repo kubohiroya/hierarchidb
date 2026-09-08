@@ -107,6 +107,11 @@ export interface IdeGsmFdmSpaceDeleteInput {
   confirmation?: string;
 }
 
+export interface IdeGsmFdmSpaceDeleteDryRunInput {
+  spaceId: string;
+  deleteFiles?: boolean;
+}
+
 export interface IdeGsmFdmSpaceDeleteReport {
   apply: boolean;
   archived: boolean;

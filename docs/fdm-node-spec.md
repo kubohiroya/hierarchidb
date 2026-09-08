@@ -346,6 +346,8 @@ Mutations:
 - `cancelTask(taskId)`: cancellation request for a server task.
 - Existing `sim`, `calib`, and `check` command mutations through the owning `idegsm-project` command service, not a second FDM-specific command implementation.
 
+Client-side server-space deletion must use the explicit FDM space lifecycle API. `fdmSpaceDeleteDryRun` is the safe inspection helper and always sends `apply: false`; apply/archive/delete UI remains gated on server authorization and reference-aware semantics. `fdmDirectoryRemove` removes an entry inside a space and must not be used as server-side FDM space delete/archive.
+
 Subscriptions:
 
 - `subscribeFdmCellLog`: bounded live log snapshots for the selected cell.
