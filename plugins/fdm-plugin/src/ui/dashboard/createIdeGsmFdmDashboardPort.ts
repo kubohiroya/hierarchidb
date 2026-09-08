@@ -1,7 +1,5 @@
 import {
   FdmContractError,
-  normalizeFdmDashboardResponse,
-  type FdmDashboardCell as PortDashboardCell,
   type FdmDashboardActionInput,
   type FdmDashboardDimensions,
   type FdmDashboardPort,
@@ -9,17 +7,22 @@ import {
   type FdmDashboardResponse,
   type FdmDimensionValue,
   type FdmRuntimeEvent,
+  normalizeFdmDashboardResponse,
+  type FdmDashboardCell as PortDashboardCell,
 } from '@hierarchidb/fdm-api';
 import type {
-  FdmDashboardCell as IdeGsmDashboardCell,
   FdmDashboardStatusInput,
   FdmDashboardStatusPayload,
+  FdmVerifyInput,
+  FdmVerifyReport,
+  FdmDashboardCell as IdeGsmDashboardCell,
 } from '@hierarchidb/ide-gsm-client';
 
 export interface IdeGsmFdmDashboardClient {
   readonly fdmDashboardStatus: (
     input: FdmDashboardStatusInput
   ) => Promise<FdmDashboardStatusPayload>;
+  readonly fdmSweep: (input: FdmVerifyInput) => Promise<FdmVerifyReport>;
 }
 
 export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): FdmDashboardPort {
@@ -32,7 +35,15 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
     loadDashboard,
     performAction: async (input: FdmDashboardActionInput): Promise<FdmDashboardResponse> => {
       if (input.action === 'run-selected') {
-        throw new FdmContractError('FDM_RUN_SELECTED_REQUIRES_CONFIRMED_EXECUTION_CONTRACT');
+        const current = await loadDashboard({
+          node: input.node,
+          filters: input.node.filters,
+          axisMap: input.node.axisMap,
+          selectedStateDir: input.node.selectedStateDir,
+          signal: input.signal,
+        });
+        const selectedCell = selectedActionCell(current.cells, input.selectedCellId);
+        await client.fdmSweep(toSweepInput(current, selectedCell));
       }
       return loadDashboard({
         node: input.node,
@@ -43,6 +54,37 @@ export function createIdeGsmFdmDashboardPort(client: IdeGsmFdmDashboardClient): 
       });
     },
   };
+}
+
+function selectedActionCell(
+  cells: readonly PortDashboardCell[],
+  selectedCellId: string | undefined
+): PortDashboardCell {
+  if (selectedCellId === undefined) {
+    throw new FdmContractError('FDM_RUN_SELECTED_REQUIRES_SELECTED_CELL');
+  }
+  const selectedCell = cells.find((cell) => cell.id === selectedCellId);
+  if (selectedCell === undefined) {
+    throw new FdmContractError('FDM_RUN_SELECTED_CELL_NOT_FOUND');
+  }
+  return selectedCell;
+}
+
+function toSweepInput(
+  dashboard: FdmDashboardResponse,
+  selectedCell: PortDashboardCell
+): FdmVerifyInput {
+  const input: FdmVerifyInput = {
+    spaceId: dashboard.node.spaceId,
+    parameterSet: [selectedCell.parameterSet],
+    dataset: [selectedCell.dataset],
+    computeEngine: [selectedCell.compute],
+    timeline: [selectedCell.timeline],
+  };
+  if (dashboard.selectedStateDir !== undefined) {
+    input.stateDir = dashboard.selectedStateDir;
+  }
+  return input;
 }
 
 function toStatusInput(query: FdmDashboardQuery): FdmDashboardStatusInput {
@@ -87,15 +129,37 @@ function toDimensions(
   payload: FdmDashboardStatusPayload,
   cells: readonly IdeGsmDashboardCell[]
 ): FdmDashboardDimensions {
-  const parameterSetIds = mergeIds(payload.parameterSet, cells.map((cell) => cell.parameterSet));
-  const profileIds = mergeIds(payload.profile, cells.map((cell) => cell.profile));
-  const timelineIds = mergeIds(payload.timeline, cells.map((cell) => cell.timelinePoint));
-  const checkpointIds = mergeIds(undefined, cells.map((cell) => cell.checkpoint));
+  const parameterSetIds = mergeIds(
+    payload.parameterSet,
+    cells.map((cell) => cell.parameterSet)
+  );
+  const profileIds = mergeIds(
+    payload.profile,
+    cells.map((cell) => cell.profile)
+  );
+  const timelineIds = mergeIds(
+    payload.timeline,
+    cells.map((cell) => cell.timelinePoint)
+  );
+  const checkpointIds = mergeIds(
+    undefined,
+    cells.map((cell) => cell.checkpoint)
+  );
   return {
     parameterSets: toDimensionValues(parameterSetIds),
     profiles: toDimensionValues(profileIds.length > 0 ? profileIds : parameterSetIds),
-    datasets: toDimensionValues(mergeIds(payload.dataset, cells.map((cell) => cell.dataset))),
-    computes: toDimensionValues(mergeIds(payload.compute, cells.map((cell) => cell.compute))),
+    datasets: toDimensionValues(
+      mergeIds(
+        payload.dataset,
+        cells.map((cell) => cell.dataset)
+      )
+    ),
+    computes: toDimensionValues(
+      mergeIds(
+        payload.compute,
+        cells.map((cell) => cell.compute)
+      )
+    ),
     timelines: toDimensionValues(timelineIds.length > 0 ? timelineIds : checkpointIds),
     checkpoints: toDimensionValues(checkpointIds.length > 0 ? checkpointIds : timelineIds),
   };
