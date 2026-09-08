@@ -310,4 +310,101 @@ describe('createIdeGsmFdmDashboardPort', () => {
     dispose?.();
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
+
+  it('does not expose runtime event subscription without an injected project path resolver', () => {
+    const port = createIdeGsmFdmDashboardPort({
+      fdmDashboardStatus: vi.fn(),
+      fdmCellDetail: vi.fn(),
+      subscribeFdmCellLog: vi.fn(),
+      subscribeFdmRuntimeEvents: vi.fn(),
+      fdmSweep: vi.fn(),
+    });
+
+    expect(port.subscribeRuntimeEvents).toBeUndefined();
+  });
+
+  it('subscribes runtime events through a validated resolved project path', async () => {
+    const unsubscribe = vi.fn();
+    const client = {
+      fdmDashboardStatus: vi.fn(),
+      fdmCellDetail: vi.fn(),
+      subscribeFdmCellLog: vi.fn(),
+      subscribeFdmRuntimeEvents: vi.fn((_input, onEvent) => {
+        onEvent({
+          backendType: 'LOCAL',
+          command: 'fdmSweep',
+          compute: 'compute-a',
+          connectionType: 'local',
+          message: 'running sweep',
+          phase: 'PROGRESS',
+          progress: 50,
+          projectRelativePath: 'projects/sample',
+          receivedAt: '2026-09-08T00:00:00Z',
+          recovered: false,
+          taskId: 'task-a',
+          username: 'user-a',
+          backendMetadata: {},
+        });
+        return unsubscribe;
+      }),
+      fdmSweep: vi.fn(),
+    };
+    const port = createIdeGsmFdmDashboardPort(client, {
+      resolveProjectRelativePath: () => 'projects/sample',
+    });
+    const onEvent = vi.fn();
+
+    const dispose = await port.subscribeRuntimeEvents?.(
+      {
+        node,
+        selectedStateDir: 'state-a',
+      },
+      onEvent
+    );
+
+    expect(client.subscribeFdmRuntimeEvents).toHaveBeenCalledWith(
+      {
+        projectRelativePath: 'projects/sample',
+        stateDir: 'state-a',
+      },
+      expect.any(Function)
+    );
+    expect(onEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'fdm-runtime:task-a:2026-09-08T00:00:00Z:PROGRESS',
+        status: 'running',
+        message: 'running sweep',
+        occurredAt: '2026-09-08T00:00:00Z',
+      })
+    );
+    dispose?.();
+    expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it('rejects unsafe runtime event project paths before subscribing', async () => {
+    const subscribeFdmRuntimeEvents = vi.fn();
+    const port = createIdeGsmFdmDashboardPort(
+      {
+        fdmDashboardStatus: vi.fn(),
+        fdmCellDetail: vi.fn(),
+        subscribeFdmCellLog: vi.fn(),
+        subscribeFdmRuntimeEvents,
+        fdmSweep: vi.fn(),
+      },
+      {
+        resolveProjectRelativePath: () => '../outside',
+      }
+    );
+
+    await expect(
+      port.subscribeRuntimeEvents?.(
+        {
+          node,
+          selectedStateDir: 'state-a',
+        },
+        vi.fn()
+      )
+    ).rejects.toThrow('FDM_RUNTIME_EVENTS_PROJECT_PATH_INVALID');
+    expect(subscribeFdmRuntimeEvents).not.toHaveBeenCalled();
+  });
 });

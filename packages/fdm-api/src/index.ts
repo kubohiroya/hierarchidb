@@ -18,6 +18,8 @@ export {
   type FdmDashboardPort,
   type FdmDashboardQuery,
   type FdmDashboardResponse,
+  type FdmDashboardRuntimeEventListener,
+  type FdmDashboardRuntimeEventSubscriptionInput,
   type FdmDashboardSummary,
   type FdmDimensionValue,
   type FdmDirectoryEntry,

@@ -7,6 +7,7 @@ import type {
   FdmDashboardResponse,
   FdmFilters,
   FdmNodeData,
+  FdmRuntimeEvent,
   FdmViewMode,
 } from '@hierarchidb/fdm-api';
 
@@ -21,6 +22,7 @@ export interface FdmDashboardControllerState {
   readonly response?: FdmDashboardResponse;
   readonly cellDetail?: FdmDashboardCellDetail;
   readonly cellLogLines: readonly string[];
+  readonly runtimeEvents: readonly FdmRuntimeEvent[];
   readonly selectedCellId?: string;
   readonly selectedViewMode: FdmViewMode;
   readonly filters: FdmFilters;

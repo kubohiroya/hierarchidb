@@ -63,6 +63,8 @@ export function FdmDashboardPresentation({
   const response = state.response;
   const cells = response?.cells ?? [];
   const selectedCell = cells.find((cell) => cell.id === state.selectedCellId);
+  const runtimeEvents =
+    state.runtimeEvents.length > 0 ? state.runtimeEvents : (response?.runtimeEvents ?? []);
   const summary = useMemo(() => summarizeFdmCells(cells), [cells]);
 
   return (
@@ -188,7 +190,7 @@ export function FdmDashboardPresentation({
             cellDetail={state.cellDetail}
             cellLogLines={state.cellLogLines}
             logs={response.logs}
-            events={response.runtimeEvents}
+            events={runtimeEvents}
             directoryEntries={response.directoryEntries}
             onRunSelected={actions.runSelected}
             onOpenSelectedResult={actions.openSelectedResult}

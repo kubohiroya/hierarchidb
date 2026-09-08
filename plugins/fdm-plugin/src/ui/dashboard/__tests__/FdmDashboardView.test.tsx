@@ -112,6 +112,15 @@ describe('FdmDashboardView', () => {
         });
         return vi.fn();
       }),
+      subscribeRuntimeEvents: vi.fn((_input, onEvent) => {
+        onEvent({
+          id: 'runtime-event-a',
+          status: 'running',
+          message: 'runtime progress',
+          occurredAt: '2026-08-30T00:00:03Z',
+        });
+        return vi.fn();
+      }),
       performAction: vi.fn().mockResolvedValue(response),
     };
 
@@ -123,9 +132,11 @@ describe('FdmDashboardView', () => {
     expect(screen.getByText('running cell')).toBeInTheDocument();
     await waitFor(() => expect(port.loadCellDetail).toHaveBeenCalled());
     await waitFor(() => expect(port.subscribeCellLog).toHaveBeenCalled());
+    await waitFor(() => expect(port.subscribeRuntimeEvents).toHaveBeenCalled());
     expect(await screen.findByText('Log logs/cell-a.log')).toBeInTheDocument();
     expect(screen.getByText('detail line')).toBeInTheDocument();
     expect(screen.getByText('live line')).toBeInTheDocument();
+    expect(screen.getByText(/runtime progress/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /2D matrix/ }));
     expect(screen.getByRole('grid', { name: 'FDM 2D matrix' })).toBeInTheDocument();
