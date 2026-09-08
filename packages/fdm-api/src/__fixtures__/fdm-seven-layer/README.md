@@ -27,4 +27,4 @@ Current Phase B1 coverage:
 - L3: runtime-event bridge payloads and forbidden credential-key rejection.
 - L4: workflow projection acceptance and unknown status rejection.
 - L5: ruleset governance projection acceptance.
-- L6: current space catalog metadata with explicit unavailable provenance.
+- L6: current space catalog metadata with explicit unavailable or unscoped provenance.

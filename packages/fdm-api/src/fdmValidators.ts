@@ -247,8 +247,13 @@ export function createFdmSpaceCatalogEntries(
   catalog: FdmSpaceCatalog
 ): readonly FdmSpaceCatalogEntry[] {
   assertNonEmptyString(catalog.defaultSpaceId, 'defaultSpaceId');
+  const capabilitySummary = summarizeFdmCapabilities(catalog.capabilities);
   return catalog.spaces.map((space) => {
     assertNonEmptyString(space.spaceId, 'spaceId');
+    const hasUnscopedProvenance =
+      capabilitySummary.baselineCount > 0 ||
+      capabilitySummary.forkCount > 0 ||
+      capabilitySummary.lineageCount > 0;
     return {
       spaceId: space.spaceId,
       ...(space.label === null || space.label === undefined ? {} : { label: space.label }),
@@ -284,14 +289,44 @@ export function createFdmSpaceCatalogEntries(
       capability: {
         canRead: true,
         source: 'server',
+        ...(capabilitySummary.serverCapabilities.length === 0
+          ? {}
+          : { serverCapabilities: capabilitySummary.serverCapabilities }),
+        ...(capabilitySummary.baselineCount === 0
+          ? {}
+          : { baselineCount: capabilitySummary.baselineCount }),
+        ...(capabilitySummary.forkCount === 0 ? {} : { forkCount: capabilitySummary.forkCount }),
+        ...(capabilitySummary.lineageCount === 0
+          ? {}
+          : { lineageCount: capabilitySummary.lineageCount }),
       },
       provenance: {
         status: 'unavailable',
         spaceId: space.spaceId,
-        reason: 'FDM_SPACE_PROVENANCE_UNAVAILABLE',
+        ...(hasUnscopedProvenance ? { source: 'fdmCapabilities' } : {}),
+        reason: hasUnscopedProvenance
+          ? 'FDM_SPACE_PROVENANCE_UNSCOPED'
+          : 'FDM_SPACE_PROVENANCE_UNAVAILABLE',
       },
     } satisfies FdmSpaceCatalogEntry;
   });
+}
+
+function summarizeFdmCapabilities(capabilities: FdmSpaceCatalog['capabilities']) {
+  const supportedCapabilities = capabilities?.capabilities?.filter((capability) => {
+    return capability.supported && capability.name !== null;
+  });
+  const serverCapabilities =
+    supportedCapabilities?.map((capability) => capability.name ?? '') ?? [];
+  const baselineCount = capabilities?.baselines?.length ?? 0;
+  const forkCount = capabilities?.forks?.length ?? 0;
+  const lineageCount = capabilities?.lineage?.length ?? 0;
+  return {
+    serverCapabilities,
+    baselineCount,
+    forkCount,
+    lineageCount,
+  };
 }
 
 function assertRecord(value: unknown, label: string): Record<string, unknown> {

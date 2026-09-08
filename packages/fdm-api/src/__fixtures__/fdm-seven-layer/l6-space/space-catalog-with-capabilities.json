@@ -1,0 +1,95 @@
+{
+  "description": "L6 space catalog with unscoped server capability summaries.",
+  "catalog": {
+    "defaultSpaceId": "baseline",
+    "spaces": [
+      {
+        "spaceId": "baseline",
+        "label": "Baseline",
+        "defaultSpace": true,
+        "visible": true,
+        "archived": false
+      },
+      {
+        "spaceId": "experiment-a",
+        "label": "Experiment A",
+        "defaultSpace": false,
+        "visible": true,
+        "archived": false
+      }
+    ],
+    "capabilities": {
+      "capabilities": [
+        {
+          "level": "read-model",
+          "name": "fdmBaseline",
+          "note": "Baseline identity is exposed as a server read model.",
+          "operations": ["fdmCapabilities"],
+          "supported": true
+        },
+        {
+          "level": "contract",
+          "name": "fdmFork",
+          "note": "Fork objects are available for code generation; mutation semantics remain gated.",
+          "operations": ["fdmCapabilities"],
+          "supported": true
+        },
+        {
+          "level": "read-model",
+          "name": "fdmLineage",
+          "note": "Lineage identity can be projected from run evidence.",
+          "operations": ["fdmCapabilities", "fdmRun"],
+          "supported": true
+        }
+      ],
+      "workflows": null,
+      "runs": null,
+      "jobs": null,
+      "rulesets": null,
+      "baselines": [
+        {
+          "baselineId": null,
+          "capabilities": ["read-identity", "compare-reference"],
+          "computeEngine": null,
+          "dataset": null,
+          "profile": "refimpl",
+          "source": "reference",
+          "timelinePoint": null
+        }
+      ],
+      "forks": [
+        {
+          "capabilities": ["declare-identity"],
+          "forkId": null,
+          "sourceRunId": null,
+          "sourceWorkflowId": null,
+          "status": null,
+          "targetRunId": null,
+          "targetWorkflowId": null
+        }
+      ],
+      "lineage": [
+        {
+          "capabilities": ["read-operation-source"],
+          "lineageId": null,
+          "operationId": null,
+          "runId": null,
+          "sourceOperationId": null,
+          "sourceRunId": null,
+          "workflowId": null
+        }
+      ]
+    }
+  },
+  "expectedCapability": {
+    "serverCapabilities": ["fdmBaseline", "fdmFork", "fdmLineage"],
+    "baselineCount": 1,
+    "forkCount": 1,
+    "lineageCount": 1
+  },
+  "expectedProvenance": {
+    "status": "unavailable",
+    "source": "fdmCapabilities",
+    "reason": "FDM_SPACE_PROVENANCE_UNSCOPED"
+  }
+}

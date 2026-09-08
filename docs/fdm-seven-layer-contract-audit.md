@@ -91,6 +91,6 @@ Phase B1 now keeps each layer represented by an executable fixture or an explici
 | L3 run/job | runtime-event bridge payload and forbidden credential-key rejection | covered |
 | L4 workflow | workflow projection acceptance and unknown enum rejection | covered |
 | L5 ruleset | ruleset governance projection acceptance | covered |
-| L6 space | space catalog metadata with explicit unavailable provenance | covered, pending #1732 expansion |
+| L6 space | space catalog metadata with explicit unavailable or unscoped capability provenance | covered, pending #1735/#1736 action/view expansion |
 
-Later issues should extend these fixtures instead of creating divergent local terminology. #1732 owns baseline/fork provenance schema intake, #1735 owns lifecycle dry-run/safety wiring, and #1736 owns fork/cross-space read-only dashboard views after #1732 lands.
+Later issues should extend these fixtures instead of creating divergent local terminology. #1732 adds read-only intake for baseline/fork/lineage capability summaries without per-space inference, #1735 owns lifecycle dry-run/safety wiring, and #1736 owns fork/cross-space read-only dashboard views.
