@@ -186,6 +186,10 @@ Configuration required:
 - `TOKEN_ISSUER`: Expected token issuer
 - `TOKEN_AUD`: Expected audience (client ID)
 
+## Git Smart HTTP
+
+TurboWarp Plus Editor uses the dedicated `/v1/git/` routes and their own CORS and authorization bindings. See the [Git Smart HTTP contract](../bff/docs/git-smart-http.md).
+
 ## Allowlist semantics
 
 - `ALLOWED_TARGET_LIST` is a comma-separated list of **URL prefixes**.

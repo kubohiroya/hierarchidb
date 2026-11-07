@@ -1,4 +1,5 @@
 import { mapEnvironmentVariables, type RawEnv } from '~/env-mapper';
+import { handleGitProxy, isGitProxyPath } from './handleGitProxy';
 
 type JwtHeader = {
   alg?: string;
@@ -38,8 +39,9 @@ const globalCache = globalThis as typeof globalThis & {
 
 export default {
   async fetch(request: Request, env: RawEnv): Promise<Response> {
-    const mapped = mapEnvironmentVariables(env);
     const url = new URL(request.url);
+    if (isGitProxyPath(url.pathname)) return handleGitProxy(request, env);
+    const mapped = mapEnvironmentVariables(env);
     const origin = request.headers.get('Origin');
     const allowedOrigins = parseList(env.ALLOWED_ORIGINS ?? env.CORS_PROXY_ALLOWED_ORIGINS ?? '*');
     const cors = resolveCors(

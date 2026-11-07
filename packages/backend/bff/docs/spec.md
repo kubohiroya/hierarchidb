@@ -135,6 +135,10 @@ sequenceDiagram
 - Token endpoint: `https://github.com/login/oauth/access_token`
 - User info endpoint: `https://api.github.com/user`
 
+## GitHub App Git sessions
+
+The optional TurboWarp Plus Editor flow has its own OAuth callback, encrypted session records, and Git Worker binding. See the [Git Smart HTTP contract](git-smart-http.md).
+
 ## API Endpoints
 
 ### Authentication Endpoints
