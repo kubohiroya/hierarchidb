@@ -1,6 +1,8 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { type Context, Hono } from 'hono';
+import { handleGitAuth, isGitAuthPath } from './handleGitAuth';
+import type { GitAuthEnv } from './GitSession';
 import { exchangeCodeForToken, handleOAuth2Callback } from '~/auth/callback';
 import type { GitHubOAuth2Config } from '~/auth/github';
 import { exchangeCodeForTokens, type GoogleOAuth2Config, getGoogleUserInfo } from '~/auth/google';
@@ -17,11 +19,15 @@ import { getDynamicRedirectUri, resolveStateOrigin } from '~/utils/redirect-uri'
 import { StateManager } from '~/utils/state-manager';
 import { requireTurnstile } from '~/utils/turnstile';
 
+export { GitSession } from './GitSession';
+
 export const app = new Hono<BffBindings>();
 export default {
   fetch: (request: Request, env: BffBindings, ctx: ExecutionContext) =>
     app.fetch(request, env, ctx),
 };
+
+app.use('*', (c, next) => isGitAuthPath(c.req.path) ? handleGitAuth(c.req.raw, c.env as GitAuthEnv) : next());
 
 // Environment mapping middleware
 app.use('*', async (c, next) => {
