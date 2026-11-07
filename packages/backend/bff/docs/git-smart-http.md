@@ -17,6 +17,8 @@ The Git-only routes are `GET /v1/git/<owner>/<repo>.git/info/refs?service=git-up
 
 The proxy creates a new GitHub HTTP Basic authorization header, preserves Smart HTTP binary streams, and checks the declared POST length against the 32 MiB limit. It validates at most one discovery redirect to the same GitHub repository ID and service, and refuses RPC redirects. Error bodies use `{code, requestId}`.
 
+The `git-receive-pack` POST requires a lowercase UUID v4 in `Git-Push-Id`. Its preflight permits the header. The BFF atomically reserves the ID after validating the session, repository and write grant, before the Git Worker sends the POST. It returns `409 PUSH_DUPLICATE` for a reserved ID. The reservation survives request failures, Worker restarts and Bearer renewal, and expires with the login. A login accepts up to 256 distinct IDs and returns `429 RATE_LIMITED` at capacity. The Git Worker requires confirmation of the reservation from the BFF. Deploy both Workers and enable push with a client that implements this contract. [Editor contract](https://github.com/kubohiroya/turbowarp-plus-editor/issues/316)
+
 ## Enable and roll back
 
 Configure `GIT_ALLOWED_ORIGINS` and the exact HTTPS `GIT_PROXY_ORIGIN` in both Workers. In the BFF, configure `GIT_GITHUB_CLIENT_ID`, `GIT_GITHUB_CLIENT_SECRET`, `GIT_GITHUB_REDIRECT_URI` ending in `/v1/git-auth/callback`, and `GIT_SESSION_KEY` as a secret with 32 random bytes encoded as 64 hex digits. Register `GitSession` as a SQLite-backed Durable Object in the BFF. Bind it as `GIT_SESSIONS` in the BFF and in the Git Worker, where the binding names the BFF script. These bindings are optional and the dedicated routes fail closed when they are absent.

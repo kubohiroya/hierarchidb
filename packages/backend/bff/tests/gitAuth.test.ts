@@ -28,7 +28,9 @@ function fixture() {
           put: async (key: string, value: unknown) => {
             records.set(name + key, structuredClone(value));
           },
-          delete: async (key: string) => records.delete(name + key),
+          delete: async (keys: string[]) => {
+            for (const key of keys) records.delete(name + key);
+          },
           setAlarm: async () => {},
           transaction: async (callback: (tx: unknown) => Promise<unknown>) => callback(storage),
         };
@@ -146,14 +148,14 @@ describe('GitHub App BFF session', () => {
     expect(records.size).toBe(0);
   });
 
-  it('refreshes provider credentials and replaces an expired proxy bearer', async () => {
+  it('refreshes provider credentials and retains push IDs through Bearer renewal', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-07T00:00:00Z'));
-    const { env, call, send } = fixture();
+    const { env, call, send, records } = fixture();
     const start = await call('/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ remote: github, write: false }),
+      body: JSON.stringify({ remote: github, write: true }),
     });
     const { authorizationUrl, ticket } = await start.json();
     const state = new URL(authorizationUrl).searchParams.get('state');
@@ -162,7 +164,7 @@ describe('GitHub App BFF session', () => {
     const headers = { Authorization: 'Bearer ' + ticket };
     const { bearer } = await (await call('/session', { headers })).json();
     const stub = env.GIT_SESSIONS.get(env.GIT_SESSIONS.idFromName(state));
-    const grant = (token: string) =>
+    const grant = (token: string, pushId?: string, write = Boolean(pushId)) =>
       stub.fetch('https://git-session.internal/authorize', {
         method: 'POST',
         body: JSON.stringify({
@@ -170,11 +172,17 @@ describe('GitHub App BFF session', () => {
           origin: editor,
           owner: 'owner',
           repo: 'project',
-          write: false,
+          write,
+          pushId,
         }),
       });
     vi.setSystemTime(new Date('2026-11-07T00:01:01Z'));
     expect((await grant(bearer)).status).toBe(200);
+    const pushId = '00000000-0000-4000-8000-000000000001';
+    const reserved = await grant(bearer, pushId);
+    expect(reserved.status).toBe(200);
+    expect(await reserved.json()).toMatchObject({ pushId });
+    expect((await grant(bearer, undefined, true)).status).toBe(400);
     expect(
       send.mock.calls.filter(
         ([url, options]) =>
@@ -187,6 +195,20 @@ describe('GitHub App BFF session', () => {
     const renewed = await (await call('/session', { headers })).json();
     expect(renewed.bearer).not.toBe(bearer);
     expect((await grant(renewed.bearer)).status).toBe(200);
+    const duplicate = await grant(renewed.bearer, pushId);
+    expect(duplicate.status).toBe(409);
+    expect(await duplicate.json()).toEqual({ code: 'PUSH_DUPLICATE' });
+    records.set(state + 'push-ids', [
+      pushId,
+      ...Array.from(
+        { length: 255 },
+        (_, index) => '00000000-0000-4000-8000-' + String(index + 2).padStart(12, '0')
+      ),
+    ]);
+    expect((await grant(renewed.bearer, '00000000-0000-4000-8000-000000000257')).status).toBe(429);
+    expect((await grant(renewed.bearer, pushId)).status).toBe(409);
+    expect((await call('/session', { method: 'DELETE', headers })).status).toBe(204);
+    expect(records.size).toBe(0);
   });
 
   it('rejects spoofed origins and invalid repository URLs before contacting GitHub', async () => {

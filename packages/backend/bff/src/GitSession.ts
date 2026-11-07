@@ -55,6 +55,9 @@ const tokenPattern = /^[A-Za-z0-9_]+$/u;
 const ownerPattern = /^[A-Za-z0-9][A-Za-z0-9-]*$/u;
 const repoPattern = /^[A-Za-z0-9_.-]+$/u;
 const recordKey = 'session';
+const pushIdsKey = 'push-ids';
+const sessionKeys = [recordKey, pushIdsKey];
+const maxPushIds = 256;
 const shortSession = 5 * 60_000;
 
 export class GitAuthError extends Error {
@@ -177,7 +180,7 @@ export class GitSession {
           return gitError(401, 'SESSION_REQUIRED');
         }
         if (path === '/revoke') {
-          await this.state.storage.delete(recordKey);
+          await this.state.storage.delete(sessionKeys);
           return new Response(null, { status: 204 });
         }
         if (record.deadline <= Date.now()) return gitError(401, 'SESSION_EXPIRED');
@@ -198,6 +201,8 @@ export class GitSession {
             origin: string;
             write: boolean;
             candidate?: Repository;
+            pushId?: string;
+            writeDiscovery?: boolean;
           }
         >();
         return Response.json(await this.authorize(value, config));
@@ -212,7 +217,7 @@ export class GitSession {
 
   async alarm(): Promise<void> {
     const record = await this.state.storage.get<Record>(recordKey);
-    if (record && record.deadline <= Date.now()) await this.state.storage.delete(recordKey);
+    if (!record || record.deadline <= Date.now()) await this.state.storage.delete(sessionKeys);
   }
 
   private async complete(state: string, code: string, config: Settings): Promise<void> {
@@ -300,6 +305,8 @@ export class GitSession {
       origin: string;
       write: boolean;
       candidate?: Repository;
+      pushId?: string;
+      writeDiscovery?: boolean;
     },
     config: Settings
   ) {
@@ -316,6 +323,11 @@ export class GitSession {
     if (record.expiresAt <= Date.now()) return gitError(401, 'SESSION_EXPIRED');
     if (!sameRepository(value, record.remote) || (value.write && !record.write))
       return gitError(403, 'FORBIDDEN');
+    if (
+      (value.write && !value.pushId && value.writeDiscovery !== true) ||
+      (value.pushId !== undefined && (!value.write || value.candidate || value.writeDiscovery))
+    )
+      return gitError(400, 'BAD_REQUEST');
 
     const usable =
       credentials.accessExpiresAt > Date.now()
@@ -344,9 +356,20 @@ export class GitSession {
       if (latest.expiresAt <= Date.now()) return gitError(401, 'SESSION_EXPIRED');
       if ((await this.readCredentials(latest, config)).proxySecret !== value.credential)
         return gitError(401, 'SESSION_REQUIRED');
+      if (value.pushId) {
+        const pushIds = (await tx.get<string[]>(pushIdsKey)) ?? [];
+        if (pushIds.includes(value.pushId)) return gitError(409, 'PUSH_DUPLICATE');
+        if (pushIds.length >= maxPushIds) return gitError(429, 'RATE_LIMITED');
+        await tx.put(pushIdsKey, [...pushIds, value.pushId]);
+      }
       if (value.candidate) await tx.put(recordKey, { ...latest, canonical: target });
     });
-    return { owner: target.owner, repo: target.repo, accessToken: usable.accessToken };
+    return {
+      owner: target.owner,
+      repo: target.repo,
+      accessToken: usable.accessToken,
+      ...(value.pushId && { pushId: value.pushId }),
+    };
   }
 
   private refresh(credentials: Credentials, config: Settings): Promise<Credentials> {
@@ -369,7 +392,7 @@ export class GitSession {
       return latestCredentials;
     }
     if (latestCredentials.refreshExpiresAt <= Date.now()) {
-      await this.state.storage.delete(recordKey);
+      await this.state.storage.delete(sessionKeys);
       return gitError(401, 'REAUTH_REQUIRED');
     }
     const tokens = await this.exchange(
@@ -380,7 +403,7 @@ export class GitSession {
       config
     ).catch(async (error) => {
       if (error instanceof GitAuthError && error.status === 401)
-        await this.state.storage.delete(recordKey);
+        await this.state.storage.delete(sessionKeys);
       throw error;
     });
     return this.state.storage.transaction(async (tx) => {
