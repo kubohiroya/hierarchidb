@@ -1,6 +1,7 @@
 const github = 'https://github.com';
 const maxRequestBytes = 32 * 1024 * 1024;
 const namespace = '/v1/git';
+const pushIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const pathPattern =
   /^\/([A-Za-z0-9][A-Za-z0-9-]*)\/([A-Za-z0-9_.-]+)\.git(\/info\/refs\?service=(git-upload-pack|git-receive-pack)|\/(git-upload-pack|git-receive-pack))$/u;
 
@@ -19,7 +20,12 @@ function parseRoute(path: string, method: string) {
 }
 
 type Route = NonNullable<ReturnType<typeof parseRoute>>;
-type Grant = { owner: string; repo: string; accessToken: string };
+type Grant = {
+  owner: string;
+  repo: string;
+  accessToken: string;
+  pushId?: string;
+};
 type GitEnv = {
   GIT_PROXY_ORIGIN?: string;
   GIT_ALLOWED_ORIGINS?: string;
@@ -48,7 +54,7 @@ async function authorize(
   credential: string,
   origin: string,
   route: Route,
-  candidate?: Route
+  { candidate, pushId }: { candidate?: Route; pushId?: string } = {}
 ) {
   const response = await stub.fetch('https://git-session.internal/authorize', {
     method: 'POST',
@@ -59,7 +65,11 @@ async function authorize(
       owner: route.owner,
       repo: route.repo,
       write: route.write,
-      ...(candidate && { candidate: { owner: candidate.owner, repo: candidate.repo } }),
+      ...(route.write && route.suffix.startsWith('/info/') && { writeDiscovery: true }),
+      ...(candidate && {
+        candidate: { owner: candidate.owner, repo: candidate.repo },
+      }),
+      ...(pushId && { pushId }),
     }),
   });
   if (response.status !== 200) {
@@ -73,7 +83,12 @@ async function authorize(
       throw new ProxyError(401, value.code);
     if (response.status === 403 && value.code === 'FORBIDDEN')
       throw new ProxyError(403, value.code);
-    if (response.status === 409 && value.code === 'REDIRECT_REJECTED')
+    if (response.status === 400 && value.code === 'BAD_REQUEST')
+      throw new ProxyError(400, value.code);
+    if (
+      response.status === 409 &&
+      (value.code === 'REDIRECT_REJECTED' || value.code === 'PUSH_DUPLICATE')
+    )
       throw new ProxyError(409, value.code);
     throw upstreamFailure(response.status);
   }
@@ -84,6 +99,7 @@ async function authorize(
   );
   if (
     !canonical ||
+    grant.pushId !== pushId ||
     typeof grant.accessToken !== 'string' ||
     !/^[A-Za-z0-9_]+$/u.test(grant.accessToken)
   ) {
@@ -115,9 +131,11 @@ export async function handleGitProxy(
   const route = method && parseRoute(url.pathname.slice(namespace.length) + url.search, method);
   if (!route) return fail(400, 'BAD_REQUEST');
   const post = method === 'POST';
+  const push = post && route.write;
   if (preflight) {
     headers.set('Vary', 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
     const allowedHeaders = post ? ['authorization', 'content-type'] : ['authorization'];
+    if (push) allowedHeaders.push('git-push-id');
     const requested =
       request.headers
         .get('Access-Control-Request-Headers')
@@ -145,11 +163,15 @@ export async function handleGitProxy(
   } else if (request.body || (length !== null && length !== '0')) {
     return fail(400, 'BAD_REQUEST');
   }
+  const pushId = request.headers.get('Git-Push-Id');
+  if (push ? !pushIdPattern.test(pushId ?? '') : pushId !== null) return fail(400, 'BAD_REQUEST');
 
   const timeout = AbortSignal.timeout(120_000);
   try {
     const stub = env.GIT_SESSIONS.get(env.GIT_SESSIONS.idFromName(bearer[1]));
-    const grant = await authorize(stub, bearer[2], origin, route);
+    const grant = await authorize(stub, bearer[2], origin, route, {
+      pushId: pushId ?? undefined,
+    });
     const responseType = 'application/x-' + route.service + (post ? '-result' : '-advertisement');
     const signal = AbortSignal.any([request.signal, timeout]);
     let body: ReadableStream | undefined;
@@ -181,7 +203,9 @@ export async function handleGitProxy(
       const path = location?.startsWith(github + '/') ? location.slice(github.length) : location;
       const candidate = !post && path?.startsWith('/') && parseRoute(path, 'GET');
       if (!candidate || candidate.service !== route.service) return fail(409, 'REDIRECT_REJECTED');
-      const redirected = await authorize(stub, bearer[2], origin, route, candidate);
+      const redirected = await authorize(stub, bearer[2], origin, route, {
+        candidate,
+      });
       if (redirected.owner === grant.owner && redirected.repo === grant.repo)
         return fail(409, 'REDIRECT_REJECTED');
       response = await upstream(redirected);

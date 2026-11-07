@@ -6,21 +6,30 @@ const host = 'https://git.example.test';
 const root = host + '/v1/git/owner/project.git';
 const discovery = root + '/info/refs?service=git-upload-pack';
 const upload = root + '/git-upload-pack';
+const receive = root + '/git-receive-pack';
+const pushId = '00000000-0000-4000-8000-000000000001';
 const bearer = 'Bearer ' + 'a'.repeat(43) + '.' + 'b'.repeat(43);
 const bytes = Uint8Array.of(0, 12, 255);
 
-function fixture() {
+function fixture(allowWrite = false) {
+  const pushIds = new Set<string>();
   const resolve = vi.fn(async (_url: string, init: RequestInit) => {
     const grant = JSON.parse(String(init.body));
     if (grant.credential !== 'b'.repeat(43))
       return Response.json({ code: 'SESSION_REQUIRED' }, { status: 401 });
-    if (grant.write) return Response.json({ code: 'FORBIDDEN' }, { status: 403 });
+    if (grant.write && !allowWrite) return Response.json({ code: 'FORBIDDEN' }, { status: 403 });
+    if (grant.pushId) {
+      if (pushIds.has(grant.pushId))
+        return Response.json({ code: 'PUSH_DUPLICATE' }, { status: 409 });
+      pushIds.add(grant.pushId);
+    }
     if (grant.candidate?.repo === 'other')
       return Response.json({ code: 'REDIRECT_REJECTED' }, { status: 409 });
     return Response.json({
       owner: 'owner',
       repo: grant.candidate?.repo ?? 'project',
       accessToken: 'ghu_private',
+      pushId: grant.pushId,
     });
   });
   const env = {
@@ -70,6 +79,7 @@ describe('Git Smart HTTP Worker', () => {
     for (const [url, method, requested] of [
       [discovery, 'GET', 'authorization'],
       [upload, 'POST', 'authorization, content-type'],
+      [receive, 'POST', 'authorization, content-type, git-push-id'],
     ]) {
       const response = await call(url, {
         method: 'OPTIONS',
@@ -85,6 +95,49 @@ describe('Git Smart HTTP Worker', () => {
     }
     expect(resolve).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it('requires a single push ID and a reservation from the BFF before egress', async () => {
+    const { call, resolve, send } = fixture(true);
+    const headers = {
+      Authorization: bearer,
+      'Content-Type': 'application/x-git-receive-pack-request',
+      'Content-Length': String(bytes.byteLength),
+    };
+    const post = (id: string) =>
+      call(receive, {
+        method: 'POST',
+        headers: { ...headers, 'Git-Push-Id': id },
+        body: bytes,
+      });
+    expect((await call(receive, { method: 'POST', headers, body: bytes })).status).toBe(400);
+    expect((await post('invalid')).status).toBe(400);
+    expect((await post(pushId + ', ' + pushId)).status).toBe(400);
+    expect(
+      (
+        await call(discovery, {
+          headers: { Authorization: bearer, 'Git-Push-Id': pushId },
+        })
+      ).status
+    ).toBe(400);
+    expect(resolve).not.toHaveBeenCalled();
+    resolve.mockResolvedValueOnce(
+      Response.json({
+        owner: 'owner',
+        repo: 'project',
+        accessToken: 'ghu_private',
+      })
+    );
+    expect((await post(pushId)).status).toBe(502);
+    expect(send).not.toHaveBeenCalled();
+    const response = await post(pushId);
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
+    const duplicate = await post(pushId);
+    expect(duplicate.status).toBe(409);
+    expect(await duplicate.json()).toMatchObject({ code: 'PUSH_DUPLICATE' });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(new Headers(send.mock.calls[0]?.[1]?.headers).has('Git-Push-Id')).toBe(false);
   });
 
   it('streams authenticated GET and POST and builds a separate GitHub Authorization header', async () => {
