@@ -186,9 +186,11 @@ Configuration required:
 - `TOKEN_ISSUER`: Expected token issuer
 - `TOKEN_AUD`: Expected audience (client ID)
 
-## Git Smart HTTP
+## Git Smart HTTP and GitHub API routes
 
 TurboWarp Plus Editor uses the dedicated `/v1/git/` routes and their own CORS and authorization bindings. See the [Git Smart HTTP contract](../bff/docs/git-smart-http.md).
+
+The same Worker serves fixed pull request and review routes under `/v1/github/<owner>/<repo>/`. They share the Git routes' origin checks and `GitSession` binding, forward no arbitrary URL or GraphQL document, and stay separate from the generic `?url=` proxy. `GIT_GITHUB_API` enables them by group (`pulls-read`, `review-threads`, `reviews-body`); without it every route returns `404 GITHUB_API_UNAVAILABLE`. See [GitHub API routes](../bff/docs/git-smart-http.md#github-api-routes).
 
 ## Allowlist semantics
 
