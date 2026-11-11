@@ -1,5 +1,7 @@
 # GitHub App for the TurboWarp Plus Editor Git routes
 
+[日本語](./github-app-setup.ja.md)
+
 The Git routes described in [git-smart-http.md](./git-smart-http.md) reach GitHub through a GitHub App. This guide explains who creates that App and how the operator of a deployment creates and configures it.
 
 ## Who creates the App
