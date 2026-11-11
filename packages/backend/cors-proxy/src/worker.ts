@@ -1,4 +1,5 @@
 import { mapEnvironmentVariables, type RawEnv } from '~/env-mapper';
+import { handleGitHubApi, isGitHubApiPath } from './handleGitHubApi';
 import { handleGitProxy, isGitProxyPath } from './handleGitProxy';
 
 type JwtHeader = {
@@ -41,6 +42,7 @@ export default {
   async fetch(request: Request, env: RawEnv): Promise<Response> {
     const url = new URL(request.url);
     if (isGitProxyPath(url.pathname)) return handleGitProxy(request, env);
+    if (isGitHubApiPath(url.pathname)) return handleGitHubApi(request, env);
     const mapped = mapEnvironmentVariables(env);
     const origin = request.headers.get('Origin');
     const allowedOrigins = parseList(env.ALLOWED_ORIGINS ?? env.CORS_PROXY_ALLOWED_ORIGINS ?? '*');
