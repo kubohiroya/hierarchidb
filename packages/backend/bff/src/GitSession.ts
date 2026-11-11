@@ -27,6 +27,7 @@ type Pending = {
   origin: string;
   remote: Repository;
   write: boolean;
+  review: boolean;
   deadline: number;
 };
 type Active = {
@@ -34,6 +35,7 @@ type Active = {
   origin: string;
   remote: Repository;
   write: boolean;
+  review: boolean;
   ticketHash: string;
   canonical: Repository & { id: number };
   account: { login: string };
@@ -56,16 +58,288 @@ const ownerPattern = /^[A-Za-z0-9][A-Za-z0-9-]*$/u;
 const repoPattern = /^[A-Za-z0-9_.-]+$/u;
 const recordKey = 'session';
 const pushIdsKey = 'push-ids';
-const sessionKeys = [recordKey, pushIdsKey];
+const reviewIdsKey = 'review-ids';
+const reviewSubmitsKey = 'review-submits';
+const sessionKeys = [recordKey, pushIdsKey, reviewIdsKey, reviewSubmitsKey];
 const maxPushIds = 256;
+const maxReviewRecords = 256;
 const shortSession = 5 * 60_000;
+// An in-flight step older than this is treated as an unknown outcome. The Git Worker's upstream
+// timeout is 30 seconds, so the step can no longer complete through the Worker.
+const reviewStepTimeout = 60_000;
+const submitIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const nodeIdPattern = /^[A-Za-z0-9_=-]{1,200}$/u;
+const commitOidPattern = /^[0-9a-f]{40}$/u;
+const maxPullRequestNumber = 2_147_483_647;
+
+type ReviewStep = 'start' | 'thread' | 'submit' | 'delete' | 'context';
+type SubmitRequest = {
+  id: string;
+  step: ReviewStep;
+  number: number;
+  commitOid?: string;
+  threadIndex?: number;
+  threadCount?: number;
+};
+type GitHubAuthorization = Repository & {
+  credential: string;
+  origin: string;
+  operation: 'read' | 'review';
+  reviewId?: string;
+  submit?: SubmitRequest;
+};
+type SubmitState =
+  | 'starting'
+  | 'threading'
+  | 'submitting'
+  | 'deleting'
+  | 'pending'
+  | 'start-unknown'
+  | 'submit-unknown'
+  | 'broken'
+  | 'submitted'
+  | 'closed';
+type ReviewSubmit = {
+  repositoryId: number;
+  number: number;
+  commitOid: string;
+  pullRequestNodeId: string | null;
+  reviewNodeId: string | null;
+  threads: number;
+  state: SubmitState;
+  // The state a failed or unknown delete returns to.
+  resume: 'pending' | 'broken' | null;
+  // The thread index of the last thread step, to recognize a resent request.
+  threadIndex: number | null;
+  since: number;
+  // Nonce of the current state. A result must name it, so a late result of an expired step
+  // cannot overwrite a newer state.
+  attempt: string;
+};
+type ReviewSubmits = { [submitId: string]: ReviewSubmit };
+type ReviewOutcome = 'ok' | 'failed' | 'unknown' | 'gone' | 'pending' | 'submitted' | 'closed';
+type ReviewResult = {
+  submitId: string;
+  attempt: string;
+  outcome: ReviewOutcome;
+  pullRequestNodeId?: string;
+  reviewNodeId?: string;
+};
 
 export class GitAuthError extends Error {
   constructor(
     readonly status: number,
-    readonly code: string
+    readonly code: string,
+    readonly retryAfter?: number
   ) {
     super(code);
+  }
+}
+
+function isInteger(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
+}
+
+function finished(state: SubmitState): boolean {
+  return state === 'submitted' || state === 'closed';
+}
+
+/**
+ * Applies the outcome of the current step to a review submit record. Returns null when the
+ * outcome does not apply to the record's state.
+ */
+function transition(
+  record: ReviewSubmit,
+  outcome: ReviewOutcome,
+  ids: { pullRequestNodeId?: string; reviewNodeId?: string },
+  now: number
+): ReviewSubmit | null {
+  const next = (patch: Partial<ReviewSubmit>): ReviewSubmit => ({
+    ...record,
+    ...patch,
+    since: now,
+    attempt: generateCodeVerifier(),
+  });
+  switch (record.state) {
+    case 'starting':
+      if (outcome === 'ok') {
+        if (!ids.pullRequestNodeId || !ids.reviewNodeId) return null;
+        return next({
+          state: 'pending',
+          threads: 0,
+          pullRequestNodeId: ids.pullRequestNodeId,
+          reviewNodeId: ids.reviewNodeId,
+        });
+      }
+      if (outcome === 'failed') return next({ state: 'closed' });
+      if (outcome === 'unknown') return next({ state: 'start-unknown' });
+      return null;
+    case 'threading':
+      if (outcome === 'ok')
+        return next({ state: 'pending', threads: record.threads + 1, threadIndex: null });
+      if (outcome === 'failed' || outcome === 'unknown') return next({ state: 'broken' });
+      if (outcome === 'gone') return next({ state: 'closed' });
+      return null;
+    case 'submitting':
+      if (outcome === 'ok') return next({ state: 'submitted' });
+      if (outcome === 'failed') return next({ state: 'pending' });
+      if (outcome === 'unknown') return next({ state: 'submit-unknown' });
+      if (outcome === 'gone') return next({ state: 'closed' });
+      return null;
+    case 'deleting':
+      if (!record.resume) return null;
+      if (outcome === 'ok' || outcome === 'gone') return next({ state: 'closed', resume: null });
+      if (outcome === 'failed' || outcome === 'unknown')
+        return next({ state: record.resume, resume: null });
+      return null;
+    case 'start-unknown':
+      if (outcome === 'pending') {
+        if (!ids.pullRequestNodeId || !ids.reviewNodeId) return null;
+        return next({
+          state: 'pending',
+          threads: 0,
+          pullRequestNodeId: ids.pullRequestNodeId,
+          reviewNodeId: ids.reviewNodeId,
+        });
+      }
+      if (outcome === 'closed') return next({ state: 'closed' });
+      return null;
+    case 'submit-unknown':
+      if (outcome === 'pending' || outcome === 'submitted' || outcome === 'closed')
+        return next({ state: outcome });
+      return null;
+    default:
+      return null;
+  }
+}
+
+/** Treats an in-flight step that outlived the Worker timeout as an unknown outcome. */
+function settle(record: ReviewSubmit, now: number): ReviewSubmit {
+  if (
+    !['starting', 'threading', 'submitting', 'deleting'].includes(record.state) ||
+    now - record.since < reviewStepTimeout
+  )
+    return record;
+  const settled = transition(record, 'unknown', {}, now);
+  if (!settled) throw new Error('An in-flight review submit record cannot settle');
+  return settled;
+}
+
+function validSubmitRequest(operation: 'read' | 'review', submit: SubmitRequest): boolean {
+  const keys = Object.keys(submit).sort().join(',');
+  if (!submitIdPattern.test(submit.id) || !isInteger(submit.number, 1, maxPullRequestNumber))
+    return false;
+  switch (submit.step) {
+    case 'context':
+      return operation === 'read' && keys === 'id,number,step';
+    case 'start':
+      return (
+        operation === 'review' &&
+        keys === 'commitOid,id,number,step' &&
+        typeof submit.commitOid === 'string' &&
+        commitOidPattern.test(submit.commitOid)
+      );
+    case 'thread':
+      return (
+        operation === 'review' &&
+        keys === 'id,number,step,threadIndex' &&
+        isInteger(submit.threadIndex, 0, 49)
+      );
+    case 'submit':
+      return (
+        operation === 'review' &&
+        keys === 'id,number,step,threadCount' &&
+        isInteger(submit.threadCount, 0, 50)
+      );
+    case 'delete':
+      return operation === 'review' && keys === 'id,number,step';
+    default:
+      return false;
+  }
+}
+
+/**
+ * Checks a GraphQL review step against the submit records and marks the step as in flight.
+ * Returns the record the Worker continues with.
+ */
+function reserveStep(
+  submits: ReviewSubmits,
+  reviewIds: string[],
+  submit: SubmitRequest,
+  repositoryId: number,
+  now: number
+): ReviewSubmit {
+  const existing = submits[submit.id];
+  if (submit.step === 'start') {
+    if (existing || reviewIds.includes(submit.id)) return gitError(409, 'REVIEW_DUPLICATE');
+    for (const [id, value] of Object.entries(submits)) {
+      const record = settle(value, now);
+      submits[id] = record;
+      if (
+        record.repositoryId === repositoryId &&
+        record.number === submit.number &&
+        !finished(record.state)
+      )
+        return gitError(409, 'REVIEW_STEP_CONFLICT');
+    }
+    if (reviewIds.length + Object.keys(submits).length >= maxReviewRecords)
+      return gitError(429, 'RATE_LIMITED');
+    if (!submit.commitOid) return gitError(400, 'BAD_REQUEST');
+    const record: ReviewSubmit = {
+      repositoryId,
+      number: submit.number,
+      commitOid: submit.commitOid,
+      pullRequestNodeId: null,
+      reviewNodeId: null,
+      threads: 0,
+      state: 'starting',
+      resume: null,
+      threadIndex: null,
+      since: now,
+      attempt: generateCodeVerifier(),
+    };
+    submits[submit.id] = record;
+    return record;
+  }
+  if (!existing || existing.repositoryId !== repositoryId || existing.number !== submit.number)
+    return gitError(409, 'REVIEW_STEP_CONFLICT');
+  const record = settle(existing, now);
+  submits[submit.id] = record;
+  const begin = (patch: Partial<ReviewSubmit>): ReviewSubmit => {
+    const value = { ...record, ...patch, since: now, attempt: generateCodeVerifier() };
+    submits[submit.id] = value;
+    return value;
+  };
+  switch (submit.step) {
+    case 'context':
+      return record;
+    case 'thread': {
+      const index = submit.threadIndex;
+      if (index === undefined) return gitError(400, 'BAD_REQUEST');
+      if (record.state === 'pending' && index === record.threads)
+        return begin({ state: 'threading', threadIndex: index });
+      if (
+        index < record.threads ||
+        ((record.state === 'threading' || record.state === 'broken') &&
+          index === record.threadIndex)
+      )
+        return gitError(409, 'REVIEW_DUPLICATE');
+      return gitError(409, 'REVIEW_STEP_CONFLICT');
+    }
+    case 'submit':
+      if (record.state === 'pending' && submit.threadCount === record.threads)
+        return begin({ state: 'submitting' });
+      if (['submitting', 'submit-unknown', 'submitted'].includes(record.state))
+        return gitError(409, 'REVIEW_DUPLICATE');
+      return gitError(409, 'REVIEW_STEP_CONFLICT');
+    case 'delete':
+      if (record.state === 'pending' || record.state === 'broken')
+        return begin({ state: 'deleting', resume: record.state });
+      if (record.state === 'deleting' || record.state === 'closed')
+        return gitError(409, 'REVIEW_DUPLICATE');
+      return gitError(409, 'REVIEW_STEP_CONFLICT');
+    default:
+      return gitError(400, 'BAD_REQUEST');
   }
 }
 
@@ -139,6 +413,16 @@ function gitError(status: number, code: string): never {
   throw new GitAuthError(status, code);
 }
 
+/** Seconds until GitHub accepts requests again, from `retry-after` or `x-ratelimit-reset`. */
+export function retryAfterSeconds(headers: Headers, now = Date.now()): number {
+  const retryAfter = headers.get('retry-after');
+  if (retryAfter !== null && /^[0-9]+$/u.test(retryAfter)) return Number(retryAfter);
+  const reset = headers.get('x-ratelimit-reset');
+  if (reset !== null && /^[0-9]+$/u.test(reset))
+    return Math.max(0, Math.ceil(Number(reset) - now / 1000));
+  return 60;
+}
+
 export class GitSession {
   private key: Promise<CryptoKey> | undefined;
   private refreshing: Promise<Credentials> | undefined;
@@ -196,21 +480,33 @@ export class GitSession {
       }
       if (path === '/authorize') {
         const value = await request.json<
-          Repository & {
-            credential: string;
-            origin: string;
-            write: boolean;
-            candidate?: Repository;
-            pushId?: string;
-            writeDiscovery?: boolean;
-          }
+          | (Repository & {
+              credential: string;
+              origin: string;
+              write: boolean;
+              candidate?: Repository;
+              pushId?: string;
+              writeDiscovery?: boolean;
+            })
+          | GitHubAuthorization
         >();
+        // GitHub API requests name an operation; Git Smart HTTP requests name `write`.
+        if ('operation' in value) return Response.json(await this.authorizeGitHub(value, config));
         return Response.json(await this.authorize(value, config));
+      }
+      if (path === '/review-result') {
+        return Response.json(await this.reviewResult(await request.json<ReviewResult>()));
       }
       return Response.json({ code: 'BAD_REQUEST' }, { status: 400 });
     } catch (error) {
       return error instanceof GitAuthError
-        ? Response.json({ code: error.code }, { status: error.status })
+        ? Response.json(
+            {
+              code: error.code,
+              ...(error.retryAfter !== undefined && { retryAfter: error.retryAfter }),
+            },
+            { status: error.status }
+          )
         : Response.json({ code: 'UPSTREAM_FAILURE' }, { status: 502 });
     }
   }
@@ -259,6 +555,7 @@ export class GitSession {
           remote: pending.remote,
           ticketHash: pending.ticketHash,
           write: pending.write,
+          review: pending.review,
           canonical,
           account: { login },
           deadline,
@@ -370,6 +667,124 @@ export class GitSession {
       accessToken: usable.accessToken,
       ...(value.pushId && { pushId: value.pushId }),
     };
+  }
+
+  /**
+   * Authorizes a GitHub API request of the Git Worker. The repository ID is checked on every
+   * request, review submits are reserved atomically before the Worker contacts GitHub, and the
+   * grant carries only node IDs that this session recorded.
+   */
+  private async authorizeGitHub(value: GitHubAuthorization, config: Settings) {
+    const { operation, reviewId, submit } = value;
+    if (
+      (operation !== 'read' && operation !== 'review') ||
+      (reviewId !== undefined &&
+        (operation !== 'review' || submit !== undefined || !submitIdPattern.test(reviewId))) ||
+      (submit !== undefined &&
+        (typeof submit !== 'object' || submit === null || !validSubmitRequest(operation, submit)))
+    )
+      return gitError(400, 'BAD_REQUEST');
+    if (operation === 'review' && reviewId === undefined && submit === undefined)
+      return gitError(400, 'BAD_REQUEST');
+    const record = await this.state.storage.get<Record>(recordKey);
+    if (
+      !record ||
+      record.phase !== 'active' ||
+      record.origin !== value.origin ||
+      !keyPattern.test(value.credential)
+    )
+      return gitError(401, 'SESSION_REQUIRED');
+    const credentials = await this.readCredentials(record, config);
+    if (credentials.proxySecret !== value.credential) return gitError(401, 'SESSION_REQUIRED');
+    if (record.expiresAt <= Date.now()) return gitError(401, 'SESSION_EXPIRED');
+    if (!sameRepository(value, record.remote) || (operation === 'review' && record.review !== true))
+      return gitError(403, 'FORBIDDEN');
+
+    const usable =
+      credentials.accessExpiresAt > Date.now()
+        ? credentials
+        : await this.refresh(credentials, config);
+    const target = await this.lookup(record.canonical, false, usable.accessToken, true);
+    if (target.id !== record.canonical.id) return gitError(403, 'FORBIDDEN');
+    const reserved = await this.state.storage.transaction(async (tx) => {
+      const latest = await tx.get<Record>(recordKey);
+      if (latest?.phase !== 'active') return gitError(401, 'SESSION_REQUIRED');
+      if (latest.expiresAt <= Date.now()) return gitError(401, 'SESSION_EXPIRED');
+      if ((await this.readCredentials(latest, config)).proxySecret !== value.credential)
+        return gitError(401, 'SESSION_REQUIRED');
+      if (!reviewId && !submit) return null;
+      const reviewIds = (await tx.get<string[]>(reviewIdsKey)) ?? [];
+      const submits = (await tx.get<ReviewSubmits>(reviewSubmitsKey)) ?? {};
+      if (reviewId) {
+        if (reviewIds.includes(reviewId) || submits[reviewId])
+          return gitError(409, 'REVIEW_DUPLICATE');
+        if (reviewIds.length + Object.keys(submits).length >= maxReviewRecords)
+          return gitError(429, 'RATE_LIMITED');
+        await tx.put(reviewIdsKey, [...reviewIds, reviewId]);
+        return null;
+      }
+      if (!submit) return null;
+      const current = reserveStep(submits, reviewIds, submit, target.id, Date.now());
+      await tx.put(reviewSubmitsKey, submits);
+      return current;
+    });
+    return {
+      owner: target.owner,
+      repo: target.repo,
+      accessToken: usable.accessToken,
+      repositoryId: target.id,
+      ...(reviewId && { reviewId }),
+      ...(submit &&
+        reserved && {
+          submit: {
+            id: submit.id,
+            state: reserved.state,
+            number: reserved.number,
+            commitOid: reserved.commitOid,
+            threads: reserved.threads,
+            attempt: reserved.attempt,
+            pullRequestNodeId: reserved.pullRequestNodeId,
+            reviewNodeId: reserved.reviewNodeId,
+          },
+        }),
+    };
+  }
+
+  /** Records the upstream outcome of the step that the Worker reserved with `/authorize`. */
+  private async reviewResult(
+    value: ReviewResult
+  ): Promise<{ state: SubmitState; threads: number }> {
+    if (
+      typeof value !== 'object' ||
+      value === null ||
+      typeof value.submitId !== 'string' ||
+      !submitIdPattern.test(value.submitId) ||
+      typeof value.attempt !== 'string' ||
+      !keyPattern.test(value.attempt) ||
+      !['ok', 'failed', 'unknown', 'gone', 'pending', 'submitted', 'closed'].includes(
+        value.outcome
+      ) ||
+      (value.pullRequestNodeId !== undefined && !nodeIdPattern.test(value.pullRequestNodeId)) ||
+      (value.reviewNodeId !== undefined && !nodeIdPattern.test(value.reviewNodeId))
+    )
+      return gitError(400, 'BAD_REQUEST');
+    return this.state.storage.transaction(async (tx) => {
+      const latest = await tx.get<Record>(recordKey);
+      if (latest?.phase !== 'active') return gitError(401, 'SESSION_REQUIRED');
+      const submits = (await tx.get<ReviewSubmits>(reviewSubmitsKey)) ?? {};
+      const record = submits[value.submitId];
+      if (!record || record.attempt !== value.attempt) return gitError(409, 'REVIEW_STEP_CONFLICT');
+      const updated = transition(
+        record,
+        value.outcome,
+        { pullRequestNodeId: value.pullRequestNodeId, reviewNodeId: value.reviewNodeId },
+        Date.now()
+      );
+      if (!updated) return gitError(409, 'REVIEW_STEP_CONFLICT');
+      submits[value.submitId] = updated;
+      await tx.put(reviewSubmitsKey, submits);
+      return { state: updated.state, threads: updated.threads };
+    });
   }
 
   private refresh(credentials: Credentials, config: Settings): Promise<Credentials> {
@@ -487,7 +902,8 @@ export class GitSession {
 
   private async github(
     path: string,
-    accessToken: string
+    accessToken: string,
+    rateLimit = false
   ): Promise<{
     login?: string;
     id?: number;
@@ -504,6 +920,17 @@ export class GitSession {
       },
     });
     if (response.status === 401) return gitError(401, 'REAUTH_REQUIRED');
+    // GitHub API routes separate a rate limit from missing permission; Git routes keep FORBIDDEN.
+    if (
+      rateLimit &&
+      (response.status === 429 ||
+        (response.status === 403 &&
+          (response.headers.get('x-ratelimit-remaining') === '0' ||
+            response.headers.has('retry-after'))))
+    ) {
+      await response.body?.cancel();
+      throw new GitAuthError(429, 'RATE_LIMITED', retryAfterSeconds(response.headers));
+    }
     if (response.status === 403 || response.status === 404) return gitError(403, 'FORBIDDEN');
     if (response.status === 429) return gitError(429, 'RATE_LIMITED');
     if (!response.ok) return gitError(502, 'UPSTREAM_FAILURE');
@@ -513,10 +940,15 @@ export class GitSession {
   private async lookup(
     remote: Repository,
     write: boolean,
-    accessToken: string
+    accessToken: string,
+    rateLimit = false
   ): Promise<Repository & { id: number }> {
     if (!validRepository(remote.owner, remote.repo)) return gitError(403, 'FORBIDDEN');
-    const result = await this.github('/repos/' + remote.owner + '/' + remote.repo, accessToken);
+    const result = await this.github(
+      '/repos/' + remote.owner + '/' + remote.repo,
+      accessToken,
+      rateLimit
+    );
     const name = result.full_name && parseGitRemote('https://github.com/' + result.full_name);
     if (
       !name ||
