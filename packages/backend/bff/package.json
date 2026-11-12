@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
+    "@kubohiroya/turbowarp-plus-editor-git": "0.20.0",
     "hono": "^4.9.2",
     "jose": "^6.0.12"
   },

@@ -66,3 +66,6 @@ allowBuilds:
 
 patchedDependencies:
   ast-types@0.16.1: patches/ast-types@0.16.1.patch
+
+minimumReleaseAgeExclude:
+  - '@kubohiroya/turbowarp-plus-editor-git@0.20.0'
