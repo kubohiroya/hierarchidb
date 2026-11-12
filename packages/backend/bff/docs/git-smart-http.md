@@ -27,6 +27,7 @@ This section implements stage A of [TurboWarp Plus Editor #444](https://github.c
 | --- | --- | --- | --- | --- |
 | `GET /pulls` | `GET /repos/{owner}/{repo}/pulls?state=all&sort=updated&direction=desc&per_page=20&page=<page>` | `page` 1–50, at most once | read | `pulls-read` |
 | `GET /pulls/<n>` | `GET /repos/{owner}/{repo}/pulls/{n}` (`application/vnd.github.text+json`) | none | read | `pulls-read` |
+| `GET /pulls/<n>/publication-status` | `POST https://api.github.com/graphql` with the fixed publication status query | none | read | `checks-read` |
 | `POST /graphql/<operation>` | `POST https://api.github.com/graphql` with a fixed document | `pullRequestReviewContext` (read); `addPullRequestReview`, `addPullRequestReviewThread`, `submitPullRequestReview`, `deletePullRequestReview` (review) | per operation | `review-threads` |
 | `GET /pulls/<n>/reviews` | `GET /repos/{owner}/{repo}/pulls/{n}/reviews?per_page=30&page=<page>` | `page` 1–10, at most once | read | `reviews-body` |
 | `POST /pulls/<n>/reviews` | `POST /repos/{owner}/{repo}/pulls/{n}/reviews` | none | review | `reviews-body` |
@@ -60,7 +61,33 @@ The GraphQL body is a JSON object of variables only; any other key or a value of
 
 `POST /pulls/<n>/reviews` accepts only `commit_id` (40 lowercase hex digits, required), `event` (`COMMENT`, `APPROVE` or `REQUEST_CHANGES`, required) and `body` (required and non-empty except for `APPROVE`, at most 65,536 characters). `comments` and an empty `event` are rejected.
 
-The Worker sends exactly five GraphQL documents, kept in `packages/backend/cors-proxy/src/githubReviewDocuments.ts`. The thread mutation writes `subjectType: FILE` into the document. The Worker fills in `owner` and `name` (canonical, `followRenames: false`), `pullRequestId` and `reviewId`.
+The Worker keeps the five review documents and the publication status query in `packages/backend/cors-proxy/src/githubReviewDocuments.ts`. The thread mutation writes `subjectType: FILE` into the document. The Worker fills in `owner` and `name` (canonical, `followRenames: false`), `pullRequestId` and `reviewId`.
+
+### Pull request publication status
+
+The status route uses an ordinary repository-bound Git session with the `read` grant. The Worker verifies the GraphQL repository ID against the session grant, the pull request number against the path, and the rollup commit OID against the current head SHA. It rejects a mismatched repository with `403 FORBIDDEN` and a mismatched pull request or rollup SHA with `502 UPSTREAM_FAILURE`. The session lookup and the GraphQL query read GitHub repository data.
+
+The response contains:
+
+| Field | Value |
+| --- | --- |
+| `repositoryId`, `number` | Verified GitHub repository ID and pull request number |
+| `state`, `mergedAt`, `draft` | `OPEN`, `CLOSED` or `MERGED`; a merge timestamp or `null`; the draft flag |
+| `head` | `{ ref, sha, repositoryId }` with `repositoryId: null` when the head repository cannot be identified |
+| `base` | `{ ref, sha }` in the verified repository |
+| `checks` | `{ state, totalCount }`; state is `SUCCESS`, `FAILURE`, `PENDING`, `ERROR` or `EXPECTED`, or `null` when no rollup contexts are visible |
+| `reviewDecision` | `APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED` or `null` |
+| `mergeStateStatus`, `mergeable` | GitHub's [detailed merge status and mergeability](https://docs.github.com/en/graphql/reference/pulls#mergestatestatus) |
+
+The queue must compare the returned head repository, ref and SHA with its approved publication job and compare the base with the intended target. A successful [check rollup](https://docs.github.com/en/graphql/reference/commits#statuscheckrollup) reports the status of visible checks on that head. A zero count gives no CI evidence. GitHub evaluates branch rules, required reviews, test-merge or merge-queue checks, and merge permissions at the point of merge.
+
+For a live read check, enable `checks-read` on the Git Worker, approve the GitHub App installation on a disposable test repository, and authorize the user's normal Git session for that repository. Grant `Contents: Read` for Git read access, `Pull requests: Read`, `Checks: Read` and `Commit statuses: Read` for PR status and both kinds of checks. An existing write grant is sufficient for its corresponding read permission. Have the repository owner prepare a PR with a CI workflow or external check, and poll the route before and after pushing an updated head. Compare the returned SHA and status with GitHub. A different repository, a disallowed origin and an expired session must be rejected. Removing `checks-read` disables the route independently.
+
+### Approval for future publication writes
+
+A future BFF publication endpoint would start from a BFF-hosted confirmation screen that shows the exact repository, branches and commit IDs, PR title and body, issue action, merge method and authorized steps. The Worker would issue a short-lived approval tied to the authenticated account, repository ID, allowed Editor origin and job ID only after the user confirms that preview. The job should reserve its approved steps in durable storage and recover verified outcomes after timeouts. Approval and mutation handling require a separate capability from the status route and the normal Git session.
+
+The server should re-read the pull request, compare its current head and base with the approved job, and pass the expected head SHA in GitHub's merge request. A changed target or head requires renewed approval. For a stacked pull request, the approval must identify the predecessor pull request and intended base. An issue close requires an approved issue action and verified merge. The GitHub App installation would need `Pull requests: Write` for creation, `Contents: Write` for push and [merge](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request), and `Issues: Write` when creating or explicitly closing an issue. Configure each permission on the installation and verify the user can perform the approved actions under the repository's rules.
 
 ### Node IDs
 
