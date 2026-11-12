@@ -1,5 +1,11 @@
 import { generateCodeChallenge, generateCodeVerifier } from '~/utils/pkce';
-import { getGitAuthSettings, hashGitTicket, parseGitRemote, type GitAuthEnv } from './GitSession';
+import {
+  type GitAuthEnv,
+  getGitAuthSettings,
+  hashGitTicket,
+  parseGitRemote,
+  publicationApprovalPathPattern,
+} from './GitSession';
 
 const prefix = '/v1/git-auth';
 const callbackPath = prefix + '/callback';
@@ -74,8 +80,24 @@ export async function handleGitAuth(request: Request, env: GitAuthEnv): Promise<
       ) {
         return fail(400, 'INVALID_OAUTH_STATE');
       }
-      const result = await call(state, '/callback', { state, code });
+      const proofCookie = '__Host-tw-publish-proof-' + state + '=';
+      const proofs = (request.headers.get('Cookie') ?? '')
+        .split(';')
+        .map((part) => part.trim())
+        .filter((part) => part.startsWith(proofCookie));
+      const proof = proofs.length === 1 ? proofs[0]?.slice(proofCookie.length) : undefined;
+      const result = await call(state, '/callback', { state, code, ...(proof && { proof }) });
+      if (proof)
+        headers.set(
+          'Set-Cookie',
+          proofCookie + '; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0'
+        );
       if (result.status === 204) {
+        const location = result.headers.get('Location');
+        if (location && publicationApprovalPathPattern.test(location)) {
+          headers.set('Location', location);
+          return new Response(null, { status: 303, headers });
+        }
         headers.set('Content-Type', 'text/plain; charset=utf-8');
         return new Response('GitHub authorization complete. Return to the Editor.', { headers });
       }

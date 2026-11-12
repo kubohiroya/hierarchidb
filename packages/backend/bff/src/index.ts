@@ -1,8 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { type Context, Hono } from 'hono';
-import { handleGitAuth, isGitAuthPath } from './handleGitAuth';
-import type { GitAuthEnv } from './GitSession';
 import { exchangeCodeForToken, handleOAuth2Callback } from '~/auth/callback';
 import type { GitHubOAuth2Config } from '~/auth/github';
 import { exchangeCodeForTokens, type GoogleOAuth2Config, getGoogleUserInfo } from '~/auth/google';
@@ -18,6 +16,10 @@ import { type AuthSessionMode, parseAuthSessionConfig } from '~/utils/parseAuthS
 import { getDynamicRedirectUri, resolveStateOrigin } from '~/utils/redirect-uri';
 import { StateManager } from '~/utils/state-manager';
 import { requireTurnstile } from '~/utils/turnstile';
+import type { GitAuthEnv } from './GitSession';
+import type { PublicationEnv } from './gitHubPublicationProtocol';
+import { handleGitAuth, isGitAuthPath } from './handleGitAuth';
+import { handleGitHubPublication, isGitHubPublicationPath } from './handleGitHubPublication';
 
 export { GitSession } from './GitSession';
 
@@ -27,7 +29,14 @@ export default {
     app.fetch(request, env, ctx),
 };
 
-app.use('*', (c, next) => isGitAuthPath(c.req.path) ? handleGitAuth(c.req.raw, c.env as GitAuthEnv) : next());
+app.use('*', (c, next) =>
+  isGitAuthPath(c.req.path) ? handleGitAuth(c.req.raw, c.env as GitAuthEnv) : next()
+);
+app.use('*', (c, next) =>
+  isGitHubPublicationPath(c.req.path)
+    ? handleGitHubPublication(c.req.raw, c.env as PublicationEnv)
+    : next()
+);
 
 // Environment mapping middleware
 app.use('*', async (c, next) => {

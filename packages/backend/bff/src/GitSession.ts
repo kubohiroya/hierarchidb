@@ -3,6 +3,7 @@ import { generateCodeVerifier } from '~/utils/pkce';
 
 export type GitAuthEnv = {
   GIT_SESSIONS?: DurableObjectNamespace;
+  GIT_PUBLICATION_JOBS?: DurableObjectNamespace;
   GIT_ALLOWED_ORIGINS?: string;
   GIT_PROXY_ORIGIN?: string;
   GIT_GITHUB_CLIENT_ID?: string;
@@ -29,6 +30,14 @@ type Pending = {
   write: boolean;
   review: boolean;
   deadline: number;
+  publication?: {
+    objectId: string;
+    jobId: string;
+    proofHash: string;
+    accountId: number;
+    repositoryId: number;
+    returnPath: string;
+  };
 };
 type Active = {
   phase: 'active';
@@ -53,6 +62,8 @@ type Credentials = {
 };
 
 const keyPattern = /^[A-Za-z0-9_-]{43}$/u;
+export const publicationApprovalPathPattern =
+  /^\/v1\/github-publication\/approval\/([0-9a-f]{64})\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\/([A-Za-z0-9_-]{43})$/u;
 const tokenPattern = /^[A-Za-z0-9_]+$/u;
 const ownerPattern = /^[A-Za-z0-9][A-Za-z0-9-]*$/u;
 const repoPattern = /^[A-Za-z0-9_.-]+$/u;
@@ -84,7 +95,7 @@ type SubmitRequest = {
 type GitHubAuthorization = Repository & {
   credential: string;
   origin: string;
-  operation: 'read' | 'review';
+  operation: 'read' | 'review' | 'publication';
   reviewId?: string;
   submit?: SubmitRequest;
 };
@@ -445,9 +456,16 @@ export class GitSession {
         return new Response(null, { status: 204 });
       }
       if (path === '/callback') {
-        const { code, state } = await request.json<{ code: string; state: string }>();
-        await this.complete(state, code, config);
-        return new Response(null, { status: 204 });
+        const { code, state, proof } = await request.json<{
+          code: string;
+          state: string;
+          proof?: string;
+        }>();
+        const publication = await this.complete(state, code, config, proof);
+        return new Response(null, {
+          status: 204,
+          ...(publication && { headers: { Location: publication } }),
+        });
       }
       if (path === '/session' || path === '/revoke') {
         const { credential, origin, state } = await request.json<{
@@ -516,7 +534,12 @@ export class GitSession {
     if (!record || record.deadline <= Date.now()) await this.state.storage.delete(sessionKeys);
   }
 
-  private async complete(state: string, code: string, config: Settings): Promise<void> {
+  private async complete(
+    state: string,
+    code: string,
+    config: Settings,
+    proof?: string
+  ): Promise<string | undefined> {
     const pending = await this.state.storage.transaction(async (tx) => {
       const current = await tx.get<Record>(recordKey);
       if (
@@ -527,18 +550,48 @@ export class GitSession {
       ) {
         return gitError(400, 'INVALID_OAUTH_STATE');
       }
+      if (
+        current.publication &&
+        (!proof ||
+          !keyPattern.test(proof) ||
+          current.publication.proofHash !== (await hashGitTicket(proof)))
+      )
+        return gitError(400, 'INVALID_OAUTH_STATE');
       await tx.put(recordKey, { ...current, phase: 'exchanging' });
       return current;
     });
     try {
       const tokens = await this.exchange(
-        { code, redirect_uri: config.redirectUri, code_verifier: pending.verifier },
+        {
+          code,
+          redirect_uri: config.redirectUri,
+          code_verifier: pending.verifier,
+          ...(pending.publication && { repository_id: String(pending.publication.repositoryId) }),
+        },
         config
       );
       const user = await this.github('/user', tokens.accessToken);
       if (typeof user.login !== 'string' || !user.login) return gitError(401, 'REAUTH_REQUIRED');
       const login = user.login;
       const canonical = await this.lookup(pending.remote, pending.write, tokens.accessToken);
+      if (pending.publication) {
+        const { objectId, jobId, accountId, repositoryId, proofHash, returnPath } =
+          pending.publication;
+        const namespace = this.env.GIT_PUBLICATION_JOBS;
+        if (!namespace || user.id !== accountId || canonical.id !== repositoryId)
+          return gitError(403, 'FORBIDDEN');
+        if (!publicationApprovalPathPattern.test(returnPath)) return gitError(403, 'FORBIDDEN');
+        const response = await namespace
+          .get(namespace.idFromString(objectId))
+          .fetch('https://github-publication.internal/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: jobId, state, accountId, repositoryId, proofHash }),
+          });
+        if (!response.ok) return gitError(403, 'PUBLICATION_APPROVAL_REJECTED');
+        await this.state.storage.delete(sessionKeys);
+        return returnPath;
+      }
       const deadline = Math.min(tokens.refreshExpiresAt, Date.now() + 8 * 60 * 60_000);
       const expiresAt = Math.min(deadline, Date.now() + shortSession);
       const credentials = await encrypt(
@@ -677,11 +730,14 @@ export class GitSession {
   private async authorizeGitHub(value: GitHubAuthorization, config: Settings) {
     const { operation, reviewId, submit } = value;
     if (
-      (operation !== 'read' && operation !== 'review') ||
+      (operation !== 'read' && operation !== 'review' && operation !== 'publication') ||
       (reviewId !== undefined &&
         (operation !== 'review' || submit !== undefined || !submitIdPattern.test(reviewId))) ||
       (submit !== undefined &&
-        (typeof submit !== 'object' || submit === null || !validSubmitRequest(operation, submit)))
+        (operation === 'publication' ||
+          typeof submit !== 'object' ||
+          submit === null ||
+          !validSubmitRequest(operation, submit)))
     )
       return gitError(400, 'BAD_REQUEST');
     if (operation === 'review' && reviewId === undefined && submit === undefined)
@@ -697,15 +753,35 @@ export class GitSession {
     const credentials = await this.readCredentials(record, config);
     if (credentials.proxySecret !== value.credential) return gitError(401, 'SESSION_REQUIRED');
     if (record.expiresAt <= Date.now()) return gitError(401, 'SESSION_EXPIRED');
-    if (!sameRepository(value, record.remote) || (operation === 'review' && record.review !== true))
+    if (
+      !sameRepository(value, record.remote) ||
+      (operation === 'review' && record.review !== true) ||
+      (operation === 'publication' && record.write !== true)
+    )
       return gitError(403, 'FORBIDDEN');
 
     const usable =
       credentials.accessExpiresAt > Date.now()
         ? credentials
         : await this.refresh(credentials, config);
-    const target = await this.lookup(record.canonical, false, usable.accessToken, true);
+    const target = await this.lookup(
+      record.canonical,
+      operation === 'publication',
+      usable.accessToken,
+      true
+    );
     if (target.id !== record.canonical.id) return gitError(403, 'FORBIDDEN');
+    const actor =
+      operation === 'publication'
+        ? await this.github('/user', usable.accessToken, true)
+        : undefined;
+    if (
+      actor &&
+      (!isInteger(actor.id, 1, Number.MAX_SAFE_INTEGER) ||
+        typeof actor.login !== 'string' ||
+        actor.login.toLowerCase() !== record.account.login.toLowerCase())
+    )
+      return gitError(403, 'FORBIDDEN');
     const reserved = await this.state.storage.transaction(async (tx) => {
       const latest = await tx.get<Record>(recordKey);
       if (latest?.phase !== 'active') return gitError(401, 'SESSION_REQUIRED');
@@ -733,6 +809,7 @@ export class GitSession {
       repo: target.repo,
       accessToken: usable.accessToken,
       repositoryId: target.id,
+      ...(actor && { account: { id: actor.id, login: actor.login } }),
       ...(reviewId && { reviewId }),
       ...(submit &&
         reserved && {
