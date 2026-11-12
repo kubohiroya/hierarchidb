@@ -18,9 +18,15 @@ import { StateManager } from '~/utils/state-manager';
 import { requireTurnstile } from '~/utils/turnstile';
 import type { GitAuthEnv } from './GitSession';
 import type { PublicationEnv } from './gitHubPublicationProtocol';
+import type { GitRepositoryCreationEnv } from './gitRepositoryCreationProtocol';
 import { handleGitAuth, isGitAuthPath } from './handleGitAuth';
 import { handleGitHubPublication, isGitHubPublicationPath } from './handleGitHubPublication';
+import {
+  handleGitRepositoryCreation,
+  isGitRepositoryCreationPath,
+} from './handleGitRepositoryCreation';
 
+export { GitRepositoryCreation } from './GitRepositoryCreation';
 export { GitSession } from './GitSession';
 
 export const app = new Hono<BffBindings>();
@@ -35,6 +41,11 @@ app.use('*', (c, next) =>
 app.use('*', (c, next) =>
   isGitHubPublicationPath(c.req.path)
     ? handleGitHubPublication(c.req.raw, c.env as PublicationEnv)
+    : next()
+);
+app.use('*', (c, next) =>
+  isGitRepositoryCreationPath(c.req.path)
+    ? handleGitRepositoryCreation(c.req.raw, c.env as GitRepositoryCreationEnv)
     : next()
 );
 

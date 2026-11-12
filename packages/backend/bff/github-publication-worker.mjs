@@ -3,7 +3,7 @@ import { createPullRequestQueue, validatePublicationIntent } from '@kubohiroya/t
 import { GitHubPublication as Publication } from './src/GitHubPublication.ts';
 import worker from './src/index.ts';
 
-export { GitSession } from './src/index.ts';
+export { GitRepositoryCreation, GitSession } from './src/index.ts';
 export default worker;
 
 export class GitHubPublication extends Publication {

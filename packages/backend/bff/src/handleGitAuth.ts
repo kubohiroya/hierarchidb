@@ -109,13 +109,17 @@ export async function handleGitAuth(request: Request, env: GitAuthEnv): Promise<
       if (request.headers.get('Content-Type') !== 'application/json')
         return fail(400, 'BAD_REQUEST');
       const input = await request
-        .json<{ remote: unknown; write: unknown; review?: unknown }>()
+        .json<{ remote: unknown; write: unknown; review?: unknown; repositoryId?: unknown }>()
         .catch(() => null);
       const remote = parseGitRemote(input?.remote);
       if (
         !remote ||
         typeof input?.write !== 'boolean' ||
-        (input.review !== undefined && typeof input.review !== 'boolean')
+        (input.review !== undefined && typeof input.review !== 'boolean') ||
+        (input.repositoryId !== undefined &&
+          (typeof input.repositoryId !== 'number' ||
+            !Number.isSafeInteger(input.repositoryId) ||
+            input.repositoryId < 1))
       )
         return fail(400, 'BAD_REQUEST');
       const state = generateCodeVerifier();
@@ -140,6 +144,7 @@ export async function handleGitAuth(request: Request, env: GitAuthEnv): Promise<
         write: input.write,
         // Review submission is a separate grant from push. Omitting it requests no review grant.
         review: input.review ?? false,
+        ...(input.repositoryId !== undefined && { repositoryId: input.repositoryId }),
         deadline: Date.now() + 10 * 60_000,
       });
       if (result.status !== 204) return fail(502, 'UPSTREAM_FAILURE');

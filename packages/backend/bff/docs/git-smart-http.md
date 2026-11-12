@@ -2,12 +2,16 @@
 
 This optional contract implements mode B of [TurboWarp Plus Editor #315](https://github.com/kubohiroya/turbowarp-plus-editor/issues/315). It uses GitHub App web authorization, a BFF-owned Durable Object, and a Git-only route in the CORS Worker.
 
+Account-scoped initial creation uses the separate [repository creation contract](./github-repository-creation.md).
+
 ## Login and session
 
 1. The Editor POSTs JSON `{remote, write, review?}` to the BFF at `/v1/git-auth/start`. `review` is an optional boolean that requests the grant to submit pull request reviews; it is separate from `write` (push) and is false when omitted. A non-boolean value returns `400 BAD_REQUEST`. The BFF returns an authorization URL and an opaque login ticket. The Editor keeps the ticket in memory and opens the authorization URL.
 2. GitHub calls `/v1/git-auth/callback`. The BFF atomically consumes the OAuth state before exchanging the code using PKCE. It validates the selected repository ID and requested permission. The callback returns a plain confirmation.
 3. With the login ticket as its Bearer, the Editor polls `GET /v1/git-auth/session` on the BFF. A pending login returns 202. A completed login returns the Cloudflare connection, account, proxy Bearer, and expiration in Unix milliseconds. The ticket is origin-bound and can obtain a renewed five-minute proxy Bearer until the login expires. The login lasts at most eight hours.
 4. `DELETE /v1/git-auth/session` with the login ticket revokes the server-side record. In-flight calls recheck the record before authorization completes.
+
+Initial publication may add `repositoryId` (a positive safe integer) to the start body. The callback requests that ID in the [GitHub token exchange](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app) and checks it against the ID returned by the repository lookup before granting the session. The session response echoes the verified ID only for this opt-in flow. Git authorization checks that ID again for every request, including discovery redirects.
 
 GitHub access and refresh tokens and the current proxy secret are encrypted with AES-GCM in the BFF's Durable Object. The BFF serializes token rotation. The Git Worker accesses authorization through a Durable Object binding. The public BFF endpoints return display information and the proxy session, keeping upstream credentials in the Worker boundary.
 

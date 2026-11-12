@@ -27,6 +27,7 @@ type Pending = {
   ticketHash: string;
   origin: string;
   remote: Repository;
+  repositoryId?: number;
   write: boolean;
   review: boolean;
   deadline: number;
@@ -47,6 +48,7 @@ type Active = {
   review: boolean;
   ticketHash: string;
   canonical: Repository & { id: number };
+  repositoryId?: number;
   account: { login: string };
   deadline: number;
   expiresAt: number;
@@ -493,6 +495,7 @@ export class GitSession {
           connection: { mode: 'cloudflare', proxyOrigin: config.proxyOrigin },
           account: record.account,
           bearer: state + '.' + credentials.proxySecret,
+          ...(record.repositoryId !== undefined && { repositoryId: record.canonical.id }),
           expiresAt,
         });
       }
@@ -561,12 +564,15 @@ export class GitSession {
       return current;
     });
     try {
+      const expectedRepositoryId = pending.publication?.repositoryId ?? pending.repositoryId;
       const tokens = await this.exchange(
         {
           code,
           redirect_uri: config.redirectUri,
           code_verifier: pending.verifier,
-          ...(pending.publication && { repository_id: String(pending.publication.repositoryId) }),
+          ...(expectedRepositoryId !== undefined && {
+            repository_id: String(expectedRepositoryId),
+          }),
         },
         config
       );
@@ -574,12 +580,13 @@ export class GitSession {
       if (typeof user.login !== 'string' || !user.login) return gitError(401, 'REAUTH_REQUIRED');
       const login = user.login;
       const canonical = await this.lookup(pending.remote, pending.write, tokens.accessToken);
+      if (expectedRepositoryId !== undefined && canonical.id !== expectedRepositoryId)
+        return gitError(403, 'FORBIDDEN');
       if (pending.publication) {
         const { objectId, jobId, accountId, repositoryId, proofHash, returnPath } =
           pending.publication;
         const namespace = this.env.GIT_PUBLICATION_JOBS;
-        if (!namespace || user.id !== accountId || canonical.id !== repositoryId)
-          return gitError(403, 'FORBIDDEN');
+        if (!namespace || user.id !== accountId) return gitError(403, 'FORBIDDEN');
         if (!publicationApprovalPathPattern.test(returnPath)) return gitError(403, 'FORBIDDEN');
         const response = await namespace
           .get(namespace.idFromString(objectId))
@@ -610,6 +617,7 @@ export class GitSession {
           write: pending.write,
           review: pending.review,
           canonical,
+          ...(pending.repositoryId !== undefined && { repositoryId: pending.repositoryId }),
           account: { login },
           deadline,
           expiresAt,
