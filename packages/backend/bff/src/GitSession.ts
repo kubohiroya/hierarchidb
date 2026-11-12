@@ -26,6 +26,7 @@ type Pending = {
   ticketHash: string;
   origin: string;
   remote: Repository;
+  repositoryId?: number;
   write: boolean;
   review: boolean;
   deadline: number;
@@ -38,6 +39,7 @@ type Active = {
   review: boolean;
   ticketHash: string;
   canonical: Repository & { id: number };
+  repositoryId?: number;
   account: { login: string };
   deadline: number;
   expiresAt: number;
@@ -475,6 +477,7 @@ export class GitSession {
           connection: { mode: 'cloudflare', proxyOrigin: config.proxyOrigin },
           account: record.account,
           bearer: state + '.' + credentials.proxySecret,
+          ...(record.repositoryId !== undefined && { repositoryId: record.canonical.id }),
           expiresAt,
         });
       }
@@ -532,13 +535,20 @@ export class GitSession {
     });
     try {
       const tokens = await this.exchange(
-        { code, redirect_uri: config.redirectUri, code_verifier: pending.verifier },
+        {
+          code,
+          redirect_uri: config.redirectUri,
+          code_verifier: pending.verifier,
+          ...(pending.repositoryId !== undefined && { repository_id: String(pending.repositoryId) }),
+        },
         config
       );
       const user = await this.github('/user', tokens.accessToken);
       if (typeof user.login !== 'string' || !user.login) return gitError(401, 'REAUTH_REQUIRED');
       const login = user.login;
       const canonical = await this.lookup(pending.remote, pending.write, tokens.accessToken);
+      if (pending.repositoryId !== undefined && canonical.id !== pending.repositoryId)
+        return gitError(403, 'FORBIDDEN');
       const deadline = Math.min(tokens.refreshExpiresAt, Date.now() + 8 * 60 * 60_000);
       const expiresAt = Math.min(deadline, Date.now() + shortSession);
       const credentials = await encrypt(
@@ -557,6 +567,7 @@ export class GitSession {
           write: pending.write,
           review: pending.review,
           canonical,
+          ...(pending.repositoryId !== undefined && { repositoryId: pending.repositoryId }),
           account: { login },
           deadline,
           expiresAt,

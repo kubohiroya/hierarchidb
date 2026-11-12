@@ -3,6 +3,8 @@
 import { type Context, Hono } from 'hono';
 import { handleGitAuth, isGitAuthPath } from './handleGitAuth';
 import type { GitAuthEnv } from './GitSession';
+import { handleGitRepositoryCreation, isGitRepositoryCreationPath } from './handleGitRepositoryCreation';
+import type { GitRepositoryCreationEnv } from './gitRepositoryCreationProtocol';
 import { exchangeCodeForToken, handleOAuth2Callback } from '~/auth/callback';
 import type { GitHubOAuth2Config } from '~/auth/github';
 import { exchangeCodeForTokens, type GoogleOAuth2Config, getGoogleUserInfo } from '~/auth/google';
@@ -20,6 +22,7 @@ import { StateManager } from '~/utils/state-manager';
 import { requireTurnstile } from '~/utils/turnstile';
 
 export { GitSession } from './GitSession';
+export { GitRepositoryCreation } from './GitRepositoryCreation';
 
 export const app = new Hono<BffBindings>();
 export default {
@@ -28,6 +31,8 @@ export default {
 };
 
 app.use('*', (c, next) => isGitAuthPath(c.req.path) ? handleGitAuth(c.req.raw, c.env as GitAuthEnv) : next());
+app.use('*', (c, next) => isGitRepositoryCreationPath(c.req.path) ?
+  handleGitRepositoryCreation(c.req.raw, c.env as GitRepositoryCreationEnv) : next());
 
 // Environment mapping middleware
 app.use('*', async (c, next) => {

@@ -115,6 +115,7 @@ describe('GitHub App BFF session', () => {
       connection: { mode: 'cloudflare', proxyOrigin: proxy },
       account: { login: 'fixture-user' },
     });
+    expect(result).not.toHaveProperty('repositoryId');
     expect(result.bearer).not.toBe(ticket);
     expect(JSON.stringify(result)).not.toContain('ghu_private');
     expect(JSON.stringify([...records])).not.toMatch(/gh[ur]_private/u);
@@ -146,6 +147,39 @@ describe('GitHub App BFF session', () => {
     expect((await call('/session', { method: 'DELETE', headers })).status).toBe(204);
     expect((await grant()).status).toBe(401);
     expect(records.size).toBe(0);
+  });
+
+  it('binds an opt-in initial publication session to the GitHub repository ID', async () => {
+    const { env, call, send } = fixture();
+    const start = (repositoryId: unknown) => call('/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ remote: github, write: true, repositoryId }),
+    });
+    expect((await start('42')).status).toBe(400);
+    expect((await start(0)).status).toBe(400);
+    const denied = await (await start(43)).json();
+    const deniedState = new URL(denied.authorizationUrl).searchParams.get('state');
+    expect((await call('/callback?code=fixture-code&state=' + deniedState)).status).toBe(403);
+    expect((await call('/session', { headers: { Authorization: 'Bearer ' + denied.ticket } })).status).toBe(401);
+
+    const authorized = await (await start(42)).json();
+    const state = new URL(authorized.authorizationUrl).searchParams.get('state');
+    if (!state || !env.GIT_SESSIONS) throw new Error('missing fixture state');
+    expect((await call('/callback?code=fixture-code&state=' + state)).status).toBe(200);
+    const session = await (await call('/session', { headers: { Authorization: 'Bearer ' + authorized.ticket } })).json();
+    expect(session.repositoryId).toBe(42);
+    const exchange = send.mock.calls.findLast(([url]) => url.includes('/oauth/access_token'));
+    expect((exchange?.[1]?.body as URLSearchParams).get('repository_id')).toBe('42');
+    const stub = env.GIT_SESSIONS.get(env.GIT_SESSIONS.idFromName(state));
+    const grant = () => stub.fetch('https://git-session.internal/authorize', {
+      method: 'POST',
+      body: JSON.stringify({ credential: session.bearer.split('.')[1], origin: editor, owner: 'owner',
+        repo: 'project', write: true, writeDiscovery: true }),
+    });
+    expect((await grant()).status).toBe(200);
+    send.mockResolvedValueOnce(Response.json({ id: 43, full_name: 'owner/project', permissions: { push: true } }));
+    expect((await grant()).status).toBe(403);
   });
 
   it('refreshes provider credentials and retains push IDs through Bearer renewal', async () => {
