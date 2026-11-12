@@ -539,7 +539,9 @@ export class GitSession {
           code,
           redirect_uri: config.redirectUri,
           code_verifier: pending.verifier,
-          ...(pending.repositoryId !== undefined && { repository_id: String(pending.repositoryId) }),
+          ...(pending.repositoryId !== undefined && {
+            repository_id: String(pending.repositoryId),
+          }),
         },
         config
       );

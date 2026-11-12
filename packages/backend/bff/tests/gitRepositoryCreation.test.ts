@@ -1,14 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { app } from '../src/index';
 import { GitRepositoryCreation } from '../src/GitRepositoryCreation';
 import type { GitRepositoryCreationEnv } from '../src/gitRepositoryCreationProtocol';
+import { app } from '../src/index';
 import { generateCodeChallenge } from '../src/utils/pkce';
 
 const bff = 'https://bff.example.test';
 const editor = 'https://editor.example.test';
 const prefix = '/v1/github-create';
-const intent = { operationId: 'create-1', owner: 'alice', name: 'game', description: 'Game', visibility: 'private',
-  seedDigest: 'a'.repeat(64), topics: ['scratch', 'blocks'] };
+const intent = {
+  operationId: 'create-1',
+  owner: 'alice',
+  name: 'game',
+  description: 'Game',
+  visibility: 'private',
+  seedDigest: 'a'.repeat(64),
+  topics: ['scratch', 'blocks'],
+};
 const repoPath = 'https://api.github.com/repos/alice/game';
 const createUrl = 'https://api.github.com/user/repos';
 const json = { 'Content-Type': 'application/json' };
@@ -37,12 +44,17 @@ function fixture() {
         const local = entries;
         const storage = {
           get: async (key: string) => structuredClone(local.get(key)),
-          put: async (key: string, value: unknown) => { local.set(key, structuredClone(value)); },
+          put: async (key: string, value: unknown) => {
+            local.set(key, structuredClone(value));
+          },
           delete: async (key: string) => local.delete(key),
           setAlarm: async () => {},
           transaction: (callback: (tx: unknown) => Promise<unknown>) => {
             const result = (locks.get(name) ?? Promise.resolve()).then(() => callback(storage));
-            locks.set(name, result.catch(() => {}));
+            locks.set(
+              name,
+              result.catch(() => {})
+            );
             return result;
           },
         };
@@ -54,8 +66,15 @@ function fixture() {
     },
   } as unknown as DurableObjectNamespace;
 
-  const repository = { id: 42, name: 'game', owner: { login: 'alice' }, private: true, size: 0,
-    created_at: new Date().toISOString(), secretFixtureField: 'filtered' };
+  const repository = {
+    id: 42,
+    name: 'game',
+    owner: { login: 'alice' },
+    private: true,
+    size: 0,
+    created_at: new Date().toISOString(),
+    secretFixtureField: 'filtered',
+  };
   let actor = { login: 'alice', id: 1 };
   const send = vi.fn(async (url: string, init?: RequestInit) => {
     expect(init?.redirect).toBe('error');
@@ -74,11 +93,18 @@ function fixture() {
   });
   vi.stubGlobal('fetch', send);
   const call = (path: string, init: RequestInit = {}, origin = editor) =>
-    app.request(bff + prefix + path, { ...init, headers: { Origin: origin, ...init.headers } }, env as never);
+    app.request(
+      bff + prefix + path,
+      { ...init, headers: { Origin: origin, ...init.headers } },
+      env as never
+    );
   async function login() {
     const start = await call('/start', { method: 'POST', headers: json, body: '{}' });
     expect(start.status).toBe(200);
-    const { authorizationUrl, ticket } = await start.json<{ authorizationUrl: string; ticket: string }>();
+    const { authorizationUrl, ticket } = await start.json<{
+      authorizationUrl: string;
+      ticket: string;
+    }>();
     const url = new URL(authorizationUrl);
     const state = url.searchParams.get('state');
     expect(ticket).toMatch(/^login\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/u);
@@ -91,20 +117,38 @@ function fixture() {
     const exchange = send.mock.calls.findLast(([target]) => target.includes('/oauth/access_token'));
     const verifier = (exchange?.[1]?.body as URLSearchParams).get('code_verifier');
     expect(typeof verifier).toBe('string');
-    expect(url.searchParams.get('code_challenge')).toBe(await generateCodeChallenge(verifier ?? ''));
+    expect(url.searchParams.get('code_challenge')).toBe(
+      await generateCodeChallenge(verifier ?? '')
+    );
     expect((await call(callback)).status).toBe(400);
     const session = await call('/session', { headers: ticketHeaders });
     expect(session.status).toBe(200);
     const result = await session.json<{ bearer: string; expiresAt: number }>();
-    expect(result).toMatchObject({ scope: 'repository-creation', connection: { mode: 'cloudflare', proxyOrigin: bff },
-      account: { login: actor.login }, bearer: expect.stringMatching(/^create\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/u) });
+    expect(result).toMatchObject({
+      scope: 'repository-creation',
+      connection: { mode: 'cloudflare', proxyOrigin: bff },
+      account: { login: actor.login },
+      bearer: expect.stringMatching(/^create\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/u),
+    });
     expect(result.expiresAt).toBeLessThanOrEqual(Date.now() + 15 * 60_000);
     expect(JSON.stringify(result)).not.toContain('ghu_fixture');
     const headers = { ...json, Authorization: 'Bearer ' + result.bearer };
-    const create = (input: object = intent) => call('/repos', { method: 'POST', headers, body: JSON.stringify(input) });
+    const create = (input: object = intent) =>
+      call('/repos', { method: 'POST', headers, body: JSON.stringify(input) });
     return { ticketHeaders, headers, create, expiresAt: result.expiresAt };
   }
-  return { env, call, send, records, instances, login, repository, setActor: (value: typeof actor) => { actor = value; } };
+  return {
+    env,
+    call,
+    send,
+    records,
+    instances,
+    login,
+    repository,
+    setActor: (value: typeof actor) => {
+      actor = value;
+    },
+  };
 }
 
 afterEach(() => {
@@ -116,15 +160,23 @@ describe('GitHub repository creation on the BFF', () => {
   it('separates the login and creation credentials, encrypts provider tokens and enforces origin and revocation', async () => {
     const { call, login, records, send } = fixture();
     const { ticketHeaders, headers } = await login();
-    expect(JSON.stringify([...records.values()].flatMap((record) => [...record.values()]))).not.toContain('ghu_fixture');
+    expect(
+      JSON.stringify([...records.values()].flatMap((record) => [...record.values()]))
+    ).not.toContain('ghu_fixture');
     expect((await call('/owners', { headers: ticketHeaders })).status).toBe(401);
     expect((await call('/session', { headers })).status).toBe(401);
     expect((await call('/owners', { headers }, 'https://other.example.test')).status).toBe(401);
     expect((await call('/owners', { headers }, 'https://denied.example.test')).status).toBe(403);
-    expect((await call('/owners', { headers: { Authorization: 'Bearer ' + 'a'.repeat(43) + '.' + 'b'.repeat(43) } })).status).toBe(401);
-    expect(await (await call('/owners', { headers })).json()).toEqual({ owners: [
-      { login: 'alice', type: 'User', canCreate: { private: true, public: true } },
-    ] });
+    expect(
+      (
+        await call('/owners', {
+          headers: { Authorization: 'Bearer ' + 'a'.repeat(43) + '.' + 'b'.repeat(43) },
+        })
+      ).status
+    ).toBe(401);
+    expect(await (await call('/owners', { headers })).json()).toEqual({
+      owners: [{ login: 'alice', type: 'User', canCreate: { private: true, public: true } }],
+    });
     expect((await call('/session', { method: 'DELETE', headers: ticketHeaders })).status).toBe(204);
     expect((await call('/owners', { headers })).status).toBe(401);
     expect(send).toHaveBeenCalledTimes(2);
@@ -136,15 +188,31 @@ describe('GitHub repository creation on the BFF', () => {
     delete env.GIT_REPOSITORY_CREATION;
     expect((await call('/start', { method: 'POST', headers: json, body: '{}' })).status).toBe(404);
     env.GIT_REPOSITORY_CREATION = namespace;
-    expect((await call('/start', { method: 'POST', headers: json, body: '{ "owner": "alice" }' })).status).toBe(400);
-    expect((await call('/start', { method: 'POST', headers: json, body: ' '.repeat(4097) })).status).toBe(413);
-    const options = { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'POST',
-      'Access-Control-Request-Headers': 'Authorization, Content-Type' } };
+    expect(
+      (await call('/start', { method: 'POST', headers: json, body: '{ "owner": "alice" }' })).status
+    ).toBe(400);
+    expect(
+      (await call('/start', { method: 'POST', headers: json, body: ' '.repeat(4097) })).status
+    ).toBe(413);
+    const options = {
+      method: 'OPTIONS',
+      headers: {
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Authorization, Content-Type',
+      },
+    };
     const preflight = await call('/repos', options);
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(editor);
     expect((await call('/repos?owner=alice', options)).status).toBe(400);
-    expect((await call('/repos', { ...options, headers: { ...options.headers, 'Access-Control-Request-Headers': 'Cookie' } })).status).toBe(403);
+    expect(
+      (
+        await call('/repos', {
+          ...options,
+          headers: { ...options.headers, 'Access-Control-Request-Headers': 'Cookie' },
+        })
+      ).status
+    ).toBe(403);
     const { create } = await login();
     expect((await create({ ...intent, owner: 'other' })).status).toBe(403);
     expect((await create({ ...intent, name: 'a.git' })).status).toBe(400);
@@ -171,8 +239,13 @@ describe('GitHub repository creation on the BFF', () => {
     const first = await login();
     const result = await first.create();
     expect(result.status).toBe(201);
-    expect(await result.json()).toEqual({ id: 42, name: 'game', owner: 'alice', visibility: 'private',
-      remote: 'https://github.com/alice/game.git' });
+    expect(await result.json()).toEqual({
+      id: 42,
+      name: 'game',
+      owner: 'alice',
+      visibility: 'private',
+      remote: 'https://github.com/alice/game.git',
+    });
     instances.clear();
     const second = await login();
     expect((await second.create()).status).toBe(201);
@@ -180,7 +253,10 @@ describe('GitHub repository creation on the BFF', () => {
     const writes = send.mock.calls.filter(([url]) => url === createUrl);
     expect(writes).toHaveLength(1);
     expect(JSON.parse(writes[0]?.[1]?.body as string)).toEqual({
-      name: 'game', description: 'Game', private: true, auto_init: false,
+      name: 'game',
+      description: 'Game',
+      private: true,
+      auto_init: false,
     });
     setActor({ login: 'other-user', id: 2 });
     const { headers } = await login();
@@ -191,19 +267,28 @@ describe('GitHub repository creation on the BFF', () => {
   it('reconciles an unknown operation only after receiving the inspected repository ID', async () => {
     const { call, login, repository, send } = fixture();
     const { create, headers } = await login();
-    send.mockImplementationOnce(async () => { throw new Error('Upstream response was lost'); });
+    send.mockImplementationOnce(async () => {
+      throw new Error('Upstream response was lost');
+    });
     const first = await create();
     expect(first.status).toBe(502);
     expect(await first.json()).toMatchObject({ code: 'unknown' });
     expect((await create()).status).toBe(502);
     const operation = '/operations/create-1';
     const reconcile = (repositoryId: number) =>
-      call(operation + '/reconcile', { method: 'POST', headers, body: JSON.stringify({ repositoryId }) });
+      call(operation + '/reconcile', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ repositoryId }),
+      });
     const inspect = await call(operation, { headers });
     expect(await inspect.json()).toMatchObject({ status: 'unknown', candidate: { id: 42 } });
     expect((await reconcile(41)).status).toBe(409);
     repository.size = 4;
-    expect(await (await call(operation, { headers })).json()).toEqual({ status: 'unknown', candidate: null });
+    expect(await (await call(operation, { headers })).json()).toEqual({
+      status: 'unknown',
+      candidate: null,
+    });
     expect((await reconcile(42)).status).toBe(409);
     repository.size = 0;
     expect((await reconcile(42)).status).toBe(201);
@@ -216,9 +301,12 @@ describe('GitHub repository creation on the BFF', () => {
     const { call, login, repository, send } = fixture();
     const { create, headers } = await login();
     expect((await create()).status).toBe(201);
-    const topics = (id: number, operationId = intent.operationId) => call('/repos/' + id + '/topics', {
-      method: 'PUT', headers, body: JSON.stringify({ operationId }),
-    });
+    const topics = (id: number, operationId = intent.operationId) =>
+      call('/repos/' + id + '/topics', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ operationId }),
+      });
     expect((await topics(43)).status).toBe(403);
     expect((await topics(42, 'missing')).status).toBe(403);
     repository.id = 43;

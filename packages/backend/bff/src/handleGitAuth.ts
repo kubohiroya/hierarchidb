@@ -1,5 +1,5 @@
 import { generateCodeChallenge, generateCodeVerifier } from '~/utils/pkce';
-import { getGitAuthSettings, hashGitTicket, parseGitRemote, type GitAuthEnv } from './GitSession';
+import { type GitAuthEnv, getGitAuthSettings, hashGitTicket, parseGitRemote } from './GitSession';
 
 const prefix = '/v1/git-auth';
 const callbackPath = prefix + '/callback';
@@ -95,7 +95,9 @@ export async function handleGitAuth(request: Request, env: GitAuthEnv): Promise<
         typeof input?.write !== 'boolean' ||
         (input.review !== undefined && typeof input.review !== 'boolean') ||
         (input.repositoryId !== undefined &&
-          (typeof input.repositoryId !== 'number' || !Number.isSafeInteger(input.repositoryId) || input.repositoryId < 1))
+          (typeof input.repositoryId !== 'number' ||
+            !Number.isSafeInteger(input.repositoryId) ||
+            input.repositoryId < 1))
       )
         return fail(400, 'BAD_REQUEST');
       const state = generateCodeVerifier();
