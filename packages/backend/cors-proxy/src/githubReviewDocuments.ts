@@ -1,5 +1,5 @@
 /**
- * The only GraphQL documents the Git Worker sends to GitHub. Clients name an operation and send
+ * Review operations the Git Worker sends to GitHub. Clients name an operation and send
  * variables; they never send a document, a pull request node ID or a review node ID.
  */
 export const githubReviewDocuments = {
@@ -46,3 +46,28 @@ export type GitHubReviewOperation = keyof typeof githubReviewDocuments;
 export function isGitHubReviewOperation(value: string): value is GitHubReviewOperation {
   return Object.hasOwn(githubReviewDocuments, value);
 }
+
+export const pullRequestPublicationStatusDocument = `query PullRequestPublicationStatus($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name, followRenames: false) {
+    databaseId
+    pullRequest(number: $number) {
+      number
+      state
+      mergedAt
+      isDraft
+      headRefName
+      headRefOid
+      headRepository { databaseId }
+      baseRefName
+      baseRefOid
+      reviewDecision
+      mergeStateStatus
+      mergeable
+      statusCheckRollup {
+        commit { oid }
+        state
+        contexts(first: 1) { totalCount }
+      }
+    }
+  }
+}`;
