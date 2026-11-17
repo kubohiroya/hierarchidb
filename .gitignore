@@ -171,6 +171,7 @@ pnpm-debug.log*
 # Cloudflare
 .wrangler/
 wrangler.toml
+wrangler.git.toml
 !wrangler.toml.template
 /.idea/
 /.claude/
