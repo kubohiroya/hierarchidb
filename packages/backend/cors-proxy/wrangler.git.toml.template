@@ -1,0 +1,37 @@
+# The Git Worker for TurboWarp Plus Editor: only the `/v1/git/` and `/v1/github/` routes.
+# Copy to wrangler.git.toml (ignored by Git) and deploy with `pnpm deploy:git:development` or
+# `pnpm deploy:git:production`. The generic `?url=` proxy keeps its own Worker (wrangler.toml).
+# See ../bff/docs/git-smart-http.md#enable-and-roll-back.
+name = "hierarchidb-git-worker"
+main = "src/gitWorker.ts"
+compatibility_date = "2024-12-01"
+
+# Development environment
+[env.development]
+name = "hierarchidb-git-worker-dev"
+
+[env.development.vars]
+# Exact origins of the Editor deployments, comma-separated. Never `*`.
+GIT_ALLOWED_ORIGINS = "https://your-editor-origin.example,tw-editor://."
+# The exact HTTPS origin of this Worker, also set in the BFF and in the Editor build.
+GIT_PROXY_ORIGIN = "https://hierarchidb-git-worker-dev.<account-subdomain>.workers.dev"
+GIT_GITHUB_API = "pulls-read,review-threads,reviews-body"
+
+[[env.development.durable_objects.bindings]]
+name = "GIT_SESSIONS"
+class_name = "GitSession"
+script_name = "hierarchidb-bff-dev"
+
+# Production environment
+[env.production]
+name = "hierarchidb-git-worker-prod"
+
+[env.production.vars]
+GIT_ALLOWED_ORIGINS = "https://your-editor-origin.example,tw-editor://."
+GIT_PROXY_ORIGIN = "https://hierarchidb-git-worker-prod.<account-subdomain>.workers.dev"
+GIT_GITHUB_API = "pulls-read,review-threads,reviews-body"
+
+[[env.production.durable_objects.bindings]]
+name = "GIT_SESSIONS"
+class_name = "GitSession"
+script_name = "hierarchidb-bff-prod"

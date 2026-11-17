@@ -1,6 +1,6 @@
 # TurboWarp Plus Editor Git proxy
 
-This optional contract implements mode B of [TurboWarp Plus Editor #315](https://github.com/kubohiroya/turbowarp-plus-editor/issues/315). It uses GitHub App web authorization, a BFF-owned Durable Object, and a Git-only route in the CORS Worker.
+This optional contract implements mode B of [TurboWarp Plus Editor #315](https://github.com/kubohiroya/turbowarp-plus-editor/issues/315). It uses GitHub App web authorization, a BFF-owned Durable Object, and a dedicated Git Worker (`packages/backend/cors-proxy/src/gitWorker.ts`) that runs apart from the generic `?url=` CORS proxy.
 
 Account-scoped initial creation uses the separate [repository creation contract](./github-repository-creation.md).
 
@@ -158,7 +158,11 @@ A well-formed successful GraphQL `200` is success even when `x-ratelimit-remaini
 
 ## Enable and roll back
 
-Configure `GIT_ALLOWED_ORIGINS` and the exact HTTPS `GIT_PROXY_ORIGIN` in both Workers. In the BFF, configure `GIT_GITHUB_CLIENT_ID`, `GIT_GITHUB_CLIENT_SECRET`, `GIT_GITHUB_REDIRECT_URI` ending in `/v1/git-auth/callback`, and `GIT_SESSION_KEY` as a secret with 32 random bytes encoded as 64 hex digits. Register `GitSession` as a SQLite-backed Durable Object in the BFF. Bind it as `GIT_SESSIONS` in the BFF and in the Git Worker, where the binding names the BFF script. These bindings are optional and the dedicated routes fail closed when they are absent.
+The Git Worker is its own Cloudflare Worker, built from `packages/backend/cors-proxy/src/gitWorker.ts` with `wrangler.git.toml.template`. It serves only `/v1/git/` and `/v1/github/` and returns `404 NOT_FOUND` for every other path, so the generic proxy's origin `*` and target list never apply to the Git routes. The generic proxy (`src/worker.ts`) no longer serves those paths. Copy the template to `wrangler.git.toml` and deploy it with `pnpm deploy:git:development` or `pnpm deploy:git:production` in `packages/backend/cors-proxy`.
+
+To move an existing deployment, deploy the Git Worker first, set `GIT_PROXY_ORIGIN` to its origin in the BFF and the Git Worker, rebuild the Editor with that origin as `TW_PLUS_GIT_PROXY_ORIGIN`, and only then redeploy the generic proxy.
+
+Configure `GIT_ALLOWED_ORIGINS` and the exact HTTPS `GIT_PROXY_ORIGIN` in the BFF and the Git Worker. In the BFF, configure `GIT_GITHUB_CLIENT_ID`, `GIT_GITHUB_CLIENT_SECRET`, `GIT_GITHUB_REDIRECT_URI` ending in `/v1/git-auth/callback`, and `GIT_SESSION_KEY` as a secret with 32 random bytes encoded as 64 hex digits. Register `GitSession` as a SQLite-backed Durable Object in the BFF. Bind it as `GIT_SESSIONS` in the BFF and in the Git Worker, where the binding names the BFF script. These bindings are optional and the dedicated routes fail closed when they are absent.
 
 [github-app-setup.md](./github-app-setup.md) explains how to create the GitHub App that provides `GIT_GITHUB_CLIENT_ID` and `GIT_GITHUB_CLIENT_SECRET`.
 
