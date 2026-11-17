@@ -188,9 +188,9 @@ Configuration required:
 
 ## Git Smart HTTP and GitHub API routes
 
-TurboWarp Plus Editor uses the dedicated `/v1/git/` routes and their own CORS and authorization bindings. See the [Git Smart HTTP contract](../bff/docs/git-smart-http.md).
+TurboWarp Plus Editor uses the dedicated `/v1/git/` routes and their own CORS and authorization bindings. They run in a separate Git Worker (`src/gitWorker.ts`, configured from `wrangler.git.toml.template`), not in the generic proxy Worker described above, which no longer serves them. See the [Git Smart HTTP contract](../bff/docs/git-smart-http.md#enable-and-roll-back).
 
-The same Worker serves fixed pull request and review routes under `/v1/github/<owner>/<repo>/`. They share the Git routes' origin checks and `GitSession` binding, forward no arbitrary URL or GraphQL document, and stay separate from the generic `?url=` proxy. `GIT_GITHUB_API` enables them by group (`pulls-read`, `review-threads`, `reviews-body`); without it every route returns `404 GITHUB_API_UNAVAILABLE`. See [GitHub API routes](../bff/docs/git-smart-http.md#github-api-routes).
+The Git Worker also serves fixed pull request and review routes under `/v1/github/<owner>/<repo>/`. They share the Git routes' origin checks and `GitSession` binding, forward no arbitrary URL or GraphQL document, and stay separate from the generic `?url=` proxy. `GIT_GITHUB_API` enables them by group (`pulls-read`, `review-threads`, `reviews-body`); without it every route returns `404 GITHUB_API_UNAVAILABLE`. See [GitHub API routes](../bff/docs/git-smart-http.md#github-api-routes).
 
 ## Allowlist semantics
 
