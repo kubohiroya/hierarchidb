@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { githubReviewDocuments } from '../src/githubReviewDocuments';
+import {
+  githubReviewDocuments,
+  pullRequestPublicationStatusDocument,
+} from '../src/githubReviewDocuments';
 import { handleGitHubApi, isGitHubApiPath } from '../src/handleGitHubApi';
 import { isGitProxyPath } from '../src/handleGitProxy';
 
@@ -10,6 +13,7 @@ const bearer = 'Bearer ' + 'a'.repeat(43) + '.' + 'b'.repeat(43);
 const submitId = '00000000-0000-4000-8000-000000000001';
 const sha = 'a'.repeat(40);
 const attempt = 'c'.repeat(43);
+const publicationUrl = root + '/pulls/7/publication-status';
 
 type Json = { [key: string]: unknown };
 
@@ -26,6 +30,35 @@ function pullSummary(number: number) {
     base: { sha: 'b'.repeat(40), ref: 'main', repo: { full_name: 'owner/project' } },
     node_id: 'PR_node',
     _links: { self: { href: 'https://api.github.com/x' } },
+  };
+}
+
+function publicationData(pull: Json = {}, repositoryId = 42) {
+  return {
+    repository: {
+      databaseId: repositoryId,
+      pullRequest: {
+        number: 7,
+        state: 'OPEN',
+        mergedAt: null,
+        isDraft: false,
+        headRefName: 'feature',
+        headRefOid: sha,
+        headRepository: { databaseId: 42 },
+        baseRefName: 'main',
+        baseRefOid: 'b'.repeat(40),
+        statusCheckRollup: {
+          commit: { oid: sha },
+          state: 'SUCCESS',
+          contexts: { totalCount: 3 },
+        },
+        reviewDecision: 'APPROVED',
+        mergeStateStatus: 'CLEAN',
+        mergeable: 'MERGEABLE',
+        body: 'must not be relayed',
+        ...pull,
+      },
+    },
   };
 }
 
@@ -171,6 +204,154 @@ afterEach(() => {
 });
 
 describe('GitHub API routes of the Git Worker', () => {
+  it('reads a single fixed publication query for the session repository and PR', async () => {
+    const { call, resolve, graphql, send } = fixture({ features: 'checks-read' });
+    graphql.mockReturnValueOnce(
+      Response.json({ data: publicationData() }, { headers: { 'Set-Cookie': 'secret=1' } })
+    );
+    const response = await call(publicationUrl, { headers: { Authorization: bearer } });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Set-Cookie')).toBeNull();
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+    expect(await response.json()).toEqual({
+      repositoryId: 42,
+      number: 7,
+      state: 'OPEN',
+      mergedAt: null,
+      draft: false,
+      head: { ref: 'feature', sha, repositoryId: 42 },
+      base: { ref: 'main', sha: 'b'.repeat(40) },
+      checks: { state: 'SUCCESS', totalCount: 3 },
+      reviewDecision: 'APPROVED',
+      mergeStateStatus: 'CLEAN',
+      mergeable: 'MERGEABLE',
+    });
+    expect(resolve.mock.calls).toHaveLength(1);
+    const authCall = resolve.mock.calls[0];
+    expect(authCall?.[0]).toBe('https://git-session.internal/authorize');
+    expect(JSON.parse(String(authCall?.[1].body))).toEqual({
+      credential: 'b'.repeat(43),
+      origin,
+      owner: 'owner',
+      repo: 'project',
+      operation: 'read',
+    });
+    expect(send.mock.calls).toHaveLength(1);
+    expect(send.mock.calls[0]?.[0]).toBe('https://api.github.com/graphql');
+    expect(graphql).toHaveBeenCalledExactlyOnceWith(pullRequestPublicationStatusDocument, {
+      owner: 'owner',
+      name: 'project',
+      number: 7,
+    });
+    expect(pullRequestPublicationStatusDocument).toMatch(/^query /u);
+    expect(pullRequestPublicationStatusDocument).toContain('followRenames: false');
+  });
+
+  it('keeps missing and empty check rollups distinct from successful CI', async () => {
+    const { call, graphql } = fixture({ features: 'checks-read' });
+    for (const statusCheckRollup of [
+      null,
+      { commit: { oid: sha }, state: 'SUCCESS', contexts: { totalCount: 0 } },
+    ]) {
+      graphql.mockReturnValueOnce(
+        Response.json({
+          data: publicationData({
+            state: 'MERGED',
+            mergedAt: '2026-11-12T12:00:00Z',
+            headRepository: null,
+            reviewDecision: null,
+            mergeStateStatus: 'UNKNOWN',
+            mergeable: 'UNKNOWN',
+            statusCheckRollup,
+          }),
+        })
+      );
+      const response = await call(publicationUrl, { headers: { Authorization: bearer } });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        state: 'MERGED',
+        mergedAt: '2026-11-12T12:00:00Z',
+        head: { repositoryId: null },
+        checks: { state: null, totalCount: 0 },
+        reviewDecision: null,
+        mergeable: 'UNKNOWN',
+      });
+    }
+  });
+
+  it('rejects mismatched repository ID, pull number and check head', async () => {
+    const { call, graphql } = fixture({ features: 'checks-read' });
+    for (const [data, status, code] of [
+      [publicationData({}, 43), 403, 'FORBIDDEN'],
+      [publicationData({ number: 8 }), 502, 'UPSTREAM_FAILURE'],
+      [
+        publicationData({
+          statusCheckRollup: {
+            commit: { oid: 'c'.repeat(40) },
+            state: 'SUCCESS',
+            contexts: { totalCount: 3 },
+          },
+        }),
+        502,
+        'UPSTREAM_FAILURE',
+      ],
+      [{ repository: { databaseId: 42, pullRequest: null } }, 404, 'PULL_REQUEST_NOT_FOUND'],
+    ] as const) {
+      graphql.mockReturnValueOnce(Response.json({ data }));
+      const response = await call(publicationUrl, { headers: { Authorization: bearer } });
+      expect(response.status).toBe(status);
+      expect(await response.json()).toMatchObject({ code });
+    }
+  });
+
+  it('enables the publication read independently and rejects caller-supplied writes and queries', async () => {
+    const off = fixture({ features: 'pulls-read,review-threads' });
+    const headers = { Authorization: bearer };
+    expect((await off.call(publicationUrl, { headers })).status).toBe(404);
+    expect(
+      (await off.post(root + '/graphql/pullRequestPublicationStatus', { number: 7 })).status
+    ).toBe(400);
+    expect(off.resolve).not.toHaveBeenCalled();
+    const { call, post, resolve, send } = fixture({ features: 'checks-read' });
+    for (const url of [
+      publicationUrl + '?sha=' + sha,
+      root + '/pulls/2147483648/publication-status',
+      root + '/pulls/0/publication-status',
+      root + '/pulls/7/merge',
+    ])
+      expect((await call(url, { headers })).status).toBe(400);
+    expect((await post(publicationUrl, { query: 'mutation { x }' })).status).toBe(400);
+    expect((await call(publicationUrl, { method: 'PUT', headers })).status).toBe(400);
+    expect((await call(publicationUrl, { method: 'DELETE', headers })).status).toBe(400);
+    expect(
+      (await call(publicationUrl, { headers: { ...headers, 'Review-Submit-Id': submitId } })).status
+    ).toBe(400);
+    expect((await call(publicationUrl, { headers }, 'https://other.example.test')).status).toBe(
+      403
+    );
+    expect((await call(publicationUrl)).status).toBe(401);
+    expect(resolve).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('returns a status preflight and stops when the Git session rejects repository access', async () => {
+    const { call, resolve, send } = fixture({ features: 'checks-read' });
+    const preflight = await call(publicationUrl, {
+      method: 'OPTIONS',
+      headers: {
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'authorization',
+      },
+    });
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('Access-Control-Allow-Headers')).toBe('authorization');
+    expect(resolve).not.toHaveBeenCalled();
+    resolve.mockResolvedValueOnce(Response.json({ code: 'FORBIDDEN' }, { status: 403 }));
+    expect((await call(publicationUrl, { headers: { Authorization: bearer } })).status).toBe(403);
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('is unavailable without GIT_GITHUB_API and fails loudly on an unknown value', async () => {
     const off = fixture({ features: null });
     for (const url of [root + '/pulls', root + '/graphql/addPullRequestReview', root + '/x']) {

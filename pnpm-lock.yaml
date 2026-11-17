@@ -28,9 +28,7 @@ overrides:
   rollup: 4.59.0
 
 patchedDependencies:
-  ast-types@0.16.1:
-    hash: 54dd49286e138c8084b62b22090693e68eba621b8d03298ed1e0873cf336fee9
-    path: patches/ast-types@0.16.1.patch
+  ast-types@0.16.1: 54dd49286e138c8084b62b22090693e68eba621b8d03298ed1e0873cf336fee9
 
 importers:
 
@@ -741,6 +739,9 @@ importers:
 
   packages/backend/bff:
     dependencies:
+      '@kubohiroya/turbowarp-plus-editor-git':
+        specifier: 0.20.0
+        version: 0.20.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       hono:
         specifier: ^4.9.2
         version: 4.12.5
@@ -6741,6 +6742,16 @@ packages:
 
   '@juggle/resize-observer@3.4.0':
     resolution: {integrity: sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==}
+
+  '@kubohiroya/turbowarp-plus-editor-git@0.20.0':
+    resolution: {integrity: sha512-ib0wci0CQg5HwJQoygtezUBhMucE8egIQGt5U1v84fU76obgKdlOAUVfBm1Y565u3aYF9M/xMK4iJ3XyiHETiA==}
+    peerDependencies:
+      '@kubohiroya/turbowarp-plus-editor-auth': '>=0.3.0 <0.6.0'
+      react: '>=16.14 <19'
+      react-dom: '>=16.14 <19'
+    peerDependenciesMeta:
+      '@kubohiroya/turbowarp-plus-editor-auth':
+        optional: true
 
   '@lit-labs/ssr-dom-shim@1.5.1':
     resolution: {integrity: sha512-Aou5UdlSpr5whQe8AA/bZG0jMj96CoJIWbGfZ91qieWu5AWUMKw8VR/pAkQkJYvBNhmCcWnZlyyk5oze8JIqYA==}
@@ -16720,6 +16731,11 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@juggle/resize-observer@3.4.0': {}
+
+  '@kubohiroya/turbowarp-plus-editor-git@0.20.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   '@lit-labs/ssr-dom-shim@1.5.1': {}
 

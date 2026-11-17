@@ -2,6 +2,7 @@ import {
   type GitHubReviewOperation,
   githubReviewDocuments,
   isGitHubReviewOperation,
+  pullRequestPublicationStatusDocument,
 } from './githubReviewDocuments';
 
 const namespace = '/v1/github';
@@ -22,9 +23,23 @@ const attemptPattern = /^[A-Za-z0-9_-]{43}$/u;
 const ownerPattern = /^[A-Za-z0-9][A-Za-z0-9-]*$/u;
 const repoPattern = /^[A-Za-z0-9_.-]+$/u;
 const pathPattern =
-  /^\/v1\/github\/([A-Za-z0-9][A-Za-z0-9-]*)\/([A-Za-z0-9_.-]+)\/(?:(pulls)|pulls\/([1-9][0-9]{0,9})|pulls\/([1-9][0-9]{0,9})\/(reviews)|graphql\/([A-Za-z]+))$/u;
-const features = ['pulls-read', 'review-threads', 'reviews-body'] as const;
+  /^\/v1\/github\/([A-Za-z0-9][A-Za-z0-9-]*)\/([A-Za-z0-9_.-]+)\/(?:(pulls)|pulls\/([1-9][0-9]{0,9})|pulls\/([1-9][0-9]{0,9})\/(reviews|publication-status)|graphql\/([A-Za-z]+))$/u;
+const features = ['pulls-read', 'review-threads', 'reviews-body', 'checks-read'] as const;
 const events = ['COMMENT', 'APPROVE', 'REQUEST_CHANGES'] as const;
+const pullStates = ['OPEN', 'CLOSED', 'MERGED'] as const;
+const checkStates = ['SUCCESS', 'FAILURE', 'PENDING', 'ERROR', 'EXPECTED'] as const;
+const reviewDecisions = ['APPROVED', 'CHANGES_REQUESTED', 'REVIEW_REQUIRED'] as const;
+const mergeStates = [
+  'BEHIND',
+  'BLOCKED',
+  'CLEAN',
+  'DIRTY',
+  'DRAFT',
+  'HAS_HOOKS',
+  'UNKNOWN',
+  'UNSTABLE',
+] as const;
+const mergeability = ['MERGEABLE', 'CONFLICTING', 'UNKNOWN'] as const;
 
 type Feature = (typeof features)[number];
 type ReviewEvent = (typeof events)[number];
@@ -42,12 +57,14 @@ type PathMatch = {
   target:
     | { kind: 'pulls' }
     | { kind: 'pull'; number: number }
+    | { kind: 'publication-status'; number: number }
     | { kind: 'reviews'; number: number }
     | { kind: 'graphql'; operation: string };
 };
 type Route =
   | { kind: 'pulls'; page: number }
   | { kind: 'pull'; number: number }
+  | { kind: 'publication-status'; number: number }
   | { kind: 'reviews'; number: number; page: number }
   | { kind: 'create-review'; number: number }
   | { kind: 'graphql'; operation: GitHubReviewOperation };
@@ -170,7 +187,7 @@ function parseFeatures(value: string | undefined): Set<Feature> | null | 'invali
 function matchPath(path: string): PathMatch | null {
   const match = pathPattern.exec(path);
   if (!match || match[0] !== path) return null;
-  const [, owner, repo, pulls, pull, reviewsNumber, reviews, operation] = match;
+  const [, owner, repo, pulls, pull, suffixNumber, suffix, operation] = match;
   // The GitHub API names a repository without the `.git` suffix of the Git routes.
   if (!owner || !repo || ['.', '..'].includes(repo) || repo.toLowerCase().endsWith('.git'))
     return null;
@@ -180,10 +197,12 @@ function matchPath(path: string): PathMatch | null {
     if (number > maxPullRequestNumber) return null;
     return { owner, repo, feature: 'pulls-read', target: { kind: 'pull', number } };
   }
-  if (reviews && reviewsNumber) {
-    const number = Number(reviewsNumber);
+  if (suffixNumber) {
+    const number = Number(suffixNumber);
     if (number > maxPullRequestNumber) return null;
-    return { owner, repo, feature: 'reviews-body', target: { kind: 'reviews', number } };
+    return suffix === 'publication-status'
+      ? { owner, repo, feature: 'checks-read', target: { kind: 'publication-status', number } }
+      : { owner, repo, feature: 'reviews-body', target: { kind: 'reviews', number } };
   }
   if (operation)
     return { owner, repo, feature: 'review-threads', target: { kind: 'graphql', operation } };
@@ -204,8 +223,8 @@ function resolveRoute(path: PathMatch, method: string, search: string): Route | 
     const page = method === 'GET' ? parsePage(search, 50) : null;
     return page === null ? null : { kind: 'pulls', page };
   }
-  if (target.kind === 'pull')
-    return method === 'GET' && search === '' ? { kind: 'pull', number: target.number } : null;
+  if (target.kind === 'pull' || target.kind === 'publication-status')
+    return method === 'GET' && search === '' ? target : null;
   if (target.kind === 'reviews') {
     if (method === 'POST')
       return search === '' ? { kind: 'create-review', number: target.number } : null;
@@ -370,6 +389,21 @@ function commitOid(value: unknown): string | null {
   return value === null ? null : string(object(value).oid);
 }
 
+function enumValue<T extends string>(value: unknown, choices: readonly T[]): T {
+  const match = choices.find((choice) => choice === value);
+  if (match === undefined) throw new ShapeError();
+  return match;
+}
+
+function branchRef(value: unknown): string {
+  const ref = string(value);
+  if (ref.length === 0 || new TextEncoder().encode(ref).byteLength > maxPathBytes)
+    throw new ShapeError();
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are rejected.
+  if (/[\u0000-\u0020\u007f]/u.test(ref)) throw new ShapeError();
+  return ref;
+}
+
 function shapePullSummary(value: unknown) {
   const pull = object(value);
   const head = object(pull.head);
@@ -437,13 +471,67 @@ function shapeCreatedReview(value: unknown) {
   };
 }
 
-function shapeContext(data: Json, repositoryId: number): ReviewContext {
-  const viewer = string(object(data.viewer).login);
+function boundPull(data: Json, repositoryId: number): Json {
   if (data.repository === null) throw new ProxyError(403, 'FORBIDDEN');
   const repository = object(data.repository);
   if (integer(repository.databaseId) !== repositoryId) throw new ProxyError(403, 'FORBIDDEN');
   if (repository.pullRequest === null) throw new ProxyError(404, 'PULL_REQUEST_NOT_FOUND');
-  const pull = object(repository.pullRequest);
+  return object(repository.pullRequest);
+}
+
+function shapePublicationStatus(data: Json, repositoryId: number, number: number) {
+  const pull = boundPull(data, repositoryId);
+  const headSha = string(pull.headRefOid);
+  const baseSha = string(pull.baseRefOid);
+  const state = enumValue(pull.state, pullStates);
+  const mergedAt = nullableString(pull.mergedAt);
+  if (
+    pull.number !== number ||
+    !commitOidPattern.test(headSha) ||
+    !commitOidPattern.test(baseSha) ||
+    (state === 'MERGED') !== (mergedAt !== null) ||
+    (mergedAt !== null && !Number.isFinite(Date.parse(mergedAt)))
+  )
+    throw new ShapeError();
+
+  const headRepositoryId =
+    pull.headRepository === null ? null : object(pull.headRepository).databaseId;
+  if (headRepositoryId !== null && !isInteger(headRepositoryId, 1, Number.MAX_SAFE_INTEGER))
+    throw new ShapeError();
+
+  let checks: { state: (typeof checkStates)[number] | null; totalCount: number } = {
+    state: null,
+    totalCount: 0,
+  };
+  if (pull.statusCheckRollup !== null) {
+    const rollup = object(pull.statusCheckRollup);
+    const totalCount = object(rollup.contexts).totalCount;
+    // GitHub can update the pull request during the query. A stale rollup cannot prove CI.
+    if (commitOid(rollup.commit) !== headSha || !isInteger(totalCount, 0, Number.MAX_SAFE_INTEGER))
+      throw new ShapeError();
+    const checkState = enumValue(rollup.state, checkStates);
+    checks = { state: totalCount === 0 ? null : checkState, totalCount };
+  }
+
+  return {
+    repositoryId,
+    number,
+    state,
+    mergedAt,
+    draft: boolean(pull.isDraft),
+    head: { ref: branchRef(pull.headRefName), sha: headSha, repositoryId: headRepositoryId },
+    base: { ref: branchRef(pull.baseRefName), sha: baseSha },
+    checks,
+    reviewDecision:
+      pull.reviewDecision === null ? null : enumValue(pull.reviewDecision, reviewDecisions),
+    mergeStateStatus: enumValue(pull.mergeStateStatus, mergeStates),
+    mergeable: enumValue(pull.mergeable, mergeability),
+  };
+}
+
+function shapeContext(data: Json, repositoryId: number): ReviewContext {
+  const viewer = string(object(data.viewer).login);
+  const pull = boundPull(data, repositoryId);
   return {
     viewer,
     pullRequestNodeId: nodeId(pull.id),
@@ -749,7 +837,7 @@ export async function handleGitHubApi(
 
   const graphql = async (
     grant: Grant,
-    operation: GitHubReviewOperation,
+    operation: GitHubReviewOperation | 'pullRequestPublicationStatus',
     graphqlVariables: Json
   ): Promise<GraphqlOutcome> => {
     let response: Response;
@@ -764,7 +852,10 @@ export async function handleGitHubApi(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          query: githubReviewDocuments[operation],
+          query:
+            operation === 'pullRequestPublicationStatus'
+              ? pullRequestPublicationStatusDocument
+              : githubReviewDocuments[operation],
           variables: graphqlVariables,
         }),
         redirect: 'manual',
@@ -851,9 +942,14 @@ export async function handleGitHubApi(
   const upstreamFailure = new ProxyError(502, 'UPSTREAM_FAILURE');
   const pullNotFound = new ProxyError(404, 'PULL_REQUEST_NOT_FOUND');
 
-  /** Reads the review context of the pull request in the verified repository. */
-  const readContext = async (grant: Grant, number: number): Promise<ReviewContext> => {
-    const outcome = await graphql(grant, 'pullRequestReviewContext', {
+  /** Reads a fixed query about the pull request in the verified repository. */
+  const readPull = async <T>(
+    grant: Grant,
+    number: number,
+    query: 'pullRequestReviewContext' | 'pullRequestPublicationStatus',
+    shape: (data: Json, repositoryId: number, number: number) => T
+  ): Promise<T> => {
+    const outcome = await graphql(grant, query, {
       owner: grant.owner,
       name: grant.repo,
       number,
@@ -873,14 +969,23 @@ export async function handleGitHubApi(
     }
     if (outcome.kind !== 'ok') throw unsent(outcome, upstreamFailure, pullNotFound);
     try {
-      return shapeContext(outcome.data, grant.repositoryId);
+      return shape(outcome.data, grant.repositoryId, number);
     } catch (error) {
       if (error instanceof ProxyError) throw error;
       throw upstreamFailure;
     }
   };
+  const readContext = (grant: Grant, number: number) =>
+    readPull(grant, number, 'pullRequestReviewContext', shapeContext);
 
   try {
+    if (route.kind === 'publication-status') {
+      const grant = await authorize(stub, { ...session, operation: 'read' });
+      return respond(
+        await readPull(grant, route.number, 'pullRequestPublicationStatus', shapePublicationStatus)
+      );
+    }
+
     if (route.kind === 'pulls' || route.kind === 'pull' || route.kind === 'reviews') {
       const grant = await authorize(stub, { ...session, operation: 'read' });
       const { suffix, accept, limit, shape } =
